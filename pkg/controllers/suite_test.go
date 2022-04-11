@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"path/filepath"
-	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/pkg/api/v1alpha1"
+	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	"testing"
 
 	. "github.com/onsi/ginkgo"

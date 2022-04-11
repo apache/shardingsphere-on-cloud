@@ -520,6 +520,37 @@ spec:
             type: object
           status:
             description: ProxyStatus defines the observed state of Proxy
+            properties:
+              availableNodes:
+                format: int32
+                type: integer
+              conditions:
+                items:
+                  properties:
+                    lastUpdateTime:
+                      format: date-time
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              phase:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: string
+              version:
+                type: string
+            required:
+            - availableNodes
+            - conditions
+            - phase
+            - version
             type: object
         type: object
     served: true

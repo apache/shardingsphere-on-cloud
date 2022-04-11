@@ -18,12 +18,11 @@ package controllers
 
 import (
 	"context"
-	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/pkg/api/v1alpha1"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 )
 
 // ProxyReconciler reconciles a Proxy object

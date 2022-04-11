@@ -60,6 +60,10 @@ type ProxySpec struct {
 type ProxyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Phase          PhaseStatus `json:"phase"`
+	Conditions     Conditions  `json:"conditions"`
+	AvailableNodes int32       `json:"availableNodes"`
+	Version        string      `json:"version"`
 }
 
 //+kubebuilder:object:root=true

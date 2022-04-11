@@ -19,7 +19,7 @@ package main
 import (
 	"flag"
 	"os"
-	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/pkg/api/v1alpha1"
+	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	controllers2 "sphere-ex.com/shardingsphere-operator/pkg/controllers"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
