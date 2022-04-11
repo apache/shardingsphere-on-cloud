@@ -1,0 +1,59 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - sphere-ex.com.sphere-ex.com
+  resources:
+  - proxies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sphere-ex.com.sphere-ex.com
+  resources:
+  - proxies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - sphere-ex.com.sphere-ex.com
+  resources:
+  - proxies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - sphere-ex.com.sphere-ex.com
+  resources:
+  - proxyconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sphere-ex.com.sphere-ex.com
+  resources:
+  - proxyconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - sphere-ex.com.sphere-ex.com
+  resources:
+  - proxyconfigs/status
+  verbs:
+  - get
+  - patch
+  - update

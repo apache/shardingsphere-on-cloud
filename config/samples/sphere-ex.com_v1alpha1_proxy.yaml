@@ -1,0 +1,6 @@
+apiVersion: sphere-ex.com.sphere-ex.com/v1alpha1
+kind: Proxy
+metadata:
+  name: proxy-sample
+spec:
+  # TODO(user): Add fields here
