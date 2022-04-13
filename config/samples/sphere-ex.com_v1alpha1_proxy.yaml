@@ -3,4 +3,9 @@ kind: Proxy
 metadata:
   name: proxy-sample
 spec:
-  # TODO(user): Add fields here
+  version: "5.1.0"
+  serviceType:
+    type: ClusterIP
+  replicas: 1
+  mode: Cluster
+  proxyConfigName: "sharding-proxy"

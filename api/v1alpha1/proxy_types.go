@@ -39,12 +39,16 @@ type ProxySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Version     string                  `json:"version"`
-	Port        int32                   `json:"port"`
-	ServiceType ServiceType             `json:"serviceType"`
-	Resource    v1.ResourceRequirements `json:"resource"`
-	Replicas    int32                   `json:"replicas"`
-	Mode        string                  `json:"mode"`
+	Version         string      `json:"version"`
+	ServiceType     ServiceType `json:"serviceType"`
+	Replicas        int32       `json:"replicas"`
+	ProxyConfigName string      `json:"proxyConfigName"`
+	// +kebuilder:
+	Mode string `json:"mode"`
+	// +optional
+	Port int32 `json:"port"`
+	// +optional
+	Resource v1.ResourceRequirements `json:"resource"`
 	// Probes are not allowed for ephemeral containers.
 	// +optional
 	LivenessProbe *v1.Probe `json:"livenessProbe,omitempty" protobuf:"bytes,10,opt,name=livenessProbe"`
@@ -56,16 +60,9 @@ type ProxySpec struct {
 	StartupProbe *v1.Probe `json:"startupProbe,omitempty" protobuf:"bytes,22,opt,name=startupProbe"`
 }
 
-// ProxyStatus defines the observed state of Proxy
-type ProxyStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	Phase          PhaseStatus `json:"phase"`
-	Conditions     Conditions  `json:"conditions"`
-	AvailableNodes int32       `json:"availableNodes"`
-	Version        string      `json:"version"`
-}
-
+//+kubebuilder:printcolumn:JSONPath=".status.availableNodes",name=AvailableNodes,type=string
+//+kubebuilder:printcolumn:JSONPath=".status.version",name=Version,type=string
+//+kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
