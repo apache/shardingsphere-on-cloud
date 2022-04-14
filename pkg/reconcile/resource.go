@@ -137,11 +137,11 @@ func ConstructCascadingService(proxy *sphereexcomv1alpha1.Proxy) *v1.Service {
 
 func addInitContainer(dp *appsv1.Deployment, mysql *sphereexcomv1alpha1.MySQLDriver) *appsv1.Deployment {
 	scriptStr := strings.Builder{}
-	t1, _ := template.New("shell").Parse(`wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{.Version}}.jar;
-wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{.Version}}/mysql-connector-java-{{.Version}}.jar.md5;
-if [ $(md5sum /mysql-connector-java-{{.Version}}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-{{.Version}}.jar.md5) ];
+	t1, _ := template.New("shell").Parse(`wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{ .Version }}.jar;
+wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{ .Version }}.jar.md5;
+if [ $(md5sum /mysql-connector-java-{{ .Version }}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-{{ .Version }}.jar.md5) ];
 then echo success;
-else echo failed;exit 1;fi;mv /mysql-connector-java-{{.Version}}.jar /opt/shardingsphere-proxy/ext-lib"`)
+else echo failed;exit 1;fi;mv /mysql-connector-java-{{ .Version }}.jar /opt/shardingsphere-proxy/ext-lib`)
 	_ = t1.Execute(&scriptStr, mysql)
 	dp.Spec.Template.Spec.InitContainers = []v1.Container{
 		{
@@ -156,7 +156,7 @@ else echo failed;exit 1;fi;mv /mysql-connector-java-{{.Version}}.jar /opt/shardi
 			},
 		},
 	}
-	return nil
+	return dp
 }
 
 func processOptionalParameter(proxy *sphereexcomv1alpha1.Proxy, dp *appsv1.Deployment) *appsv1.Deployment {
