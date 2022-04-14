@@ -18,4 +18,16 @@ spec:
     requests:
       cpu: "0.2"
       memory: "1.6Gi"
-
+  livenessProbe:
+    tcpSocket:
+      port: 3307
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 3307
+    periodSeconds: 20
+  startupProbe:
+    tcpSocket:
+      port: 3307
+    periodSeconds: 5
+    failureThreshold: 12

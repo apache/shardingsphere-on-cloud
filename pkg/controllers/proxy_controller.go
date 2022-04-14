@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -71,8 +72,9 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		err = r.Create(ctx, dp)
 		if apierrors.IsAlreadyExists(err) {
 			log.Error(err, "Deployment no longer exists!")
-		} else {
+		} else if err != nil {
 			runtime.SetInitFailed()
+			fmt.Println(err)
 			_ = r.Status().Update(ctx, runtime)
 			log.Error(err, "Create Resource Deployment Error")
 			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
@@ -81,7 +83,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		err = r.Create(ctx, svc)
 		if apierrors.IsAlreadyExists(err) {
 			log.Error(err, "Service no longer exists!")
-		} else {
+		} else if err != nil {
 			runtime.SetInitFailed()
 			_ = r.Status().Update(ctx, runtime)
 			log.Error(err, "Create Resource Service Error")
