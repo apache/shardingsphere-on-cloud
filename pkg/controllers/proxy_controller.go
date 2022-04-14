@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -66,28 +65,31 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 	originStatus := runtime.Status.DeepCopy()
-	if originStatus.Phase == "" || len(originStatus.Conditions) == 0 {
+	if runtime.Status.Phase == "" || len(runtime.Status.Conditions) == 0 {
 		runtime.SetInitStatus()
 		dp := reconcile.ConstructCascadingDeployment(runtime)
 		err = r.Create(ctx, dp)
-		if apierrors.IsAlreadyExists(err) {
-			log.Error(err, "Deployment no longer exists!")
-		} else if err != nil {
-			runtime.SetInitFailed()
-			fmt.Println(err)
-			_ = r.Status().Update(ctx, runtime)
-			log.Error(err, "Create Resource Deployment Error")
-			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+		if err != nil {
+			if apierrors.IsAlreadyExists(err) {
+				log.Error(err, "Deployment no longer exists!")
+			} else if err != nil {
+				runtime.SetInitFailed()
+				_ = r.Status().Update(ctx, runtime)
+				log.Error(err, "Create Resource Deployment Error")
+				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+			}
 		}
 		svc := reconcile.ConstructCascadingService(runtime)
 		err = r.Create(ctx, svc)
-		if apierrors.IsAlreadyExists(err) {
-			log.Error(err, "Service no longer exists!")
-		} else if err != nil {
-			runtime.SetInitFailed()
-			_ = r.Status().Update(ctx, runtime)
-			log.Error(err, "Create Resource Service Error")
-			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+		if err != nil {
+			if apierrors.IsAlreadyExists(err) {
+				log.Error(err, "Service no longer exists!")
+			} else {
+				runtime.SetInitFailed()
+				_ = r.Status().Update(ctx, runtime)
+				log.Error(err, "Create Resource Service Error")
+				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+			}
 		}
 		runtime.Annotations["ResourcesInit"] = "true"
 		runtime.Annotations["UpdateTime"] = metav1.Now().Format(metav1.RFC3339Micro)
@@ -96,16 +98,17 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		log.Info(" status are equal... ", "Status", runtime.Status)
 		return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, nil
 	}
-	err = r.Update(ctx, runtime)
-	if err != nil {
-		log.Error(err, "Update CRD Resources Error")
-		return ctrl.Result{}, err
-	}
 	err = r.Status().Update(ctx, runtime)
 	if err != nil {
 		log.Error(err, "Update CRD Status Error")
 		return ctrl.Result{}, err
 	}
+	err = r.Update(ctx, runtime)
+	if err != nil {
+		log.Error(err, "Update CRD Resources Error")
+		return ctrl.Result{}, err
+	}
+
 	log.Info("runtime spec is ", "spec", runtime.Spec)
 	log.Info("runtime status is ", "status", runtime.Status)
 	return ctrl.Result{}, nil
