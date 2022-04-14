@@ -189,6 +189,13 @@ spec:
                 type: object
               mode:
                 type: string
+              mySQLDriver:
+                properties:
+                  version:
+                    type: string
+                required:
+                - version
+                type: object
               port:
                 format: int32
                 type: integer

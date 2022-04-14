@@ -48,7 +48,9 @@ type ProxySpec struct {
 	// +optional
 	Port int32 `json:"port"`
 	// +optional
-	Resource v1.ResourceRequirements `json:"resource"`
+	MySQLDriver *MySQLDriver `json:"mySQLDriver"`
+	// +optional
+	Resource *v1.ResourceRequirements `json:"resource"`
 	// Probes are not allowed for ephemeral containers.
 	// +optional
 	LivenessProbe *v1.Probe `json:"livenessProbe,omitempty" protobuf:"bytes,10,opt,name=livenessProbe"`

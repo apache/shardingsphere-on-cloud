@@ -2,18 +2,21 @@ package reconcile
 
 import (
 	"fmt"
+	"html/template"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
+	"strings"
 )
 
 func ConstructCascadingDeployment(proxy *sphereexcomv1alpha1.Proxy) *appsv1.Deployment {
 	if proxy.Spec.Port == 0 {
 		proxy.Spec.Port = 3307
 	}
-	dp := appsv1.Deployment{
+	dp := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxy.Name,
 			Namespace: proxy.Namespace,
@@ -91,7 +94,8 @@ func ConstructCascadingDeployment(proxy *sphereexcomv1alpha1.Proxy) *appsv1.Depl
 			},
 		},
 	}
-	return &dp
+
+	return processOptionalParameter(proxy, dp)
 }
 
 func ConstructCascadingService(proxy *sphereexcomv1alpha1.Proxy) *v1.Service {
@@ -128,4 +132,87 @@ func ConstructCascadingService(proxy *sphereexcomv1alpha1.Proxy) *v1.Service {
 		svc.Spec.Ports[0].NodePort = proxy.Spec.ServiceType.NodePort
 	}
 	return &svc
+}
+
+func addInitContainer(dp *appsv1.Deployment, mysql *sphereexcomv1alpha1.MySQLDriver) *appsv1.Deployment {
+	scriptStr := strings.Builder{}
+	t1, _ := template.New("shell").Parse(`wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{.Version}}.jar;
+wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{.Version}}/mysql-connector-java-{{.Version}}.jar.md5;
+if [ $(md5sum /mysql-connector-java-{{.Version}}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-{{.Version}}.jar.md5) ];
+then echo success;
+else echo failed;exit 1;fi;mv /mysql-connector-java-{{.Version}}.jar /opt/shardingsphere-proxy/ext-lib"`)
+	_ = t1.Execute(&scriptStr, mysql)
+	dp.Spec.Template.Spec.InitContainers = []v1.Container{
+		{
+			Name:    "download-mysql-connect",
+			Image:   "busybox:1.35.0",
+			Command: []string{"/bin/sh", "-c", scriptStr.String()},
+			VolumeMounts: []v1.VolumeMount{
+				{
+					Name:      "mysql-connect-jar",
+					MountPath: "/opt/shardingsphere-proxy/ext-lib",
+				},
+			},
+		},
+	}
+	return nil
+}
+
+func processOptionalParameter(proxy *sphereexcomv1alpha1.Proxy, dp *appsv1.Deployment) *appsv1.Deployment {
+	if proxy.Spec.MySQLDriver != nil {
+		dp = addInitContainer(dp, proxy.Spec.MySQLDriver)
+	}
+
+	//TODO: 更好的实现默认值添加和非默认值赋值
+	if proxy.Spec.Resource != nil {
+		dp.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resource
+	} else {
+		cpu, _ := resource.ParseQuantity("0.2")
+		memory, _ := resource.ParseQuantity("1.6Gi")
+		dp.Spec.Template.Spec.Containers[0].Resources = v1.ResourceRequirements{
+			Requests: v1.ResourceList{
+				"cpu":    cpu,
+				"memory": memory,
+			},
+		}
+	}
+	if proxy.Spec.LivenessProbe != nil {
+		dp.Spec.Template.Spec.Containers[0].LivenessProbe = proxy.Spec.LivenessProbe
+	} else {
+		dp.Spec.Template.Spec.Containers[0].LivenessProbe = &v1.Probe{
+			ProbeHandler: v1.ProbeHandler{
+				TCPSocket: &v1.TCPSocketAction{
+					Port: intstr.FromInt(int(proxy.Spec.Port)),
+				},
+			},
+
+			PeriodSeconds: 10,
+		}
+	}
+	if proxy.Spec.ReadinessProbe != nil {
+		dp.Spec.Template.Spec.Containers[0].ReadinessProbe = proxy.Spec.ReadinessProbe
+	} else {
+		dp.Spec.Template.Spec.Containers[0].ReadinessProbe = &v1.Probe{
+			ProbeHandler: v1.ProbeHandler{
+				TCPSocket: &v1.TCPSocketAction{
+					Port: intstr.FromInt(int(proxy.Spec.Port)),
+				},
+			},
+			PeriodSeconds: 10,
+		}
+	}
+	if proxy.Spec.StartupProbe != nil {
+		dp.Spec.Template.Spec.Containers[0].StartupProbe = proxy.Spec.StartupProbe
+	} else {
+		dp.Spec.Template.Spec.Containers[0].StartupProbe = &v1.Probe{
+			ProbeHandler: v1.ProbeHandler{
+				TCPSocket: &v1.TCPSocketAction{
+					Port: intstr.FromInt(int(proxy.Spec.Port)),
+				},
+			},
+			PeriodSeconds:    5,
+			FailureThreshold: 12,
+		}
+	}
+	return dp
 }
