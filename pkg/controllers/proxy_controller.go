@@ -92,12 +92,6 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		runtime.Annotations["ResourcesInit"] = "true"
 		runtime.Annotations["UpdateTime"] = metav1.Now().Format(metav1.RFC3339Micro)
 	}
-	// TODO: 判断状态并且处理不同的Status
-	switch originStatus.Conditions[len(originStatus.Conditions)-1].Type {
-	case sphereexcomv1alpha1.ConditionProcessing:
-	case sphereexcomv1alpha1.ConditionRunning:
-	case sphereexcomv1alpha1.ConditionUnknow:
-	}
 	if equality.Semantic.DeepEqual(originStatus, runtime.Status) {
 		log.Info(" status are equal... ", "Status", runtime.Status)
 		return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, nil
