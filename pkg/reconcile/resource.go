@@ -9,12 +9,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
+	"strconv"
 	"strings"
 )
 
 func ConstructCascadingDeployment(proxy *sphereexcomv1alpha1.Proxy) *appsv1.Deployment {
 	if proxy.Spec.Port == 0 {
-		proxy.Spec.Port = 3307
+		proxy.Spec.Port = int32(3307)
 	}
 	dp := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -57,7 +58,7 @@ func ConstructCascadingDeployment(proxy *sphereexcomv1alpha1.Proxy) *appsv1.Depl
 							Env: []v1.EnvVar{
 								{
 									Name:  "PORT",
-									Value: string(proxy.Spec.Port),
+									Value: strconv.FormatInt(int64(proxy.Spec.Port), 10),
 								},
 							},
 							VolumeMounts: []v1.VolumeMount{

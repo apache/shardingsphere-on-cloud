@@ -230,7 +230,16 @@ func (in *ProxyList) DeepCopyObject() runtime.Object {
 func (in *ProxySpec) DeepCopyInto(out *ProxySpec) {
 	*out = *in
 	out.ServiceType = in.ServiceType
-	in.Resource.DeepCopyInto(&out.Resource)
+	if in.MySQLDriver != nil {
+		in, out := &in.MySQLDriver, &out.MySQLDriver
+		*out = new(MySQLDriver)
+		**out = **in
+	}
+	if in.Resource != nil {
+		in, out := &in.Resource, &out.Resource
+		*out = new(v1.ResourceRequirements)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.LivenessProbe != nil {
 		in, out := &in.LivenessProbe, &out.LivenessProbe
 		*out = new(v1.Probe)
