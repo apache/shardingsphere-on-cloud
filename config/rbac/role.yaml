@@ -45,7 +45,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - sphere-ex.com.sphere-ex.com
+  - shardingsphere.sphere-ex.com
   resources:
   - proxies
   verbs:
@@ -57,41 +57,15 @@ rules:
   - update
   - watch
 - apiGroups:
-  - sphere-ex.com.sphere-ex.com
+  - shardingsphere.sphere-ex.com
   resources:
   - proxies/finalizers
   verbs:
   - update
 - apiGroups:
-  - sphere-ex.com.sphere-ex.com
+  - shardingsphere.sphere-ex.com
   resources:
   - proxies/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - sphere-ex.com.sphere-ex.com
-  resources:
-  - proxyconfigs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - sphere-ex.com.sphere-ex.com
-  resources:
-  - proxyconfigs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - sphere-ex.com.sphere-ex.com
-  resources:
-  - proxyconfigs/status
   verbs:
   - get
   - patch

@@ -39,27 +39,30 @@ type ProxySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Version         string      `json:"version"`
-	ServiceType     ServiceType `json:"serviceType"`
-	Replicas        int32       `json:"replicas"`
-	ProxyConfigName string      `json:"proxyConfigName"`
-	// +kebuilder:
-	Mode string `json:"mode"`
+	// TODO:description
+	Version     string      `json:"version"`
+	ServiceType ServiceType `json:"serviceType"`
+	// TODO:description
+	Replicas int32 `json:"replicas"`
+	// TODO:description
+	ProxyConfigName string `json:"proxyConfigName"`
+	// TODO:description
 	// +optional
-	Port int32 `json:"port"`
+	Port int32 `json:"port,omitempty"`
+	// TODO:description
 	// +optional
-	MySQLDriver *MySQLDriver `json:"mySQLDriver"`
+	MySQLDriver *MySQLDriver `json:"mySQLDriver,omitempty"`
 	// +optional
-	Resource *v1.ResourceRequirements `json:"resource"`
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Probes are not allowed for ephemeral containers.
 	// +optional
-	LivenessProbe *v1.Probe `json:"livenessProbe,omitempty" protobuf:"bytes,10,opt,name=livenessProbe"`
+	LivenessProbe *v1.Probe `json:"livenessProbe,omitempty"`
 	// Probes are not allowed for ephemeral containers.
 	// +optional
-	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty" protobuf:"bytes,11,opt,name=readinessProbe"`
+	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty" `
 	// Probes are not allowed for ephemeral containers.
 	// +optional
-	StartupProbe *v1.Probe `json:"startupProbe,omitempty" protobuf:"bytes,22,opt,name=startupProbe"`
+	StartupProbe *v1.Probe `json:"startupProbe,omitempty"`
 }
 
 //+kubebuilder:printcolumn:JSONPath=".status.availableNodes",name=AvailableNodes,type=string

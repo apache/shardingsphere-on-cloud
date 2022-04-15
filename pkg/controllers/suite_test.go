@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"path/filepath"
-	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -30,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -61,7 +62,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = sphereexcomv1alpha1.AddToScheme(scheme.Scheme)
+	err = shardingspherev1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme

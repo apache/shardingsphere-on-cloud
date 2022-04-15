@@ -8,12 +8,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
+	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	"strconv"
 	"strings"
 )
 
-func ConstructCascadingDeployment(proxy *sphereexcomv1alpha1.Proxy) *appsv1.Deployment {
+func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.Deployment {
 	if proxy.Spec.Port == 0 {
 		proxy.Spec.Port = int32(3307)
 	}
@@ -21,9 +21,6 @@ func ConstructCascadingDeployment(proxy *sphereexcomv1alpha1.Proxy) *appsv1.Depl
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxy.Name,
 			Namespace: proxy.Namespace,
-			Annotations: map[string]string{
-				"UpdateTime": metav1.Now().Format(metav1.RFC3339Micro),
-			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(proxy.GetObjectMeta(), proxy.GroupVersionKind()),
 			},
@@ -99,11 +96,11 @@ func ConstructCascadingDeployment(proxy *sphereexcomv1alpha1.Proxy) *appsv1.Depl
 	return processOptionalParameter(proxy, dp)
 }
 
-func ConstructCascadingService(proxy *sphereexcomv1alpha1.Proxy) *v1.Service {
+func ConstructCascadingService(proxy *shardingspherev1alpha1.Proxy) *v1.Service {
 
 	svc := v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      proxy.Name + "-svc",
+			Name:      proxy.Name,
 			Namespace: proxy.Namespace,
 			Annotations: map[string]string{
 				"UpdateTime": metav1.Now().Format(metav1.RFC3339Micro),
@@ -135,7 +132,7 @@ func ConstructCascadingService(proxy *sphereexcomv1alpha1.Proxy) *v1.Service {
 	return &svc
 }
 
-func addInitContainer(dp *appsv1.Deployment, mysql *sphereexcomv1alpha1.MySQLDriver) *appsv1.Deployment {
+func addInitContainer(dp *appsv1.Deployment, mysql *shardingspherev1alpha1.MySQLDriver) *appsv1.Deployment {
 	scriptStr := strings.Builder{}
 	t1, _ := template.New("shell").Parse(`wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{ .Version }}.jar;
 wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{ .Version }}.jar.md5;
@@ -159,14 +156,14 @@ else echo failed;exit 1;fi;mv /mysql-connector-java-{{ .Version }}.jar /opt/shar
 	return dp
 }
 
-func processOptionalParameter(proxy *sphereexcomv1alpha1.Proxy, dp *appsv1.Deployment) *appsv1.Deployment {
+func processOptionalParameter(proxy *shardingspherev1alpha1.Proxy, dp *appsv1.Deployment) *appsv1.Deployment {
 	if proxy.Spec.MySQLDriver != nil {
 		dp = addInitContainer(dp, proxy.Spec.MySQLDriver)
 	}
 
 	//TODO: 更好的实现默认值添加和非默认值赋值
-	if proxy.Spec.Resource != nil {
-		dp.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resource
+	if proxy.Spec.Resources != nil {
+		dp.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resources
 	} else {
 		cpu, _ := resource.ParseQuantity("0.2")
 		memory, _ := resource.ParseQuantity("1.6Gi")

@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: proxies.sphere-ex.com.sphere-ex.com
+  name: proxies.shardingsphere.sphere-ex.com
 spec:
-  group: sphere-ex.com.sphere-ex.com
+  group: shardingsphere.sphere-ex.com
   names:
     kind: Proxy
     listKind: ProxyList
@@ -187,9 +187,8 @@ spec:
                     format: int32
                     type: integer
                 type: object
-              mode:
-                type: string
               mySQLDriver:
+                description: TODO:description
                 properties:
                   version:
                     type: string
@@ -197,9 +196,11 @@ spec:
                 - version
                 type: object
               port:
+                description: TODO:description
                 format: int32
                 type: integer
               proxyConfigName:
+                description: TODO:description
                 type: string
               readinessProbe:
                 description: Probes are not allowed for ephemeral containers.
@@ -344,9 +345,10 @@ spec:
                     type: integer
                 type: object
               replicas:
+                description: TODO:description
                 format: int32
                 type: integer
-              resource:
+              resources:
                 description: ResourceRequirements describes the compute resource requirements.
                 properties:
                   limits:
@@ -528,9 +530,9 @@ spec:
                     type: integer
                 type: object
               version:
+                description: TODO:description
                 type: string
             required:
-            - mode
             - proxyConfigName
             - replicas
             - serviceType
@@ -540,8 +542,11 @@ spec:
             description: ProxyStatus defines the observed state of Proxy
             properties:
               availableNodes:
-                type: string
+                description: TODO:description
+                format: int32
+                type: integer
               conditions:
+                description: TODO:description
                 items:
                   properties:
                     lastUpdateTime:
@@ -559,9 +564,10 @@ spec:
               phase:
                 description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
                   of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
+                  this file TODO:description'
                 type: string
               version:
+                description: TODO:description
                 type: string
             required:
             - availableNodes

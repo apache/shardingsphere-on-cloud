@@ -19,8 +19,7 @@ package main
 import (
 	"flag"
 	"os"
-	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
-	controllers2 "sphere-ex.com/shardingsphere-operator/pkg/controllers"
+	"sphere-ex.com/shardingsphere-operator/pkg/controllers"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -32,6 +31,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -43,7 +44,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(sphereexcomv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(shardingspherev1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -77,14 +78,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers2.ProxyConfigReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ProxyConfig")
-		os.Exit(1)
-	}
-	if err = (&controllers2.ProxyReconciler{
+	if err = (&controllers.ProxyReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

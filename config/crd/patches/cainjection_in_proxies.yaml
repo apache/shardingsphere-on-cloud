@@ -4,4 +4,4 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
-  name: proxies.sphere-ex.com.sphere-ex.com
+  name: proxies.shardingsphere.sphere-ex.com

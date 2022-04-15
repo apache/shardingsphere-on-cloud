@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -18,17 +17,21 @@ type ConditionType string
 const (
 	ConditionProcessing ConditionType = "Processing"
 	ConditionRunning    ConditionType = "Running"
-	ConditionUnknow     ConditionType = "Unknow"
+	ConditionUnknown    ConditionType = "Unknown"
 )
 
 // ProxyStatus defines the observed state of Proxy
 type ProxyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Phase          PhaseStatus `json:"phase"`
-	Conditions     Conditions  `json:"conditions"`
-	AvailableNodes string      `json:"availableNodes"`
-	Version        string      `json:"version"`
+	// TODO:description
+	Phase PhaseStatus `json:"phase"`
+	// TODO:description
+	Conditions Conditions `json:"conditions"`
+	// TODO:description
+	AvailableNodes int32 `json:"availableNodes"`
+	// TODO:description
+	Version string `json:"version"`
 }
 
 type Conditions []Condition
@@ -46,7 +49,7 @@ func (p *Proxy) SetInitStatus() {
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	})
-	p.Status.AvailableNodes = fmt.Sprintf("0/%d", p.Spec.Replicas)
+	p.Status.AvailableNodes = 0
 	p.Status.Version = p.Spec.Version
 }
 
@@ -65,6 +68,6 @@ func (p *Proxy) SetRunningButNotready(readyCount int32) {
 		Status:         v1.ConditionFalse,
 		LastUpdateTime: metav1.Now(),
 	})
-	p.Status.AvailableNodes = fmt.Sprintf("%d/%d", readyCount, p.Spec.Replicas)
+	p.Status.AvailableNodes = readyCount
 	p.Status.Version = p.Spec.Version
 }

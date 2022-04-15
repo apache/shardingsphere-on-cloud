@@ -26,8 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	sphereexcomv1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
+	logger "sigs.k8s.io/controller-runtime/pkg/log"
+	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	"sphere-ex.com/shardingsphere-operator/pkg/reconcile"
 	"time"
 )
@@ -42,9 +42,9 @@ type ProxyReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=sphere-ex.com.sphere-ex.com,resources=proxies,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=sphere-ex.com.sphere-ex.com,resources=proxies/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=sphere-ex.com.sphere-ex.com,resources=proxies/finalizers,verbs=update
+//+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxies/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxies/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployment/status,verbs=get;list
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
@@ -54,70 +54,70 @@ type ProxyReconciler struct {
 // move the current state of the cluster closer to the desired state.
 
 func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-	runtime := &sphereexcomv1alpha1.Proxy{}
+	log := logger.FromContext(ctx)
+	run := &shardingspherev1alpha1.Proxy{}
 
-	err := r.Get(ctx, req.NamespacedName, runtime)
+	err := r.Get(ctx, req.NamespacedName, run)
 	if apierrors.IsNotFound(err) {
 		log.Error(err, "Proxy in work queue no longer exists!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	} else if err != nil {
 		return ctrl.Result{}, err
 	}
-	originStatus := runtime.Status.DeepCopy()
-	if runtime.Status.Phase == "" || len(runtime.Status.Conditions) == 0 {
-		runtime.SetInitStatus()
-		dp := reconcile.ConstructCascadingDeployment(runtime)
+	originStatus := run.Status.DeepCopy()
+	if run.Status.Phase == "" || len(run.Status.Conditions) == 0 {
+		run.SetInitStatus()
+		dp := reconcile.ConstructCascadingDeployment(run)
 		err = r.Create(ctx, dp)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				log.Error(err, "Deployment no longer exists!")
 			} else if err != nil {
-				runtime.SetInitFailed()
-				_ = r.Status().Update(ctx, runtime)
-				log.Error(err, "Create Resource Deployment Error")
+				run.SetInitFailed()
+				_ = r.Status().Update(ctx, run)
+				log.Error(err, "Create Resources Deployment Error")
 				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
 			}
 		}
-		svc := reconcile.ConstructCascadingService(runtime)
+		svc := reconcile.ConstructCascadingService(run)
 		err = r.Create(ctx, svc)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				log.Error(err, "Service no longer exists!")
 			} else {
-				runtime.SetInitFailed()
-				_ = r.Status().Update(ctx, runtime)
-				log.Error(err, "Create Resource Service Error")
+				run.SetInitFailed()
+				_ = r.Status().Update(ctx, run)
+				log.Error(err, "Create Resources Service Error")
 				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
 			}
 		}
-		runtime.Annotations["ResourcesInit"] = "true"
-		runtime.Annotations["UpdateTime"] = metav1.Now().Format(metav1.RFC3339Micro)
+		run.Annotations["ResourcesInit"] = "true"
+		run.Annotations["UpdateTime"] = metav1.Now().Format(metav1.RFC3339Micro)
 	}
-	if equality.Semantic.DeepEqual(originStatus, runtime.Status) {
-		log.Info(" status are equal... ", "Status", runtime.Status)
+	if equality.Semantic.DeepEqual(originStatus, run.Status) {
+		log.Info(" status are equal... ", "Status", run.Status)
 		return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, nil
 	}
-	err = r.Status().Update(ctx, runtime)
+	err = r.Status().Update(ctx, run)
 	if err != nil {
 		log.Error(err, "Update CRD Status Error")
 		return ctrl.Result{}, err
 	}
-	err = r.Update(ctx, runtime)
+	err = r.Update(ctx, run)
 	if err != nil {
 		log.Error(err, "Update CRD Resources Error")
 		return ctrl.Result{}, err
 	}
 
-	log.Info("runtime spec is ", "spec", runtime.Spec)
-	log.Info("runtime status is ", "status", runtime.Status)
+	log.Info("run spec is ", "spec", run.Spec)
+	log.Info("run status is ", "status", run.Status)
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ProxyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&sphereexcomv1alpha1.Proxy{}).
+		For(&shardingspherev1alpha1.Proxy{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&v1.Service{}).
 		Complete(r)
