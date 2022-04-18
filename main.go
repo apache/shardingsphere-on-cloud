@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+
 	"sphere-ex.com/shardingsphere-operator/pkg/controllers"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -33,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
+	"sphere-ex.com/shardingsphere-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -83,6 +85,13 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Proxy")
+		os.Exit(1)
+	}
+	if err = (&controllers.ProxyConfigReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ProxyConfig")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
