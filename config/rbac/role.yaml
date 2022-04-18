@@ -70,3 +70,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - shardingsphere.sphere-ex.com
+  resources:
+  - proxyconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - shardingsphere.sphere-ex.com
+  resources:
+  - proxyconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - shardingsphere.sphere-ex.com
+  resources:
+  - proxyconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
