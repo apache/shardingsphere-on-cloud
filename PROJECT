@@ -1,0 +1,16 @@
+domain: sphere-ex.com
+layout:
+- go.kubebuilder.io/v3
+projectName: shardingsphere-operator
+repo: sphere-ex.com/shardingsphere-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sphere-ex.com
+  group: shardingsphere
+  kind: Proxy
+  path: sphere-ex.com/shardingsphere-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

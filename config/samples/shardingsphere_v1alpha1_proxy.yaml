@@ -1,0 +1,32 @@
+apiVersion: shardingsphere.sphere-ex.com/v1alpha1
+kind: Proxy
+metadata:
+  name: proxy-sample
+spec:
+  version: "5.1.0"
+  serviceType:
+    type: ClusterIP
+  replicas: 1
+  proxyConfigName: "sharding-proxy"
+  mySQLDriver:
+    version: "5.1.47"
+  resource:
+    limits:
+      cpu: "2"
+      memory: "2Gi"
+    requests:
+      cpu: "0.2"
+      memory: "1.6Gi"
+  livenessProbe:
+    tcpSocket:
+      port: 3307
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 3307
+    periodSeconds: 20
+  startupProbe:
+    tcpSocket:
+      port: 3307
+    periodSeconds: 5
+    failureThreshold: 12
