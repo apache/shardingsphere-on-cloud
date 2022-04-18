@@ -25,8 +25,10 @@ import (
 
 // User TODO: description
 type User struct {
-	UserName string `json:"userName" yaml:"user"`
-	PassWord string `json:"passWord" yaml:"-"`
+	// +optional
+	UserConfig string `json:"-" yaml:"user"`
+	UserName   string `json:"userName" yaml:"-"`
+	PassWord   string `json:"passWord" yaml:"-"`
 	// +optional
 	HostName string `json:"hostName,omitempty" yaml:"-"`
 }
@@ -46,31 +48,59 @@ type Auth struct {
 // Props TODO: description
 type Props struct {
 	// +optional
-	KernelExecutorSize string `json:"kernel-executor-size,omitempty" yaml:"kernel-executor-size"`
+	KernelExecutorSize int `json:"kernel-executor-size,omitempty" yaml:"kernel-executor-size"`
 	// +optional
-	CheckTableMetadataEnabled string `json:"check-table-metadata-enabled,omitempty" yaml:"check-table-metadata-enabled"`
+	CheckTableMetadataEnabled bool `json:"check-table-metadata-enabled,omitempty" yaml:"check-table-metadata-enabled"`
 	// +optional
-	ProxyBackendQueryFetchSize string `json:"proxy-backend-query-fetch-size,omitempty" yaml:"proxy-backend-query-fetch-size"`
+	ProxyBackendQueryFetchSize int `json:"proxy-backend-query-fetch-size,omitempty" yaml:"proxy-backend-query-fetch-size"`
 	// +optional
-	CheckDuplicateTableEnabled string `json:"check-duplicate-table-enabled,omitempty" yaml:"check-duplicate-table-enabled"`
+	CheckDuplicateTableEnabled bool `json:"check-duplicate-table-enabled,omitempty" yaml:"check-duplicate-table-enabled"`
 	// +optional
-	ProxyFrontendExecutorSize string `json:"proxy-frontend-executor-size,omitempty" yaml:"proxy-frontend-executor-size"`
+	ProxyFrontendExecutorSize int `json:"proxy-frontend-executor-size,omitempty" yaml:"proxy-frontend-executor-size"`
 	// +optional
 	ProxyBackendExecutorSuitable string `json:"proxy-backend-executor-suitable,omitempty" yaml:"proxy-backend-executor-suitable"`
 }
 
+type ClusterProps struct {
+	NameSpace   string `json:"namespace" yaml:"namespace"`
+	ServerLists string `json:"server-lists" yaml:"server-lists"`
+	// +optional
+	RetryIntervalMilliseconds int `json:"retryIntervalMilliseconds,omitempty" yaml:"retryIntervalMilliseconds,omitempty"`
+	// +optional
+	MaxRetries int `json:"maxRetries,omitempty" yaml:"maxRetries,omitempty"`
+	// +optional
+	TimeToLiveSeconds int `json:"timeToLiveSeconds,omitempty" yaml:"timeToLiveSeconds,omitempty"`
+	// +optional
+	OperationTimeoutMilliseconds int `json:"operationTimeoutMilliseconds,omitempty" yaml:"operationTimeoutMilliseconds,omitempty"`
+	// +optional
+	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
+}
+
+type repositoryConfig struct {
+	Type  string       `json:"type" yaml:"type"`
+	Props ClusterProps `json:"props" yaml:"props"`
+}
+
+type ClusterConfig struct {
+	Type       string           `json:"type" yaml:"type"`
+	Repository repositoryConfig `json:"repository" yaml:"repository"`
+	Overwrite  bool             `json:"overwrite" yaml:"overwrite"`
+}
+
 // ProxyConfigSpec defines the desired state of ProxyConfig
 type ProxyConfigSpec struct {
-	AUTHORITY Auth  `json:"AUTHORITY" yaml:"AUTHORITY"`
-	Props     Props `json:"Props" yaml:"props"`
+	ClusterConfig ClusterConfig `json:"mode" yaml:"mode"`
+	AUTHORITY     Auth          `json:"AUTHORITY" yaml:"AUTHORITY"`
+	// +optional
+	Props Props `json:"props,omitempty" yaml:"props,omitempty"`
 }
 
 // ProxyConfigStatus defines the observed state of ProxyConfig
 type ProxyConfigStatus struct {
-	// crd change or create timestamp
-	UpdateTime metav1.Time `json:"updateTime"`
+	MetadataRepository string `json:"metadataRepository"`
 }
 
+//+kubebuilder:printcolumn:JSONPath=".status.metadataRepository",name=MetadataRepository,type=string
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
@@ -83,7 +113,6 @@ type ProxyConfig struct {
 	Status ProxyConfigStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:printcolumn:JSONPath=".status.updateTime",name=UpdateTime,type=string
 //+kubebuilder:object:root=true
 
 // ProxyConfigList contains a list of ProxyConfig
@@ -95,4 +124,8 @@ type ProxyConfigList struct {
 
 func init() {
 	SchemeBuilder.Register(&ProxyConfig{}, &ProxyConfigList{})
+}
+
+func (in *ProxyConfig) SetMetadataRepository(metadataType string) {
+	in.Status.MetadataRepository = metadataType
 }

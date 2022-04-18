@@ -8,6 +8,7 @@ spec:
     type: ClusterIP
   replicas: 1
   proxyConfigName: "sharding-proxy"
+  port: 3307
   mySQLDriver:
     version: "5.1.47"
   resource:

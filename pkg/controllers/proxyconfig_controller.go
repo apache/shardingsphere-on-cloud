@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sphere-ex.com/shardingsphere-operator/pkg/reconcile"
 
@@ -51,25 +52,56 @@ type ProxyConfigReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *ProxyConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logger.FromContext(ctx)
-	run := &shardingspherev1alpha1.ProxyConfig{}
 
+	run := &shardingspherev1alpha1.ProxyConfig{}
 	err := r.Get(ctx, req.NamespacedName, run)
 	if apierrors.IsNotFound(err) {
 		log.Error(err, "ProxyConfig in work queue no longer exists!")
 		return ctrl.Result{}, nil
 	} else if err != nil {
-		return ctrl.Result{}, err
+		log.Error(err, "Get CRD Resource Error")
+		return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
 	}
 
 	cm := &v1.ConfigMap{}
+	configmap := reconcile.ConstructCascadingConfigmap(run)
 	err = r.Get(ctx, req.NamespacedName, cm)
-	if apierrors.IsNotFound(err) {
-		configmap := reconcile.ConstructCascadingConfigmap(run)
-		err = r.Create(ctx, configmap)
-	} else {
-		oldConfigmap := cm.DeepCopy()
-		configmap := reconcile.ConstructCascadingConfigmap(run)
-		_ = r.Patch(ctx, configmap, client.MergeFrom(oldConfigmap))
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("Create the configmap")
+			err = r.Create(ctx, configmap)
+			if err != nil {
+				log.Error(err, "Create Configmap Resource Error")
+				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+			}
+			run.SetMetadataRepository(run.Spec.ClusterConfig.Repository.Type)
+			err = r.Status().Update(ctx, run)
+			if err != nil {
+				log.Error(err, "Update CRD Resource Status Error")
+				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+			}
+			return ctrl.Result{}, nil
+		} else {
+			log.Error(err, "Get Configmap Resource Error")
+			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+		}
+	}
+	if !equality.Semantic.DeepEqual(configmap.Data, cm.Data) {
+		cm = configmap
+		log.Info("Update or correct the configmap")
+		err = r.Update(ctx, configmap)
+		if err != nil {
+			log.Error(err, "Update Configmap Resource Error")
+			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+		}
+	}
+	if run.Status.MetadataRepository != run.Spec.ClusterConfig.Repository.Type || run.Status.MetadataRepository == "" {
+		run.SetMetadataRepository(run.Spec.ClusterConfig.Repository.Type)
+		err = r.Status().Update(ctx, run)
+		if err != nil {
+			log.Error(err, "Update CRD Resource Status Error")
+			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+		}
 	}
 	return ctrl.Result{}, nil
 }

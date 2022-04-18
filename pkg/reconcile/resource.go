@@ -220,6 +220,9 @@ func ConstructCascadingConfigmap(proxyConfig *shardingspherev1alpha1.ProxyConfig
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxyConfig.Name,
 			Namespace: proxyConfig.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(proxyConfig.GetObjectMeta(), proxyConfig.GroupVersionKind()),
+			},
 		},
 		Data: map[string]string{
 			"server.yaml": y,
@@ -232,7 +235,7 @@ func ConstructCascadingConfigmap(proxyConfig *shardingspherev1alpha1.ProxyConfig
 func toYaml(proxyConfig *shardingspherev1alpha1.ProxyConfig) string {
 
 	for i := 0; i < len(proxyConfig.Spec.AUTHORITY.Users); i++ {
-		proxyConfig.Spec.AUTHORITY.Users[i].UserName = proxyConfig.Spec.AUTHORITY.Users[i].UserName +
+		proxyConfig.Spec.AUTHORITY.Users[i].UserConfig = proxyConfig.Spec.AUTHORITY.Users[i].UserName +
 			"@" + proxyConfig.Spec.AUTHORITY.Users[i].HostName +
 			":" + proxyConfig.Spec.AUTHORITY.Users[i].PassWord
 	}

@@ -15,7 +15,11 @@ spec:
     singular: proxyconfig
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.metadataRepository
+      name: MetadataRepository
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: ProxyConfig is the Schema for the proxyconfigs API
@@ -64,35 +68,72 @@ spec:
                 required:
                 - users
                 type: object
-              Props:
+              mode:
+                properties:
+                  overwrite:
+                    type: boolean
+                  repository:
+                    properties:
+                      props:
+                        properties:
+                          digest:
+                            type: string
+                          maxRetries:
+                            type: integer
+                          namespace:
+                            type: string
+                          operationTimeoutMilliseconds:
+                            type: integer
+                          retryIntervalMilliseconds:
+                            type: integer
+                          server-lists:
+                            type: string
+                          timeToLiveSeconds:
+                            type: integer
+                        required:
+                        - namespace
+                        - server-lists
+                        type: object
+                      type:
+                        type: string
+                    required:
+                    - props
+                    - type
+                    type: object
+                  type:
+                    type: string
+                required:
+                - overwrite
+                - repository
+                - type
+                type: object
+              props:
                 description: 'Props TODO: description'
                 properties:
                   check-duplicate-table-enabled:
-                    type: string
+                    type: boolean
                   check-table-metadata-enabled:
-                    type: string
+                    type: boolean
                   kernel-executor-size:
-                    type: string
+                    type: integer
                   proxy-backend-executor-suitable:
                     type: string
                   proxy-backend-query-fetch-size:
-                    type: string
+                    type: integer
                   proxy-frontend-executor-size:
-                    type: string
+                    type: integer
                 type: object
             required:
             - AUTHORITY
-            - Props
+            - mode
             type: object
           status:
             description: ProxyConfigStatus defines the observed state of ProxyConfig
             properties:
-              updateTime:
-                description: crd change or create timestamp
-                format: date-time
+              metadataRepository:
                 type: string
             required:
-            - updateTime
+            - metadataRepository
             type: object
         type: object
     served: true

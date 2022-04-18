@@ -3,4 +3,25 @@ kind: ProxyConfig
 metadata:
   name: proxyconfig-sample
 spec:
-  # TODO(user): Add fields here
+  AUTHORITY:
+    users:
+      - userName: root
+        passWord: root
+        hostName: "%"
+      - userName: admin
+        passWord: root
+        hostName: "%"
+    provider:
+      type: ALL_PRIVILEGES_PERMITTED
+  mode:
+    type: Cluster
+    repository:
+      type: ZooKeeper
+      props:
+        namespace: "governance_ds"
+        server-lists: "zookeeper.default:2181"
+        retryIntervalMilliseconds: 500
+        timeToLiveSeconds: 600
+        maxRetries: 3
+        operationTimeoutMilliseconds: 5000
+    overwrite: false
