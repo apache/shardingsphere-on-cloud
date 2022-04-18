@@ -14,9 +14,6 @@ import (
 )
 
 func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.Deployment {
-	if proxy.Spec.Port == 0 {
-		proxy.Spec.Port = int32(3307)
-	}
 	dp := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxy.Name,

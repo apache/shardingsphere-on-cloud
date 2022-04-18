@@ -47,8 +47,7 @@ type ProxySpec struct {
 	// TODO:description
 	ProxyConfigName string `json:"proxyConfigName"`
 	// TODO:description
-	// +optional
-	Port int32 `json:"port,omitempty"`
+	Port int32 `json:"port"`
 	// TODO:description
 	// +optional
 	MySQLDriver *MySQLDriver `json:"mySQLDriver,omitempty"`

@@ -533,6 +533,7 @@ spec:
                 description: TODO:description
                 type: string
             required:
+            - port
             - proxyConfigName
             - replicas
             - serviceType
