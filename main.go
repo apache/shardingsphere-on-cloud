@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
-	"sphere-ex.com/shardingsphere-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

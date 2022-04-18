@@ -23,19 +23,52 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// User TODO: description
+type User struct {
+	UserName string `json:"userName" yaml:"user"`
+	PassWord string `json:"passWord" yaml:"-"`
+	// +optional
+	HostName string `json:"hostName,omitempty" yaml:"-"`
+}
+
+// Provider TODO: description
+type Provider struct {
+	Type string `json:"type" yaml:"type"`
+}
+
+// Auth TODO: description
+type Auth struct {
+	Users []User `json:"users" yaml:"users"`
+	// +optional
+	Provider Provider `json:"provider,omitempty"`
+}
+
+// Props TODO: description
+type Props struct {
+	// +optional
+	KernelExecutorSize string `json:"kernel-executor-size,omitempty" yaml:"kernel-executor-size"`
+	// +optional
+	CheckTableMetadataEnabled string `json:"check-table-metadata-enabled,omitempty" yaml:"check-table-metadata-enabled"`
+	// +optional
+	ProxyBackendQueryFetchSize string `json:"proxy-backend-query-fetch-size,omitempty" yaml:"proxy-backend-query-fetch-size"`
+	// +optional
+	CheckDuplicateTableEnabled string `json:"check-duplicate-table-enabled,omitempty" yaml:"check-duplicate-table-enabled"`
+	// +optional
+	ProxyFrontendExecutorSize string `json:"proxy-frontend-executor-size,omitempty" yaml:"proxy-frontend-executor-size"`
+	// +optional
+	ProxyBackendExecutorSuitable string `json:"proxy-backend-executor-suitable,omitempty" yaml:"proxy-backend-executor-suitable"`
+}
+
 // ProxyConfigSpec defines the desired state of ProxyConfig
 type ProxyConfigSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of ProxyConfig. Edit proxyconfig_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	AUTHORITY Auth  `json:"AUTHORITY" yaml:"AUTHORITY"`
+	Props     Props `json:"Props" yaml:"props"`
 }
 
 // ProxyConfigStatus defines the observed state of ProxyConfig
 type ProxyConfigStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// crd change or create timestamp
+	UpdateTime metav1.Time `json:"updateTime"`
 }
 
 //+kubebuilder:object:root=true
@@ -50,6 +83,7 @@ type ProxyConfig struct {
 	Status ProxyConfigStatus `json:"status,omitempty"`
 }
 
+//+kubebuilder:printcolumn:JSONPath=".status.updateTime",name=UpdateTime,type=string
 //+kubebuilder:object:root=true
 
 // ProxyConfigList contains a list of ProxyConfig

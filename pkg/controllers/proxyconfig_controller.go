@@ -18,11 +18,14 @@ package controllers
 
 import (
 	"context"
+	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"sphere-ex.com/shardingsphere-operator/pkg/reconcile"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	logger "sigs.k8s.io/controller-runtime/pkg/log"
 
 	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 )
@@ -47,10 +50,27 @@ type ProxyConfigReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *ProxyConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := logger.FromContext(ctx)
+	run := &shardingspherev1alpha1.ProxyConfig{}
 
-	// TODO(user): your logic here
+	err := r.Get(ctx, req.NamespacedName, run)
+	if apierrors.IsNotFound(err) {
+		log.Error(err, "ProxyConfig in work queue no longer exists!")
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		return ctrl.Result{}, err
+	}
 
+	cm := &v1.ConfigMap{}
+	err = r.Get(ctx, req.NamespacedName, cm)
+	if apierrors.IsNotFound(err) {
+		configmap := reconcile.ConstructCascadingConfigmap(run)
+		err = r.Create(ctx, configmap)
+	} else {
+		oldConfigmap := cm.DeepCopy()
+		configmap := reconcile.ConstructCascadingConfigmap(run)
+		_ = r.Patch(ctx, configmap, client.MergeFrom(oldConfigmap))
+	}
 	return ctrl.Result{}, nil
 }
 
@@ -58,5 +78,6 @@ func (r *ProxyConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *ProxyConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&shardingspherev1alpha1.ProxyConfig{}).
+		Owns(&v1.ConfigMap{}).
 		Complete(r)
 }

@@ -1,0 +1,107 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: proxyconfigs.shardingsphere.sphere-ex.com
+spec:
+  group: shardingsphere.sphere-ex.com
+  names:
+    kind: ProxyConfig
+    listKind: ProxyConfigList
+    plural: proxyconfigs
+    singular: proxyconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ProxyConfig is the Schema for the proxyconfigs API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ProxyConfigSpec defines the desired state of ProxyConfig
+            properties:
+              AUTHORITY:
+                description: 'Auth TODO: description'
+                properties:
+                  provider:
+                    description: 'Provider TODO: description'
+                    properties:
+                      type:
+                        type: string
+                    required:
+                    - type
+                    type: object
+                  users:
+                    items:
+                      description: 'User TODO: description'
+                      properties:
+                        hostName:
+                          type: string
+                        passWord:
+                          type: string
+                        userName:
+                          type: string
+                      required:
+                      - passWord
+                      - userName
+                      type: object
+                    type: array
+                required:
+                - users
+                type: object
+              Props:
+                description: 'Props TODO: description'
+                properties:
+                  check-duplicate-table-enabled:
+                    type: string
+                  check-table-metadata-enabled:
+                    type: string
+                  kernel-executor-size:
+                    type: string
+                  proxy-backend-executor-suitable:
+                    type: string
+                  proxy-backend-query-fetch-size:
+                    type: string
+                  proxy-frontend-executor-size:
+                    type: string
+                type: object
+            required:
+            - AUTHORITY
+            - Props
+            type: object
+          status:
+            description: ProxyConfigStatus defines the observed state of ProxyConfig
+            properties:
+              updateTime:
+                description: crd change or create timestamp
+                format: date-time
+                type: string
+            required:
+            - updateTime
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

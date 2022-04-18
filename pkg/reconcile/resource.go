@@ -2,6 +2,7 @@ package reconcile
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"html/template"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -210,4 +211,31 @@ func processOptionalParameter(proxy *shardingspherev1alpha1.Proxy, dp *appsv1.De
 		}
 	}
 	return dp
+}
+
+// ConstructCascadingConfigmap Construct spec resources to Configmap
+func ConstructCascadingConfigmap(proxyConfig *shardingspherev1alpha1.ProxyConfig) *v1.ConfigMap {
+	y := toYaml(proxyConfig)
+	return &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      proxyConfig.Name,
+			Namespace: proxyConfig.Namespace,
+		},
+		Data: map[string]string{
+			"server.yaml": y,
+		},
+	}
+
+}
+
+// ToYaml Convert ProxyConfig spec content to yaml format
+func toYaml(proxyConfig *shardingspherev1alpha1.ProxyConfig) string {
+
+	for i := 0; i < len(proxyConfig.Spec.AUTHORITY.Users); i++ {
+		proxyConfig.Spec.AUTHORITY.Users[i].UserName = proxyConfig.Spec.AUTHORITY.Users[i].UserName +
+			"@" + proxyConfig.Spec.AUTHORITY.Users[i].HostName +
+			":" + proxyConfig.Spec.AUTHORITY.Users[i].PassWord
+	}
+	y, _ := yaml.Marshal(proxyConfig.Spec)
+	return string(y)
 }
