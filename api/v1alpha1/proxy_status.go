@@ -15,9 +15,10 @@ const (
 type ConditionType string
 
 const (
-	ConditionProcessing ConditionType = "Processing"
-	ConditionRunning    ConditionType = "Running"
-	ConditionUnknown    ConditionType = "Unknown"
+	ConditionInitialized ConditionType = "Initializing"
+	ConditionProcessing  ConditionType = "Processing"
+	ConditionRunning     ConditionType = "Running"
+	ConditionUnknown     ConditionType = "Unknown"
 )
 
 // ProxyStatus defines the observed state of Proxy
@@ -45,7 +46,7 @@ type Condition struct {
 func (p *Proxy) SetInitializedStatus() {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append(p.Status.Conditions, Condition{
-		Type:           ConditionProcessing,
+		Type:           ConditionInitialized,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	})
@@ -55,8 +56,16 @@ func (p *Proxy) SetInitializedStatus() {
 
 func (p *Proxy) SetInitializationFailed() {
 	p.Status.Conditions = append(p.Status.Conditions, Condition{
-		Type:           ConditionProcessing,
+		Type:           ConditionInitialized,
 		Status:         v1.ConditionFalse,
+		LastUpdateTime: metav1.Now(),
+	})
+}
+
+func (p *Proxy) SetInitializationSuccess() {
+	p.Status.Conditions = append(p.Status.Conditions, Condition{
+		Type:           ConditionProcessing,
+		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	})
 }
@@ -74,7 +83,7 @@ func (p *Proxy) SetNotRunning() {
 
 func (p *Proxy) SetRunningButNotReady(readyNodes int32) {
 	p.Status.Phase = StatusNotReady
-	p.Status.Conditions = append([]Condition{}, Condition{
+	p.Status.Conditions = append(p.Status.Conditions, Condition{
 		Type:           ConditionRunning,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
@@ -85,7 +94,7 @@ func (p *Proxy) SetRunningButNotReady(readyNodes int32) {
 
 func (p *Proxy) SetReady() {
 	p.Status.Phase = StatusReady
-	p.Status.Conditions = append([]Condition{}, Condition{
+	p.Status.Conditions = append(p.Status.Conditions, Condition{
 		Type:           ConditionRunning,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),

@@ -91,9 +91,15 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return ctrl.Result{RequeueAfter: WaitingForRetry}, err
 		}
 		run.Annotations["ResourcesInit"] = "true"
+		run.SetInitializationSuccess()
+		err = r.Status().Update(ctx, run)
+		if err != nil {
+			log.Error(err, "Update Init CRD Status Error")
+			return ctrl.Result{RequeueAfter: WaitingForRetry}, err
+		}
 		err = r.Update(ctx, run)
 		if err != nil {
-			log.Error(err, "Init CRD Resources Error")
+			log.Error(err, "Update Init CRD Resources Error")
 			return ctrl.Result{RequeueAfter: WaitingForRetry}, err
 		}
 		return ctrl.Result{RequeueAfter: WaitingForReady}, err
