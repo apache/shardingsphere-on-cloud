@@ -61,7 +61,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	err := r.Get(ctx, req.NamespacedName, run)
 	if apierrors.IsNotFound(err) {
 		log.Error(err, "Proxy in work queue no longer exists!")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, nil
 	} else if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -120,7 +120,9 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			result.RequeueAfter = WaitingForReady
 			run.SetRunningButNotReady(readyNodes)
 		} else {
-			run.SetReady()
+			if run.Status.Phase != shardingspherev1alpha1.StatusReady {
+				run.SetReady()
+			}
 		}
 	} else {
 		result.RequeueAfter = WaitingForReady

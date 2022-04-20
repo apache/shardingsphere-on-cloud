@@ -17,7 +17,7 @@ func ReadyCount(podList *v1.PodList) int32 {
 	var readyPods int32
 	readyPods = 0
 	for _, pod := range podList.Items {
-		if pod.Status.ContainerStatuses[0].Ready {
+		if pod.Status.ContainerStatuses[0].Ready && pod.ObjectMeta.DeletionTimestamp == nil {
 			readyPods++
 		}
 	}
