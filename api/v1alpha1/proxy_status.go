@@ -83,7 +83,7 @@ func (p *Proxy) SetNotRunning() {
 
 func (p *Proxy) SetRunningButNotReady(readyNodes int32) {
 	p.Status.Phase = StatusNotReady
-	p.Status.Conditions = append(p.Status.Conditions, Condition{
+	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionRunning,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
@@ -94,7 +94,7 @@ func (p *Proxy) SetRunningButNotReady(readyNodes int32) {
 
 func (p *Proxy) SetReady() {
 	p.Status.Phase = StatusReady
-	p.Status.Conditions = append(p.Status.Conditions, Condition{
+	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionRunning,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),

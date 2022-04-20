@@ -118,6 +118,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		readyNodes := reconcile.ReadyCount(podList)
 		if readyNodes != run.Spec.Replicas {
 			result.RequeueAfter = WaitingForReady
+			run.SetRunningButNotReady(readyNodes)
 		} else {
 			run.SetReady()
 		}
