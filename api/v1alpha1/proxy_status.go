@@ -29,7 +29,7 @@ type ProxyStatus struct {
 	// TODO:description
 	Conditions Conditions `json:"conditions"`
 	// TODO:description
-	AvailableNodes int32 `json:"availableNodes"`
+	ReadyNodes int32 `json:"readyNodes"`
 	// TODO:description
 	Version string `json:"version"`
 }
@@ -42,18 +42,18 @@ type Condition struct {
 	LastUpdateTime metav1.Time        `json:"lastUpdateTime,omitempty"`
 }
 
-func (p *Proxy) SetInitStatus() {
+func (p *Proxy) SetInitializedStatus() {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append(p.Status.Conditions, Condition{
 		Type:           ConditionProcessing,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	})
-	p.Status.AvailableNodes = 0
+	p.Status.ReadyNodes = 0
 	p.Status.Version = p.Spec.Version
 }
 
-func (p *Proxy) SetInitFailed() {
+func (p *Proxy) SetInitializationFailed() {
 	p.Status.Conditions = append(p.Status.Conditions, Condition{
 		Type:           ConditionProcessing,
 		Status:         v1.ConditionFalse,
@@ -61,13 +61,35 @@ func (p *Proxy) SetInitFailed() {
 	})
 }
 
-func (p *Proxy) SetRunningButNotready(readyCount int32) {
+func (p *Proxy) SetNotRunning() {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionRunning,
 		Status:         v1.ConditionFalse,
 		LastUpdateTime: metav1.Now(),
 	})
-	p.Status.AvailableNodes = readyCount
+	p.Status.ReadyNodes = 0
+	p.Status.Version = p.Spec.Version
+}
+
+func (p *Proxy) SetRunningButNotReady(readyNodes int32) {
+	p.Status.Phase = StatusNotReady
+	p.Status.Conditions = append([]Condition{}, Condition{
+		Type:           ConditionRunning,
+		Status:         v1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	})
+	p.Status.ReadyNodes = readyNodes
+	p.Status.Version = p.Spec.Version
+}
+
+func (p *Proxy) SetReady() {
+	p.Status.Phase = StatusReady
+	p.Status.Conditions = append([]Condition{}, Condition{
+		Type:           ConditionRunning,
+		Status:         v1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	})
+	p.Status.ReadyNodes = p.Spec.Replicas
 	p.Status.Version = p.Spec.Version
 }

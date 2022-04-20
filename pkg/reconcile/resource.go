@@ -30,13 +30,13 @@ func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.D
 			Replicas: &proxy.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"apps": "proxy-" + proxy.Name,
+					"apps": proxy.Name,
 				},
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"apps": "proxy-" + proxy.Name,
+						"apps": proxy.Name,
 					},
 				},
 				Spec: v1.PodSpec{
@@ -61,10 +61,6 @@ func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.D
 									Name:      "config",
 									MountPath: "/opt/shardingsphere-proxy/conf",
 								},
-								{
-									Name:      "mysql-connect-jar",
-									MountPath: "/opt/shardingsphere-proxy/ext-lib",
-								},
 							},
 						},
 					},
@@ -77,12 +73,6 @@ func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.D
 										Name: proxy.Spec.ProxyConfigName,
 									},
 								},
-							},
-						},
-						{
-							Name: "mysql-connect-jar",
-							VolumeSource: v1.VolumeSource{
-								EmptyDir: &v1.EmptyDirVolumeSource{},
 							},
 						},
 					},
@@ -109,7 +99,7 @@ func ConstructCascadingService(proxy *shardingspherev1alpha1.Proxy) *v1.Service 
 		},
 		Spec: v1.ServiceSpec{
 			Selector: map[string]string{
-				"apps": "proxy-" + proxy.Name,
+				"apps": proxy.Name,
 			},
 			Type: proxy.Spec.ServiceType.Type,
 			Ports: []v1.ServicePort{
@@ -151,6 +141,17 @@ else echo failed;exit 1;fi;mv /mysql-connector-java-{{ .Version }}.jar /opt/shar
 			},
 		},
 	}
+	dp.Spec.Template.Spec.Containers[0].VolumeMounts = append(dp.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
+		Name:      "mysql-connect-jar",
+		MountPath: "/opt/shardingsphere-proxy/ext-lib",
+	},
+	)
+	dp.Spec.Template.Spec.Volumes = append(dp.Spec.Template.Spec.Volumes, v1.Volume{
+		Name: "mysql-connect-jar",
+		VolumeSource: v1.VolumeSource{
+			EmptyDir: &v1.EmptyDirVolumeSource{},
+		},
+	})
 	return dp
 }
 
@@ -234,10 +235,10 @@ func ConstructCascadingConfigmap(proxyConfig *shardingspherev1alpha1.ProxyConfig
 // ToYaml Convert ProxyConfig spec content to yaml format
 func toYaml(proxyConfig *shardingspherev1alpha1.ProxyConfig) string {
 
-	for i := 0; i < len(proxyConfig.Spec.AUTHORITY.Users); i++ {
-		proxyConfig.Spec.AUTHORITY.Users[i].UserConfig = proxyConfig.Spec.AUTHORITY.Users[i].UserName +
-			"@" + proxyConfig.Spec.AUTHORITY.Users[i].HostName +
-			":" + proxyConfig.Spec.AUTHORITY.Users[i].PassWord
+	for i := 0; i < len(proxyConfig.Spec.Authority.Users); i++ {
+		proxyConfig.Spec.Authority.Users[i].UserConfig = proxyConfig.Spec.Authority.Users[i].UserName +
+			"@" + proxyConfig.Spec.Authority.Users[i].HostName +
+			":" + proxyConfig.Spec.Authority.Users[i].PassWord
 	}
 	y, _ := yaml.Marshal(proxyConfig.Spec)
 	return string(y)

@@ -64,7 +64,7 @@ type ProxySpec struct {
 	StartupProbe *v1.Probe `json:"startupProbe,omitempty"`
 }
 
-//+kubebuilder:printcolumn:JSONPath=".status.availableNodes",name=AvailableNodes,type=string
+//+kubebuilder:printcolumn:JSONPath=".status.readyNodes",name=ReadyNodes,type=integer
 //+kubebuilder:printcolumn:JSONPath=".status.version",name=Version,type=string
 //+kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
 //+kubebuilder:object:root=true

@@ -22,7 +22,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,7 +32,8 @@ import (
 )
 
 const (
-	SyncBuildStatusInterval = 5 * time.Second
+	WaitingForRetry = 5 * time.Second
+	WaitingForReady = 12 * time.Second
 )
 
 // ProxyReconciler reconciles a Proxy object
@@ -55,6 +55,7 @@ type ProxyReconciler struct {
 
 func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logger.FromContext(ctx)
+
 	run := &shardingspherev1alpha1.Proxy{}
 
 	err := r.Get(ctx, req.NamespacedName, run)
@@ -64,54 +65,76 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	} else if err != nil {
 		return ctrl.Result{}, err
 	}
-	originStatus := run.Status.DeepCopy()
+
 	if run.Status.Phase == "" || len(run.Status.Conditions) == 0 {
-		run.SetInitStatus()
+		run.SetInitializedStatus()
+		err = r.Status().Update(ctx, run)
+		if err != nil {
+			log.Error(err, "Init CRD Status Error")
+			return ctrl.Result{RequeueAfter: WaitingForRetry}, err
+		}
 		dp := reconcile.ConstructCascadingDeployment(run)
 		err = r.Create(ctx, dp)
 		if err != nil {
-			if apierrors.IsAlreadyExists(err) {
-				log.Error(err, "Deployment no longer exists!")
-			} else if err != nil {
-				run.SetInitFailed()
-				_ = r.Status().Update(ctx, run)
-				log.Error(err, "Create Resources Deployment Error")
-				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
-			}
+			run.SetInitializationFailed()
+			_ = r.Status().Update(ctx, run)
+			log.Error(err, "Create Resources Deployment Error")
+			return ctrl.Result{RequeueAfter: WaitingForRetry}, err
+
 		}
 		svc := reconcile.ConstructCascadingService(run)
 		err = r.Create(ctx, svc)
 		if err != nil {
-			if apierrors.IsAlreadyExists(err) {
-				log.Error(err, "Service no longer exists!")
-			} else {
-				run.SetInitFailed()
-				_ = r.Status().Update(ctx, run)
-				log.Error(err, "Create Resources Service Error")
-				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
-			}
+			run.SetInitializationFailed()
+			_ = r.Status().Update(ctx, run)
+			log.Error(err, "Create Resources Service Error")
+			return ctrl.Result{RequeueAfter: WaitingForRetry}, err
 		}
 		run.Annotations["ResourcesInit"] = "true"
-		run.Annotations["UpdateTime"] = metav1.Now().Format(metav1.RFC3339Micro)
+		err = r.Update(ctx, run)
+		if err != nil {
+			log.Error(err, "Init CRD Resources Error")
+			return ctrl.Result{RequeueAfter: WaitingForRetry}, err
+		}
+		return ctrl.Result{RequeueAfter: WaitingForReady}, err
+	}
+
+	originStatus := run.Status.DeepCopy()
+	podList := &v1.PodList{}
+	err = r.List(ctx, podList, client.InNamespace(req.Namespace), client.MatchingLabels(map[string]string{"apps": req.Name}))
+	if err != nil {
+		log.Error(err, "list Cascading Pod Error")
+		return ctrl.Result{RequeueAfter: WaitingForRetry}, err
+	}
+
+	result := ctrl.Result{}
+	if reconcile.IsRunning(podList) {
+		readyNodes := reconcile.ReadyCount(podList)
+		if readyNodes != run.Spec.Replicas {
+			result.RequeueAfter = WaitingForReady
+		} else {
+			run.SetReady()
+		}
+	} else {
+		result.RequeueAfter = WaitingForReady
+		run.SetNotRunning()
 	}
 	if equality.Semantic.DeepEqual(originStatus, run.Status) {
 		log.Info(" status are equal... ", "Status", run.Status)
-		return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, nil
+		return result, nil
 	}
 	err = r.Status().Update(ctx, run)
 	if err != nil {
 		log.Error(err, "Update CRD Status Error")
-		return ctrl.Result{}, err
+		return result, err
 	}
 	err = r.Update(ctx, run)
 	if err != nil {
 		log.Error(err, "Update CRD Resources Error")
-		return ctrl.Result{}, err
+		return result, err
 	}
-
-	log.Info("run spec is ", "spec", run.Spec)
 	log.Info("run status is ", "status", run.Status)
-	return ctrl.Result{}, nil
+	return result, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

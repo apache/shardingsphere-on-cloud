@@ -6,12 +6,12 @@ spec:
   version: "5.1.0"
   serviceType:
     type: ClusterIP
-  replicas: 1
+  replicas: 3
   proxyConfigName: "sharding-proxy"
   port: 3307
   mySQLDriver:
     version: "5.1.47"
-  resource:
+  resources:
     limits:
       cpu: "2"
       memory: "2Gi"

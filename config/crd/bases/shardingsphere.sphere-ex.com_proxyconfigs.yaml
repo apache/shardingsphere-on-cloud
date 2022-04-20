@@ -39,7 +39,7 @@ spec:
           spec:
             description: ProxyConfigSpec defines the desired state of ProxyConfig
             properties:
-              AUTHORITY:
+              authority:
                 description: 'Auth TODO: description'
                 properties:
                   provider:
@@ -124,7 +124,7 @@ spec:
                     type: integer
                 type: object
             required:
-            - AUTHORITY
+            - authority
             - mode
             type: object
           status:

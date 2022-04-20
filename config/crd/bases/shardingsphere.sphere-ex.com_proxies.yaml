@@ -16,9 +16,9 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.availableNodes
-      name: AvailableNodes
-      type: string
+    - jsonPath: .status.readyNodes
+      name: ReadyNodes
+      type: integer
     - jsonPath: .status.version
       name: Version
       type: string
@@ -542,10 +542,6 @@ spec:
           status:
             description: ProxyStatus defines the observed state of Proxy
             properties:
-              availableNodes:
-                description: TODO:description
-                format: int32
-                type: integer
               conditions:
                 description: TODO:description
                 items:
@@ -567,13 +563,17 @@ spec:
                   of cluster Important: Run "make" to regenerate code after modifying
                   this file TODO:description'
                 type: string
+              readyNodes:
+                description: TODO:description
+                format: int32
+                type: integer
               version:
                 description: TODO:description
                 type: string
             required:
-            - availableNodes
             - conditions
             - phase
+            - readyNodes
             - version
             type: object
         type: object

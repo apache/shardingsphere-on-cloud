@@ -40,6 +40,7 @@ type ProxyConfigReconciler struct {
 //+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxyconfigs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxyconfigs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxyconfigs/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=configmap,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -60,7 +61,7 @@ func (r *ProxyConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, nil
 	} else if err != nil {
 		log.Error(err, "Get CRD Resource Error")
-		return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+		return ctrl.Result{RequeueAfter: WaitingForRetry}, err
 	}
 
 	cm := &v1.ConfigMap{}
@@ -72,18 +73,18 @@ func (r *ProxyConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			err = r.Create(ctx, configmap)
 			if err != nil {
 				log.Error(err, "Create Configmap Resource Error")
-				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+				return ctrl.Result{RequeueAfter: WaitingForRetry}, err
 			}
 			run.SetMetadataRepository(run.Spec.ClusterConfig.Repository.Type)
 			err = r.Status().Update(ctx, run)
 			if err != nil {
 				log.Error(err, "Update CRD Resource Status Error")
-				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+				return ctrl.Result{RequeueAfter: WaitingForRetry}, err
 			}
 			return ctrl.Result{}, nil
 		} else {
 			log.Error(err, "Get Configmap Resource Error")
-			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+			return ctrl.Result{RequeueAfter: WaitingForRetry}, err
 		}
 	}
 	if !equality.Semantic.DeepEqual(configmap.Data, cm.Data) {
@@ -92,7 +93,7 @@ func (r *ProxyConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		err = r.Update(ctx, configmap)
 		if err != nil {
 			log.Error(err, "Update Configmap Resource Error")
-			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+			return ctrl.Result{RequeueAfter: WaitingForRetry}, err
 		}
 	}
 	if run.Status.MetadataRepository != run.Spec.ClusterConfig.Repository.Type || run.Status.MetadataRepository == "" {
@@ -100,7 +101,7 @@ func (r *ProxyConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		err = r.Status().Update(ctx, run)
 		if err != nil {
 			log.Error(err, "Update CRD Resource Status Error")
-			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+			return ctrl.Result{RequeueAfter: WaitingForRetry}, err
 		}
 	}
 	return ctrl.Result{}, nil
