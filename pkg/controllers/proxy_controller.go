@@ -102,7 +102,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	podList := &v1.PodList{}
 	err = r.List(ctx, podList, client.InNamespace(req.Namespace), client.MatchingLabels(map[string]string{"apps": req.Name}))
 	if err != nil {
-		log.Error(err, "list Cascading Pod Error")
+		log.Error(err, "List Cascading Pod Error")
 		return ctrl.Result{RequeueAfter: WaitingForRetry}, err
 	}
 
