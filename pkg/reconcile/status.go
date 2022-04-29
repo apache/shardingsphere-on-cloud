@@ -18,7 +18,6 @@ package reconcile
 
 import (
 	v1 "k8s.io/api/core/v1"
-	"math"
 )
 
 func IsRunning(podList *v1.PodList) bool {
