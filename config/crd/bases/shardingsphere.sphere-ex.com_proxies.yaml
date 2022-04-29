@@ -19,9 +19,6 @@ spec:
     - jsonPath: .status.readyNodes
       name: ReadyNodes
       type: integer
-    - jsonPath: .status.version
-      name: Version
-      type: string
     - jsonPath: .status.phase
       name: Phase
       type: string
@@ -567,14 +564,10 @@ spec:
                 description: TODO:description
                 format: int32
                 type: integer
-              version:
-                description: TODO:description
-                type: string
             required:
             - conditions
             - phase
             - readyNodes
-            - version
             type: object
         type: object
     served: true

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package v1alpha1
 
 import (
@@ -10,14 +26,15 @@ type PhaseStatus string
 const (
 	StatusReady    PhaseStatus = "Ready"
 	StatusNotReady PhaseStatus = "NotReady"
+	StatusFailed   PhaseStatus = "Failed"
 )
 
 type ConditionType string
 
 const (
-	ConditionInitialized ConditionType = "Initializing"
-	ConditionProcessing  ConditionType = "Processing"
-	ConditionRunning     ConditionType = "Running"
+	ConditionInitialized ConditionType = "Initialized"
+	ConditionStarted     ConditionType = "Started"
+	ConditionReady       ConditionType = "Ready"
 	ConditionUnknown     ConditionType = "Unknown"
 )
 
@@ -31,8 +48,6 @@ type ProxyStatus struct {
 	Conditions Conditions `json:"conditions"`
 	// TODO:description
 	ReadyNodes int32 `json:"readyNodes"`
-	// TODO:description
-	Version string `json:"version"`
 }
 
 type Conditions []Condition
@@ -43,15 +58,14 @@ type Condition struct {
 	LastUpdateTime metav1.Time        `json:"lastUpdateTime,omitempty"`
 }
 
-func (p *Proxy) SetInitializedStatus() {
+func (p *Proxy) SetInitialized() {
 	p.Status.Phase = StatusNotReady
-	p.Status.Conditions = append(p.Status.Conditions, Condition{
+	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionInitialized,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	})
 	p.Status.ReadyNodes = 0
-	p.Status.Version = p.Spec.Version
 }
 
 func (p *Proxy) SetInitializationFailed() {
@@ -62,43 +76,33 @@ func (p *Proxy) SetInitializationFailed() {
 	})
 }
 
-func (p *Proxy) SetInitializationSuccess() {
+func (p *Proxy) SetPodStarted(readyNodes int32) {
+	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append(p.Status.Conditions, Condition{
-		Type:           ConditionProcessing,
-		Status:         v1.ConditionTrue,
-		LastUpdateTime: metav1.Now(),
-	})
-}
-
-func (p *Proxy) SetNotRunning() {
-	p.Status.Phase = StatusNotReady
-	p.Status.Conditions = append([]Condition{}, Condition{
-		Type:           ConditionRunning,
-		Status:         v1.ConditionFalse,
-		LastUpdateTime: metav1.Now(),
-	})
-	p.Status.ReadyNodes = 0
-	p.Status.Version = p.Spec.Version
-}
-
-func (p *Proxy) SetRunningButNotReady(readyNodes int32) {
-	p.Status.Phase = StatusNotReady
-	p.Status.Conditions = append([]Condition{}, Condition{
-		Type:           ConditionRunning,
+		Type:           ConditionStarted,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	})
 	p.Status.ReadyNodes = readyNodes
-	p.Status.Version = p.Spec.Version
 }
 
-func (p *Proxy) SetReady() {
+func (p *Proxy) SetReady(readyNodes int32) {
 	p.Status.Phase = StatusReady
 	p.Status.Conditions = append([]Condition{}, Condition{
-		Type:           ConditionRunning,
+		Type:           ConditionReady,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	})
-	p.Status.ReadyNodes = p.Spec.Replicas
-	p.Status.Version = p.Spec.Version
+	p.Status.ReadyNodes = readyNodes
+
+}
+
+func (p *Proxy) SetFailed(readyNodes int32) {
+	p.Status.Phase = StatusFailed
+	p.Status.Conditions = append([]Condition{}, Condition{
+		Type:           ConditionUnknown,
+		Status:         v1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	})
+	p.Status.ReadyNodes = readyNodes
 }
