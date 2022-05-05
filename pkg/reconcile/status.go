@@ -32,7 +32,7 @@ func IsRunning(podList *v1.PodList) bool {
 	return status
 }
 
-func ReadyCount(podList *v1.PodList) int32 {
+func CountingReadyPods(podList *v1.PodList) int32 {
 	var readyPods int32
 	readyPods = 0
 	for _, pod := range podList.Items {
@@ -43,14 +43,12 @@ func ReadyCount(podList *v1.PodList) int32 {
 	return readyPods
 }
 
-func RestartCount(podList *v1.PodList) int32 {
-
+func CountingPodMaxRestartTimes(podList *v1.PodList) int32 {
 	var podRestartCount int32 = math.MinInt32
 	for _, pod := range podList.Items {
 		if podRestartCount < pod.Status.ContainerStatuses[0].RestartCount {
 			podRestartCount = pod.Status.ContainerStatuses[0].RestartCount
 		}
 	}
-
 	return podRestartCount
 }

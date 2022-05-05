@@ -110,9 +110,9 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	result := ctrl.Result{}
 	if reconcile.IsRunning(podList) {
-		readyNodes := reconcile.ReadyCount(podList)
+		readyNodes := reconcile.CountingReadyPods(podList)
 		if readyNodes != run.Spec.Replicas {
-			restartTimes := reconcile.RestartCount(podList)
+			restartTimes := reconcile.CountingPodMaxRestartTimes(podList)
 			if restartTimes > MaxRestartedCount {
 				run.SetFailed()
 				_ = r.Status().Update(ctx, run)

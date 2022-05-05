@@ -77,7 +77,7 @@ func (p *Proxy) SetInitializationFailed() {
 
 func (p *Proxy) SetPodStarted(readyNodes int32) {
 	p.Status.Phase = StatusNotReady
-	p.Status.Conditions = append(p.Status.Conditions, Condition{
+	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionStarted,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
@@ -87,7 +87,7 @@ func (p *Proxy) SetPodStarted(readyNodes int32) {
 
 func (p *Proxy) SetPodNotStarted() {
 	p.Status.Phase = StatusNotReady
-	p.Status.Conditions = append(p.Status.Conditions, Condition{
+	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionStarted,
 		Status:         v1.ConditionFalse,
 		LastUpdateTime: metav1.Now(),
