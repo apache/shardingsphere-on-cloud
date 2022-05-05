@@ -26,7 +26,6 @@ type PhaseStatus string
 const (
 	StatusReady    PhaseStatus = "Ready"
 	StatusNotReady PhaseStatus = "NotReady"
-	StatusFailed   PhaseStatus = "Failed"
 )
 
 type ConditionType string
@@ -65,11 +64,11 @@ func (p *Proxy) SetInitialized() {
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	})
-	p.Status.ReadyNodes = 0
 }
 
 func (p *Proxy) SetInitializationFailed() {
-	p.Status.Conditions = append(p.Status.Conditions, Condition{
+	p.Status.Phase = StatusNotReady
+	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionInitialized,
 		Status:         v1.ConditionFalse,
 		LastUpdateTime: metav1.Now(),
@@ -86,6 +85,15 @@ func (p *Proxy) SetPodStarted(readyNodes int32) {
 	p.Status.ReadyNodes = readyNodes
 }
 
+func (p *Proxy) SetPodNotStarted() {
+	p.Status.Phase = StatusNotReady
+	p.Status.Conditions = append(p.Status.Conditions, Condition{
+		Type:           ConditionStarted,
+		Status:         v1.ConditionFalse,
+		LastUpdateTime: metav1.Now(),
+	})
+}
+
 func (p *Proxy) SetReady(readyNodes int32) {
 	p.Status.Phase = StatusReady
 	p.Status.Conditions = append([]Condition{}, Condition{
@@ -97,12 +105,11 @@ func (p *Proxy) SetReady(readyNodes int32) {
 
 }
 
-func (p *Proxy) SetFailed(readyNodes int32) {
-	p.Status.Phase = StatusFailed
+func (p *Proxy) SetFailed() {
+	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionUnknown,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	})
-	p.Status.ReadyNodes = readyNodes
 }

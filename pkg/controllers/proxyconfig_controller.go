@@ -93,7 +93,7 @@ func (r *ProxyConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if err != nil {
 			log.Error(err, "Error updating cascaded configmap")
 			// 重新排队为了处理冲突错误
-			// TODO: 单独为冲突错误进行重新排队处理
+			// TODO: Error handling for conflict errors alone
 			return ctrl.Result{Requeue: true}, err
 		}
 	}

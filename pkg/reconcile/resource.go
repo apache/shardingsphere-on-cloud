@@ -169,41 +169,11 @@ else echo failed;exit 1;fi;mv /mysql-connector-java-{{ .Version }}.jar /opt/shar
 
 }
 
-func updateInitContainer(dp *appsv1.Deployment, mysql *shardingspherev1alpha1.MySQLDriver) {
-
-	if len(dp.Spec.Template.Spec.InitContainers) != 0 {
-		scriptStr := strings.Builder{}
-		t1, _ := template.New("shell").Parse(`wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{ .Version }}.jar;
-wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{ .Version }}.jar.md5;
-if [ $(md5sum /mysql-connector-java-{{ .Version }}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-{{ .Version }}.jar.md5) ];
-then echo success;
-else echo failed;exit 1;fi;mv /mysql-connector-java-{{ .Version }}.jar /opt/shardingsphere-proxy/ext-lib`)
-		_ = t1.Execute(&scriptStr, mysql)
-		dp.Spec.Template.Spec.InitContainers = []v1.Container{
-			{
-				Name:    "download-mysql-connect",
-				Image:   "busybox:1.35.0",
-				Command: []string{"/bin/sh", "-c", scriptStr.String()},
-				VolumeMounts: []v1.VolumeMount{
-					{
-						Name:      "mysql-connect-jar",
-						MountPath: "/opt/shardingsphere-proxy/ext-lib",
-					},
-				},
-			},
-		}
-	} else {
-		addInitContainer(dp, mysql)
-	}
-
-}
-
 func processOptionalParameter(proxy *shardingspherev1alpha1.Proxy, dp *appsv1.Deployment) *appsv1.Deployment {
 	if proxy.Spec.MySQLDriver != nil {
 		addInitContainer(dp, proxy.Spec.MySQLDriver)
 	}
 
-	//TODO: 更好的实现默认值添加和非默认值赋值
 	if proxy.Spec.Resources != nil {
 		dp.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resources
 	} else {
@@ -285,20 +255,4 @@ func toYaml(proxyConfig *shardingspherev1alpha1.ProxyConfig) string {
 	}
 	y, _ := yaml.Marshal(proxyConfig.Spec)
 	return string(y)
-}
-
-func UpdateDeployment(proxy *shardingspherev1alpha1.Proxy, runtimeDeployment *appsv1.Deployment) {
-	runtimeDeployment.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("apache/shardingsphere-proxy:%s", proxy.Spec.Version)
-	runtimeDeployment.Spec.Replicas = &proxy.Spec.Replicas
-	runtimeDeployment.Spec.Template.Spec.Volumes[0].ConfigMap.Name = proxy.Spec.ProxyConfigName
-	runtimeDeployment.Spec.Template.Spec.Containers[0].Env[0].Value = strconv.FormatInt(int64(proxy.Spec.Port), 10)
-	runtimeDeployment.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = proxy.Spec.Port
-	if proxy.Spec.MySQLDriver.Version != "" {
-		updateInitContainer(runtimeDeployment, proxy.Spec.MySQLDriver)
-	}
-	runtimeDeployment.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resources
-	runtimeDeployment.Spec.Template.Spec.Containers[0].LivenessProbe = proxy.Spec.LivenessProbe
-	runtimeDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe = proxy.Spec.ReadinessProbe
-	runtimeDeployment.Spec.Template.Spec.Containers[0].StartupProbe = proxy.Spec.StartupProbe
-
 }

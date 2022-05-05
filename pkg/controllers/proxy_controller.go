@@ -31,9 +31,9 @@ import (
 )
 
 const (
-	//WaitingForReady 时间选择参考 kubelet 重启时间
-	WaitingForReady = 10 * time.Second
-	Threshold       = int32(5)
+	//WaitingForReady Time selection reference kubelet restart time
+	WaitingForReady   = 10 * time.Second
+	MaxRestartedCount = int32(5)
 )
 
 // ProxyReconciler reconciles a Proxy object
@@ -54,11 +54,6 @@ type ProxyReconciler struct {
 // move the current state of the cluster closer to the desired state.
 
 func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	// TODO: 超过错误重试阈值
-	// 错误重试应该以次数为限制，超过阈值限制将直接转化为失败最终态，不再继续重新排队
-	// 调谐代码中错误尝试阈值实现方式暂时不完善
-
-	// TODO: 错误需不需要进行重新排队？
 	log := logger.FromContext(ctx)
 
 	run := &shardingspherev1alpha1.Proxy{}
@@ -85,23 +80,13 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	} else if err != nil {
 		log.Error(err, "Error getting cascaded deployment")
 		return ctrl.Result{}, err
-	} else {
-		// TODO: 对比 Deployment 有没有更改
-		reconcile.UpdateDeployment(run, runtimeDeployment)
-		err = r.Update(ctx, runtimeDeployment)
-		if err != nil {
-			log.Error(err, "Error updating cascaded deployment")
-			// 重试是为了处理出现冲突这个错误
-			// TODO: 单独为冲突错误进行重新排队处理
-			return ctrl.Result{Requeue: true}, err
-		}
 	}
 
-	// TODO: service 是否需要纠正
+	// TODO: Whether the service needs to be corrected
 	runtimeService := &v1.Service{}
 	err = r.Get(ctx, req.NamespacedName, runtimeService)
-	cascadingService := reconcile.ConstructCascadingService(run)
 	if apierrors.IsNotFound(err) {
+		cascadingService := reconcile.ConstructCascadingService(run)
 		err = r.Create(ctx, cascadingService)
 		if err != nil {
 			run.SetInitializationFailed()
@@ -109,27 +94,29 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			log.Error(err, "Error creating cascaded service")
 			return ctrl.Result{}, err
 		}
+		run.SetInitialized()
+		return ctrl.Result{RequeueAfter: WaitingForReady}, nil
 	} else if err != nil {
 		log.Error(err, "Error getting cascaded service")
 		return ctrl.Result{}, err
 	}
 
-	result := ctrl.Result{}
 	podList := &v1.PodList{}
 	err = r.List(ctx, podList, client.InNamespace(req.Namespace), client.MatchingLabels(map[string]string{"apps": req.Name}))
 	if err != nil {
 		log.Error(err, "Error listing cascaded pod")
 		return ctrl.Result{}, err
 	}
+
+	result := ctrl.Result{}
 	if reconcile.IsRunning(podList) {
 		readyNodes := reconcile.ReadyCount(podList)
 		if readyNodes != run.Spec.Replicas {
 			restartTimes := reconcile.RestartCount(podList)
-			if restartTimes > Threshold {
-				run.SetFailed(readyNodes)
+			if restartTimes > MaxRestartedCount {
+				run.SetFailed()
 				_ = r.Status().Update(ctx, run)
 				log.Error(nil, "The times of restarts exceeds the threshold")
-				return result, nil
 			}
 			result.RequeueAfter = (time.Duration(restartTimes) + 1) * WaitingForReady
 			if readyNodes != run.Status.ReadyNodes {
@@ -142,10 +129,12 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			}
 		}
 	} else {
-		run.SetInitialized()
+		// TODO: Waiting for pods to start exceeds the maximum number of retries
+		run.SetPodNotStarted()
 		result.RequeueAfter = WaitingForReady
 	}
-	// TODO: 对比 Status 有没有修改
+
+	// TODO: Compare Status with or without modification
 	err = r.Status().Update(ctx, run)
 	if err != nil {
 		log.Error(err, "Error updating status")
