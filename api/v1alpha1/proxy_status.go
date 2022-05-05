@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package v1alpha1
 
 import (
@@ -15,9 +31,10 @@ const (
 type ConditionType string
 
 const (
-	ConditionProcessing ConditionType = "Processing"
-	ConditionRunning    ConditionType = "Running"
-	ConditionUnknown    ConditionType = "Unknown"
+	ConditionInitialized ConditionType = "Initialized"
+	ConditionStarted     ConditionType = "Started"
+	ConditionReady       ConditionType = "Ready"
+	ConditionUnknown     ConditionType = "Unknown"
 )
 
 // ProxyStatus defines the observed state of Proxy
@@ -29,9 +46,7 @@ type ProxyStatus struct {
 	// TODO:description
 	Conditions Conditions `json:"conditions"`
 	// TODO:description
-	AvailableNodes int32 `json:"availableNodes"`
-	// TODO:description
-	Version string `json:"version"`
+	ReadyNodes int32 `json:"readyNodes"`
 }
 
 type Conditions []Condition
@@ -42,32 +57,59 @@ type Condition struct {
 	LastUpdateTime metav1.Time        `json:"lastUpdateTime,omitempty"`
 }
 
-func (p *Proxy) SetInitStatus() {
+func (p *Proxy) SetInitialized() {
 	p.Status.Phase = StatusNotReady
-	p.Status.Conditions = append(p.Status.Conditions, Condition{
-		Type:           ConditionProcessing,
+	p.Status.Conditions = append([]Condition{}, Condition{
+		Type:           ConditionInitialized,
 		Status:         v1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	})
-	p.Status.AvailableNodes = 0
-	p.Status.Version = p.Spec.Version
 }
 
-func (p *Proxy) SetInitFailed() {
-	p.Status.Conditions = append(p.Status.Conditions, Condition{
-		Type:           ConditionProcessing,
-		Status:         v1.ConditionFalse,
-		LastUpdateTime: metav1.Now(),
-	})
-}
-
-func (p *Proxy) SetRunningButNotready(readyCount int32) {
+func (p *Proxy) SetInitializationFailed() {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
-		Type:           ConditionRunning,
+		Type:           ConditionInitialized,
 		Status:         v1.ConditionFalse,
 		LastUpdateTime: metav1.Now(),
 	})
-	p.Status.AvailableNodes = readyCount
-	p.Status.Version = p.Spec.Version
+}
+
+func (p *Proxy) SetPodStarted(readyNodes int32) {
+	p.Status.Phase = StatusNotReady
+	p.Status.Conditions = append([]Condition{}, Condition{
+		Type:           ConditionStarted,
+		Status:         v1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	})
+	p.Status.ReadyNodes = readyNodes
+}
+
+func (p *Proxy) SetPodNotStarted() {
+	p.Status.Phase = StatusNotReady
+	p.Status.Conditions = append([]Condition{}, Condition{
+		Type:           ConditionStarted,
+		Status:         v1.ConditionFalse,
+		LastUpdateTime: metav1.Now(),
+	})
+}
+
+func (p *Proxy) SetReady(readyNodes int32) {
+	p.Status.Phase = StatusReady
+	p.Status.Conditions = append([]Condition{}, Condition{
+		Type:           ConditionReady,
+		Status:         v1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	})
+	p.Status.ReadyNodes = readyNodes
+
+}
+
+func (p *Proxy) SetFailed() {
+	p.Status.Phase = StatusNotReady
+	p.Status.Conditions = append([]Condition{}, Condition{
+		Type:           ConditionUnknown,
+		Status:         v1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	})
 }

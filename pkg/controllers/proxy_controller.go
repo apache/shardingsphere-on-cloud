@@ -1,18 +1,18 @@
 /*
-Copyright 2022.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+ * Copyright (c) 2022.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package controllers
 
@@ -20,9 +20,7 @@ import (
 	"context"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,7 +31,9 @@ import (
 )
 
 const (
-	SyncBuildStatusInterval = 5 * time.Second
+	//WaitingForReady Time selection reference kubelet restart time
+	WaitingForReady   = 10 * time.Second
+	MaxRestartedCount = int32(5)
 )
 
 // ProxyReconciler reconciles a Proxy object
@@ -55,63 +55,93 @@ type ProxyReconciler struct {
 
 func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logger.FromContext(ctx)
-	run := &shardingspherev1alpha1.Proxy{}
 
+	run := &shardingspherev1alpha1.Proxy{}
 	err := r.Get(ctx, req.NamespacedName, run)
 	if apierrors.IsNotFound(err) {
-		log.Error(err, "Proxy in work queue no longer exists!")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		log.Info("Resource in work queue no longer exists!")
+		return ctrl.Result{}, nil
 	} else if err != nil {
-		return ctrl.Result{}, err
-	}
-	originStatus := run.Status.DeepCopy()
-	if run.Status.Phase == "" || len(run.Status.Conditions) == 0 {
-		run.SetInitStatus()
-		dp := reconcile.ConstructCascadingDeployment(run)
-		err = r.Create(ctx, dp)
-		if err != nil {
-			if apierrors.IsAlreadyExists(err) {
-				log.Error(err, "Deployment no longer exists!")
-			} else if err != nil {
-				run.SetInitFailed()
-				_ = r.Status().Update(ctx, run)
-				log.Error(err, "Create Resources Deployment Error")
-				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
-			}
-		}
-		svc := reconcile.ConstructCascadingService(run)
-		err = r.Create(ctx, svc)
-		if err != nil {
-			if apierrors.IsAlreadyExists(err) {
-				log.Error(err, "Service no longer exists!")
-			} else {
-				run.SetInitFailed()
-				_ = r.Status().Update(ctx, run)
-				log.Error(err, "Create Resources Service Error")
-				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
-			}
-		}
-		run.Annotations["ResourcesInit"] = "true"
-		run.Annotations["UpdateTime"] = metav1.Now().Format(metav1.RFC3339Micro)
-	}
-	if equality.Semantic.DeepEqual(originStatus, run.Status) {
-		log.Info(" status are equal... ", "Status", run.Status)
-		return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, nil
-	}
-	err = r.Status().Update(ctx, run)
-	if err != nil {
-		log.Error(err, "Update CRD Status Error")
-		return ctrl.Result{}, err
-	}
-	err = r.Update(ctx, run)
-	if err != nil {
-		log.Error(err, "Update CRD Resources Error")
+		log.Error(err, "Error getting  CRD resource")
 		return ctrl.Result{}, err
 	}
 
-	log.Info("run spec is ", "spec", run.Spec)
-	log.Info("run status is ", "status", run.Status)
-	return ctrl.Result{}, nil
+	runtimeDeployment := &appsv1.Deployment{}
+	err = r.Get(ctx, req.NamespacedName, runtimeDeployment)
+	if apierrors.IsNotFound(err) {
+		cascadingDeployment := reconcile.ConstructCascadingDeployment(run)
+		err = r.Create(ctx, cascadingDeployment)
+		if err != nil {
+			run.SetInitializationFailed()
+			_ = r.Status().Update(ctx, run)
+			log.Error(err, "Error creating cascaded deployment")
+			return ctrl.Result{}, err
+		}
+	} else if err != nil {
+		log.Error(err, "Error getting cascaded deployment")
+		return ctrl.Result{}, err
+	}
+
+	// TODO: Whether the service needs to be corrected
+	runtimeService := &v1.Service{}
+	err = r.Get(ctx, req.NamespacedName, runtimeService)
+	if apierrors.IsNotFound(err) {
+		cascadingService := reconcile.ConstructCascadingService(run)
+		err = r.Create(ctx, cascadingService)
+		if err != nil {
+			run.SetInitializationFailed()
+			_ = r.Status().Update(ctx, run)
+			log.Error(err, "Error creating cascaded service")
+			return ctrl.Result{}, err
+		}
+		run.SetInitialized()
+		return ctrl.Result{RequeueAfter: WaitingForReady}, nil
+	} else if err != nil {
+		log.Error(err, "Error getting cascaded service")
+		return ctrl.Result{}, err
+	}
+
+	podList := &v1.PodList{}
+	err = r.List(ctx, podList, client.InNamespace(req.Namespace), client.MatchingLabels(map[string]string{"apps": req.Name}))
+	if err != nil {
+		log.Error(err, "Error listing cascaded pod")
+		return ctrl.Result{}, err
+	}
+
+	result := ctrl.Result{}
+	if reconcile.IsRunning(podList) {
+		readyNodes := reconcile.CountingReadyPods(podList)
+		if readyNodes != run.Spec.Replicas {
+			restartTimes := reconcile.CountingPodMaxRestartTimes(podList)
+			if restartTimes > MaxRestartedCount {
+				run.SetFailed()
+				_ = r.Status().Update(ctx, run)
+				log.Error(nil, "The times of restarts exceeds the threshold")
+			}
+			result.RequeueAfter = (time.Duration(restartTimes) + 1) * WaitingForReady
+			if readyNodes != run.Status.ReadyNodes {
+				run.SetPodStarted(readyNodes)
+			}
+		} else {
+			if run.Status.Phase != shardingspherev1alpha1.StatusReady {
+				log.Info("Status is now ready!")
+				run.SetReady(readyNodes)
+			}
+		}
+	} else {
+		// TODO: Waiting for pods to start exceeds the maximum number of retries
+		run.SetPodNotStarted()
+		result.RequeueAfter = WaitingForReady
+	}
+
+	// TODO: Compare Status with or without modification
+	err = r.Status().Update(ctx, run)
+	if err != nil {
+		log.Error(err, "Error updating status")
+		return result, err
+	}
+	log.Info("RuntimeCRD status ", "status", run.Status)
+	return result, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -119,6 +149,6 @@ func (r *ProxyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&shardingspherev1alpha1.Proxy{}).
 		Owns(&appsv1.Deployment{}).
-		Owns(&v1.Service{}).
+		Owns(&v1.Pod{}).
 		Complete(r)
 }

@@ -1,18 +1,18 @@
 /*
-Copyright 2022.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+ * Copyright (c) 2022.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package controllers
 
@@ -40,6 +40,7 @@ type ProxyConfigReconciler struct {
 //+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxyconfigs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxyconfigs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxyconfigs/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=configmap,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -56,51 +57,52 @@ func (r *ProxyConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	run := &shardingspherev1alpha1.ProxyConfig{}
 	err := r.Get(ctx, req.NamespacedName, run)
 	if apierrors.IsNotFound(err) {
-		log.Error(err, "ProxyConfig in work queue no longer exists!")
+		log.Info("Resource in work queue no longer exists!")
 		return ctrl.Result{}, nil
 	} else if err != nil {
-		log.Error(err, "Get CRD Resource Error")
-		return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+		log.Error(err, "Error getting CRD resource")
+		return ctrl.Result{}, err
 	}
 
 	cm := &v1.ConfigMap{}
 	configmap := reconcile.ConstructCascadingConfigmap(run)
 	err = r.Get(ctx, req.NamespacedName, cm)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			log.Info("Create the configmap")
-			err = r.Create(ctx, configmap)
-			if err != nil {
-				log.Error(err, "Create Configmap Resource Error")
-				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
-			}
-			run.SetMetadataRepository(run.Spec.ClusterConfig.Repository.Type)
-			err = r.Status().Update(ctx, run)
-			if err != nil {
-				log.Error(err, "Update CRD Resource Status Error")
-				return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
-			}
-			return ctrl.Result{}, nil
-		} else {
-			log.Error(err, "Get Configmap Resource Error")
-			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+	if apierrors.IsNotFound(err) {
+		log.Info("Creating cascaded configmap")
+		err = r.Create(ctx, configmap)
+		if err != nil {
+			log.Error(err, "Error creating cascaded configmap")
+			return ctrl.Result{}, err
 		}
+		run.SetMetadataRepository(run.Spec.ClusterConfig.Repository.Type)
+		err = r.Status().Update(ctx, run)
+		if err != nil {
+			log.Error(err, "Error updating CRD resource status")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		log.Error(err, "Error getting cascaded configmap")
+		return ctrl.Result{}, err
 	}
+
 	if !equality.Semantic.DeepEqual(configmap.Data, cm.Data) {
 		cm = configmap
 		log.Info("Update or correct the configmap")
 		err = r.Update(ctx, configmap)
 		if err != nil {
-			log.Error(err, "Update Configmap Resource Error")
-			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+			log.Error(err, "Error updating cascaded configmap")
+			// 重新排队为了处理冲突错误
+			// TODO: Error handling for conflict errors alone
+			return ctrl.Result{Requeue: true}, err
 		}
 	}
 	if run.Status.MetadataRepository != run.Spec.ClusterConfig.Repository.Type || run.Status.MetadataRepository == "" {
 		run.SetMetadataRepository(run.Spec.ClusterConfig.Repository.Type)
 		err = r.Status().Update(ctx, run)
 		if err != nil {
-			log.Error(err, "Update CRD Resource Status Error")
-			return ctrl.Result{RequeueAfter: SyncBuildStatusInterval}, err
+			log.Error(err, "Error updating CRD resource status")
+			return ctrl.Result{}, err
 		}
 	}
 	return ctrl.Result{}, nil

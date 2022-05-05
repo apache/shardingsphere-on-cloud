@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package reconcile
 
 import (
@@ -30,13 +46,13 @@ func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.D
 			Replicas: &proxy.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"apps": "proxy-" + proxy.Name,
+					"apps": proxy.Name,
 				},
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"apps": "proxy-" + proxy.Name,
+						"apps": proxy.Name,
 					},
 				},
 				Spec: v1.PodSpec{
@@ -61,10 +77,6 @@ func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.D
 									Name:      "config",
 									MountPath: "/opt/shardingsphere-proxy/conf",
 								},
-								{
-									Name:      "mysql-connect-jar",
-									MountPath: "/opt/shardingsphere-proxy/ext-lib",
-								},
 							},
 						},
 					},
@@ -77,12 +89,6 @@ func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.D
 										Name: proxy.Spec.ProxyConfigName,
 									},
 								},
-							},
-						},
-						{
-							Name: "mysql-connect-jar",
-							VolumeSource: v1.VolumeSource{
-								EmptyDir: &v1.EmptyDirVolumeSource{},
 							},
 						},
 					},
@@ -100,16 +106,13 @@ func ConstructCascadingService(proxy *shardingspherev1alpha1.Proxy) *v1.Service 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxy.Name,
 			Namespace: proxy.Namespace,
-			Annotations: map[string]string{
-				"UpdateTime": metav1.Now().Format(metav1.RFC3339Micro),
-			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(proxy.GetObjectMeta(), proxy.GroupVersionKind()),
 			},
 		},
 		Spec: v1.ServiceSpec{
 			Selector: map[string]string{
-				"apps": "proxy-" + proxy.Name,
+				"apps": proxy.Name,
 			},
 			Type: proxy.Spec.ServiceType.Type,
 			Ports: []v1.ServicePort{
@@ -130,7 +133,7 @@ func ConstructCascadingService(proxy *shardingspherev1alpha1.Proxy) *v1.Service 
 	return &svc
 }
 
-func addInitContainer(dp *appsv1.Deployment, mysql *shardingspherev1alpha1.MySQLDriver) *appsv1.Deployment {
+func addInitContainer(dp *appsv1.Deployment, mysql *shardingspherev1alpha1.MySQLDriver) {
 	scriptStr := strings.Builder{}
 	t1, _ := template.New("shell").Parse(`wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{ .Version }}.jar;
 wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{ .Version }}.jar.md5;
@@ -151,15 +154,26 @@ else echo failed;exit 1;fi;mv /mysql-connector-java-{{ .Version }}.jar /opt/shar
 			},
 		},
 	}
-	return dp
+	dp.Spec.Template.Spec.Containers[0].VolumeMounts = append(dp.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
+		Name:      "mysql-connect-jar",
+		MountPath: "/opt/shardingsphere-proxy/ext-lib",
+	},
+	)
+
+	dp.Spec.Template.Spec.Volumes = append(dp.Spec.Template.Spec.Volumes, v1.Volume{
+		Name: "mysql-connect-jar",
+		VolumeSource: v1.VolumeSource{
+			EmptyDir: &v1.EmptyDirVolumeSource{},
+		},
+	})
+
 }
 
 func processOptionalParameter(proxy *shardingspherev1alpha1.Proxy, dp *appsv1.Deployment) *appsv1.Deployment {
 	if proxy.Spec.MySQLDriver != nil {
-		dp = addInitContainer(dp, proxy.Spec.MySQLDriver)
+		addInitContainer(dp, proxy.Spec.MySQLDriver)
 	}
 
-	//TODO: 更好的实现默认值添加和非默认值赋值
 	if proxy.Spec.Resources != nil {
 		dp.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resources
 	} else {
@@ -234,10 +248,10 @@ func ConstructCascadingConfigmap(proxyConfig *shardingspherev1alpha1.ProxyConfig
 // ToYaml Convert ProxyConfig spec content to yaml format
 func toYaml(proxyConfig *shardingspherev1alpha1.ProxyConfig) string {
 
-	for i := 0; i < len(proxyConfig.Spec.AUTHORITY.Users); i++ {
-		proxyConfig.Spec.AUTHORITY.Users[i].UserConfig = proxyConfig.Spec.AUTHORITY.Users[i].UserName +
-			"@" + proxyConfig.Spec.AUTHORITY.Users[i].HostName +
-			":" + proxyConfig.Spec.AUTHORITY.Users[i].PassWord
+	for i := 0; i < len(proxyConfig.Spec.Authority.Users); i++ {
+		proxyConfig.Spec.Authority.Users[i].UserConfig = proxyConfig.Spec.Authority.Users[i].UserName +
+			"@" + proxyConfig.Spec.Authority.Users[i].HostName +
+			":" + proxyConfig.Spec.Authority.Users[i].PassWord
 	}
 	y, _ := yaml.Marshal(proxyConfig.Spec)
 	return string(y)
