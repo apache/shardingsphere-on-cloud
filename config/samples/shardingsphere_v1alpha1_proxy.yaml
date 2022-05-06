@@ -5,10 +5,11 @@ metadata:
 spec:
   version: "5.1.0"
   serviceType:
-    type: ClusterIP
+    type: NodePort
+    nodePort: 32001
   replicas: 2
   proxyConfigName: "sharding-proxy"
-  port: 3307
+  port: 3308
   mySQLDriver:
     version: "5.1.47"
   resources:
@@ -20,14 +21,14 @@ spec:
       memory: "1.6Gi"
   livenessProbe:
     tcpSocket:
-      port: 3307
+      port: 3308
     periodSeconds: 10
   readinessProbe:
     tcpSocket:
-      port: 3307
+      port: 3308
     periodSeconds: 20
   startupProbe:
     tcpSocket:
-      port: 3307
+      port: 3308
     periodSeconds: 5
     failureThreshold: 12

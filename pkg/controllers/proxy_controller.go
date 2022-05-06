@@ -1,17 +1,18 @@
 /*
- * Copyright (c) 2022.
+ *   Licensed to the Apache Software Foundation (ASF) under one or more
+ *   contributor license agreements.  See the NOTICE file distributed with
+ *   this work for additional information regarding copyright ownership.
+ *   The ASF licenses this file to You under the Apache License, Version 2.0
+ *   (the "License"); you may not use this file except in compliance with
+ *   the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package controllers
@@ -80,9 +81,16 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	} else if err != nil {
 		log.Error(err, "Error getting cascaded deployment")
 		return ctrl.Result{}, err
+	} else {
+		originDeployment := runtimeDeployment.DeepCopy()
+		reconcile.UpdateDeployment(run, originDeployment)
+		err = r.Update(ctx, originDeployment)
+		if err != nil {
+			log.Error(err, "Error updating cascaded deployment")
+			return ctrl.Result{Requeue: true}, err
+		}
 	}
 
-	// TODO: Whether the service needs to be corrected
 	runtimeService := &v1.Service{}
 	err = r.Get(ctx, req.NamespacedName, runtimeService)
 	if apierrors.IsNotFound(err) {
@@ -99,6 +107,14 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	} else if err != nil {
 		log.Error(err, "Error getting cascaded service")
 		return ctrl.Result{}, err
+	} else {
+		originService := runtimeService.DeepCopy()
+		reconcile.UpdateService(run, originService)
+		err = r.Update(ctx, originService)
+		if err != nil {
+			log.Error(err, "Error updating cascaded service")
+			return ctrl.Result{}, err
+		}
 	}
 
 	podList := &v1.PodList{}
@@ -109,8 +125,8 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	result := ctrl.Result{}
+	readyNodes := reconcile.CountingReadyPods(podList)
 	if reconcile.IsRunning(podList) {
-		readyNodes := reconcile.CountingReadyPods(podList)
 		if readyNodes != run.Spec.Replicas {
 			restartTimes := reconcile.CountingPodMaxRestartTimes(podList)
 			if restartTimes > MaxRestartedCount {
@@ -130,7 +146,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	} else {
 		// TODO: Waiting for pods to start exceeds the maximum number of retries
-		run.SetPodNotStarted()
+		run.SetPodNotStarted(readyNodes)
 		result.RequeueAfter = WaitingForReady
 	}
 
@@ -149,6 +165,7 @@ func (r *ProxyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&shardingspherev1alpha1.Proxy{}).
 		Owns(&appsv1.Deployment{}).
+		Owns(&v1.Service{}).
 		Owns(&v1.Pod{}).
 		Complete(r)
 }
