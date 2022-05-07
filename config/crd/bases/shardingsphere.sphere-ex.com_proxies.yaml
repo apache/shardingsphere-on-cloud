@@ -185,19 +185,24 @@ spec:
                     type: integer
                 type: object
               mySQLDriver:
-                description: TODO:description
+                description: MySQLDriver Defines the mysql-driven version in ShardingSphere-proxy
                 properties:
                   version:
+                    description: mysql-driven version,must be x.y.z
+                    pattern: ^([1-9]\d|[1-9])(\.([1-9]\d|\d)){2}$
                     type: string
                 required:
                 - version
                 type: object
               port:
-                description: TODO:description
+                description: Port is ShardingSphere-Proxy startup port
                 format: int32
+                minimum: 0
                 type: integer
               proxyConfigName:
-                description: TODO:description
+                description: ProxyConfigName is the name of the ProxyConfig CRD
+                minLength: 0
+                pattern: '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
                 type: string
               readinessProbe:
                 description: Probes are not allowed for ephemeral containers.
@@ -342,7 +347,7 @@ spec:
                     type: integer
                 type: object
               replicas:
-                description: TODO:description
+                description: Replicas is the expected number of replicas of ShardingSphere-Proxy
                 format: int32
                 type: integer
               resources:
@@ -375,11 +380,26 @@ spec:
                 description: ServiceType defines the Service in Kubernetes of ShardingSphere-Proxy
                 properties:
                   nodePort:
+                    description: 'The port on each node on which this service is exposed
+                      when type is NodePort or LoadBalancer.  Usually assigned by
+                      the system. If a value is specified, in-range, and not in use
+                      it will be used, otherwise the operation will fail.  If not
+                      specified, a port will be allocated if this Service requires
+                      one.  If this field is specified when creating a Service which
+                      does not need it, creation will fail. This field will be wiped
+                      when updating a Service to no longer need it (e.g. changing
+                      type from NodePort to ClusterIP). More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport'
                     format: int32
+                    minimum: 0
                     type: integer
                   type:
                     description: Service Type string describes ingress methods for
                       a service
+                    enum:
+                    - ClusterIP
+                    - NodePort
+                    - LoadBalancer
+                    - ExternalName
                     type: string
                 required:
                 - type
@@ -527,7 +547,7 @@ spec:
                     type: integer
                 type: object
               version:
-                description: TODO:description
+                description: Version  is the version of ShardingSphere-Proxy
                 type: string
             required:
             - port
@@ -540,8 +560,18 @@ spec:
             description: ProxyStatus defines the observed state of Proxy
             properties:
               conditions:
-                description: TODO:description
+                description: Conditions The conditions array, the reason and message
+                  fields
                 items:
+                  description: '| **condition** | **status** | **directions**| | -------------
+                    | ---------- | ----------------------------------------------------
+                    | | Initialized   | true       | Initialization successful| |
+                    Initialized   | false      | initialization failed| | Started       |
+                    true       | pod started successfully but not ready| | Started       |
+                    false      | pod started failed| | Ready         | true       |
+                    The pod is ready and can provide external services| | Unknown       |
+                    true       | ShardingSphere-Proxy failed to start correctly due
+                    to some problems |'
                   properties:
                     lastUpdateTime:
                       format: date-time
@@ -556,12 +586,14 @@ spec:
                   type: object
                 type: array
               phase:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file TODO:description'
+                description: 'ShardingSphere-Proxy phase are a brief summary of the
+                  ShardingSphere-Proxy life cycle There are two possible phase values:
+                  Ready: ShardingSphere-Proxy can already provide external services
+                  NotReady: ShardingSphere-Proxy cannot provide external services'
                 type: string
               readyNodes:
-                description: TODO:description
+                description: ReadyNodes shows the number of replicas that ShardingSphere-Proxy
+                  is running normally
                 format: int32
                 type: integer
             required:

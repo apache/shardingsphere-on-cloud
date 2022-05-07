@@ -27,11 +27,28 @@ import (
 
 //ServiceType defines the Service in Kubernetes of ShardingSphere-Proxy
 type ServiceType struct {
+	// +kubebuilder:validation:Enum=ClusterIP;NodePort;LoadBalancer;ExternalName
+
 	Type v1.ServiceType `json:"type"`
+	// +kubebuilder:validation:Minimum=0
+
+	// The port on each node on which this service is exposed when type is
+	// NodePort or LoadBalancer.  Usually assigned by the system. If a value is
+	// specified, in-range, and not in use it will be used, otherwise the
+	// operation will fail.  If not specified, a port will be allocated if this
+	// Service requires one.  If this field is specified when creating a
+	// Service which does not need it, creation will fail. This field will be
+	// wiped when updating a Service to no longer need it (e.g. changing type
+	// from NodePort to ClusterIP).
+	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
 	// +optional
 	NodePort int32 `json:"nodePort"`
 }
+
+//MySQLDriver Defines the mysql-driven version in ShardingSphere-proxy
 type MySQLDriver struct {
+	// +kubebuilder:validation:Pattern=`^([1-9]\d|[1-9])(\.([1-9]\d|\d)){2}$`
+	// mysql-driven version,must be x.y.z
 	Version string `json:"version"`
 }
 
@@ -40,16 +57,21 @@ type ProxySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// TODO:description
+	// Version  is the version of ShardingSphere-Proxy
 	Version     string      `json:"version"`
 	ServiceType ServiceType `json:"serviceType"`
-	// TODO:description
+	//Replicas is the expected number of replicas of ShardingSphere-Proxy
 	Replicas int32 `json:"replicas"`
-	// TODO:description
+
+	// +kubebuilder:validation:MinLength=0
+	// +kubebuilder:validation:Pattern=[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*
+
+	//ProxyConfigName is the name of the ProxyConfig CRD
 	ProxyConfigName string `json:"proxyConfigName"`
-	// TODO:description
+
+	// +kubebuilder:validation:Minimum=0
+	//Port is ShardingSphere-Proxy startup port
 	Port int32 `json:"port"`
-	// TODO:description
 	// +optional
 	MySQLDriver *MySQLDriver `json:"mySQLDriver,omitempty"`
 	// +optional

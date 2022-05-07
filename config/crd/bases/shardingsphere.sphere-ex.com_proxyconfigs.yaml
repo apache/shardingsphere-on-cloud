@@ -40,10 +40,12 @@ spec:
             description: ProxyConfigSpec defines the desired state of ProxyConfig
             properties:
               authority:
-                description: 'Auth TODO: description'
+                description: Auth  is used to set up initial user to login compute
+                  node, and authority data of storage node.
                 properties:
-                  provider:
-                    description: 'Provider TODO: description'
+                  privilege:
+                    description: Privilege for storage node, the default value is
+                      ALL_PRIVILEGES_PERMITTED
                     properties:
                       type:
                         type: string
@@ -52,55 +54,80 @@ spec:
                     type: object
                   users:
                     items:
-                      description: 'User TODO: description'
+                      description: 'User is a slice about authorized host and password
+                        for compute node. Format: user:<username>@<hostname>,hostname
+                        is % or empty string means do not care about authorized host
+                        password:<password>'
                       properties:
-                        hostName:
+                        password:
                           type: string
-                        passWord:
-                          type: string
-                        userName:
+                        user:
                           type: string
                       required:
-                      - passWord
-                      - userName
+                      - password
+                      - user
                       type: object
                     type: array
                 required:
                 - users
                 type: object
               mode:
+                description: ClusterConfig needs to fill in the relevant configuration
+                  required by Cluster mode
                 properties:
                   overwrite:
+                    description: Whether overwrite persistent configuration with local
+                      configuration
                     type: boolean
                   repository:
+                    description: Persist repository configuration
                     properties:
                       props:
+                        description: Properties of persist repository
                         properties:
                           digest:
+                            description: Password of login
                             type: string
                           maxRetries:
+                            description: 'MaxRetries Max retries of client connection.
+                              default: 3'
                             type: integer
                           namespace:
+                            description: Namespace of registry center
                             type: string
                           operationTimeoutMilliseconds:
+                            description: 'OperationTimeoutMilliseconds Milliseconds
+                              of operation timeout. default: 500'
                             type: integer
                           retryIntervalMilliseconds:
+                            description: 'RetryIntervalMilliseconds Milliseconds of
+                              retry interval. default: 500'
                             type: integer
                           server-lists:
+                            description: Server lists of registry center
                             type: string
                           timeToLiveSeconds:
+                            description: 'TimeToLiveSeconds Seconds of ephemeral data
+                              live.default: 60'
                             type: integer
                         required:
                         - namespace
                         - server-lists
                         type: object
                       type:
+                        description: Type of persist repository
+                        enum:
+                        - ZooKeeper
                         type: string
                     required:
                     - props
                     - type
                     type: object
                   type:
+                    description: 'Type of mode configuration. Values only support:
+                      Cluster'
+                    enum:
+                    - Cluster
                     type: string
                 required:
                 - overwrite

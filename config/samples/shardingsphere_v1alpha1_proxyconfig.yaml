@@ -3,15 +3,13 @@ kind: ProxyConfig
 metadata:
   name: proxyconfig-sample
 spec:
-  AUTHORITY:
+  authority:
     users:
-      - userName: root
-        passWord: root
-        hostName: "%"
-      - userName: admin
-        passWord: root
-        hostName: "%"
-    provider:
+      - user: root@%
+        password: root
+      - user: admin@%
+        password: admin
+    privilege:
       type: ALL_PRIVILEGES_PERMITTED
   mode:
     type: Cluster
