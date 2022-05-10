@@ -64,7 +64,7 @@ type ProxySpec struct {
 	Replicas int32 `json:"replicas"`
 
 	// +kubebuilder:validation:MinLength=0
-	// +kubebuilder:validation:Pattern=[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 
 	//ProxyConfigName is the name of the ProxyConfig CRD
 	ProxyConfigName string `json:"proxyConfigName"`

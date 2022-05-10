@@ -30,6 +30,8 @@ import (
 	"strings"
 )
 
+const imageName = "apache/shardingsphere-proxy"
+
 func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.Deployment {
 	dp := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -59,7 +61,7 @@ func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.D
 					Containers: []v1.Container{
 						{
 							Name:            "proxy",
-							Image:           fmt.Sprintf("apache/shardingsphere-proxy:%s", proxy.Spec.Version),
+							Image:           fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version),
 							ImagePullPolicy: v1.PullIfNotPresent,
 							Ports: []v1.ContainerPort{
 								{
@@ -206,7 +208,7 @@ func toYaml(proxyConfig *shardingspherev1alpha1.ProxyConfig) string {
 
 // UpdateDeployment FIXME:merge UpdateDeployment and ConstructCascadingDeployment
 func UpdateDeployment(proxy *shardingspherev1alpha1.Proxy, runtimeDeployment *appsv1.Deployment) {
-	runtimeDeployment.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("apache/shardingsphere-proxy:%s", proxy.Spec.Version)
+	runtimeDeployment.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
 	runtimeDeployment.Spec.Replicas = &proxy.Spec.Replicas
 	runtimeDeployment.Spec.Template.Spec.Volumes[0].ConfigMap.Name = proxy.Spec.ProxyConfigName
 	runtimeDeployment.Spec.Template.Spec.Containers[0].Env[0].Value = strconv.FormatInt(int64(proxy.Spec.Port), 10)

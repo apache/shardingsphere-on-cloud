@@ -29,18 +29,19 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	shardingwebhook "sphere-ex.com/shardingsphere-operator/pkg/webhook"
 )
 
 // log is for logging in this package.
 var proxylog = logf.Log.WithName("proxy-resource")
 
 func (r *Proxy) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
+	return shardingwebhook.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=true,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=create;update,versions=v1alpha1,name=mproxy.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/apis/admission.shardingsphere.sphere-ex.com/v1alpha1/mutate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=true,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=create;update,versions=v1alpha1,name=mproxy.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Proxy{}
 
@@ -91,7 +92,7 @@ func (r *Proxy) Default() {
 	}
 }
 
-//+kubebuilder:webhook:path=/validate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=false,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=create;update,versions=v1alpha1,name=vproxy.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/apis/admission.shardingsphere.sphere-ex.com/v1alpha1/validate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=false,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=create;update,versions=v1alpha1,name=vproxy.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Proxy{}
 

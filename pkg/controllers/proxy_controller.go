@@ -33,8 +33,7 @@ import (
 
 const (
 	//WaitingForReady Time selection reference kubelet restart time
-	WaitingForReady   = 10 * time.Second
-	MaxRestartedCount = int32(5)
+	WaitingForReady = 10 * time.Second
 )
 
 // ProxyReconciler reconciles a Proxy object
@@ -128,13 +127,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	readyNodes := reconcile.CountingReadyPods(podList)
 	if reconcile.IsRunning(podList) {
 		if readyNodes != run.Spec.Replicas {
-			restartTimes := reconcile.CountingPodMaxRestartTimes(podList)
-			if restartTimes > MaxRestartedCount {
-				run.SetFailed()
-				_ = r.Status().Update(ctx, run)
-				log.Error(nil, "The times of restarts exceeds the threshold")
-			}
-			result.RequeueAfter = (time.Duration(restartTimes) + 1) * WaitingForReady
+			result.RequeueAfter = WaitingForReady
 			if readyNodes != run.Status.ReadyNodes {
 				run.SetPodStarted(readyNodes)
 			}

@@ -202,7 +202,7 @@ spec:
               proxyConfigName:
                 description: ProxyConfigName is the name of the ProxyConfig CRD
                 minLength: 0
-                pattern: '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
+                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                 type: string
               readinessProbe:
                 description: Probes are not allowed for ephemeral containers.

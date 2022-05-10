@@ -2,18 +2,17 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  creationTimestamp: null
-  name: mutating-webhook-configuration
+  name: shardingsphere-mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
     service:
-      name: webhook-service
-      namespace: system
+      name: kubernetes
+      namespace: default
       path: /apis/admission.shardingsphere.sphere-ex.com/v1alpha1/mutate-shardingsphere-sphere-ex-com-v1alpha1-proxy
   failurePolicy: Fail
-  name: mproxy.kb.io
+  name: mproxy.shardingsphere.sphere-ex.com
   rules:
   - apiGroups:
     - shardingsphere.sphere-ex.com
@@ -29,18 +28,17 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  creationTimestamp: null
-  name: validating-webhook-configuration
+  name: shardingsphere-validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
     service:
-      name: webhook-service
-      namespace: system
+      name: kubernetes
+      namespace: default
       path: /apis/admission.shardingsphere.sphere-ex.com/v1alpha1/validate-shardingsphere-sphere-ex-com-v1alpha1-proxy
   failurePolicy: Fail
-  name: vproxy.kb.io
+  name: vproxy.shardingsphere.sphere-ex.com
   rules:
   - apiGroups:
     - shardingsphere.sphere-ex.com
