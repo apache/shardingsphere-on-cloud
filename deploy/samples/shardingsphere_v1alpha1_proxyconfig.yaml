@@ -1,7 +1,7 @@
 apiVersion: shardingsphere.sphere-ex.com/v1alpha1
 kind: ProxyConfig
 metadata:
-  name: proxyconfig-usertest
+  name: proxyconfig-sample
 spec:
   authority:
     users:

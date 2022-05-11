@@ -26,7 +26,7 @@ type ProxyConfigSpec struct {
 	ClusterConfig ClusterConfig `json:"mode" yaml:"mode"`
 	Authority     Auth          `json:"authority" yaml:"authority"`
 	// +optional
-	Props Props `json:"props,omitempty" yaml:"props,omitempty"`
+	Props *Props `json:"props,omitempty" yaml:"props,omitempty"`
 }
 
 // ProxyConfigStatus defines the observed state of ProxyConfig

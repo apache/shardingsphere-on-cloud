@@ -5,12 +5,11 @@
 replicaCount: 2
 
 image:
-  repository: "uhub.service.ucloud.cn/controller/shardingsphere-operator"
+  repository: "shardingsphere-operator"
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "0.0.1"
-imagePullSecrets:
-  - name: uhub
+imagePullSecrets: []
 service:
   type: ClusterIP
   port: 80

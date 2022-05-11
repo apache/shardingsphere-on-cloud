@@ -17,14 +17,14 @@ spec:
     spec:
       containers:
         - args:
-            - --health-probe-bind-address=:{{.Values.health.healthProbePort}}
+            - --health-probe-bind-address=:{{ .Values.health.healthProbePort }}
             - --leader-elect
           command:
             - /manager
           ports:
             - name: webhook
               containerPort: {{ .Values.webhook.port }}
-            - name: readycheck
+            - name: healthCheck
               containerPort: {{ .Values.health.healthProbePort }}
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -47,5 +47,4 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: shardingsphere-operator
-      terminationGracePeriodSeconds: 10
+      serviceAccountName: {{ .Values.serviceAccount.name }}

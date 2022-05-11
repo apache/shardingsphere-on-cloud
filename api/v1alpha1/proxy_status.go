@@ -55,6 +55,7 @@ type ProxyStatus struct {
 
 type Conditions []Condition
 
+// Condition
 //| **condition** | **status** | **directions**|
 //| ------------- | ---------- | ---------------------------------------------------- |
 //| Initialized   | true       | Initialization successful|

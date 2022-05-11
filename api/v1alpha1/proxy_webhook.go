@@ -81,6 +81,8 @@ func (r *Proxy) Default() {
 		}
 	}
 	if r.Spec.Resources == nil {
+		// The application for resources is based on the upper limit of cpu: 2core memory: 2Gi to apply for computing resources.
+		// The cpu is applied according to 10%, and the memory is applied according to 80%
 		cpu, _ := resource.ParseQuantity("0.2")
 		memory, _ := resource.ParseQuantity("1.6Gi")
 		r.Spec.Resources = &v1.ResourceRequirements{
@@ -92,7 +94,7 @@ func (r *Proxy) Default() {
 	}
 }
 
-//+kubebuilder:webhook:path=/apis/admission.shardingsphere.sphere-ex.com/v1alpha1/validate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=false,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=create;update,versions=v1alpha1,name=vproxy.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/apis/admission.shardingsphere.sphere-ex.com/v1alpha1/validate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=false,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=create;update,versions=v1alpha1,name=vproxy.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Proxy{}
 

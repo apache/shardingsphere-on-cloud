@@ -1,13 +1,13 @@
 apiVersion: shardingsphere.sphere-ex.com/v1alpha1
 kind: Proxy
 metadata:
-  name: proxy-sample2
+  name: proxy-sample
 spec:
-  version: "5.1.1"
+  version: "5.1.2"
   serviceType:
     type: ClusterIP
   replicas: 1
-  proxyConfigName: "sharding-proxy"
+  proxyConfigName: "proxyconfig-sample"
   port: 3307
   mySQLDriver:
     version: "5.1.47"
