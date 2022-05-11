@@ -19,7 +19,6 @@ package reconcile
 
 import (
 	v1 "k8s.io/api/core/v1"
-	"math"
 )
 
 func IsRunning(podList *v1.PodList) bool {
@@ -37,19 +36,12 @@ func CountingReadyPods(podList *v1.PodList) int32 {
 	var readyPods int32
 	readyPods = 0
 	for _, pod := range podList.Items {
+		if len(pod.Status.ContainerStatuses) == 0 {
+			return readyPods
+		}
 		if pod.Status.ContainerStatuses[0].Ready && pod.ObjectMeta.DeletionTimestamp == nil {
 			readyPods++
 		}
 	}
 	return readyPods
-}
-
-func CountingPodMaxRestartTimes(podList *v1.PodList) int32 {
-	var podRestartCount int32 = math.MaxInt32
-	for _, pod := range podList.Items {
-		if podRestartCount > pod.Status.ContainerStatuses[0].RestartCount {
-			podRestartCount = pod.Status.ContainerStatuses[0].RestartCount
-		}
-	}
-	return podRestartCount
 }

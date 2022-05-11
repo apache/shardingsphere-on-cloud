@@ -19,8 +19,10 @@ package main
 
 import (
 	"flag"
-	"go.uber.org/zap/zapcore"
 	"os"
+
+	"go.uber.org/zap/zapcore"
+
 	"sphere-ex.com/shardingsphere-operator/pkg/controllers"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -54,11 +56,13 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var webhookPort int
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook binds to")
 	opts := zap.Options{
 		Development: true,
 		TimeEncoder: zapcore.RFC3339TimeEncoder,
@@ -71,10 +75,11 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Port:                   webhookPort,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "0e5175ce.sphere-ex.com",
+		CertDir:                "/etc/operator/certs",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -93,6 +98,10 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ProxyConfig")
+		os.Exit(1)
+	}
+	if err = (&shardingspherev1alpha1.Proxy{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Proxy")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

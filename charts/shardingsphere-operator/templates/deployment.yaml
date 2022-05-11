@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: shardingsphere-operator
+  name: shardingsphere-operator-manager
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: shardingsphere-operator
+  template:
+    metadata:
+      labels:
+        app: shardingsphere-operator
+    spec:
+      containers:
+        - args:
+            - --health-probe-bind-address=:{{ .Values.health.healthProbePort }}
+            - --leader-elect
+          command:
+            - /manager
+          ports:
+            - name: webhook
+              containerPort: {{ .Values.webhook.port }}
+            - name: healthCheck
+              containerPort: {{ .Values.health.healthProbePort }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.health.healthProbePort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          name: manager
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.health.healthProbePort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}

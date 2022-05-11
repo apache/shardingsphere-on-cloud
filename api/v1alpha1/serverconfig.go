@@ -17,66 +17,90 @@
 
 package v1alpha1
 
-// User TODO: description
+// User is a slice about authorized host and password for compute node.
+// Format:
+// user:<username>@<hostname>,hostname is % or empty string means do not care about authorized host
+// password:<password>
 type User struct {
-	// +optional
-	UserConfig string `json:"-" yaml:"user"`
-	UserName   string `json:"userName" yaml:"-"`
-	PassWord   string `json:"passWord" yaml:"-"`
-	// +optional
-	HostName string `json:"hostName,omitempty" yaml:"-"`
+	User     string `json:"user" yaml:"user"`
+	Password string `json:"password" yaml:"password"`
 }
 
-// Provider TODO: description
-type Provider struct {
+// Privilege for storage node, the default value is ALL_PRIVILEGES_PERMITTED
+type Privilege struct {
 	Type string `json:"type" yaml:"type"`
 }
 
-// Auth TODO: description
+// Auth  is used to set up initial user to login compute node, and authority data of storage node.
 type Auth struct {
 	Users []User `json:"users" yaml:"users"`
 	// +optional
-	Provider Provider `json:"provider,omitempty"`
+	Privilege *Privilege `json:"privilege,omitempty"`
 }
 
-// Props TODO: description
+// Props Apache ShardingSphere provides the way of property configuration to configure system level configuration.
 type Props struct {
+	// The max thread size of worker group to execute SQL. One ShardingSphereDataSource will use a independent thread pool, it does not share thread pool even different data source in same JVM.
 	// +optional
 	KernelExecutorSize int `json:"kernel-executor-size,omitempty" yaml:"kernel-executor-size"`
+	// Whether validate table meta data consistency when application startup or updated.
 	// +optional
 	CheckTableMetadataEnabled bool `json:"check-table-metadata-enabled,omitempty" yaml:"check-table-metadata-enabled"`
+	// Proxy backend query fetch size. A larger value may increase the memory usage of ShardingSphere Proxy. The default value is -1, which means set the minimum value for different JDBC drivers.
 	// +optional
 	ProxyBackendQueryFetchSize int `json:"proxy-backend-query-fetch-size,omitempty" yaml:"proxy-backend-query-fetch-size"`
+	// Whether validate duplicate table when application startup or updated.
 	// +optional
 	CheckDuplicateTableEnabled bool `json:"check-duplicate-table-enabled,omitempty" yaml:"check-duplicate-table-enabled"`
+	// Proxy frontend Netty executor size. The default value is 0, which means let Netty decide.
 	// +optional
 	ProxyFrontendExecutorSize int `json:"proxy-frontend-executor-size,omitempty" yaml:"proxy-frontend-executor-size"`
+	// Available options of proxy backend executor suitable: OLAP(default), OLTP. The OLTP option may reduce time cost of writing packets to client, but it may increase the latency of SQL execution and block other clients if client connections are more than proxy-frontend-executor-size, especially executing slow SQL.
 	// +optional
 	ProxyBackendExecutorSuitable string `json:"proxy-backend-executor-suitable,omitempty" yaml:"proxy-backend-executor-suitable"`
 }
 
 type ClusterProps struct {
-	NameSpace   string `json:"namespace" yaml:"namespace"`
+	// Namespace of registry center
+	Namespace string `json:"namespace" yaml:"namespace"`
+	//Server lists of registry center
 	ServerLists string `json:"server-lists" yaml:"server-lists"`
+	//RetryIntervalMilliseconds Milliseconds of retry interval. default: 500
 	// +optional
 	RetryIntervalMilliseconds int `json:"retryIntervalMilliseconds,omitempty" yaml:"retryIntervalMilliseconds,omitempty"`
+	// MaxRetries Max retries of client connection. default: 3
 	// +optional
 	MaxRetries int `json:"maxRetries,omitempty" yaml:"maxRetries,omitempty"`
+	// TimeToLiveSeconds Seconds of ephemeral data live.default: 60
 	// +optional
 	TimeToLiveSeconds int `json:"timeToLiveSeconds,omitempty" yaml:"timeToLiveSeconds,omitempty"`
+	// OperationTimeoutMilliseconds Milliseconds of operation timeout. default: 500
 	// +optional
 	OperationTimeoutMilliseconds int `json:"operationTimeoutMilliseconds,omitempty" yaml:"operationTimeoutMilliseconds,omitempty"`
+	// Password of login
 	// +optional
 	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
 }
 
 type RepositoryConfig struct {
-	Type  string       `json:"type" yaml:"type"`
+
+	// +kubebuilder:validation:Enum=ZooKeeper
+
+	//Type of persist repository
+	Type string `json:"type" yaml:"type"`
+	//Properties of persist repository
 	Props ClusterProps `json:"props" yaml:"props"`
 }
 
+// ClusterConfig needs to fill in the relevant configuration required by Cluster mode
 type ClusterConfig struct {
-	Type       string           `json:"type" yaml:"type"`
+
+	// +kubebuilder:validation:Enum=Cluster
+
+	// Type of mode configuration. Values only support: Cluster
+	Type string `json:"type" yaml:"type"`
+	// Persist repository configuration
 	Repository RepositoryConfig `json:"repository" yaml:"repository"`
-	Overwrite  bool             `json:"overwrite" yaml:"overwrite"`
+	// Whether overwrite persistent configuration with local configuration
+	Overwrite bool `json:"overwrite" yaml:"overwrite"`
 }

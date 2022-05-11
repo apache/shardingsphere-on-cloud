@@ -31,6 +31,7 @@ const (
 
 type ConditionType string
 
+// ConditionType shows some states during the startup process of ShardingSphere-Proxy
 const (
 	ConditionInitialized ConditionType = "Initialized"
 	ConditionStarted     ConditionType = "Started"
@@ -40,18 +41,29 @@ const (
 
 // ProxyStatus defines the observed state of Proxy
 type ProxyStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	// TODO:description
+	//ShardingSphere-Proxy phase are a brief summary of the ShardingSphere-Proxy life cycle
+	//There are two possible phase values:
+	//Ready: ShardingSphere-Proxy can already provide external services
+	//NotReady: ShardingSphere-Proxy cannot provide external services
 	Phase PhaseStatus `json:"phase"`
-	// TODO:description
+
+	//Conditions The conditions array, the reason and message fields
 	Conditions Conditions `json:"conditions"`
-	// TODO:description
+	//ReadyNodes shows the number of replicas that ShardingSphere-Proxy is running normally
 	ReadyNodes int32 `json:"readyNodes"`
 }
 
 type Conditions []Condition
 
+// Condition
+//| **condition** | **status** | **directions**|
+//| ------------- | ---------- | ---------------------------------------------------- |
+//| Initialized   | true       | Initialization successful|
+//| Initialized   | false      | initialization failed|
+//| Started       | true       | pod started successfully but not ready|
+//| Started       | false      | pod started failed|
+//| Ready         | true       | The pod is ready and can provide external services|
+//| Unknown       | true       | ShardingSphere-Proxy failed to start correctly due to some problems |
 type Condition struct {
 	Type           ConditionType      `json:"type"`
 	Status         v1.ConditionStatus `json:"status"`
