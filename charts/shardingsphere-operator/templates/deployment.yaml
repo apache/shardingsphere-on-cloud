@@ -24,7 +24,7 @@ spec:
           ports:
             - name: webhook
               containerPort: {{ .Values.webhook.port }}
-            - name: healthCheck
+            - name: healthcheck
               containerPort: {{ .Values.health.healthProbePort }}
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
