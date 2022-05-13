@@ -1,6 +1,6 @@
 name: "🐞 Bug Report"
 description: help us to improve ourself
-title: "bug: "
+title: "🐞 bug: "
 body:
   - type: textarea
     id: environment
