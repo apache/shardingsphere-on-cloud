@@ -1,0 +1,38 @@
+name: "🐞 Bug Report"
+description: help us to improve ourself
+title: "🐞 bug: "
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Bug report without environment information will be ignored or closed.
+      value: |
+        - Contents of your values.yaml file,if your helm deployment process goes wrong.
+        - Contents of your CRD resource file. Include proxy.shardingsphere.sphere-ex.com/v1alpha1 and proxyconfig.shardingsphere.sphere-ex.com/v1alpha1
+        - Kubernetes distro (e.g. RKE/K3s/EKS/OpenShift) and version
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue description
+      description: Please provide a clear description of your problem.
+      value: |
+        - Which phase is not functioning properly, is it the installation phase or the apply CRD phase ?
+    validations:
+      required: true
+  - type: textarea
+    id: Error
+    attributes:
+      label: Error log
+      value: |
+        - Including ShardingSphere-Proxy error log and ShardingSphere-Operator error log
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What's the expected result?
+

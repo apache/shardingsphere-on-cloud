@@ -1,0 +1,21 @@
+name: "🚀 Request help"
+description: Please use this template for requesting help.
+title: "🚀 request help: "
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Request description
+      description: Provide a clear and concise description of the help you need.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Request help without environment information will be ignored or closed.
+      value: |
+        - your ShardingSphere-Operator Version
+        - Kubernetes distro (e.g. RKE/K3s/EKS/OpenShift) and version
+    validations:
+      required: true
