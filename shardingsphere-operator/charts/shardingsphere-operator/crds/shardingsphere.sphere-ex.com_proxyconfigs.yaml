@@ -77,7 +77,9 @@ spec:
                   properties:
                     overwrite:
                       description: Whether overwrite persistent configuration with local
-                        configuration
+                        configuration. If it is false, it will not upload the local configuration
+                        to ZooKeeper. If it is true, it will upload the local configuration
+                        to ZooKeeper and overwrite the original configuration of ZooKeeper.
                       type: boolean
                     repository:
                       description: Persist repository configuration

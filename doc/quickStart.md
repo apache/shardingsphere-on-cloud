@@ -1,6 +1,5 @@
 # ShardingSphere-Operator 简明使用手册
 
-⚠️⚠️⚠️⚠️ 现阶段因为 shardingsphere-proxy 5.1.2 还未发布。proxyConfig 功能还不能使用，请使用前自行挂载现阶段版本支持的 server.yaml ⚠️⚠️⚠️⚠️
 ## 配置
 **Proxy.shardingsphere.sphere-ex.com/v1alpha1**
 
@@ -10,7 +9,7 @@ kind: Proxy
 metadata:
   name: proxy-sample
 spec:
-  version: "5.1.1"
+  version: "5.1.2"
   serviceType:
     type: ClusterIP
   replicas: 1
@@ -87,35 +86,7 @@ health:
 serviceAccount:
   name: shardingsphere-operator
 ```
-<span id=002>**用于 v5.1.1 测试的配置文件**</span>
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sharding-proxy
-  namespace: default
-data:
-  server.yaml: |-
-    mode:
-        type: Cluster
-        repository:
-          type: ZooKeeper
-          props:
-            namespace: governance_ds
-            server-lists: zookeeper.default:2181
-            retryIntervalMilliseconds: 500
-            timeToLiveSeconds: 600
-            maxRetries: 3
-            operationTimeoutMilliseconds: 5000
-        overwrite: false
-    rules:
-      - !AUTHORITY
-        users:
-          - root@%:root
-        provider:
-          type: ALL_PRIVILEGES_PERMITTED
 
-```
 
 ## 安装 ShardingSphere-Operator 
 按照[values.yaml](#001)中的配置完成对 charts/shardingsphere-operator/values.yaml  
@@ -127,9 +98,7 @@ helm install  shardingsphere-operator shardingsphere-operator -n shardingsphere-
 ```
 ## 安装 ShardingSphere-Proxy
 
-
-首先新建一个[configmap.yaml](#002)
 ```shell
-kubectl apply -f deploy/samples/shardingsphere_v1alpha1_proxy.yaml
-kubectl apply -f  configmap.yaml
+kubectl apply -f shardingsphere-operator/deploy/samples/shardingsphere_v1alpha1_proxy.yaml
+kubectl apply -f shardingsphere-operator/deploy/samples/shardingsphere_v1alpha1_proxyconfig.yaml
 ```
