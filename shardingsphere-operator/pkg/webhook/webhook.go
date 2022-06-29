@@ -19,7 +19,6 @@ package webhook
 
 import (
 	"errors"
-	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
@@ -212,9 +211,8 @@ func (blder *WebhookBuilder) registerApiservice() {
 func getApiService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		ar, _ := ioutil.ReadAll(r.Body)
+		_, _ = w.Write([]byte("{}"))
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(ar)
 	}
 }
 

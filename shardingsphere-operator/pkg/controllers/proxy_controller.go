@@ -26,7 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logger "sigs.k8s.io/controller-runtime/pkg/log"
-	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
+	"sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	"sphere-ex.com/shardingsphere-operator/pkg/reconcile"
 	"time"
 )
@@ -56,7 +56,7 @@ type ProxyReconciler struct {
 func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logger.FromContext(ctx)
 
-	run := &shardingspherev1alpha1.Proxy{}
+	run := &v1alpha1.Proxy{}
 	err := r.Get(ctx, req.NamespacedName, run)
 	if apierrors.IsNotFound(err) {
 		log.Info("Resource in work queue no longer exists!")
@@ -132,7 +132,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				run.SetPodStarted(readyNodes)
 			}
 		} else {
-			if run.Status.Phase != shardingspherev1alpha1.StatusReady {
+			if run.Status.Phase != v1alpha1.StatusReady {
 				log.Info("Status is now ready!")
 				run.SetReady(readyNodes)
 			}
@@ -156,7 +156,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 // SetupWithManager sets up the controller with the Manager.
 func (r *ProxyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&shardingspherev1alpha1.Proxy{}).
+		For(&v1alpha1.Proxy{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&v1.Service{}).
 		Owns(&v1.Pod{}).
