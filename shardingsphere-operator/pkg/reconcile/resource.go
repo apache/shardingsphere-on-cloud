@@ -25,14 +25,14 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
+	"sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	"strconv"
 	"strings"
 )
 
 const imageName = "apache/shardingsphere-proxy"
 
-func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.Deployment {
+func ConstructCascadingDeployment(proxy *v1alpha1.Proxy) *appsv1.Deployment {
 	dp := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxy.Name,
@@ -105,7 +105,7 @@ func ConstructCascadingDeployment(proxy *shardingspherev1alpha1.Proxy) *appsv1.D
 	return processOptionalParameter(proxy, dp)
 }
 
-func ConstructCascadingService(proxy *shardingspherev1alpha1.Proxy) *v1.Service {
+func ConstructCascadingService(proxy *v1alpha1.Proxy) *v1.Service {
 
 	svc := v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -135,7 +135,7 @@ func ConstructCascadingService(proxy *shardingspherev1alpha1.Proxy) *v1.Service 
 	return &svc
 }
 
-func addInitContainer(dp *appsv1.Deployment, mysql *shardingspherev1alpha1.MySQLDriver) {
+func addInitContainer(dp *appsv1.Deployment, mysql *v1alpha1.MySQLDriver) {
 
 	if len(dp.Spec.Template.Spec.InitContainers) == 0 {
 		dp.Spec.Template.Spec.Containers[0].VolumeMounts = append(dp.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
@@ -175,7 +175,7 @@ else echo failed;exit 1;fi;mv /mysql-connector-java-{{ .Version }}.jar /opt/shar
 
 }
 
-func processOptionalParameter(proxy *shardingspherev1alpha1.Proxy, dp *appsv1.Deployment) *appsv1.Deployment {
+func processOptionalParameter(proxy *v1alpha1.Proxy, dp *appsv1.Deployment) *appsv1.Deployment {
 	if proxy.Spec.MySQLDriver != nil {
 		addInitContainer(dp, proxy.Spec.MySQLDriver)
 	}
@@ -183,7 +183,7 @@ func processOptionalParameter(proxy *shardingspherev1alpha1.Proxy, dp *appsv1.De
 }
 
 // ConstructCascadingConfigmap Construct spec resources to Configmap
-func ConstructCascadingConfigmap(proxyConfig *shardingspherev1alpha1.ProxyConfig) *v1.ConfigMap {
+func ConstructCascadingConfigmap(proxyConfig *v1alpha1.ProxyConfig) *v1.ConfigMap {
 	y := toYaml(proxyConfig)
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -201,13 +201,13 @@ func ConstructCascadingConfigmap(proxyConfig *shardingspherev1alpha1.ProxyConfig
 }
 
 // ToYaml Convert ProxyConfig spec content to yaml format
-func toYaml(proxyConfig *shardingspherev1alpha1.ProxyConfig) string {
+func toYaml(proxyConfig *v1alpha1.ProxyConfig) string {
 	y, _ := yaml.Marshal(proxyConfig.Spec)
 	return string(y)
 }
 
 // UpdateDeployment FIXME:merge UpdateDeployment and ConstructCascadingDeployment
-func UpdateDeployment(proxy *shardingspherev1alpha1.Proxy, runtimeDeployment *appsv1.Deployment) {
+func UpdateDeployment(proxy *v1alpha1.Proxy, runtimeDeployment *appsv1.Deployment) {
 	runtimeDeployment.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
 	runtimeDeployment.Spec.Replicas = &proxy.Spec.Replicas
 	runtimeDeployment.Spec.Template.Spec.Volumes[0].ConfigMap.Name = proxy.Spec.ProxyConfigName
@@ -223,7 +223,7 @@ func UpdateDeployment(proxy *shardingspherev1alpha1.Proxy, runtimeDeployment *ap
 
 }
 
-func UpdateService(proxy *shardingspherev1alpha1.Proxy, runtimeService *v1.Service) {
+func UpdateService(proxy *v1alpha1.Proxy, runtimeService *v1.Service) {
 	runtimeService.Spec.Type = proxy.Spec.ServiceType.Type
 	runtimeService.Spec.Ports[0].Port = proxy.Spec.Port
 	runtimeService.Spec.Ports[0].TargetPort = fromInt32(proxy.Spec.Port)

@@ -22,14 +22,13 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	"sphere-ex.com/shardingsphere-operator/pkg/reconcile"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logger "sigs.k8s.io/controller-runtime/pkg/log"
-
-	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 )
 
 // ProxyConfigReconciler reconciles a ProxyConfig object
