@@ -1,0 +1,118 @@
+
+
+# @section DBPlusEngine-Proxy cluster parameters
+## @param replicaCount DBPlusEngine-Proxy 集群启动副本数，注意：在开启 automaticScaling 后，这个参数将不再生效
+##
+replicaCount: "3"
+proxyVersion: "5.1.2"
+## @param automaticScaling.enable DBPlusEngine-Proxy 集群是否开启自动扩缩容
+## @param automaticScaling.scaleUpWindows DBPlusEngine-Proxy 自动扩容稳定窗口
+## @param automaticScaling.scaleDownWindows DBPlusEngine-Proxy 自动缩容稳定窗口
+## @param automaticScaling.target DBPlusEngine-Proxy 自动扩缩容阈值，数值为百分比，注意：现阶段暂时只支持 cpu 为指标进行扩缩容
+## @param automaticScaling.maxInstance DBPlusEngine-Proxy 最大扩容副本数
+## @param automaticScaling.minInstance DBPlusEngine-Proxy 最小启动副本数，缩容不会小于这个副本数
+##
+automaticScaling:
+  enable: false
+  scaleUpWindows: 30
+  scaleDownWindows: 30
+  target: 20
+  maxInstance: 4
+  minInstance: 1
+## @param resources DBPlusEngine-Proxy 启动需求资源，在开启automaticScaling 后，以 request 的资源乘以 target 的百分比为触发扩缩容动作的实际使用率
+## e.g:
+## resources:
+##   limits:
+##     cpu: 2
+##   requests:
+##     cpu: 2
+##
+resources:
+  limits:
+    cpu: '2'
+  requests:
+    cpu: '1'
+## @param service.type DBPlusEngine-Proxy 对外暴露方式
+## @param service.port DBPlusEngine-Proxy 对外暴露端口
+##
+service:
+  type: ClusterIP
+  port: 3307
+## @param startPort DBPlusEngine-Proxy 启动端口
+##
+startPort: 3307
+## @param mySQLDriver.version DBPlusEngine-Proxy mysql 驱动版本，如果为空，将不下载驱动
+##
+mySQLDriver:
+  version: "5.1.47"
+## @section  DBPlusEngine-Proxy ServerConfiguration parameters
+## NOTE: If you use the sub-charts to deploy Zookeeper, the server-lists field must be "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}",
+## otherwise please fill in the correct zookeeper address
+## The server.yaml is auto-generated based on this parameter.
+## If it is empty, the server.yaml is also empty.
+## ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-jdbc/yaml-config/mode/
+## ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-jdbc/builtin-algorithm/metadata-repository/
+##
+serverConfig:
+  ## @section Compute-Node DBPlusEngine-Proxy ServerConfiguration authority parameters
+  ## NOTE: It is used to set up initial user to login compute node, and authority data of storage node.
+  ## @param serverConfig.authority.privilege.type authority provider for storage node, the default value is ALL_PERMITTED
+  ## @param serverConfig.authority.users[0].password Password for compute node.
+  ## @param serverConfig.authority.users[0].user Username,authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host
+  ##
+  authority:
+    privilege:
+      type: ALL_PRIVILEGES_PERMITTED
+    users:
+      - password: root
+        user: root@%
+  ## @section Compute-Node DBPlusEngine-Proxy ServerConfiguration mode Configuration parameters
+  ## @param serverConfig.mode.type Type of mode configuration. Now only support Cluster mode
+  ## @param serverConfig.mode.repository.props.namespace Namespace of registry center
+  ## @param serverConfig.mode.repository.props.server-lists Server lists of registry center
+  ## @param serverConfig.mode.repository.props.maxRetries Max retries of client connection
+  ## @param serverConfig.mode.repository.props.operationTimeoutMilliseconds Milliseconds of operation timeout
+  ## @param serverConfig.mode.repository.props.retryIntervalMilliseconds Milliseconds of retry interval
+  ## @param serverConfig.mode.repository.props.timeToLiveSeconds Seconds of ephemeral data live
+  ## @param serverConfig.mode.repository.type Type of persist repository. Now only support ZooKeeper
+  ## @param serverConfig.mode.overwrite Whether overwrite persistent configuration with local configuration
+  ##
+  mode:
+    overwrite: true
+    repository:
+      props:
+        maxRetries: 3
+        namespace: governance_ds
+        operationTimeoutMilliseconds: 5000
+        retryIntervalMilliseconds: 500
+        server-lists: "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}"
+        timeToLiveSeconds: 600
+      type: ZooKeeper
+    type: Cluster
+  props:
+    proxy-frontend-database-protocol-type: MySQL
+## @section ZooKeeper chart parameters
+
+## ZooKeeper chart configuration
+## https://github.com/bitnami/charts/blob/master/bitnami/zookeeper/values.yaml
+##
+zookeeper:
+  ## @param zookeeper.enabled Switch to enable or disable the ZooKeeper helm chart
+  ##
+  enabled: true
+  ## @param zookeeper.replicaCount Number of ZooKeeper nodes
+  ##
+  replicaCount: 3
+  ## ZooKeeper Persistence parameters
+  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+  ## @param zookeeper.persistence.enabled Enable persistence on ZooKeeper using PVC(s)
+  ## @param zookeeper.persistence.storageClass Persistent Volume storage class
+  ## @param zookeeper.persistence.accessModes Persistent Volume access modes
+  ## @param zookeeper.persistence.size Persistent Volume size
+  ##
+  persistence:
+    enabled: false
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi

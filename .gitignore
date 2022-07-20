@@ -5,7 +5,7 @@
 *.dll
 *.so
 *.dylib
-bin
+**/bin
 testbin/*
 
 # Test binary, build with `go test -c`
@@ -24,3 +24,7 @@ testbin/*
 *.swo
 *~
 shardingsphere-operator/build/certs/
+shardingsphere-operator/config/
+charts/shardingsphere-cluster/charts/
+charts/shardingsphere-operator/charts/
+**/Chart.lock
