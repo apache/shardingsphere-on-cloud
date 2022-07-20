@@ -88,18 +88,18 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Proxy")
+		setupLog.Error(err, "unable to create controller", "controller", "ShardingSphereProxy")
 		os.Exit(1)
 	}
 	if err = (&controllers.ProxyConfigReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ProxyConfig")
+		setupLog.Error(err, "unable to create controller", "controller", "ShardingSphereProxyServerConfig")
 		os.Exit(1)
 	}
-	if err = (&v1alpha1.Proxy{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Proxy")
+	if err = (&v1alpha1.ShardingSphereProxy{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "ShardingSphereProxy")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

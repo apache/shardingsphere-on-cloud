@@ -31,7 +31,7 @@ const (
 
 type ConditionType string
 
-// ConditionType shows some states during the startup process of ShardingSphere-Proxy
+// ConditionType shows some states during the startup process of ShardingSphere-ShardingSphereProxy
 const (
 	ConditionInitialized ConditionType = "Initialized"
 	ConditionStarted     ConditionType = "Started"
@@ -39,17 +39,17 @@ const (
 	ConditionUnknown     ConditionType = "Unknown"
 )
 
-// ProxyStatus defines the observed state of Proxy
+// ProxyStatus defines the observed state of ShardingSphereProxy
 type ProxyStatus struct {
-	//ShardingSphere-Proxy phase are a brief summary of the ShardingSphere-Proxy life cycle
+	//ShardingSphere-ShardingSphereProxy phase are a brief summary of the ShardingSphere-ShardingSphereProxy life cycle
 	//There are two possible phase values:
-	//Ready: ShardingSphere-Proxy can already provide external services
-	//NotReady: ShardingSphere-Proxy cannot provide external services
+	//Ready: ShardingSphere-ShardingSphereProxy can already provide external services
+	//NotReady: ShardingSphere-ShardingSphereProxy cannot provide external services
 	Phase PhaseStatus `json:"phase"`
 
 	//Conditions The conditions array, the reason and message fields
 	Conditions Conditions `json:"conditions"`
-	//ReadyNodes shows the number of replicas that ShardingSphere-Proxy is running normally
+	//ReadyNodes shows the number of replicas that ShardingSphere-ShardingSphereProxy is running normally
 	ReadyNodes int32 `json:"readyNodes"`
 }
 
@@ -63,14 +63,14 @@ type Conditions []Condition
 //| Started       | true       | pod started successfully but not ready|
 //| Started       | false      | pod started failed|
 //| Ready         | true       | The pod is ready and can provide external services|
-//| Unknown       | true       | ShardingSphere-Proxy failed to start correctly due to some problems |
+//| Unknown       | true       | ShardingSphere-ShardingSphereProxy failed to start correctly due to some problems |
 type Condition struct {
 	Type           ConditionType      `json:"type"`
 	Status         v1.ConditionStatus `json:"status"`
 	LastUpdateTime metav1.Time        `json:"lastUpdateTime,omitempty"`
 }
 
-func (p *Proxy) SetInitialized() {
+func (p *ShardingSphereProxy) SetInitialized() {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionInitialized,
@@ -79,7 +79,7 @@ func (p *Proxy) SetInitialized() {
 	})
 }
 
-func (p *Proxy) SetInitializationFailed() {
+func (p *ShardingSphereProxy) SetInitializationFailed() {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionInitialized,
@@ -88,7 +88,7 @@ func (p *Proxy) SetInitializationFailed() {
 	})
 }
 
-func (p *Proxy) SetPodStarted(readyNodes int32) {
+func (p *ShardingSphereProxy) SetPodStarted(readyNodes int32) {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionStarted,
@@ -98,7 +98,7 @@ func (p *Proxy) SetPodStarted(readyNodes int32) {
 	p.Status.ReadyNodes = readyNodes
 }
 
-func (p *Proxy) SetPodNotStarted(readyNodes int32) {
+func (p *ShardingSphereProxy) SetPodNotStarted(readyNodes int32) {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionStarted,
@@ -108,7 +108,7 @@ func (p *Proxy) SetPodNotStarted(readyNodes int32) {
 	p.Status.ReadyNodes = readyNodes
 }
 
-func (p *Proxy) SetReady(readyNodes int32) {
+func (p *ShardingSphereProxy) SetReady(readyNodes int32) {
 	p.Status.Phase = StatusReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionReady,
@@ -119,7 +119,7 @@ func (p *Proxy) SetReady(readyNodes int32) {
 
 }
 
-func (p *Proxy) SetFailed() {
+func (p *ShardingSphereProxy) SetFailed() {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionUnknown,
@@ -127,6 +127,6 @@ func (p *Proxy) SetFailed() {
 		LastUpdateTime: metav1.Now(),
 	})
 }
-func (p *Proxy) UpdateReadyNodes(readyNodes int32) {
+func (p *ShardingSphereProxy) UpdateReadyNodes(readyNodes int32) {
 	p.Status.ReadyNodes = readyNodes
 }

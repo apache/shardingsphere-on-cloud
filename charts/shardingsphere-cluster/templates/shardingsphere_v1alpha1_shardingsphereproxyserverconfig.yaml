@@ -15,7 +15,7 @@
 ##
 
 apiVersion: shardingsphere.sphere-ex.com/v1alpha1
-kind: ProxyConfig
+kind: ShardingSphereProxyServerConfig
 metadata:
   name: {{ printf "%s-configuration" (include "common.names.fullname" .) }}
 spec:

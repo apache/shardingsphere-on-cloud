@@ -66,7 +66,7 @@ var logback = `<?xml version="1.0"?>
 </configuration> 
 `
 
-func ConstructCascadingDeployment(proxy *v1alpha1.Proxy) *appsv1.Deployment {
+func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *appsv1.Deployment {
 	dp := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxy.Name,
@@ -144,7 +144,7 @@ func ConstructCascadingDeployment(proxy *v1alpha1.Proxy) *appsv1.Deployment {
 	return processOptionalParameter(proxy, dp)
 }
 
-func ConstructCascadingService(proxy *v1alpha1.Proxy) *v1.Service {
+func ConstructCascadingService(proxy *v1alpha1.ShardingSphereProxy) *v1.Service {
 
 	svc := v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -214,7 +214,7 @@ else echo failed;exit 1;fi;mv /mysql-connector-java-{{ .Version }}.jar /opt/shar
 
 }
 
-func processOptionalParameter(proxy *v1alpha1.Proxy, dp *appsv1.Deployment) *appsv1.Deployment {
+func processOptionalParameter(proxy *v1alpha1.ShardingSphereProxy, dp *appsv1.Deployment) *appsv1.Deployment {
 	if proxy.Spec.MySQLDriver != nil {
 		addInitContainer(dp, proxy.Spec.MySQLDriver)
 	}
@@ -222,7 +222,7 @@ func processOptionalParameter(proxy *v1alpha1.Proxy, dp *appsv1.Deployment) *app
 }
 
 // ConstructCascadingConfigmap Construct spec resources to Configmap
-func ConstructCascadingConfigmap(proxyConfig *v1alpha1.ProxyConfig) *v1.ConfigMap {
+func ConstructCascadingConfigmap(proxyConfig *v1alpha1.ShardingSphereProxyServerConfig) *v1.ConfigMap {
 	y := toYaml(proxyConfig)
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -241,7 +241,7 @@ func ConstructCascadingConfigmap(proxyConfig *v1alpha1.ProxyConfig) *v1.ConfigMa
 }
 
 // ConstructHPA Create HPA if you need
-func ConstructHPA(proxy *v1alpha1.Proxy) *autoscalingv2beta2.HorizontalPodAutoscaler {
+func ConstructHPA(proxy *v1alpha1.ShardingSphereProxy) *autoscalingv2beta2.HorizontalPodAutoscaler {
 	return &autoscalingv2beta2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxy.Name,
@@ -290,14 +290,14 @@ func ConstructHPA(proxy *v1alpha1.Proxy) *autoscalingv2beta2.HorizontalPodAutosc
 
 }
 
-// ToYaml Convert ProxyConfig spec content to yaml format
-func toYaml(proxyConfig *v1alpha1.ProxyConfig) string {
+// ToYaml Convert ShardingSphereProxyServerConfig spec content to yaml format
+func toYaml(proxyConfig *v1alpha1.ShardingSphereProxyServerConfig) string {
 	y, _ := yaml.Marshal(proxyConfig.Spec)
 	return string(y)
 }
 
 // UpdateDeployment FIXME:merge UpdateDeployment and ConstructCascadingDeployment
-func UpdateDeployment(proxy *v1alpha1.Proxy, runtimeDeployment *appsv1.Deployment) {
+func UpdateDeployment(proxy *v1alpha1.ShardingSphereProxy, runtimeDeployment *appsv1.Deployment) {
 	runtimeDeployment.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
 	if proxy.Spec.AutomaticScaling == nil {
 		runtimeDeployment.Spec.Replicas = &proxy.Spec.Replicas
@@ -315,7 +315,7 @@ func UpdateDeployment(proxy *v1alpha1.Proxy, runtimeDeployment *appsv1.Deploymen
 
 }
 
-func UpdateService(proxy *v1alpha1.Proxy, runtimeService *v1.Service) {
+func UpdateService(proxy *v1alpha1.ShardingSphereProxy, runtimeService *v1.Service) {
 	runtimeService.Spec.Type = proxy.Spec.ServiceType.Type
 	runtimeService.Spec.Ports[0].Port = proxy.Spec.Port
 	runtimeService.Spec.Ports[0].TargetPort = fromInt32(proxy.Spec.Port)
@@ -324,7 +324,7 @@ func UpdateService(proxy *v1alpha1.Proxy, runtimeService *v1.Service) {
 	}
 }
 
-func UpdateHPA(proxy *v1alpha1.Proxy, runtimeHPA *autoscalingv2beta2.HorizontalPodAutoscaler) {
+func UpdateHPA(proxy *v1alpha1.ShardingSphereProxy, runtimeHPA *autoscalingv2beta2.HorizontalPodAutoscaler) {
 	runtimeHPA.Spec.Metrics[0].Resource.Target.AverageUtilization = &proxy.Spec.AutomaticScaling.Target
 	runtimeHPA.Spec.Behavior.ScaleDown.StabilizationWindowSeconds = &proxy.Spec.AutomaticScaling.ScaleDownWindows
 	runtimeHPA.Spec.Behavior.ScaleUp.StabilizationWindowSeconds = &proxy.Spec.AutomaticScaling.ScaleUpWindows

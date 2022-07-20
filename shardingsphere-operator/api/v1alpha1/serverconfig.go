@@ -46,13 +46,13 @@ type Props struct {
 	// Whether validate table meta data consistency when application startup or updated.
 	// +optional
 	CheckTableMetadataEnabled bool `json:"check-table-metadata-enabled,omitempty" yaml:"check-table-metadata-enabled,omitempty"`
-	// Proxy backend query fetch size. A larger value may increase the memory usage of ShardingSphere Proxy. The default value is -1, which means set the minimum value for different JDBC drivers.
+	// ShardingSphereProxy backend query fetch size. A larger value may increase the memory usage of ShardingSphere ShardingSphereProxy. The default value is -1, which means set the minimum value for different JDBC drivers.
 	// +optional
 	ProxyBackendQueryFetchSize int `json:"proxy-backend-query-fetch-size,omitempty" yaml:"proxy-backend-query-fetch-size,omitempty"`
 	// Whether validate duplicate table when application startup or updated.
 	// +optional
 	CheckDuplicateTableEnabled bool `json:"check-duplicate-table-enabled,omitempty" yaml:"check-duplicate-table-enabled,omitempty"`
-	// Proxy frontend Netty executor size. The default value is 0, which means let Netty decide.
+	// ShardingSphereProxy frontend Netty executor size. The default value is 0, which means let Netty decide.
 	// +optional
 	ProxyFrontendExecutorSize int `json:"proxy-frontend-executor-size,omitempty" yaml:"proxy-frontend-executor-size,omitempty"`
 	// Available options of proxy backend executor suitable: OLAP(default), OLTP. The OLTP option may reduce time cost of writing packets to client, but it may increase the latency of SQL execution and block other clients if client connections are more than proxy-frontend-executor-size, especially executing slow SQL.

@@ -10,20 +10,16 @@ resources:
   controller: true
   domain: sphere-ex.com
   group: shardingsphere
-  kind: Proxy
+  kind: ShardingSphereProxy
   path: sphere-ex.com/shardingsphere-operator/api/v1alpha1
   version: v1alpha1
-  webhooks:
-    defaulting: true
-    validation: true
-    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
   domain: sphere-ex.com
   group: shardingsphere
-  kind: ProxyConfig
+  kind: ShardingSphereProxyServerConfig
   path: sphere-ex.com/shardingsphere-operator/api/v1alpha1
   version: v1alpha1
 version: "3"

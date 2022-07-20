@@ -25,7 +25,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-//ServiceType defines the Service in Kubernetes of ShardingSphere-Proxy
+//ServiceType defines the Service in Kubernetes of ShardingSphere-ShardingSphereProxy
 type ServiceType struct {
 	// +kubebuilder:validation:Enum=ClusterIP;NodePort;LoadBalancer;ExternalName
 
@@ -68,15 +68,15 @@ type AutomaticScaling struct {
 	MinInstance int32 `json:"minInstance,omitempty"`
 }
 
-// ProxySpec defines the desired state of Proxy
+// ProxySpec defines the desired state of ShardingSphereProxy
 type ProxySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Version  is the version of ShardingSphere-Proxy
+	// Version  is the version of ShardingSphere-ShardingSphereProxy
 	Version     string      `json:"version"`
 	ServiceType ServiceType `json:"serviceType"`
-	//Replicas is the expected number of replicas of ShardingSphere-Proxy
+	//Replicas is the expected number of replicas of ShardingSphere-ShardingSphereProxy
 	Replicas int32 `json:"replicas"`
 	// +optional
 	AutomaticScaling *AutomaticScaling `json:"automaticScaling,omitempty"`
@@ -85,11 +85,11 @@ type ProxySpec struct {
 	// +kubebuilder:validation:MinLength=0
 	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 
-	//ProxyConfigName is the name of the ProxyConfig CRD
+	//ProxyConfigName is the name of the ShardingSphereProxyServerConfig CRD
 	ProxyConfigName string `json:"proxyConfigName"`
 
 	// +kubebuilder:validation:Minimum=0
-	//Port is ShardingSphere-Proxy startup port
+	//Port is ShardingSphere-ShardingSphereProxy startup port
 	Port int32 `json:"port"`
 	// +optional
 	MySQLDriver *MySQLDriver `json:"mySQLDriver,omitempty"`
@@ -111,8 +111,8 @@ type ProxySpec struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Proxy is the Schema for the proxies API
-type Proxy struct {
+// ShardingSphereProxy is the Schema for the proxies API
+type ShardingSphereProxy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -122,13 +122,13 @@ type Proxy struct {
 
 //+kubebuilder:object:root=true
 
-// ProxyList contains a list of Proxy
-type ProxyList struct {
+// ShardingSphereProxyList contains a list of ShardingSphereProxy
+type ShardingSphereProxyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Proxy `json:"items"`
+	Items           []ShardingSphereProxy `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Proxy{}, &ProxyList{})
+	SchemeBuilder.Register(&ShardingSphereProxy{}, &ShardingSphereProxyList{})
 }
