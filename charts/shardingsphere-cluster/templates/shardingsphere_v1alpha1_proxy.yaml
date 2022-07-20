@@ -18,7 +18,7 @@
 apiVersion: shardingsphere.sphere-ex.com/v1alpha1
 kind: Proxy
 metadata:
-  name: proxy-sample
+  name: {{ template "common.names.fullname" . }}
 spec:
   version: {{ .Values.proxyVersion | default .Chart.AppVersion }}
   serviceType:
