@@ -15,23 +15,40 @@
 ##   limitations under the License.
 ##
 
+## @section ShardingSphere-Proxy operator parameters
+## @param replicaCount operator  replica count
+##
 replicaCount: 2
-
 image:
-  repository: "uhub.service.ucloud.cn/sphere-ex/proxy-operator"
+  ## @param image.repository operator image name
+  ##
+  repository: "sahrdingsphere-operator"
+  ## @param image.pullPolicy image pull policy
+  ##
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## @param image.tag image tag
+  ##
   tag: "0.0.1"
-imagePullSecrets:
-  - name: uhub
-service:
-  type: ClusterIP
-  port: 80
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
+## @param imagePullSecrets image pull secret of private repository
+## e.g:
+## imagePullSecrets:
+##   - name: mysecret
+##
+imagePullSecrets: []
+## @param resources operator Resources required by the operator
+## e.g:
+## resources:
+##   limits:
+##     cpu: 2
+##   limits:
+##     cpu: 2
+##
+resources: {}
+## @param webhook.port operator webhook boot port
+##
 webhook:
   port: 9443
+## @param health.healthProbePort operator health check port
+##
 health:
   healthProbePort: 8081
