@@ -13,7 +13,7 @@ jobs:
       - name: "Kaniko build"
         uses: mlycore/action-kaniko@master
         with:
-          image: ${{ env.IMAGE_NAME }}
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ${{ env.REGISTRY }}
