@@ -22,6 +22,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"html/template"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -31,6 +32,39 @@ import (
 )
 
 const imageName = "apache/shardingsphere-proxy"
+
+var logback = `<?xml version="1.0"?>
+<configuration>
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="sqlConsole" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{database}] [%X{user}] [%X{host}] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <logger name="ShardingSphere-SQL" level="info" additivity="false">
+        <appender-ref ref="sqlConsole" />
+    </logger>
+    <logger name="org.apache.shardingsphere" level="info" additivity="false">
+        <appender-ref ref="console" />
+    </logger>
+    
+    <logger name="com.zaxxer.hikari" level="error" />
+    
+    <logger name="com.atomikos" level="error" />
+    
+    <logger name="io.netty" level="error" />
+    
+    <root>
+        <level value="info" />
+        <appender-ref ref="console" />
+    </root>
+</configuration> 
+`
 
 func ConstructCascadingDeployment(proxy *v1alpha1.Proxy) *appsv1.Deployment {
 	dp := &appsv1.Deployment{
@@ -45,7 +79,6 @@ func ConstructCascadingDeployment(proxy *v1alpha1.Proxy) *appsv1.Deployment {
 			Strategy: appsv1.DeploymentStrategy{
 				Type: appsv1.RecreateDeploymentStrategyType,
 			},
-			Replicas: &proxy.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"apps": proxy.Name,
@@ -98,10 +131,16 @@ func ConstructCascadingDeployment(proxy *v1alpha1.Proxy) *appsv1.Deployment {
 			},
 		},
 	}
+	if proxy.Spec.AutomaticScaling == nil {
+		dp.Spec.Replicas = &proxy.Spec.Replicas
+	}
 	dp.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resources
 	dp.Spec.Template.Spec.Containers[0].LivenessProbe = proxy.Spec.LivenessProbe
 	dp.Spec.Template.Spec.Containers[0].ReadinessProbe = proxy.Spec.ReadinessProbe
 	dp.Spec.Template.Spec.Containers[0].StartupProbe = proxy.Spec.StartupProbe
+	if len(proxy.Spec.ImagePullSecrets) > 0 {
+		dp.Spec.Template.Spec.ImagePullSecrets = proxy.Spec.ImagePullSecrets
+	}
 	return processOptionalParameter(proxy, dp)
 }
 
@@ -195,6 +234,57 @@ func ConstructCascadingConfigmap(proxyConfig *v1alpha1.ProxyConfig) *v1.ConfigMa
 		},
 		Data: map[string]string{
 			"server.yaml": y,
+			"logback.xml": logback,
+		},
+	}
+
+}
+
+// ConstructHPA Create HPA if you need
+func ConstructHPA(proxy *v1alpha1.Proxy) *autoscalingv2beta2.HorizontalPodAutoscaler {
+	return &autoscalingv2beta2.HorizontalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      proxy.Name,
+			Namespace: proxy.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(proxy.GetObjectMeta(), proxy.GroupVersionKind()),
+			},
+		},
+		Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
+				Kind:       "Deployment",
+				Name:       proxy.Name,
+				APIVersion: appsv1.SchemeGroupVersion.String(),
+			},
+			MinReplicas: &proxy.Spec.AutomaticScaling.MinInstance,
+			MaxReplicas: proxy.Spec.AutomaticScaling.MaxInstance,
+			Metrics: []autoscalingv2beta2.MetricSpec{
+				{
+					Type: autoscalingv2beta2.ResourceMetricSourceType,
+					Resource: &autoscalingv2beta2.ResourceMetricSource{
+						Name: "cpu",
+						Target: autoscalingv2beta2.MetricTarget{
+							Type:               autoscalingv2beta2.UtilizationMetricType,
+							AverageUtilization: &proxy.Spec.AutomaticScaling.Target,
+						},
+					},
+				},
+			},
+			Behavior: &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
+				ScaleUp: &autoscalingv2beta2.HPAScalingRules{
+					StabilizationWindowSeconds: &proxy.Spec.AutomaticScaling.ScaleUpWindows,
+				},
+				ScaleDown: &autoscalingv2beta2.HPAScalingRules{
+					StabilizationWindowSeconds: &proxy.Spec.AutomaticScaling.ScaleDownWindows,
+					Policies: []autoscalingv2beta2.HPAScalingPolicy{
+						{
+							Type:          autoscalingv2beta2.PodsScalingPolicy,
+							Value:         1,
+							PeriodSeconds: 30,
+						},
+					},
+				},
+			},
 		},
 	}
 
@@ -209,7 +299,9 @@ func toYaml(proxyConfig *v1alpha1.ProxyConfig) string {
 // UpdateDeployment FIXME:merge UpdateDeployment and ConstructCascadingDeployment
 func UpdateDeployment(proxy *v1alpha1.Proxy, runtimeDeployment *appsv1.Deployment) {
 	runtimeDeployment.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
-	runtimeDeployment.Spec.Replicas = &proxy.Spec.Replicas
+	if proxy.Spec.AutomaticScaling == nil {
+		runtimeDeployment.Spec.Replicas = &proxy.Spec.Replicas
+	}
 	runtimeDeployment.Spec.Template.Spec.Volumes[0].ConfigMap.Name = proxy.Spec.ProxyConfigName
 	runtimeDeployment.Spec.Template.Spec.Containers[0].Env[0].Value = strconv.FormatInt(int64(proxy.Spec.Port), 10)
 	runtimeDeployment.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = proxy.Spec.Port
@@ -230,6 +322,14 @@ func UpdateService(proxy *v1alpha1.Proxy, runtimeService *v1.Service) {
 	if proxy.Spec.ServiceType.NodePort != 0 {
 		runtimeService.Spec.Ports[0].NodePort = proxy.Spec.ServiceType.NodePort
 	}
+}
+
+func UpdateHPA(proxy *v1alpha1.Proxy, runtimeHPA *autoscalingv2beta2.HorizontalPodAutoscaler) {
+	runtimeHPA.Spec.Metrics[0].Resource.Target.AverageUtilization = &proxy.Spec.AutomaticScaling.Target
+	runtimeHPA.Spec.Behavior.ScaleDown.StabilizationWindowSeconds = &proxy.Spec.AutomaticScaling.ScaleDownWindows
+	runtimeHPA.Spec.Behavior.ScaleUp.StabilizationWindowSeconds = &proxy.Spec.AutomaticScaling.ScaleUpWindows
+	runtimeHPA.Spec.MaxReplicas = proxy.Spec.AutomaticScaling.MaxInstance
+	runtimeHPA.Spec.MinReplicas = &proxy.Spec.AutomaticScaling.MinInstance
 }
 
 func fromInt32(val int32) intstr.IntOrString {

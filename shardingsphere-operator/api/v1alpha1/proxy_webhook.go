@@ -56,7 +56,7 @@ func (r *Proxy) Default() {
 				},
 			},
 			PeriodSeconds:    5,
-			FailureThreshold: 12,
+			FailureThreshold: 2,
 		}
 	}
 	if r.Spec.ReadinessProbe == nil {
@@ -83,12 +83,18 @@ func (r *Proxy) Default() {
 	if r.Spec.Resources == nil {
 		// The application for resources is based on the upper limit of cpu: 2core memory: 2Gi to apply for computing resources.
 		// The cpu is applied according to 10%, and the memory is applied according to 80%
-		cpu, _ := resource.ParseQuantity("0.2")
-		memory, _ := resource.ParseQuantity("1.6Gi")
+		cpuLimits, _ := resource.ParseQuantity("4")
+		memoryLimits, _ := resource.ParseQuantity("2Gi")
+		cpuRequest, _ := resource.ParseQuantity("2.8")
+		memoryRequest, _ := resource.ParseQuantity("1600Mbi")
 		r.Spec.Resources = &v1.ResourceRequirements{
+			Limits: v1.ResourceList{
+				"cpu":    cpuLimits,
+				"memory": memoryLimits,
+			},
 			Requests: v1.ResourceList{
-				"cpu":    cpu,
-				"memory": memory,
+				"cpu":    cpuRequest,
+				"memory": memoryRequest,
 			},
 		}
 	}
@@ -101,13 +107,29 @@ var _ webhook.Validator = &Proxy{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Proxy) ValidateCreate() error {
 	proxylog.Info("validate create", "name", r.Name)
-	return r.validateService()
+	err := r.validateService()
+	if err != nil {
+		return err
+	}
+	err = r.validateInstance()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *Proxy) ValidateUpdate(old runtime.Object) error {
 	proxylog.Info("validate update", "name", r.Name)
-	return r.validateService()
+	err := r.validateService()
+	if err != nil {
+		return err
+	}
+	err = r.validateInstance()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -119,6 +141,18 @@ func (r *Proxy) validateService() error {
 	field.NewPath("spec").Child("serviceType")
 	if r.Spec.ServiceType.NodePort != 0 && r.Spec.ServiceType.Type != v1.ServiceTypeNodePort {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("serviceType"), r.Spec.ServiceType, errors.New("nodePort: Forbidden: may not be used when `type` is 'ClusterIP'").Error()))
+		return apierrors.NewInvalid(schema.GroupKind{
+			Group: "shardingsphere.sphere-ex.com",
+			Kind:  "Proxy",
+		}, r.Name, allErrs)
+	}
+	return nil
+}
+
+func (r *Proxy) validateInstance() error {
+	var allErrs field.ErrorList
+	if r.Spec.AutomaticScaling != nil && r.Spec.AutomaticScaling.MaxInstance < 1 {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("MaxInstance"), r.Spec.ServiceType, errors.New("If automatic scaling is enabled, the number of instances must be filled in.").Error()))
 		return apierrors.NewInvalid(schema.GroupKind{
 			Group: "shardingsphere.sphere-ex.com",
 			Kind:  "Proxy",

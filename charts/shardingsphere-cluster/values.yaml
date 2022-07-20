@@ -42,11 +42,7 @@ automaticScaling:
 ##   requests:
 ##     cpu: 2
 ##
-resources:
-  limits:
-    cpu: '2'
-  requests:
-    cpu: '1'
+resources: {}
 ## @param service.type ShardingSphere-Proxy external exposure mode
 ## @param service.port ShardingSphere-Proxy exposes  port
 ##
@@ -60,6 +56,12 @@ startPort: 3307
 ##
 mySQLDriver:
   version: "5.1.47"
+## @param imagePullSecrets ShardingSphere-Proxy pull private image repository key
+## e.g:
+## imagePullSecrets:
+##   - name: mysecret
+##
+imagePullSecrets: []
 ## @section  ShardingSphere-Proxy ServerConfiguration parameters
 ## NOTE: If you use the sub-charts to deploy Zookeeper, the server-lists field must be "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}",
 ## otherwise please fill in the correct zookeeper address
@@ -117,7 +119,7 @@ zookeeper:
   enabled: true
   ## @param zookeeper.replicaCount Number of ZooKeeper nodes
   ##
-  replicaCount: 3
+  replicaCount: 1
   ## ZooKeeper Persistence parameters
   ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
   ## @param zookeeper.persistence.enabled Enable persistence on ZooKeeper using PVC(s)

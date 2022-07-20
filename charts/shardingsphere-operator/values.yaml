@@ -21,13 +21,13 @@ replicaCount: 2
 image:
   ## @param image.repository operator image name
   ##
-  repository: "sahrdingsphere-operator"
+  repository: "ghcr.io/sphereex/shardingsphere-on-cloud"
   ## @param image.pullPolicy image pull policy
   ##
   pullPolicy: IfNotPresent
   ## @param image.tag image tag
   ##
-  tag: "0.0.1"
+  tag: "0.1.0"
 ## @param imagePullSecrets image pull secret of private repository
 ## e.g:
 ## imagePullSecrets:

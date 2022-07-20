@@ -52,6 +52,22 @@ type MySQLDriver struct {
 	Version string `json:"version"`
 }
 
+// AutomaticScaling HPA configuration
+type AutomaticScaling struct {
+	// +optional
+	Enable bool `json:"enable,omitempty"`
+	// +optional
+	ScaleUpWindows int32 `json:"scaleUpWindows,omitempty"`
+	// +optional
+	ScaleDownWindows int32 `json:"scaleDownWindows,omitempty"`
+	// +optional
+	Target int32 `json:"target,omitempty"`
+	// +optional
+	MaxInstance int32 `json:"maxInstance,omitempty"`
+	// +optional
+	MinInstance int32 `json:"minInstance,omitempty"`
+}
+
 // ProxySpec defines the desired state of Proxy
 type ProxySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -62,7 +78,10 @@ type ProxySpec struct {
 	ServiceType ServiceType `json:"serviceType"`
 	//Replicas is the expected number of replicas of ShardingSphere-Proxy
 	Replicas int32 `json:"replicas"`
-
+	// +optional
+	AutomaticScaling *AutomaticScaling `json:"automaticScaling,omitempty"`
+	// +optional
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	// +kubebuilder:validation:MinLength=0
 	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 
