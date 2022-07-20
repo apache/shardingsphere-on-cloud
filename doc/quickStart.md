@@ -1,6 +1,7 @@
 # ShardingSphere-Operator 简明使用手册
 
 ## 配置
+
 **Proxy.shardingsphere.sphere-ex.com/v1alpha1**
 
 ```yaml
@@ -56,8 +57,8 @@ spec:
     overwrite: true
 ```
 
-
 <span id="001">**values.yaml**</span>
+
 ```yaml
 # Default values for proxy-operator.
 # This is a YAML-formatted file.
@@ -70,14 +71,14 @@ image:
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "0.0.1"
-imagePullSecrets: []
+imagePullSecrets: [ ]
 service:
   type: ClusterIP
   port: 80
 resources:
-   requests:
-     cpu: 100m
-     memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
 webhook:
   serviceName: shardingsphere-operator-admission-webhook
   port: 9443
@@ -87,15 +88,17 @@ serviceAccount:
   name: shardingsphere-operator
 ```
 
+## 安装 ShardingSphere-Operator
 
-## 安装 ShardingSphere-Operator 
-按照[values.yaml](#001)中的配置完成对 charts/shardingsphere-operator/values.yaml  
+按照[values.yaml](#001)中的配置完成对 charts/shardingsphere-operator/values.yaml
 
-执行 
+执行
+
 ```shell
 kubectl create ns  shardingsphere-operator
 helm install  shardingsphere-operator shardingsphere-operator -n shardingsphere-operator
 ```
+
 ## 安装 ShardingSphere-Proxy
 
 ```shell
