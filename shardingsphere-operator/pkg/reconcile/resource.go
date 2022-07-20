@@ -79,7 +79,6 @@ func ConstructCascadingDeployment(proxy *v1alpha1.Proxy) *appsv1.Deployment {
 			Strategy: appsv1.DeploymentStrategy{
 				Type: appsv1.RecreateDeploymentStrategyType,
 			},
-			Replicas: &proxy.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"apps": proxy.Name,

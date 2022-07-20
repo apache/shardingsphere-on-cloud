@@ -21,20 +21,19 @@ replicaCount: 2
 image:
   ## @param image.repository operator image name
   ##
-  repository: "uhub.service.ucloud.cn/sphere-ex/proxy-operator"
+  repository: "ghcr.io/sphereex/shardingsphere-on-cloud"
   ## @param image.pullPolicy image pull policy
   ##
   pullPolicy: IfNotPresent
   ## @param image.tag image tag
   ##
-  tag: "0.0.2"
+  tag: "0.1.0"
 ## @param imagePullSecrets image pull secret of private repository
 ## e.g:
 ## imagePullSecrets:
 ##   - name: mysecret
 ##
-imagePullSecrets:
-  - name: uhub
+imagePullSecrets: []
 ## @param resources operator Resources required by the operator
 ## e.g:
 ## resources:
