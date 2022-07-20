@@ -25,6 +25,9 @@ spec:
   {{- if .Values.replicaCount }}
   replicas: {{ .Values.replicaCount }}
   {{- end}}
+  {{- if .Values.automaticScaling.enable }}
+  automaticScaling: {{- toYaml .Values.automaticScaling | nindent 4}}
+  {{- end }}
   proxyConfigName: {{ printf "%s-configuration" (include "common.names.fullname" .) | quote}}
   port: {{ .Values.startPort }}
   {{- if .Values.mySQLDriver.version  }}

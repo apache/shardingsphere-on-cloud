@@ -127,3 +127,6 @@ func (p *Proxy) SetFailed() {
 		LastUpdateTime: metav1.Now(),
 	})
 }
+func (p *Proxy) UpdateReadyNodes(readyNodes int32) {
+	p.Status.ReadyNodes = readyNodes
+}

@@ -20,6 +20,7 @@ package controllers
 import (
 	"context"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,6 +35,8 @@ import (
 const (
 	//WaitingForReady Time selection reference kubelet restart time
 	WaitingForReady = 10 * time.Second
+	//miniReadyCount Minimum number of replicas that can be served
+	miniReadyCount = 1
 )
 
 // ProxyReconciler reconciles a Proxy object
@@ -49,6 +52,7 @@ type ProxyReconciler struct {
 //+kubebuilder:rbac:groups=apps,resources=deployment/status,verbs=get;list
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=pods/status,verbs=get;list;watch;
+//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -68,6 +72,10 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	runtimeDeployment := &appsv1.Deployment{}
 	err = r.Get(ctx, req.NamespacedName, runtimeDeployment)
+	if err != nil && !apierrors.IsNotFound(err) {
+		log.Error(err, "Error getting cascaded HPA")
+		return ctrl.Result{}, err
+	}
 	if apierrors.IsNotFound(err) {
 		cascadingDeployment := reconcile.ConstructCascadingDeployment(run)
 		err = r.Create(ctx, cascadingDeployment)
@@ -77,9 +85,6 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			log.Error(err, "Error creating cascaded deployment")
 			return ctrl.Result{}, err
 		}
-	} else if err != nil {
-		log.Error(err, "Error getting cascaded deployment")
-		return ctrl.Result{}, err
 	} else {
 		originDeployment := runtimeDeployment.DeepCopy()
 		reconcile.UpdateDeployment(run, originDeployment)
@@ -89,9 +94,44 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return ctrl.Result{Requeue: true}, err
 		}
 	}
+	runtimeHPA := &autoscalingv2beta2.HorizontalPodAutoscaler{}
+	err = r.Get(ctx, req.NamespacedName, runtimeHPA)
+	if err != nil && !apierrors.IsNotFound(err) {
+		log.Error(err, "Error getting cascaded HPA")
+		return ctrl.Result{}, err
+	}
+	if apierrors.IsNotFound(err) && run.Spec.AutomaticScaling != nil {
+		cascadingHPA := reconcile.ConstructHPA(run)
+		err = r.Create(ctx, cascadingHPA)
+		if err != nil {
+			run.SetInitializationFailed()
+			_ = r.Status().Update(ctx, run)
+			log.Error(err, "Error creating cascaded HPA")
+			return ctrl.Result{}, err
+		}
+
+	} else if run.Spec.AutomaticScaling == nil {
+		err = r.Delete(ctx, runtimeHPA)
+		if err != nil {
+			log.Error(err, "Error delete cascaded HPA")
+			return ctrl.Result{}, err
+		}
+	} else {
+		originHPA := runtimeHPA.DeepCopy()
+		reconcile.UpdateHPA(run, originHPA)
+		err = r.Update(ctx, originHPA)
+		if err != nil {
+			log.Error(err, "Error updating cascaded HPA")
+			return ctrl.Result{}, err
+		}
+	}
 
 	runtimeService := &v1.Service{}
 	err = r.Get(ctx, req.NamespacedName, runtimeService)
+	if err != nil && !apierrors.IsNotFound(err) {
+		log.Error(err, "Error getting cascaded HPA")
+		return ctrl.Result{}, err
+	}
 	if apierrors.IsNotFound(err) {
 		cascadingService := reconcile.ConstructCascadingService(run)
 		err = r.Create(ctx, cascadingService)
@@ -103,9 +143,6 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 		run.SetInitialized()
 		return ctrl.Result{RequeueAfter: WaitingForReady}, nil
-	} else if err != nil {
-		log.Error(err, "Error getting cascaded service")
-		return ctrl.Result{}, err
 	} else {
 		originService := runtimeService.DeepCopy()
 		reconcile.UpdateService(run, originService)
@@ -126,7 +163,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	result := ctrl.Result{}
 	readyNodes := reconcile.CountingReadyPods(podList)
 	if reconcile.IsRunning(podList) {
-		if readyNodes != run.Spec.Replicas {
+		if readyNodes < miniReadyCount {
 			result.RequeueAfter = WaitingForReady
 			if readyNodes != run.Status.ReadyNodes {
 				run.SetPodStarted(readyNodes)
@@ -135,6 +172,8 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			if run.Status.Phase != v1alpha1.StatusReady {
 				log.Info("Status is now ready!")
 				run.SetReady(readyNodes)
+			} else if readyNodes != *runtimeDeployment.Spec.Replicas {
+				run.UpdateReadyNodes(readyNodes)
 			}
 		}
 	} else {

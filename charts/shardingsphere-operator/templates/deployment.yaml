@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
         - args:
-            - --health-probe-bind-address=: {{ .Values.health.healthProbePort }}
+            - --health-probe-bind-address=:{{ .Values.health.healthProbePort }}
             - --leader-elect
           command:
             - /manager
