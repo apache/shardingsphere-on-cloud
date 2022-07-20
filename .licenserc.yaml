@@ -34,5 +34,6 @@ header:
     - '**/go.mod'
     - '**/go.sum'
     - 'shardingsphere-operator/build/.dockerignore'
+    - 'shardingsphere-operator/api/v1alpha1/zz_generated.deepcopy.go'
 
   comment: on-failure
