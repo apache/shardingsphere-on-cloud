@@ -14,7 +14,7 @@
 ## limitations under the License.
 ##
 
-# @section ShardingSphere-Proxy cluster parameters
+## @section ShardingSphere-Proxy cluster parameters
 ## @param replicaCount ShardingSphere-Proxy cluster starts the number of replicas, Note: After you enable automaticScaling, this parameter will no longer take effect
 ## @param proxyVersion ShardingSphere-Proxy cluster version
 ##
@@ -93,7 +93,7 @@ serverConfig:
   ## @param serverConfig.mode.repository.props.timeToLiveSeconds Seconds of ephemeral data live
   ## @param serverConfig.mode.repository.type Type of persist repository. Now only support ZooKeeper
   ## @param serverConfig.mode.overwrite Whether overwrite persistent configuration with local configuration
-  ##
+  ## @param serverConfig.props.proxy-frontend-database-protocol-type Default startup protocol
   mode:
     overwrite: true
     repository:

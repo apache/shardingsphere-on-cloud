@@ -14,8 +14,8 @@
 ## limitations under the License.
 ##
 
-## @section ShardingSphere-Proxy operator parameters
-## @param replicaCount operator  replica count
+## @section ShardingSphere operator parameters
+## @param replicaCount operator replica count
 ##
 replicaCount: 2
 image:
