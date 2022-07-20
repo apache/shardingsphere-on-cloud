@@ -1,6 +1,5 @@
-# shardingsphere-on-cloud
+# ShardingSphere on Cloud
 
-[![Build Status](https://github.com/SphereEx/shardingsphere-on-cloud/workflows/ci/badge.svg)](https://github.com/SphereEx/shardingsphere-on-cloud/actions)
 [![GitHub release](https://img.shields.io/github/release/SphereEx/shardingsphere-on-cloud.svg)](https://github.com/SphereEx/shardingsphere-on-cloud/releases)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/ShardingSphere.svg?style=social&label=Follow%20%40ShardingSphere)](https://twitter.com/ShardingSphere)
@@ -11,9 +10,9 @@ This repository collects scripts, tools, manifests and documentations, provides 
 
 Solutions currently included in this project:
 
-* The [ShardingSphere-Operator](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
+* [The ShardingSphere-Operator](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
 
-The ShardingSphere operator uses predefined CustomResourceDefinitions for describing a Deployment for Apache ShardingSphere on Kubernetes. // ADD 
+The ShardingSphere operator uses predefined CustomResourceDefinitions for describing a Deployment for Apache ShardingSphere on Kubernetes.
 
 
 ## ShardingSphere Operator
@@ -33,7 +32,7 @@ Minimum Viable Product
 
 ### Quick Start 
 
-[quick start](./doc/deploy.md)
+Please follows [deployment instructions](./doc/deploy.md)
 
 ### Features
 
