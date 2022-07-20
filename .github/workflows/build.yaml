@@ -1,0 +1,20 @@
+name: build
+on:
+  push:
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: "Kaniko build"
+        uses: mlycore/action-kaniko@master
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          build_file: shardingsphere-operator/build/Dockerfile
+          tag_with_latest: true
+
+
