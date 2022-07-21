@@ -35,7 +35,7 @@ spec:
             - --health-probe-bind-address=:{{ .Values.health.healthProbePort }}
             - --leader-elect
           command:
-            - /manager
+            - /operator
           ports:
             - name: webhook
               containerPort: {{ .Values.webhook.port }}
@@ -49,7 +49,7 @@ spec:
               port: {{ .Values.health.healthProbePort }}
             initialDelaySeconds: 15
             periodSeconds: 20
-          name: manager
+          name: operator
           readinessProbe:
             httpGet:
               path: /readyz
