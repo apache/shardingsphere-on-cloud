@@ -25,7 +25,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-//ServiceType defines the Service in Kubernetes of ShardingSphere-ShardingSphereProxy
+//ServiceType defines the Service in Kubernetes of ShardingSphere-Proxy
 type ServiceType struct {
 	// +kubebuilder:validation:Enum=ClusterIP;NodePort;LoadBalancer;ExternalName
 
@@ -73,10 +73,10 @@ type ProxySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Version  is the version of ShardingSphere-ShardingSphereProxy
+	// Version  is the version of ShardingSphere-Proxy
 	Version     string      `json:"version"`
 	ServiceType ServiceType `json:"serviceType"`
-	//Replicas is the expected number of replicas of ShardingSphere-ShardingSphereProxy
+	//Replicas is the expected number of replicas of ShardingSphere-Proxy
 	Replicas int32 `json:"replicas"`
 	// +optional
 	AutomaticScaling *AutomaticScaling `json:"automaticScaling,omitempty"`
@@ -89,7 +89,7 @@ type ProxySpec struct {
 	ProxyConfigName string `json:"proxyConfigName"`
 
 	// +kubebuilder:validation:Minimum=0
-	//Port is ShardingSphere-ShardingSphereProxy startup port
+	//Port is ShardingSphere-Proxy startup port
 	Port int32 `json:"port"`
 	// +optional
 	MySQLDriver *MySQLDriver `json:"mySQLDriver,omitempty"`

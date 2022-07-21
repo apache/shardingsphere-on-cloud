@@ -243,7 +243,7 @@ spec:
                 - version
                 type: object
               port:
-                description: Port is ShardingSphere-ShardingSphereProxy startup port
+                description: Port is ShardingSphere-Proxy startup port
                 format: int32
                 minimum: 0
                 type: integer
@@ -396,7 +396,7 @@ spec:
                     type: integer
                 type: object
               replicas:
-                description: Replicas is the expected number of replicas of ShardingSphere-ShardingSphereProxy
+                description: Replicas is the expected number of replicas of ShardingSphere-Proxy
                 format: int32
                 type: integer
               resources:
@@ -426,7 +426,7 @@ spec:
                     type: object
                 type: object
               serviceType:
-                description: ServiceType defines the Service in Kubernetes of ShardingSphere-ShardingSphereProxy
+                description: ServiceType defines the Service in Kubernetes of ShardingSphere-Proxy
                 properties:
                   nodePort:
                     description: 'The port on each node on which this service is exposed
@@ -596,7 +596,7 @@ spec:
                     type: integer
                 type: object
               version:
-                description: Version  is the version of ShardingSphere-ShardingSphereProxy
+                description: Version  is the version of ShardingSphere-Proxy
                 type: string
             required:
             - port
@@ -619,7 +619,7 @@ spec:
                     true       | pod started successfully but not ready| | Started       |
                     false      | pod started failed| | Ready         | true       |
                     The pod is ready and can provide external services| | Unknown       |
-                    true       | ShardingSphere-ShardingSphereProxy failed to start
+                    true       | ShardingSphere-Proxy failed to start
                     correctly due to some problems |
                   properties:
                     lastUpdateTime:
@@ -635,14 +635,14 @@ spec:
                   type: object
                 type: array
               phase:
-                description: 'ShardingSphere-ShardingSphereProxy phase are a brief
-                  summary of the ShardingSphere-ShardingSphereProxy life cycle There
-                  are two possible phase values: Ready: ShardingSphere-ShardingSphereProxy
-                  can already provide external services NotReady: ShardingSphere-ShardingSphereProxy
+                description: 'ShardingSphere-Proxy phase are a brief
+                  summary of the ShardingSphere-Proxy life cycle There
+                  are two possible phase values: Ready: ShardingSphere-Proxy
+                  can already provide external services NotReady: ShardingSphere-Proxy
                   cannot provide external services'
                 type: string
               readyNodes:
-                description: ReadyNodes shows the number of replicas that ShardingSphere-ShardingSphereProxy
+                description: ReadyNodes shows the number of replicas that ShardingSphere-Proxy
                   is running normally
                 format: int32
                 type: integer
