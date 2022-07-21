@@ -32,7 +32,7 @@ Minimum Viable Product
 
 ### Quick Start 
 
-Please follows [deployment instructions](./doc/deploy.md)
+Please follows [deployment instructions](./doc/deploy.md) to deploy a ShardingSphere cluster with version 5.1.2
 
 ### Features
 

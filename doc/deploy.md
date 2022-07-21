@@ -1,6 +1,6 @@
 # ShardingSphere-Operator Concise User Manual
 
-## install ShardingSphere-Operator
+## Install ShardingSphere-Operator
 
 Configuration [below](#shardingsphere-operator-parameters) configuration content, configuration file location shardingsphere-operator/values.yaml
 run
@@ -9,7 +9,7 @@ run
 kubectl create ns  shardingsphere-operator
 helm install shardingsphere-operator shardingsphere-operator -n shardingsphere-operator
 ```
-## install ShardingSphere-Proxy cluster
+## Install ShardingSphere-Proxy cluster
 
 Configuration [below](#shardingsphere-proxy-cluster-parameters) configuration content, configuration file location shardingsphere-cluster/values.yaml
 run 
@@ -19,7 +19,7 @@ kubectl create ns  shardingsphere
 helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
 ```
 ##  Parameters
-### ShardingSphere Operator parameters
+### ShardingSphere Operator Parameters
 
 | Name                     | Description                                 | Value                     |
 | ------------------------ | ------------------------------------------- | ------------------------- |
@@ -33,7 +33,7 @@ helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
 | `health.healthProbePort` | operator health check port                  | `8081`                    |
 
 
-### ShardingSphere-Proxy Cluster parameters
+### ShardingSphere-Proxy Cluster Parameters
 
 | Name                                | Description                                                                                                                                                                                        | Value       |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
@@ -52,7 +52,7 @@ helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
 | `mySQLDriver.version`               | ShardingSphere-Proxy The ShardingSphere-Proxy mysql driver version will not be downloaded if it is empty                                                                                           | `5.1.47`    |
 
 
-### Compute-Node ShardingSphere-Proxy ServerConfiguration authority parameters
+### Compute-Node ShardingSphere-Proxy ServerConfiguration Authority Parameters
 
 | Name                                       | Description                                                                                                                                    | Value                      |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
@@ -61,7 +61,7 @@ helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
 | `serverConfig.authority.users[0].user`     | Username,authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host | `root@%`                   |
 
 
-### Compute-Node ShardingSphere-Proxy ServerConfiguration mode Configuration parameters
+### Compute-Node ShardingSphere-Proxy ServerConfiguration Mode Configuration Parameters
 
 | Name                                                              | Description                                                         | Value                                                                  |
 | ----------------------------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -77,7 +77,7 @@ helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
 | `serverConfig.props.proxy-frontend-database-protocol-type`        | Default startup protocol                                            | `MySQL`                                                                |
 
 
-### ZooKeeper chart parameters
+### ZooKeeper Chart Parameters
 
 | Name                                 | Description                                          | Value               |
 | ------------------------------------ | ---------------------------------------------------- | ------------------- |
@@ -89,7 +89,7 @@ helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
 | `zookeeper.persistence.size`         | Persistent Volume size                               | `8Gi`               |
 
 
-## Configuration example
+## Configuration Example
 
 shardingsphere-operator/values.yaml
 
@@ -257,7 +257,7 @@ zookeeper:
 
 
 
-## clean
+## Clean
 
 ```shell
 helm uninstall shardingsphere-cluster -n shardingsphere

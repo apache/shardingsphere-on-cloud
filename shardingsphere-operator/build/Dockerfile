@@ -34,14 +34,14 @@ COPY shardingsphere-operator/api api/
 COPY shardingsphere-operator/pkg pkg/
 RUN mkdir -p certs && cd certs && openssl req -new -SHA256 -newkey rsa:2048 -nodes -keyout tls.key -out tls.csr -subj "/C=CN/ST=beijing/L=beijing/O=/OU=/" && openssl x509 -req -sha256 -days 365 -in tls.csr -signkey tls.key -out tls.crt
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -ldflags "-w -s" -gcflags "-N -l" -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -ldflags "-w -s" -gcflags "-N -l" -a -o operator main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM alpine:3.15.4
 WORKDIR /
-COPY --from=builder /workspace/manager .
+COPY --from=builder /workspace/operator .
 USER root
 COPY --from=builder /workspace/certs /etc/operator/certs
 
-ENTRYPOINT ["/manager"]
+ENTRYPOINT ["/operator"]
