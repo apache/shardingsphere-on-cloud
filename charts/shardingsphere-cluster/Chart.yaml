@@ -21,12 +21,12 @@ dependencies:
   - condition: zookeeper.enabled
     name: zookeeper
     repository: https://charts.bitnami.com/bitnami
-    version: 9.x.x
+    version: 9.2.7
   - name: common
     repository: https://charts.bitnami.com/bitnami
     tags:
       - bitnami-common
-    version: 1.x.x
+    version: 1.16.1
 type: application
 version: 0.1.0
 appVersion: "5.1.2"

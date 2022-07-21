@@ -80,11 +80,11 @@ func (r *ShardingSphereProxy) Default() {
 		}
 	}
 	if r.Spec.Resources == nil {
-		// The application for resources is based on the upper limit of cpu: 2core memory: 2Gi to apply for computing resources.
+		// The application for resources is based on the upper limit of cpu: 4core memory: 2Gi to apply for computing resources.
 		// The cpu is applied according to 10%, and the memory is applied according to 80%
 		cpuLimits, _ := resource.ParseQuantity("4")
 		memoryLimits, _ := resource.ParseQuantity("2Gi")
-		cpuRequest, _ := resource.ParseQuantity("2.8")
+		cpuRequest, _ := resource.ParseQuantity("400m")
 		memoryRequest, _ := resource.ParseQuantity("1600Mbi")
 		r.Spec.Resources = &v1.ResourceRequirements{
 			Limits: v1.ResourceList{
