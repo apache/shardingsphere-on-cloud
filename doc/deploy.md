@@ -4,19 +4,32 @@
 
 Configuration [below](#shardingsphere-operator-parameters) configuration content, configuration file location shardingsphere-operator/values.yaml
 run
-
+### Source Code Install 
 ```shell
+cd charts
 kubectl create ns  shardingsphere-operator
 helm install shardingsphere-operator shardingsphere-operator -n shardingsphere-operator
 ```
+
 ## Install ShardingSphere-Proxy cluster
 
 Configuration [below](#shardingsphere-proxy-cluster-parameters) configuration content, configuration file location shardingsphere-cluster/values.yaml
 run 
 
+### Source Code Install
 ```shell
+cd charts
 kubectl create ns  shardingsphere
 helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
+```
+
+## Online Install ShardingSphere-Proxy cluster && ShardingSphere-Operator
+```shell
+helm repo add shardingspherecloud https://sphereex.github.io/shardingsphere-on-cloud/
+kubectl create ns  shardingsphere-operator
+helm install shardingsphere-operator shardingspherecloud/shardingsphere-operator -n shardingsphere-operator
+kubectl create ns  shardingsphere
+helm install  shardingsphere-cluster shardingspherecloud/shardingsphere-cluster -n shardingsphere
 ```
 ##  Parameters
 ### ShardingSphere Operator Parameters
