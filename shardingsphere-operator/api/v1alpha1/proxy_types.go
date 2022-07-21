@@ -68,7 +68,7 @@ type AutomaticScaling struct {
 	MinInstance int32 `json:"minInstance,omitempty"`
 }
 
-// ProxySpec defines the desired state of Proxy
+// ProxySpec defines the desired state of ShardingSphereProxy
 type ProxySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -85,7 +85,7 @@ type ProxySpec struct {
 	// +kubebuilder:validation:MinLength=0
 	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 
-	//ProxyConfigName is the name of the ProxyConfig CRD
+	//ProxyConfigName is the name of the ShardingSphereProxyServerConfig CRD
 	ProxyConfigName string `json:"proxyConfigName"`
 
 	// +kubebuilder:validation:Minimum=0
@@ -111,8 +111,8 @@ type ProxySpec struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Proxy is the Schema for the proxies API
-type Proxy struct {
+// ShardingSphereProxy is the Schema for the proxies API
+type ShardingSphereProxy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -122,13 +122,13 @@ type Proxy struct {
 
 //+kubebuilder:object:root=true
 
-// ProxyList contains a list of Proxy
-type ProxyList struct {
+// ShardingSphereProxyList contains a list of ShardingSphereProxy
+type ShardingSphereProxyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Proxy `json:"items"`
+	Items           []ShardingSphereProxy `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Proxy{}, &ProxyList{})
+	SchemeBuilder.Register(&ShardingSphereProxy{}, &ShardingSphereProxyList{})
 }

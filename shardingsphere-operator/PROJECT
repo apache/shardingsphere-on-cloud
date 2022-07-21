@@ -10,7 +10,7 @@ resources:
   controller: true
   domain: sphere-ex.com
   group: shardingsphere
-  kind: Proxy
+  kind: ShardingSphereProxy
   path: sphere-ex.com/shardingsphere-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
@@ -23,7 +23,7 @@ resources:
   controller: true
   domain: sphere-ex.com
   group: shardingsphere
-  kind: ProxyConfig
+  kind: ShardingSphereProxyServerConfig
   path: sphere-ex.com/shardingsphere-operator/api/v1alpha1
   version: v1alpha1
 version: "3"

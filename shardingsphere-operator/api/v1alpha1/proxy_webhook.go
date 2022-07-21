@@ -32,22 +32,21 @@ import (
 	shardingwebhook "sphere-ex.com/shardingsphere-operator/pkg/webhook"
 )
 
-// log is for logging in this package.
-var proxylog = logf.Log.WithName("proxy-resource")
+var shardingsphereproxylog = logf.Log.WithName("shardingsphereproxy-resource")
 
-func (r *Proxy) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *ShardingSphereProxy) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return shardingwebhook.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/apis/admission.shardingsphere.sphere-ex.com/v1alpha1/mutate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=true,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=create;update,versions=v1alpha1,name=mproxy.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/apis/admission.shardingsphere.sphere-ex.com/v1alpha1/mutate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=true,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=shardingsphereproxies,verbs=create;update,versions=v1alpha1,name=mproxy.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &Proxy{}
+var _ webhook.Defaulter = &ShardingSphereProxy{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Proxy) Default() {
-	proxylog.Info("default", "name", r.Name)
+func (r *ShardingSphereProxy) Default() {
+	shardingsphereproxylog.Info("default", "name", r.Name)
 	if r.Spec.StartupProbe == nil {
 		r.Spec.StartupProbe = &v1.Probe{
 			ProbeHandler: v1.ProbeHandler{
@@ -102,11 +101,11 @@ func (r *Proxy) Default() {
 
 // +kubebuilder:webhook:path=/apis/admission.shardingsphere.sphere-ex.com/v1alpha1/validate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=false,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=create;update,versions=v1alpha1,name=vproxy.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &Proxy{}
+var _ webhook.Validator = &ShardingSphereProxy{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Proxy) ValidateCreate() error {
-	proxylog.Info("validate create", "name", r.Name)
+func (r *ShardingSphereProxy) ValidateCreate() error {
+	shardingsphereproxylog.Info("validate create", "name", r.Name)
 	err := r.validateService()
 	if err != nil {
 		return err
@@ -119,8 +118,8 @@ func (r *Proxy) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Proxy) ValidateUpdate(old runtime.Object) error {
-	proxylog.Info("validate update", "name", r.Name)
+func (r *ShardingSphereProxy) ValidateUpdate(old runtime.Object) error {
+	shardingsphereproxylog.Info("validate update", "name", r.Name)
 	err := r.validateService()
 	if err != nil {
 		return err
@@ -133,29 +132,29 @@ func (r *Proxy) ValidateUpdate(old runtime.Object) error {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Proxy) ValidateDelete() error {
+func (r *ShardingSphereProxy) ValidateDelete() error {
 	return nil
 }
-func (r *Proxy) validateService() error {
+func (r *ShardingSphereProxy) validateService() error {
 	var allErrs field.ErrorList
 	field.NewPath("spec").Child("serviceType")
 	if r.Spec.ServiceType.NodePort != 0 && r.Spec.ServiceType.Type != v1.ServiceTypeNodePort {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("serviceType"), r.Spec.ServiceType, errors.New("nodePort: Forbidden: may not be used when `type` is 'ClusterIP'").Error()))
 		return apierrors.NewInvalid(schema.GroupKind{
 			Group: "shardingsphere.sphere-ex.com",
-			Kind:  "Proxy",
+			Kind:  "ShardingSphereProxy",
 		}, r.Name, allErrs)
 	}
 	return nil
 }
 
-func (r *Proxy) validateInstance() error {
+func (r *ShardingSphereProxy) validateInstance() error {
 	var allErrs field.ErrorList
 	if r.Spec.AutomaticScaling != nil && r.Spec.AutomaticScaling.MaxInstance < 1 {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("MaxInstance"), r.Spec.ServiceType, errors.New("If automatic scaling is enabled, the number of instances must be filled in.").Error()))
 		return apierrors.NewInvalid(schema.GroupKind{
 			Group: "shardingsphere.sphere-ex.com",
-			Kind:  "Proxy",
+			Kind:  "ShardingSphereProxy",
 		}, r.Name, allErrs)
 	}
 	return nil

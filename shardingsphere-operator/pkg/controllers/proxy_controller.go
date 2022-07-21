@@ -39,7 +39,7 @@ const (
 	miniReadyCount = 1
 )
 
-// ProxyReconciler reconciles a Proxy object
+// ProxyReconciler reconciles a ShardingSphereProxy object
 type ProxyReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -60,7 +60,7 @@ type ProxyReconciler struct {
 func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logger.FromContext(ctx)
 
-	run := &v1alpha1.Proxy{}
+	run := &v1alpha1.ShardingSphereProxy{}
 	err := r.Get(ctx, req.NamespacedName, run)
 	if apierrors.IsNotFound(err) {
 		log.Info("Resource in work queue no longer exists!")
@@ -195,7 +195,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 // SetupWithManager sets up the controller with the Manager.
 func (r *ProxyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Proxy{}).
+		For(&v1alpha1.ShardingSphereProxy{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&v1.Service{}).
 		Owns(&v1.Pod{}).

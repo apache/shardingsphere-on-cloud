@@ -21,14 +21,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: proxyconfigs.shardingsphere.sphere-ex.com
+  name: shardingsphereproxyserverconfigs.shardingsphere.sphere-ex.com
 spec:
   group: shardingsphere.sphere-ex.com
   names:
-    kind: ProxyConfig
-    listKind: ProxyConfigList
-    plural: proxyconfigs
-    singular: proxyconfig
+    kind: ShardingSphereProxyServerConfig
+    listKind: ShardingSphereProxyServerConfigList
+    plural: shardingsphereproxyserverconfigs
+    singular: shardingsphereproxyserverconfig
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -38,7 +38,8 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ProxyConfig is the Schema for the proxyconfigs API
+        description: ShardingSphereProxyServerConfig is the Schema for the proxyconfigs
+          API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -53,7 +54,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ProxyConfigSpec defines the desired state of ProxyConfig
+            description: ProxyConfigSpec defines the desired state of ShardingSphereProxyServerConfig
             properties:
               authority:
                 description: Auth  is used to set up initial user to login compute
@@ -181,16 +182,16 @@ spec:
                       slow SQL.'
                     type: string
                   proxy-backend-query-fetch-size:
-                    description: Proxy backend query fetch size. A larger value may
-                      increase the memory usage of ShardingSphere Proxy. The default
-                      value is -1, which means set the minimum value for different
-                      JDBC drivers.
+                    description: ShardingSphereProxy backend query fetch size. A larger
+                      value may increase the memory usage of ShardingSphere ShardingSphereProxy.
+                      The default value is -1, which means set the minimum value for
+                      different JDBC drivers.
                     type: integer
                   proxy-frontend-database-protocol-type:
                     type: string
                   proxy-frontend-executor-size:
-                    description: Proxy frontend Netty executor size. The default value
-                      is 0, which means let Netty decide.
+                    description: ShardingSphereProxy frontend Netty executor size.
+                      The default value is 0, which means let Netty decide.
                     type: integer
                 type: object
             required:
@@ -198,7 +199,7 @@ spec:
             - mode
             type: object
           status:
-            description: ProxyConfigStatus defines the observed state of ProxyConfig
+            description: ProxyConfigStatus defines the observed state of ShardingSphereProxyServerConfig
             properties:
               metadataRepository:
                 type: string

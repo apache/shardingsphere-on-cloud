@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ProxyConfigSpec defines the desired state of ProxyConfig
+// ProxyConfigSpec defines the desired state of ShardingSphereProxyServerConfig
 type ProxyConfigSpec struct {
 	ClusterConfig ClusterConfig `json:"mode" yaml:"mode"`
 	Authority     Auth          `json:"authority" yaml:"authority"`
@@ -29,7 +29,7 @@ type ProxyConfigSpec struct {
 	Props *Props `json:"props,omitempty" yaml:"props,omitempty"`
 }
 
-// ProxyConfigStatus defines the observed state of ProxyConfig
+// ProxyConfigStatus defines the observed state of ShardingSphereProxyServerConfig
 type ProxyConfigStatus struct {
 	MetadataRepository string `json:"metadataRepository"`
 }
@@ -38,8 +38,8 @@ type ProxyConfigStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// ProxyConfig is the Schema for the proxyconfigs API
-type ProxyConfig struct {
+// ShardingSphereProxyServerConfig is the Schema for the proxyconfigs API
+type ShardingSphereProxyServerConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -49,17 +49,17 @@ type ProxyConfig struct {
 
 //+kubebuilder:object:root=true
 
-// ProxyConfigList contains a list of ProxyConfig
-type ProxyConfigList struct {
+// ShardingSphereProxyServerConfigList contains a list of ShardingSphereProxyServerConfig
+type ShardingSphereProxyServerConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ProxyConfig `json:"items"`
+	Items           []ShardingSphereProxyServerConfig `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ProxyConfig{}, &ProxyConfigList{})
+	SchemeBuilder.Register(&ShardingSphereProxyServerConfig{}, &ShardingSphereProxyServerConfigList{})
 }
 
-func (in *ProxyConfig) SetMetadataRepository(metadataType string) {
+func (in *ShardingSphereProxyServerConfig) SetMetadataRepository(metadataType string) {
 	in.Status.MetadataRepository = metadataType
 }

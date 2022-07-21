@@ -39,7 +39,7 @@ const (
 	ConditionUnknown     ConditionType = "Unknown"
 )
 
-// ProxyStatus defines the observed state of Proxy
+// ProxyStatus defines the observed state of ShardingSphereProxy
 type ProxyStatus struct {
 	//ShardingSphere-Proxy phase are a brief summary of the ShardingSphere-Proxy life cycle
 	//There are two possible phase values:
@@ -70,7 +70,7 @@ type Condition struct {
 	LastUpdateTime metav1.Time        `json:"lastUpdateTime,omitempty"`
 }
 
-func (p *Proxy) SetInitialized() {
+func (p *ShardingSphereProxy) SetInitialized() {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionInitialized,
@@ -79,7 +79,7 @@ func (p *Proxy) SetInitialized() {
 	})
 }
 
-func (p *Proxy) SetInitializationFailed() {
+func (p *ShardingSphereProxy) SetInitializationFailed() {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionInitialized,
@@ -88,7 +88,7 @@ func (p *Proxy) SetInitializationFailed() {
 	})
 }
 
-func (p *Proxy) SetPodStarted(readyNodes int32) {
+func (p *ShardingSphereProxy) SetPodStarted(readyNodes int32) {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionStarted,
@@ -98,7 +98,7 @@ func (p *Proxy) SetPodStarted(readyNodes int32) {
 	p.Status.ReadyNodes = readyNodes
 }
 
-func (p *Proxy) SetPodNotStarted(readyNodes int32) {
+func (p *ShardingSphereProxy) SetPodNotStarted(readyNodes int32) {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionStarted,
@@ -108,7 +108,7 @@ func (p *Proxy) SetPodNotStarted(readyNodes int32) {
 	p.Status.ReadyNodes = readyNodes
 }
 
-func (p *Proxy) SetReady(readyNodes int32) {
+func (p *ShardingSphereProxy) SetReady(readyNodes int32) {
 	p.Status.Phase = StatusReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionReady,
@@ -119,7 +119,7 @@ func (p *Proxy) SetReady(readyNodes int32) {
 
 }
 
-func (p *Proxy) SetFailed() {
+func (p *ShardingSphereProxy) SetFailed() {
 	p.Status.Phase = StatusNotReady
 	p.Status.Conditions = append([]Condition{}, Condition{
 		Type:           ConditionUnknown,
@@ -127,6 +127,6 @@ func (p *Proxy) SetFailed() {
 		LastUpdateTime: metav1.Now(),
 	})
 }
-func (p *Proxy) UpdateReadyNodes(readyNodes int32) {
+func (p *ShardingSphereProxy) UpdateReadyNodes(readyNodes int32) {
 	p.Status.ReadyNodes = readyNodes
 }

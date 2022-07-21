@@ -262,5 +262,5 @@ zookeeper:
 ```shell
 helm uninstall shardingsphere-cluster -n shardingsphere
 helm uninstall shardingsphere-operator -n shardingsphere-operator
-kubectl delete crd proxies.shardingsphere.sphere-ex.com proxyconfigs.shardingsphere.sphere-ex.com
+kubectl delete crd shardingsphereproxies.shardingsphere.sphere-ex.com shardingsphereproxyserverconfigs.shardingsphere.sphere-ex.com
 ```

@@ -117,7 +117,7 @@ rules:
   - apiGroups:
       - shardingsphere.sphere-ex.com
     resources:
-      - proxies
+      - shardingsphereproxies
     verbs:
       - create
       - delete
@@ -129,13 +129,13 @@ rules:
   - apiGroups:
       - shardingsphere.sphere-ex.com
     resources:
-      - proxies/finalizers
+      - shardingsphereproxies/finalizers
     verbs:
       - update
   - apiGroups:
       - shardingsphere.sphere-ex.com
     resources:
-      - proxies/status
+      - shardingsphereproxies/status
     verbs:
       - get
       - patch
@@ -143,7 +143,7 @@ rules:
   - apiGroups:
       - shardingsphere.sphere-ex.com
     resources:
-      - proxyconfigs
+      - shardingsphereproxyserverconfigs
     verbs:
       - create
       - delete
@@ -155,13 +155,13 @@ rules:
   - apiGroups:
       - shardingsphere.sphere-ex.com
     resources:
-      - proxyconfigs/finalizers
+      - shardingsphereproxyserverconfigs/finalizers
     verbs:
       - update
   - apiGroups:
       - shardingsphere.sphere-ex.com
     resources:
-      - proxyconfigs/status
+      - shardingsphereproxyserverconfigs/status
     verbs:
       - get
       - patch
