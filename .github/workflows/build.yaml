@@ -22,7 +22,7 @@ on:
       - dev**
       - release**
       - main
-
+    tags:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
