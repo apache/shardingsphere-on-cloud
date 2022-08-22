@@ -19,11 +19,14 @@ package controllers
 
 import (
 	"context"
+
+	shardingspherev1alpha1 "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
-	"sphere-ex.com/shardingsphere-operator/pkg/reconcile"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"

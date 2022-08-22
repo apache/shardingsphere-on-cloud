@@ -20,8 +20,9 @@ package main
 import (
 	"flag"
 	"os"
-	"sphere-ex.com/shardingsphere-operator/api/v1alpha1"
-	"sphere-ex.com/shardingsphere-operator/pkg/controllers"
+
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
 
 	"go.uber.org/zap/zapcore"
 
