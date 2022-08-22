@@ -18,6 +18,8 @@
 package v1alpha1
 
 import (
+	shardingwebhook "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/webhook"
+
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,7 +31,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	shardingwebhook "sphere-ex.com/shardingsphere-operator/pkg/webhook"
 )
 
 var shardingsphereproxylog = logf.Log.WithName("shardingsphereproxy-resource")

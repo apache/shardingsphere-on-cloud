@@ -20,14 +20,16 @@ package reconcile
 import (
 	"fmt"
 	"html/template"
+	"strconv"
+	"strings"
+
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sphere-ex.com/shardingsphere-operator/api/v1alpha1"
-	"strconv"
-	"strings"
 )
 
 const imageName = "apache/shardingsphere-proxy"

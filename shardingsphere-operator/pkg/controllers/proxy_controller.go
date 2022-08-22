@@ -19,6 +19,10 @@ package controllers
 
 import (
 	"context"
+	"time"
+
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
@@ -27,9 +31,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logger "sigs.k8s.io/controller-runtime/pkg/log"
-	"sphere-ex.com/shardingsphere-operator/api/v1alpha1"
-	"sphere-ex.com/shardingsphere-operator/pkg/reconcile"
-	"time"
 )
 
 const (

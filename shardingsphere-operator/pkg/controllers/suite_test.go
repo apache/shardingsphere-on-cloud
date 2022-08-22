@@ -18,8 +18,8 @@
 package controllers
 
 import (
+	shardingspherev1alpha1 "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"path/filepath"
-	shardingspherev1alpha1 "sphere-ex.com/shardingsphere-operator/api/v1alpha1"
 	"testing"
 
 	"k8s.io/client-go/kubernetes/scheme"
