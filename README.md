@@ -1,6 +1,8 @@
 # ShardingSphere on Cloud
 
-[![GitHub release](https://img.shields.io/github/release/SphereEx/shardingsphere-on-cloud.svg)](https://github.com/SphereEx/shardingsphere-on-cloud/releases)
+**Apache ShardingSphere Official Website:** [https://shardingsphere.apache.org/](https://shardingsphere.apache.org/)
+
+[![GitHub release](https://img.shields.io/github/release/SphereEx/shardingsphere-on-cloud.svg)](https://github.com/apache/shardingsphere-on-cloud/releases)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/ShardingSphere.svg?style=social&label=Follow%20%40ShardingSphere)](https://twitter.com/ShardingSphere)
 [![Slack](https://img.shields.io/badge/%20Slack-ShardingSphere%20Channel-blueviolet)](https://join.slack.com/t/apacheshardingsphere/shared_invite/zt-sbdde7ie-SjDqo9~I4rYcR18bq0SYTg)
@@ -10,10 +12,9 @@ This repository collects scripts, tools, manifests and documentations, provides 
 
 Solutions currently included in this project:
 
-* [The ShardingSphere-Operator](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
+* [The ShardingSphere-Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
 
 The ShardingSphere operator uses predefined CustomResourceDefinitions for describing a Deployment for Apache ShardingSphere on Kubernetes.
-
 
 ## ShardingSphere Operator
 ### Prerequisites
@@ -62,14 +63,22 @@ To build ShardingSphere Operator from scratch you will need to install the follo
 * Kubebuilder 3.4.1+
 
 ## Contributing
-
 To contribute to this project, refer to [Contributing](CONTRIBUTING.md).
 
-## Join the discussion
+## Community & Support
 
-If you have any questions or feedback regarding this project, join the [Apache ShardingSphere Slack](https://join.slack.com/t/apacheshardingsphere/shared_invite/zt-sbdde7ie-SjDqo9~I4rYcR18bq0SYTg).
+<hr>
 
-For Wechat users, follow this ![wechat offcial account](./doc/images/ssvx.png).
+:link: [Mailing List](https://shardingsphere.apache.org/community/en/contribute/subscribe/). Best for: Apache community updates, releases, changes.
+
+:link: [GitHub Issues](https://github.com/apache/shardingsphere-on-cloud/issues). Best for: larger systemic questions/bug reports or anything development related.
+
+:link: [GitHub Discussions](https://github.com/apache/shardingsphere-on-cloud/discussions). Best for: technical questions & support, requesting new features, proposing new features.
+
+:link: [Slack channel](https://join.slack.com/t/apacheshardingsphere/shared_invite/zt-sbdde7ie-SjDqo9~I4rYcR18bq0SYTg). Best for: instant communications and online meetings, sharing your applications.
+
+:link: [Twitter](https://twitter.com/ShardingSphere). Best for: keeping up to date on everything ShardingSphere.
+
 
 ## License
 
