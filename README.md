@@ -59,11 +59,11 @@ Please follows [deployment instructions](./doc/deploy.md) to deploy a ShardingSp
 
 To build ShardingSphere Operator from scratch you will need to install the following tools:
 
-* Git
+* [Git](https://git-scm.com/)
 * [Golang 1.17](https://golang.org/dl/)
-* make
-* Kubernetes 1.20+ 
-* Kubebuilder 3.4.1+
+* [make](https://www.gnu.org/savannah-checkouts/gnu/make/make.html)
+* [Kubernetes 1.20+](https://github.com/kubernetes/kubernetes)
+* [Kubebuilder 3.4.1+](https://github.com/kubernetes-sigs/kubebuilder)
 
 ## Contributing
 
