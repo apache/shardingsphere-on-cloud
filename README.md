@@ -17,6 +17,7 @@ Solutions currently included in this project:
 The ShardingSphere operator uses predefined CustomResourceDefinitions for describing a Deployment for Apache ShardingSphere on Kubernetes.
 
 ## ShardingSphere Operator
+
 ### Prerequisites
 
 With the help of ShardingSphere-Operator you could create a ShardingSphere-Proxy cluster including the ZooKeeper cluster in minutes.
@@ -43,7 +44,9 @@ Please follows [deployment instructions](./doc/deploy.md) to deploy a ShardingSp
 * Support automatic download of MySQL driver
 
 ### Installation
+
 #### Helm
+
 * ShardingSphere-Operator chart
     * Support deploy shardingsphere operator
 * ShardingSphere-Cluster chart
@@ -63,6 +66,7 @@ To build ShardingSphere Operator from scratch you will need to install the follo
 * Kubebuilder 3.4.1+
 
 ## Contributing
+
 To contribute to this project, refer to [Contributing](CONTRIBUTING.md).
 
 ## Community & Support
