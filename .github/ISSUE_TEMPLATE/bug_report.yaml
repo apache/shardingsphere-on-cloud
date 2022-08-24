@@ -9,7 +9,7 @@ body:
       description: Bug report without environment information will be ignored or closed.
       value: |
         - Contents of your values.yaml file,if your helm deployment process goes wrong.
-        - Contents of your CRD resource file. Include proxy.shardingsphere.sphere-ex.com/v1alpha1 and proxyconfig.shardingsphere.sphere-ex.com/v1alpha1
+        - Contents of your CRD resource file. Include proxy.shardingsphere.apache.org/v1alpha1 and proxyconfig.shardingsphere.apache.org/v1alpha1
         - Kubernetes distro (e.g. RKE/K3s/EKS/OpenShift) and version
     validations:
       required: true

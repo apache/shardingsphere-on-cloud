@@ -77,7 +77,7 @@ func main() {
 		Port:                   webhookPort,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "0e5175ce.sphere-ex.com",
+		LeaderElectionID:       "0e5175ce.apache.org",
 		CertDir:                "/etc/operator/certs",
 	})
 	if err != nil {

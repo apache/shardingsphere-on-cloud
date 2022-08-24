@@ -35,7 +35,7 @@ import (
 var log = logf.Log.WithName("builder")
 
 // Do additional hacks for apiService
-const apiPath = "/apis/admission.shardingsphere.sphere-ex.com/v1alpha1"
+const apiPath = "/apis/admission.shardingsphere.apache.org/v1alpha1"
 
 // WebhookBuilder builds a Webhook.
 type WebhookBuilder struct {

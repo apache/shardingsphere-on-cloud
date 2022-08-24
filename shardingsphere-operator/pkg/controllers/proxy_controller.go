@@ -46,9 +46,9 @@ type ProxyReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxies/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxies/finalizers,verbs=update
+//+kubebuilder:rbac:groups=shardingsphere.apache.org,resources=proxies,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=shardingsphere.apache.org,resources=proxies/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=shardingsphere.apache.org,resources=proxies/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployment/status,verbs=get;list
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete

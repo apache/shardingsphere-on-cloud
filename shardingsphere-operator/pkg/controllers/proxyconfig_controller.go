@@ -40,9 +40,9 @@ type ProxyConfigReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxyconfigs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxyconfigs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=shardingsphere.sphere-ex.com,resources=proxyconfigs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=shardingsphere.apache.org,resources=proxyconfigs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=shardingsphere.apache.org,resources=proxyconfigs/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=shardingsphere.apache.org,resources=proxyconfigs/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=configmap,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to

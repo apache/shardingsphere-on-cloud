@@ -22,9 +22,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: shardingsphereproxyserverconfigs.shardingsphere.sphere-ex.com
+  name: shardingsphereproxyserverconfigs.shardingsphere.apache.org
 spec:
-  group: shardingsphere.sphere-ex.com
+  group: shardingsphere.apache.org
   names:
     kind: ShardingSphereProxyServerConfig
     listKind: ShardingSphereProxyServerConfigList

@@ -41,7 +41,7 @@ func (r *ShardingSphereProxy) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/apis/admission.shardingsphere.sphere-ex.com/v1alpha1/mutate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=true,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=shardingsphereproxies,verbs=create;update,versions=v1alpha1,name=mproxy.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/apis/admission.shardingsphere.apache.org/v1alpha1/mutate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=true,failurePolicy=fail,sideEffects=None,groups=shardingsphere.apache.org,resources=shardingsphereproxies,verbs=create;update,versions=v1alpha1,name=mproxy.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &ShardingSphereProxy{}
 
@@ -100,7 +100,7 @@ func (r *ShardingSphereProxy) Default() {
 	}
 }
 
-// +kubebuilder:webhook:path=/apis/admission.shardingsphere.sphere-ex.com/v1alpha1/validate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=false,failurePolicy=fail,sideEffects=None,groups=shardingsphere.sphere-ex.com,resources=proxies,verbs=create;update,versions=v1alpha1,name=vproxy.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/apis/admission.shardingsphere.apache.org/v1alpha1/validate-shardingsphere-sphere-ex-com-v1alpha1-proxy,mutating=false,failurePolicy=fail,sideEffects=None,groups=shardingsphere.apache.org,resources=proxies,verbs=create;update,versions=v1alpha1,name=vproxy.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &ShardingSphereProxy{}
 
@@ -142,7 +142,7 @@ func (r *ShardingSphereProxy) validateService() error {
 	if r.Spec.ServiceType.NodePort != 0 && r.Spec.ServiceType.Type != v1.ServiceTypeNodePort {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("serviceType"), r.Spec.ServiceType, errors.New("nodePort: Forbidden: may not be used when `type` is 'ClusterIP'").Error()))
 		return apierrors.NewInvalid(schema.GroupKind{
-			Group: "shardingsphere.sphere-ex.com",
+			Group: "shardingsphere.apache.org",
 			Kind:  "ShardingSphereProxy",
 		}, r.Name, allErrs)
 	}
@@ -154,7 +154,7 @@ func (r *ShardingSphereProxy) validateInstance() error {
 	if r.Spec.AutomaticScaling != nil && r.Spec.AutomaticScaling.MaxInstance < 1 {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("MaxInstance"), r.Spec.ServiceType, errors.New("If automatic scaling is enabled, the number of instances must be filled in.").Error()))
 		return apierrors.NewInvalid(schema.GroupKind{
-			Group: "shardingsphere.sphere-ex.com",
+			Group: "shardingsphere.apache.org",
 			Kind:  "ShardingSphereProxy",
 		}, r.Name, allErrs)
 	}

@@ -1,17 +1,17 @@
-domain: sphere-ex.com
+domain: apache.org
 layout:
 - go.kubebuilder.io/v3
 projectName: shardingsphere-operator
-repo: sphere-ex.com/shardingsphere-operator
+repo: apache.org/shardingsphere-operator
 resources:
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: sphere-ex.com
+  domain: apache.org
   group: shardingsphere
   kind: ShardingSphereProxy
-  path: sphere-ex.com/shardingsphere-operator/api/v1alpha1
+  path: apache.org/shardingsphere-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
@@ -21,9 +21,9 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: sphere-ex.com
+  domain: apache.org
   group: shardingsphere
   kind: ShardingSphereProxyServerConfig
-  path: sphere-ex.com/shardingsphere-operator/api/v1alpha1
+  path: apache.org/shardingsphere-operator/api/v1alpha1
   version: v1alpha1
 version: "3"

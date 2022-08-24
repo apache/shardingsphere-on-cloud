@@ -18,10 +18,10 @@
 apiVersion: apiregistration.k8s.io/v1
 kind: APIService
 metadata:
-  name: v1alpha1.admission.shardingsphere.sphere-ex.com
+  name: v1alpha1.admission.shardingsphere.apache.org
 spec:
   insecureSkipTLSVerify: true
-  group: admission.shardingsphere.sphere-ex.com
+  group: admission.shardingsphere.apache.org
   groupPriorityMinimum: 1000
   versionPriority: 5
   service:

@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-apiVersion: shardingsphere.sphere-ex.com/v1alpha1
+apiVersion: shardingsphere.apache.org/v1alpha1
 kind: ShardingSphereProxyServerConfig
 metadata:
   name: {{ printf "%s-configuration" (include "common.names.fullname" .) }}
