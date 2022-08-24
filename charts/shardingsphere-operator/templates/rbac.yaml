@@ -116,7 +116,7 @@ rules:
       - update
       - watch
   - apiGroups:
-      - shardingsphere.sphere-ex.com
+      - shardingsphere.apache.org
     resources:
       - shardingsphereproxies
     verbs:
@@ -128,13 +128,13 @@ rules:
       - update
       - watch
   - apiGroups:
-      - shardingsphere.sphere-ex.com
+      - shardingsphere.apache.org
     resources:
       - shardingsphereproxies/finalizers
     verbs:
       - update
   - apiGroups:
-      - shardingsphere.sphere-ex.com
+      - shardingsphere.apache.org
     resources:
       - shardingsphereproxies/status
     verbs:
@@ -142,7 +142,7 @@ rules:
       - patch
       - update
   - apiGroups:
-      - shardingsphere.sphere-ex.com
+      - shardingsphere.apache.org
     resources:
       - shardingsphereproxyserverconfigs
     verbs:
@@ -154,13 +154,13 @@ rules:
       - update
       - watch
   - apiGroups:
-      - shardingsphere.sphere-ex.com
+      - shardingsphere.apache.org
     resources:
       - shardingsphereproxyserverconfigs/finalizers
     verbs:
       - update
   - apiGroups:
-      - shardingsphere.sphere-ex.com
+      - shardingsphere.apache.org
     resources:
       - shardingsphereproxyserverconfigs/status
     verbs:

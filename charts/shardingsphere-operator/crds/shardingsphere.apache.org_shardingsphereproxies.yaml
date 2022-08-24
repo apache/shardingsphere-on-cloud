@@ -22,9 +22,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: shardingsphereproxies.shardingsphere.sphere-ex.com
+  name: shardingsphereproxies.shardingsphere.apache.org
 spec:
-  group: shardingsphere.sphere-ex.com
+  group: shardingsphere.apache.org
   names:
     kind: ShardingSphereProxy
     listKind: ShardingSphereProxyList
@@ -117,7 +117,7 @@ spec:
                     type: integer
                   grpc:
                     description: GRPC specifies an action involving a GRPC port. This
-                      is an alpha field and requires enabling GRPCContainerProbe feature
+                      is a beta field and requires enabling GRPCContainerProbe feature
                       gate.
                     properties:
                       port:
@@ -280,7 +280,7 @@ spec:
                     type: integer
                   grpc:
                     description: GRPC specifies an action involving a GRPC port. This
-                      is an alpha field and requires enabling GRPCContainerProbe feature
+                      is a beta field and requires enabling GRPCContainerProbe feature
                       gate.
                     properties:
                       port:
@@ -480,7 +480,7 @@ spec:
                     type: integer
                   grpc:
                     description: GRPC specifies an action involving a GRPC port. This
-                      is an alpha field and requires enabling GRPCContainerProbe feature
+                      is a beta field and requires enabling GRPCContainerProbe feature
                       gate.
                     properties:
                       port:
@@ -620,8 +620,8 @@ spec:
                     true       | pod started successfully but not ready| | Started       |
                     false      | pod started failed| | Ready         | true       |
                     The pod is ready and can provide external services| | Unknown       |
-                    true       | ShardingSphere-Proxy failed to start
-                    correctly due to some problems |
+                    true       | ShardingSphere-Proxy failed to start correctly due
+                    to some problems |
                   properties:
                     lastUpdateTime:
                       format: date-time
@@ -636,11 +636,10 @@ spec:
                   type: object
                 type: array
               phase:
-                description: 'ShardingSphere-Proxy phase are a brief
-                  summary of the ShardingSphere-Proxy life cycle There
-                  are two possible phase values: Ready: ShardingSphere-Proxy
-                  can already provide external services NotReady: ShardingSphere-Proxy
-                  cannot provide external services'
+                description: 'ShardingSphere-Proxy phase are a brief summary of the
+                  ShardingSphere-Proxy life cycle There are two possible phase values:
+                  Ready: ShardingSphere-Proxy can already provide external services
+                  NotReady: ShardingSphere-Proxy cannot provide external services'
                 type: string
               readyNodes:
                 description: ReadyNodes shows the number of replicas that ShardingSphere-Proxy

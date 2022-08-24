@@ -27,12 +27,12 @@ webhooks:
       service:
         name: kubernetes
         namespace: default
-        path: /apis/admission.shardingsphere.sphere-ex.com/v1alpha1/mutate-shardingsphere-sphere-ex-com-v1alpha1-shardingsphereproxy
+        path: /apis/admission.shardingsphere.apache.org/v1alpha1/mutate-shardingsphere-apache-org-v1alpha1-shardingsphereproxy
     failurePolicy: Fail
-    name: mproxy.shardingsphere.sphere-ex.com
+    name: mproxy.shardingsphere.apache.org
     rules:
       - apiGroups:
-          - shardingsphere.sphere-ex.com
+          - shardingsphere.apache.org
         apiVersions:
           - v1alpha1
         operations:
@@ -53,12 +53,12 @@ webhooks:
       service:
         name: kubernetes
         namespace: default
-        path: /apis/admission.shardingsphere.sphere-ex.com/v1alpha1/validate-shardingsphere-sphere-ex-com-v1alpha1-shardingsphereproxy
+        path: /apis/admission.shardingsphere.apache.org/v1alpha1/validate-shardingsphere-apache-org-v1alpha1-shardingsphereproxy
     failurePolicy: Fail
-    name: vproxy.shardingsphere.sphere-ex.com
+    name: vproxy.shardingsphere.apache.org
     rules:
       - apiGroups:
-          - shardingsphere.sphere-ex.com
+          - shardingsphere.apache.org
         apiVersions:
           - v1alpha1
         operations:

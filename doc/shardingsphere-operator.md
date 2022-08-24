@@ -23,7 +23,7 @@ kubectl create ns  shardingsphere
 helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
 ```
 
-## Online Install ShardingSphere-Proxy cluster && ShardingSphere-Operator
+## Online Install ShardingSphere-Proxy cluster && ShardingSphere-Operator (temporarily unavailable)
 ```shell
 helm repo add shardingspherecloud https://sphereex.github.io/shardingsphere-on-cloud/
 kubectl create ns  shardingsphere-operator
@@ -31,6 +31,7 @@ helm install shardingsphere-operator shardingspherecloud/shardingsphere-operator
 kubectl create ns  shardingsphere
 helm install  shardingsphere-cluster shardingspherecloud/shardingsphere-cluster -n shardingsphere
 ```
+
 ##  Parameters
 ### ShardingSphere Operator Parameters
 
@@ -275,5 +276,5 @@ zookeeper:
 ```shell
 helm uninstall shardingsphere-cluster -n shardingsphere
 helm uninstall shardingsphere-operator -n shardingsphere-operator
-kubectl delete crd shardingsphereproxies.shardingsphere.sphere-ex.com shardingsphereproxyserverconfigs.shardingsphere.sphere-ex.com
+kubectl delete crd shardingsphereproxies.shardingsphere.apache.org shardingsphereproxyserverconfigs.shardingsphere.apache.org
 ```
