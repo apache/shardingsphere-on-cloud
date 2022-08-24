@@ -101,36 +101,39 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		log.Error(err, "Error getting cascaded HPA")
 		return ctrl.Result{}, err
 	}
-	if apierrors.IsNotFound(err) && run.Spec.AutomaticScaling != nil {
-		cascadingHPA := reconcile.ConstructHPA(run)
-		err = r.Create(ctx, cascadingHPA)
-		if err != nil {
-			run.SetInitializationFailed()
-			_ = r.Status().Update(ctx, run)
-			log.Error(err, "Error creating cascaded HPA")
-			return ctrl.Result{}, err
-		}
-
-	} else if run.Spec.AutomaticScaling == nil {
-		err = r.Delete(ctx, runtimeHPA)
-		if err != nil {
-			log.Error(err, "Error delete cascaded HPA")
-			return ctrl.Result{}, err
+	if apierrors.IsNotFound(err) {
+		if run.Spec.AutomaticScaling != nil {
+			cascadingHPA := reconcile.ConstructHPA(run)
+			err = r.Create(ctx, cascadingHPA)
+			if err != nil {
+				run.SetInitializationFailed()
+				_ = r.Status().Update(ctx, run)
+				log.Error(err, "Error creating cascaded HPA")
+				return ctrl.Result{}, err
+			}
 		}
 	} else {
-		originHPA := runtimeHPA.DeepCopy()
-		reconcile.UpdateHPA(run, originHPA)
-		err = r.Update(ctx, originHPA)
-		if err != nil {
-			log.Error(err, "Error updating cascaded HPA")
-			return ctrl.Result{}, err
+		if run.Spec.AutomaticScaling == nil {
+			err = r.Delete(ctx, runtimeHPA)
+			if err != nil {
+				log.Error(err, "Error delete cascaded HPA")
+				return ctrl.Result{}, err
+			}
+		} else {
+			originHPA := runtimeHPA.DeepCopy()
+			reconcile.UpdateHPA(run, originHPA)
+			err = r.Update(ctx, originHPA)
+			if err != nil {
+				log.Error(err, "Error updating cascaded HPA")
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
 	runtimeService := &v1.Service{}
 	err = r.Get(ctx, req.NamespacedName, runtimeService)
 	if err != nil && !apierrors.IsNotFound(err) {
-		log.Error(err, "Error getting cascaded HPA")
+		log.Error(err, "Error getting cascaded Service")
 		return ctrl.Result{}, err
 	}
 	if apierrors.IsNotFound(err) {
