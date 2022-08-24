@@ -10,10 +10,11 @@ Thanks for your interest in contributing to ShardingSphere Operator! This docume
 
 To build ShardingSphere Operator from scratch you will need to install the following tools:
 
-* Git
+* [Git](https://git-scm.com/)
 * [Golang 1.17](https://golang.org/dl/)
-* make
-* Kubernetes 1.20+ 
+* [make](https://www.gnu.org/savannah-checkouts/gnu/make/make.html)
+* [Kubernetes 1.20+](https://github.com/kubernetes/kubernetes)
+* [Kubebuilder 3.4.1+](https://github.com/kubernetes-sigs/kubebuilder)
 
 ## Pull Requests
 
@@ -33,7 +34,7 @@ To build ShardingSphere Operator from scratch you will need to install the follo
       ```
 2. Open a regular issue for binding the pull request.
 3. Submit a Draft Pull Requests, tag your work in progress.
-4. Create your own branch and develop with it.Before developing, it's recommend to pull from remote repo to keep your repo latest. Now,you could develop at new branch.
+4. Create your own branch and develop with it. Before developing, it's recommend to pull from remote repo to keep your repo latest. Now,you could develop at new branch.
       ```
       git checkout master
       git fetch upstream
