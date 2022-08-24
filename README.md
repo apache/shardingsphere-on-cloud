@@ -12,11 +12,29 @@ This repository collects scripts, tools, manifests and documentations, provides 
 
 Solutions currently included in this project:
 
-* [The ShardingSphere-Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
+* [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/shardingsphere-proxy)
+* [The ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
 
-The ShardingSphere operator uses predefined CustomResourceDefinitions for describing a Deployment for Apache ShardingSphere on Kubernetes.
+
+## ShardingSphere Helm Charts
+
+The ShardingSphere Helm Charts uses [Helm](https://helm.sh/) to provide guidance for the installation of ShardingSphere-Proxy instance in a Kubernetes cluster.
+
+
+### Requirements
+
+* [Kubernetes 1.18+]()
+* [kubectl](https://kubernetes.io/docs/reference/kubectl/)
+* [Helm 3.2.0+](https://helm.sh/)
+* [StorageClass](https://kubernetes.io/docs/concepts/storage/storage-classes/) of [PV (Persistent Volumes)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) can be dynamically applied for persistent data (Optional)
+
+### Quick Start
+
+Please follows [instructions](./doc/shardingsphere-helm-charts.md) to deploy a ShardingSphere cluster with version 5.1.2
 
 ## ShardingSphere Operator
+
+The ShardingSphere Operator uses predefined CustomResourceDefinitions for describing a Deployment for Apache ShardingSphere on Kubernetes.
 
 ### Prerequisites
 
@@ -34,7 +52,7 @@ Minimum Viable Product
 
 ### Quick Start 
 
-Please follows [deployment instructions](./doc/deploy.md) to deploy a ShardingSphere cluster with version 5.1.2
+Please follows [instructions](./doc/shardingsphere-operator.md) to deploy a ShardingSphere cluster with version 5.1.2
 
 ### Features
 
