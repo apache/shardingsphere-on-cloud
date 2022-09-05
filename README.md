@@ -21,7 +21,7 @@ Solutions currently included in this project:
 The ShardingSphere Helm Charts uses [Helm](https://helm.sh/) to provide guidance for the installation of ShardingSphere-Proxy instance in a Kubernetes cluster.
 
 
-### Requirements
+### Prerequisites
 
 * [Kubernetes 1.18+]()
 * [kubectl](https://kubernetes.io/docs/reference/kubectl/)
@@ -36,7 +36,7 @@ Please follows [instructions](./doc/shardingsphere-helm-charts.md) to deploy a S
 
 The ShardingSphere Operator uses predefined CustomResourceDefinitions for describing a Deployment for Apache ShardingSphere on Kubernetes.
 
-### Development Prerequisites
+### Prerequisites
 
 With the help of ShardingSphere-Operator you could create a ShardingSphere-Proxy cluster including the ZooKeeper cluster in minutes.
 
