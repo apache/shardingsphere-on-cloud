@@ -21,7 +21,7 @@ Solutions currently included in this project:
 The ShardingSphere Helm Charts uses [Helm](https://helm.sh/) to provide guidance for the installation of ShardingSphere-Proxy instance in a Kubernetes cluster.
 
 
-### Requirements
+### Prerequisites
 
 * [Kubernetes 1.18+]()
 * [kubectl](https://kubernetes.io/docs/reference/kubectl/)
