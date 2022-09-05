@@ -4,6 +4,8 @@
 
 ### Online installation
 
+*** NOTE: Currently the managed Charts storage is under migration, this way of installation is NOT AVAILABLE these days***
+
 1. Add ShardingSphere-Proxy to the local helm repo:
 
 ```shell
