@@ -36,7 +36,7 @@ Please follows [instructions](./doc/shardingsphere-helm-charts.md) to deploy a S
 
 The ShardingSphere Operator uses predefined CustomResourceDefinitions for describing a Deployment for Apache ShardingSphere on Kubernetes.
 
-### Prerequisites
+### Development Prerequisites
 
 With the help of ShardingSphere-Operator you could create a ShardingSphere-Proxy cluster including the ZooKeeper cluster in minutes.
 
