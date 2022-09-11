@@ -15,6 +15,12 @@ Solutions currently included in this project:
 * [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/shardingsphere-proxy)
 * [The ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
 
+## Current Status
+
+Currently, either [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/shardingsphere-proxy) and [The ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) would create the latest version as 5.2.0 of ShardingSphere Proxy. Just following the Quick Start and give it a try!
+
+* [The ShardingSphere Helm Charts QuickStart](#quick-start)
+* [The ShardingSphere Operator QuickStart](#quick-start-1)
 
 ## ShardingSphere Helm Charts
 
@@ -30,7 +36,7 @@ The ShardingSphere Helm Charts uses [Helm](https://helm.sh/) to provide guidance
 
 ### Quick Start
 
-Please follows [instructions](./doc/shardingsphere-helm-charts.md) to deploy a ShardingSphere cluster with version 5.1.2
+Please follows [instructions](./doc/shardingsphere-helm-charts.md) to deploy a ShardingSphere cluster with version 5.2.0.
 
 ## ShardingSphere Operator
 
@@ -52,7 +58,7 @@ Minimum Viable Product
 
 ### Quick Start 
 
-Please follows [instructions](./doc/shardingsphere-operator.md) to deploy a ShardingSphere cluster with version 5.1.2
+Please follows [instructions](./doc/shardingsphere-operator.md) to deploy a ShardingSphere cluster with version 5.2.0.
 
 ### Features
 
