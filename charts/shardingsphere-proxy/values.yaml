@@ -155,3 +155,7 @@ compute:
           timeToLiveSeconds: 60
           proxy-frontend-database-protocol-type: MySQL
       overwrite: true
+    ## @param compute.serverConfig.props.proxy-frontend-database-protocol-type proxy frontend database protocol type. Only support: PostgreSQL,openGauss,MariaDB,MySQL
+    ##
+    props:
+      proxy-frontend-database-protocol-type: MySQL
