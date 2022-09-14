@@ -28,4 +28,11 @@ jobs:
           helm install shardingsphere-proxy shardingsphere-proxy -n ${TEST_NAMESPACE}
           kubectl wait --timeout=60s --for=condition=Ready --all pod -n ${TEST_NAMESPACE}
           kubectl get pod -n ${TEST_NAMESPACE} --show-labels
+          kubectl port-forward svc/shardingsphere-proxy 3307:3307 -n ${TEST_NAMESPACE} &
           sleep 3
+      - name: "prepare mysql" 
+        uses: shogo82148/actions-setup-mysql@v1
+        with:
+         mysql-version: '5.7'
+      - name: "run basic select test" 
+        run: mysql -h127.0.0.1 -P3307 -uroot -proot -e 'SELECT UNIX_TIMESTAMP()'
