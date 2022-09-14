@@ -20,7 +20,7 @@ jobs:
           set -x 
           export TEST_NAMESPACE="shardingsphere-system"
           kubectl create namespace ${TEST_NAMESPACE}
-          cd shardingsphere-proxy/charts/governance
+          cd charts/shardingsphere-proxy/charts/governance
           helm dependency build 
           cd ../..
           helm dependency build 
