@@ -52,5 +52,5 @@ jobs:
         uses: shogo82148/actions-setup-mysql@v1
         with:
          mysql-version: '5.7'
-      - name: "run basic select test" 
+      - name: "run basic cmd test" 
         run: mysql -h127.0.0.1 -P3307 -uroot -proot -e 'SHOW DATABASES'
