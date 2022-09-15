@@ -54,6 +54,7 @@ jobs:
          mysql-version: '5.7'
       - name: "run basic cmd test" 
         run: mysql -h127.0.0.1 -P3307 -uroot -proot -e 'SHOW DATABASES'
+jobs:
   run:
     name: Integration Test for ShardingSphere Operator Helm Charts
     runs-on: ubuntu-latest 
