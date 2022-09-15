@@ -28,7 +28,7 @@ image:
   pullPolicy: IfNotPresent
   ## @param image.tag image tag
   ##
-  tag: "0.0.1"
+  tag: "main"
 ## @param imagePullSecrets image pull secret of private repository
 ## e.g:
 ## imagePullSecrets:
