@@ -54,3 +54,32 @@ jobs:
          mysql-version: '5.7'
       - name: "run basic cmd test" 
         run: mysql -h127.0.0.1 -P3307 -uroot -proot -e 'SHOW DATABASES'
+  run:
+    name: Integration Test for ShardingSphere Operator Helm Charts
+    runs-on: ubuntu-latest 
+    steps:
+      - name: "checkout codes" 
+        uses: actions/checkout@v3
+      - name: "setup kind"
+        uses: helm/kind-action@v1.2.0
+      - name: "setup helm"
+        uses: azure/setup-helm@v2.1
+      - name: "setup kubectl" 
+        uses: azure/setup-kubectl@v2.0
+      - name: "Install Helm Charts for ShardingSphere Operator"
+        run: |
+          set -x 
+          kubectl create namespace shardingsphere-operator
+          cd charts
+          helm install shardingsphere-operator shardingsphere-operator -n shardingsphere-operator
+          kubectl wait --timeout=60s --for=condition=Ready --all pod -n shardingsphere-operator 
+          kubectl get pod -n shardingsphere-operator --show-labels
+      - name: "Install Helm Charts for ShardingSphere Cluster"
+        run: |
+          set -x 
+          kubectl create namespace shardingsphere
+          cd charts
+          helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
+          kubectl wait --timeout=60s --for=condition=Ready --all pod -n shardingsphere
+          kubectl get pod -n shardingsphere --show-labels
+          kubectl get svc -n shardingsphere --show-labels
