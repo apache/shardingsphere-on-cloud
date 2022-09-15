@@ -40,8 +40,6 @@ jobs:
           helm dependency build
           cd ../
           helm install shardingsphere-operator shardingsphere-operator -n shardingsphere-operator
-          sleep 30
-          kubectl get pod -n shardingsphere-operator -o yaml
           kubectl wait --timeout=120s --for=condition=Ready --all pod -n shardingsphere-operator 
           kubectl get pod -n shardingsphere-operator --show-labels
       - name: "Install Helm Charts for ShardingSphere Cluster"
@@ -52,11 +50,14 @@ jobs:
           helm dependency build
           cd ../
           helm install shardingsphere-cluster shardingsphere-cluster -n shardingsphere --set replicaCount=1
-          sleep 30
+          kubectl wait --timeout=60s --for=condition=Ready --all pod -n shardingsphere
           kubectl get pod -n shardingsphere --show-labels
           kubectl get svc -n shardingsphere --show-labels
-          sleep 30
-          #kubectl wait --timeout=120s --for=condition=Ready --all pod -n shardingsphere
-          kubectl get pod -n shardingsphere --show-labels
-          #kubectl wait --timeout=120s --for=condition=Ready --all pod -n shardingsphere
-
+          kubectl port-forward svc/shardingsphere-cluster 3307:3307 -n shardingsphere &
+          sleep 3
+      - name: "prepare mysql" 
+        uses: shogo82148/actions-setup-mysql@v1
+        with:
+         mysql-version: '5.7'
+      - name: "run basic cmd test" 
+        run: mysql -h127.0.0.1 -P3307 -uroot -proot -e 'SHOW DATABASES'
