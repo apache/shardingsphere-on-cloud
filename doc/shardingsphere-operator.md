@@ -6,8 +6,10 @@ Configuration [below](#shardingsphere-operator-parameters) configuration content
 run
 ### Source Code Install 
 ```shell
-cd charts
 kubectl create ns  shardingsphere-operator
+cd charts/shardingsphere-operator/
+helm dependency build
+cd ../
 helm install shardingsphere-operator shardingsphere-operator -n shardingsphere-operator
 ```
 
@@ -18,8 +20,10 @@ run
 
 ### Source Code Install
 ```shell
-cd charts
 kubectl create ns  shardingsphere
+cd charts/shardingsphere-cluster
+helm dependency build
+cd ../
 helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
 ```
 
