@@ -50,6 +50,10 @@ jobs:
           helm dependency build
           cd ../
           helm install shardingsphere-cluster shardingsphere-cluster -n shardingsphere
-          kubectl wait --timeout=60s --for=condition=Ready --all pod -n shardingsphere
+          kubectl wait --timeout=120s --for=condition=Ready --all pod -n shardingsphere
           kubectl get pod -n shardingsphere --show-labels
           kubectl get svc -n shardingsphere --show-labels
+          kubectl wait --timeout=120s --for=condition=Ready --all pod -n shardingsphere
+          kubectl get pod -n shardingsphere --show-labels
+          kubectl get svc -n shardingsphere --show-labels
+
