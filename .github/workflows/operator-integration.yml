@@ -39,7 +39,7 @@ jobs:
           cd charts/shardingsphere-operator/
           helm dependency build
           cd ../
-          helm install shardingsphere-operator shardingsphere-operator -n shardingsphere-operator
+          helm install shardingsphere-operator shardingsphere-operator -n shardingsphere-operator --set replicaCount=1 
           kubectl wait --timeout=120s --for=condition=Ready --all pod -n shardingsphere-operator 
           kubectl get pod -n shardingsphere-operator --show-labels
       - name: "Install Helm Charts for ShardingSphere Cluster"
