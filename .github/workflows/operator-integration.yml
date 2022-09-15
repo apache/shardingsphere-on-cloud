@@ -51,7 +51,7 @@ jobs:
           cd charts/shardingsphere-cluster
           helm dependency build
           cd ../
-          helm install shardingsphere-cluster shardingsphere-cluster -n shardingsphere
+          helm install shardingsphere-cluster shardingsphere-cluster -n shardingsphere --set replicaCount=1
           sleep 30
           kubectl get pod -n shardingsphere --show-labels
           kubectl get svc -n shardingsphere --show-labels
