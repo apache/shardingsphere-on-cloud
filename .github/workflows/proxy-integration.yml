@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: integration test
+name: Integration Test for Proxy Helm Charts
 
 on: push 
 
