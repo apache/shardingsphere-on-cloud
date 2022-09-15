@@ -18,7 +18,7 @@
 ## @section ShardingSphere operator parameters
 ## @param replicaCount operator replica count
 ##
-replicaCount: 2
+replicaCount: 1
 image:
   ## @param image.repository operator image name
   ##
@@ -28,7 +28,7 @@ image:
   pullPolicy: IfNotPresent
   ## @param image.tag image tag
   ##
-  tag: "main"
+  tag: "0.0.1"
 ## @param imagePullSecrets image pull secret of private repository
 ## e.g:
 ## imagePullSecrets:
