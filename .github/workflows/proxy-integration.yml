@@ -47,7 +47,7 @@ jobs:
           kubectl get pod,svc -n ${TEST_NAMESPACE} --show-labels
           cd ..
           kubectl apply -f hack/kubernetes/mysql.yml
-          sleep180
+          sleep 180
           kubectl get pod,svc -n default --show-labels
           kubectl wait --timeout=120s --for=condition=Ready --all pod -n ${TEST_NAMESPACE}
           kubectl get pod,svc -n default --show-labels
