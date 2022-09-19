@@ -8,26 +8,26 @@
 [![Slack](https://img.shields.io/badge/%20Slack-ShardingSphere%20Channel-blueviolet)](https://join.slack.com/t/apacheshardingsphere/shared_invite/zt-sbdde7ie-SjDqo9~I4rYcR18bq0SYTg)
 [![Gitter](https://badges.gitter.im/shardingsphere/shardingsphere.svg)](https://gitter.im/shardingsphere/Lobby)
 
-This repository collects scripts, tools, manifests and documentations, provides home for [Apache ShardingSphere](https://shardingsphere.apache.org/) on cloud solutions.
+This repository collects scripts, tools, manifests and documentations, and provides a home for [Apache ShardingSphere](https://shardingsphere.apache.org/) on cloud solutions.
 
-Solutions currently included in this project:
+The solutions currently included in this project are:
 
 * [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/shardingsphere-proxy)
 * [The ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
 
 ## Current Status
 
-Currently, either [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/shardingsphere-proxy) and [The ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) would create the latest version as 5.2.0 of ShardingSphere Proxy. Just following the Quick Start and give it a try!
+Currently, either the [ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/shardingsphere-proxy) and the [ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) make up the latest version as (5.2.0) of ShardingSphere Proxy. Refer and follow the Quick Start guide to get up and running. 
 
 * [The ShardingSphere Helm Charts QuickStart](#quick-start)
 * [The ShardingSphere Operator QuickStart](#quick-start-1)
 
 ## ShardingSphere Helm Charts
 
-The ShardingSphere Helm Charts uses [Helm](https://helm.sh/) to provide guidance for the installation of ShardingSphere-Proxy instance in a Kubernetes cluster.
+ShardingSphere Helm Charts uses [Helm](https://helm.sh/) to provide guidance for the installation of a ShardingSphere-Proxy instance in a Kubernetes cluster.
 
 
-### Prerequisites
+### Requirements
 
 * [Kubernetes 1.18+]()
 * [kubectl](https://kubernetes.io/docs/reference/kubectl/)
@@ -36,17 +36,17 @@ The ShardingSphere Helm Charts uses [Helm](https://helm.sh/) to provide guidance
 
 ### Quick Start
 
-Please follows [instructions](./doc/shardingsphere-helm-charts.md) to deploy a ShardingSphere cluster with version 5.2.0.
+Please follow these [instructions](./doc/shardingsphere-helm-charts.md) to deploy a ShardingSphere cluster with version 5.2.0.
 
 ## ShardingSphere Operator
 
-The ShardingSphere Operator uses predefined CustomResourceDefinitions for describing a Deployment for Apache ShardingSphere on Kubernetes.
+The ShardingSphere Operator uses predefined CustomResourceDefinitions for describing an Apache ShardingSphere Deployment on Kubernetes.
 
-### Prerequisites
+### Requirements
 
-With the help of ShardingSphere-Operator you could create a ShardingSphere-Proxy cluster including the ZooKeeper cluster in minutes.
+With the help of ShardingSphere-Operator you can create a ShardingSphere-Proxy cluster including the ZooKeeper cluster in minutes.
 
-For installation of SharingSphere-Operator, you will need a Kubernetes cluster, no matter it is a managed Kubernetes service like AWS EKS or self-hosted Kubernetes, or just a mini-kube, you can easily install ShardingSphere-Operator with respective [ShardingSphere Operator Helm Charts](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/charts/shardingsphere-cluster), and apply the manifests in [ShardingSphere Cluster Helm Charts](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/charts/shardingsphere-cluster) describing the expected Apache ShardingSphere deployment. **Kubernetes 1.18+ is recommended**. 
+For installation of SharingSphere-Operator, you will need a Kubernetes cluster. No matter it is a managed Kubernetes service like AWS EKS or self-hosted Kubernetes, or just a mini-kube, you can easily install ShardingSphere-Operator with respective [ShardingSphere Operator Helm Charts](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/charts/shardingsphere-cluster), and apply the manifests in [ShardingSphere Cluster Helm Charts](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/charts/shardingsphere-cluster) describing the expected Apache ShardingSphere deployment. **Kubernetes 1.18+ is recommended**. 
 
 ### Internal Architecture
 
@@ -62,24 +62,24 @@ Please follows [instructions](./doc/shardingsphere-operator.md) to deploy a Shar
 
 ### Features
 
-* Supports the use of proxy to configure and describe the shardingsphere-proxy cluster. For detailed configuration, see the deployment documentation
+* Supports the use of proxy to configure and describe the shardingsphere-proxy cluster. For detailed configuration, see the deployment documentation.
 * Support native shardingsphere proxy server.yaml configuration. For specific support items, please refer to the documentation
-* Support automatic creation of HPA based on cpu metrics
-* Support automatic download of MySQL driver
+* Support automatic creation of HPA based on CPU metrics.
+* Support automatic download of MySQL driver.
 
 ### Installation
 
 #### Helm
 
 * ShardingSphere-Operator chart
-    * Support deploy shardingsphere operator
+    * Support deploy shardingsphere operator.
 * ShardingSphere-Cluster chart
-    * Support deploy shardingsphere proxy cluster
-    * Support deploy Zookeeper by bitnami
-    * Support automatic configuration of the address of the governance center
-    * Use github pages  to host repositories and support helm repo add to add repositories 
+    * Support deploy shardingsphere proxy cluster.
+    * Support deploy Zookeeper by bitnami.
+    * Support automatic configuration of the address of the governance center.
+    * Use github pages to host repositories and support helm repo add to add repositories.
 
-### Development Prerequisites
+### Development Requirements
 
 To build ShardingSphere Operator from scratch you will need to install the following tools:
 
