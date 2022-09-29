@@ -1,0 +1,233 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Deploy Apache ShardingSphere with Single AZ",
+  "Parameters": {
+    "InitialStackName": {
+      "Description": "Name of an active CloudFormation stack that contains the initial resources.",
+      "Type": "String",
+      "MinLength" : 1,
+      "MaxLength" : 255,
+      "AllowedPattern" : "^[a-zA-Z][-a-zA-Z0-9]*$",
+      "Default" : "ShardingSphere"
+    },
+    "VPC": {
+      "Description": "VPC",
+      "Type": "AWS::EC2::VPC::Id",
+      "Default": ""
+    },
+    "Subnets": {
+      "Description": "Subnets",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "SecurityGroup": {
+      "Description": "SecurityGroup",
+      "Type": "AWS::EC2::SecurityGroup::Id"
+    },
+    "PrivateIpAddressNode1": {
+      "Type": "String",
+      "Default": "172.31.0.4"
+    },
+    "PrivateIpAddressNode2": {
+      "Type": "String",
+      "Default": "172.31.0.5"
+    },
+    "PrivateIpAddressNode3": {
+      "Type": "String",
+      "Default": "172.31.0.6"
+    },
+    "AMI": {
+      "Description": "AMI",
+      "Type": "String",
+      "Default": "ami-0495cb75b4e6cdd38"
+    },
+    "InstanceType": {
+      "Description": "EC2 instance type",
+      "Type": "String",
+      "Default": "c5.xlarge"
+    },
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+    },
+  },
+  "Resources": {
+    "Node1Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "SecurityGroup"
+          }
+        ],
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "PrivateIpAddress": {
+          "Ref": "PrivateIpAddressNode1"   
+        },
+        "SubnetId": {
+          "Ref": "Subnets"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ShardingSphere Node 1"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash -xe\n",
+                {"Fn::Sub": "echo \"server.1=${PrivateIpAddressNode1}:2888:3888\" >> /usr/local/zookeeper-3.8.0/conf/zoo.cfg\n"},
+                {"Fn::Sub": "echo \"server.2=${PrivateIpAddressNode2}:2888:3888\" >> /usr/local/zookeeper-3.8.0/conf/zoo.cfg\n"},
+                {"Fn::Sub": "echo \"server.3=${PrivateIpAddressNode3}:2888:3888\" >> /usr/local/zookeeper-3.8.0/conf/zoo.cfg\n"},
+                "echo \"1\" >> /var/log/zookeeper-3.8.0/myid\n",
+                "systemctl restart zookeeper\n",
+                
+                "mkdir /usr/local/apache-shardingsphere-5.2.0/ext-lib\n",
+                "cd /usr/local/apache-shardingsphere-5.2.0/ext-lib\n",
+                "wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.49/mysql-connector-java-5.1.49.jar\n",
+                "systemctl restart shardingsphere"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "Node2Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "SecurityGroup"
+          }
+        ],
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "PrivateIpAddress":{
+          "Ref": "PrivateIpAddressNode2"   
+        },
+        "SubnetId": {
+          "Ref": "Subnets"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ShardingSphere Node 2"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash -xe\n",
+                {"Fn::Sub": "echo \"server.1=${PrivateIpAddressNode1}:2888:3888\" >> /usr/local/zookeeper-3.8.0/conf/zoo.cfg\n"},
+                {"Fn::Sub": "echo \"server.2=${PrivateIpAddressNode2}:2888:3888\" >> /usr/local/zookeeper-3.8.0/conf/zoo.cfg\n"},
+                {"Fn::Sub": "echo \"server.3=${PrivateIpAddressNode3}:2888:3888\" >> /usr/local/zookeeper-3.8.0/conf/zoo.cfg\n"},
+                "echo \"2\" >> /var/log/zookeeper-3.8.0/myid\n",
+                "systemctl restart zookeeper\n",
+
+                "mkdir /usr/local/apache-shardingsphere-5.2.0/ext-lib\n",
+                "cd /usr/local/apache-shardingsphere-5.2.0/ext-lib\n",
+                "wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.49/mysql-connector-java-5.1.49.jar\n",
+                "systemctl restart shardingsphere"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "Node3Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "SecurityGroup"
+          }
+        ],
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "PrivateIpAddress": {
+          "Ref": "PrivateIpAddressNode3"   
+        },
+        "SubnetId": {
+          "Ref": "Subnets"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ShardingSphere Node 3"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash -xe\n",
+                {"Fn::Sub": "echo \"server.1=${PrivateIpAddressNode1}:2888:3888\" >> /usr/local/zookeeper-3.8.0/conf/zoo.cfg\n"},
+                {"Fn::Sub": "echo \"server.2=${PrivateIpAddressNode2}:2888:3888\" >> /usr/local/zookeeper-3.8.0/conf/zoo.cfg\n"},
+                {"Fn::Sub": "echo \"server.3=${PrivateIpAddressNode3}:2888:3888\" >> /usr/local/zookeeper-3.8.0/conf/zoo.cfg\n"},
+                "echo \"3\" >> /var/log/zookeeper-3.8.0/myid\n",
+                "systemctl restart zookeeper\n",
+
+                "mkdir /usr/local/apache-shardingsphere-5.2.0/ext-lib\n",
+                "cd /usr/local/apache-shardingsphere-5.2.0/ext-lib\n",
+                "wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.49/mysql-connector-java-5.1.49.jar\n",
+                "systemctl restart shardingsphere"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "ShardingSphereIPAddresses": {
+      "Description": "ShardingSphere IP Addresses",
+      "Value": {
+        "Fn::Sub": "${PrivateIpAddressNode1},${PrivateIpAddressNode2},${PrivateIpAddressNode3}"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-ShardingSphereIPAddresses"
+        }
+      }
+    },
+    "ZooKeeperIPAddresses": {
+      "Description": "ZooKeeper IP Addresses",
+      "Value": {
+        "Fn::Sub": "${PrivateIpAddressNode1},${PrivateIpAddressNode2},${PrivateIpAddressNode3}"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-ZooKeeperIPAddresses"
+        }
+      }
+    }
+  }
+}
