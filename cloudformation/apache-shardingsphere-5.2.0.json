@@ -20,14 +20,6 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Deploy Apache ShardingSphere with Single AZ",
   "Parameters": {
-    "InitialStackName": {
-      "Description": "Name of an active CloudFormation stack that contains the initial resources.",
-      "Type": "String",
-      "MinLength" : 1,
-      "MaxLength" : 255,
-      "AllowedPattern" : "^[a-zA-Z][-a-zA-Z0-9]*$",
-      "Default" : "ShardingSphere"
-    },
     "VPC": {
       "Description": "VPC",
       "Type": "AWS::EC2::VPC::Id",
