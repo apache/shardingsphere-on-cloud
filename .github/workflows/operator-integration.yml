@@ -55,6 +55,17 @@ jobs:
           kubectl get svc -n shardingsphere --show-labels
           kubectl port-forward svc/shardingsphere-cluster 3307:3307 -n shardingsphere &
           sleep 3
+      - name: "Prepare MySQL for ShardingSphere Proxy test"
+        run: |
+          set -x 
+          kubectl apply -f hack/kubernetes/mysql.yml
+          sleep 60
+          kubectl get pod,svc -n default --show-labels
+          kubectl wait --timeout=60s --for=condition=Ready --all pod -n default 
+          kubectl get pod,svc -n default --show-labels
+          kubectl port-forward svc/mysql-1 3316:3306 -n default &
+          kubectl port-forward svc/mysql-2 3326:3306 -n default &
+          sleep 3
       - name: "prepare mysql" 
         uses: shogo82148/actions-setup-mysql@v1
         with:
