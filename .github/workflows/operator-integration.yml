@@ -66,12 +66,8 @@ jobs:
           kubectl port-forward svc/mysql-1 3316:3306 -n default &
           kubectl port-forward svc/mysql-2 3326:3306 -n default &
           sleep 3
-      # - name: "prepare mysql" 
-      #   uses: shogo82148/actions-setup-mysql@v1
-      #   with:
-      #    mysql-version: '5.7'
       - name: "Install MySQL"
-        run: "sudo apt-get install -y mysql"
+        run: "sudo apt-get install -y mysql-client"
       - name: "Create schema from MySQL-1" 
         run: mysql -h127.0.0.1 -P3316 -uroot -proot -e 'CREATE DATABASE ds_1;'
       - name: "Create schema from MySQL-2" 
