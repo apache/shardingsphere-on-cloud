@@ -71,7 +71,7 @@ jobs:
       #   with:
       #    mysql-version: '5.7'
       - name: "Install MySQL"
-        run: "yum install -y mysql"
+        run: "apt-get install -y mysql"
       - name: "Create schema from MySQL-1" 
         run: mysql -h127.0.0.1 -P3316 -uroot -proot -e 'CREATE DATABASE ds_1;'
       - name: "Create schema from MySQL-2" 
