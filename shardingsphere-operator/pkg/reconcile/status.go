@@ -33,11 +33,10 @@ func IsRunning(podList *v1.PodList) bool {
 }
 
 func CountingReadyPods(podList *v1.PodList) int32 {
-	var readyPods int32
-	readyPods = 0
+	var readyPods int32 = 0
 	for _, pod := range podList.Items {
 		if len(pod.Status.ContainerStatuses) == 0 {
-			return readyPods
+			continue
 		}
 		if pod.Status.ContainerStatuses[0].Ready && pod.ObjectMeta.DeletionTimestamp == nil {
 			readyPods++
