@@ -136,5 +136,131 @@ func Test_IsRunning(t *testing.T) {
 }
 
 func Test_CountingReadyPods(t *testing.T) {
+	ts := metav1.Time{}
+	cases := []struct {
+		podlist *v1.PodList
+		exp     int32
+		message string
+	}{
+		{
+			podlist: &v1.PodList{
+				Items: []v1.Pod{},
+			},
+			exp:     0,
+			message: "Empty PodList should be 0",
+		},
+		{
+			podlist: &v1.PodList{
+				Items: []v1.Pod{
+					{
+						Status: v1.PodStatus{
+							ContainerStatuses: []v1.ContainerStatus{},
+						},
+					},
+				},
+			},
+			exp:     0,
+			message: "Only one Pod without any container statuses should be 0",
+		},
+		{
+			podlist: &v1.PodList{
+				Items: []v1.Pod{
+					{
+						Status: v1.PodStatus{
+							ContainerStatuses: []v1.ContainerStatus{
+								{
+									Ready: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			exp:     1,
+			message: "Only one Pod is running should be 1",
+		},
+		{
+			podlist: &v1.PodList{
+				Items: []v1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							DeletionTimestamp: &ts,
+						},
+						Status: v1.PodStatus{
+							ContainerStatuses: []v1.ContainerStatus{
+								{
+									Ready: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			exp:     0,
+			message: "Pod has ready container but with deletion timestamp should be 0",
+		},
+		{
+			podlist: &v1.PodList{
+				Items: []v1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							DeletionTimestamp: &ts,
+						},
+						Status: v1.PodStatus{
+							ContainerStatuses: []v1.ContainerStatus{
+								{
+									Ready: true,
+								},
+							},
+						},
+					},
+					{
+						Status: v1.PodStatus{
+							ContainerStatuses: []v1.ContainerStatus{
+								{
+									Ready: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			exp:     1,
+			message: "First Pod has ready container, second Pod has ready container but with deletion timestamp should be 0",
+		},
+		{
+			podlist: &v1.PodList{
+				Items: []v1.Pod{
+					{
+						Status: v1.PodStatus{
+							ContainerStatuses: []v1.ContainerStatus{
+								{
+									Ready: true,
+								},
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							DeletionTimestamp: &ts,
+						},
+						Status: v1.PodStatus{
+							ContainerStatuses: []v1.ContainerStatus{
+								{
+									Ready: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			exp:     1,
+			message: "First Pod has ready container but with deletion timestamp, second Pod has ready container should be 0",
+		},
+	}
 
+	for _, c := range cases {
+		act := CountingReadyPods(c.podlist)
+		assert.Equal(t, c.exp, act, c.message)
+	}
 }
