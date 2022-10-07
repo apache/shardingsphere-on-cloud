@@ -20,6 +20,7 @@ package reconcile
 import (
 	"fmt"
 	"html/template"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -68,6 +69,10 @@ var logback = `<?xml version="1.0"?>
 `
 
 func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *appsv1.Deployment {
+	if proxy == nil || reflect.DeepEqual(proxy, &v1alpha1.ShardingSphereProxy{}) {
+		return &appsv1.Deployment{}
+	}
+
 	dp := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxy.Name,
@@ -135,10 +140,18 @@ func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *appsv1.D
 	if proxy.Spec.AutomaticScaling == nil {
 		dp.Spec.Replicas = &proxy.Spec.Replicas
 	}
-	dp.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resources
-	dp.Spec.Template.Spec.Containers[0].LivenessProbe = proxy.Spec.LivenessProbe
-	dp.Spec.Template.Spec.Containers[0].ReadinessProbe = proxy.Spec.ReadinessProbe
-	dp.Spec.Template.Spec.Containers[0].StartupProbe = proxy.Spec.StartupProbe
+	if proxy.Spec.Resources != nil {
+		dp.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resources
+	}
+	if proxy.Spec.LivenessProbe != nil {
+		dp.Spec.Template.Spec.Containers[0].LivenessProbe = proxy.Spec.LivenessProbe
+	}
+	if proxy.Spec.ReadinessProbe != nil {
+		dp.Spec.Template.Spec.Containers[0].ReadinessProbe = proxy.Spec.ReadinessProbe
+	}
+	if proxy.Spec.StartupProbe != nil {
+		dp.Spec.Template.Spec.Containers[0].StartupProbe = proxy.Spec.StartupProbe
+	}
 	if len(proxy.Spec.ImagePullSecrets) > 0 {
 		dp.Spec.Template.Spec.ImagePullSecrets = proxy.Spec.ImagePullSecrets
 	}
