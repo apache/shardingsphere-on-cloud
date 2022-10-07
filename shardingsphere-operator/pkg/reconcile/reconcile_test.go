@@ -18,9 +18,13 @@
 package reconcile
 
 import (
+	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 	"testing"
 )
 
@@ -266,4 +270,230 @@ func Test_CountingReadyPods(t *testing.T) {
 		act := CountingReadyPods(c.podlist)
 		assert.Equal(t, c.exp, act, c.message)
 	}
+}
+
+func Test_ConstructCascadingDeployment(t *testing.T) {
+	cases := []struct {
+		proxy   *v1alpha1.ShardingSphereProxy
+		exp     *appsv1.Deployment
+		message string
+	}{
+		{
+			exp:     &appsv1.Deployment{},
+			message: "Nil ShardingSphereProxy definition should lead to empty Deployment",
+		},
+		{
+			proxy:   &v1alpha1.ShardingSphereProxy{},
+			exp:     &appsv1.Deployment{},
+			message: "Empty ShardingSphereProxy definition should lead to empty Deployment",
+		},
+		{
+			proxy: &v1alpha1.ShardingSphereProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "testname",
+					Namespace: "testnamespace",
+				},
+				Spec: v1alpha1.ProxySpec{
+					Version: "5.1.2",
+					// ServiceType: ServiceTypeNodePort,
+					Replicas:         3,
+					AutomaticScaling: &v1alpha1.AutomaticScaling{},
+					ImagePullSecrets: []v1.LocalObjectReference{},
+					ProxyConfigName:  "shardingsphere-proxy-config",
+					Port:             3307,
+					MySQLDriver:      &v1alpha1.MySQLDriver{},
+					Resources:        &v1.ResourceRequirements{},
+					LivenessProbe: &v1.Probe{
+						ProbeHandler: v1.ProbeHandler{
+							TCPSocket: &v1.TCPSocketAction{},
+						},
+						InitialDelaySeconds: 30,
+						TimeoutSeconds:      3,
+						PeriodSeconds:       5,
+						SuccessThreshold:    1,
+						FailureThreshold:    3,
+					},
+					ReadinessProbe: &v1.Probe{
+						ProbeHandler: v1.ProbeHandler{
+							TCPSocket: &v1.TCPSocketAction{},
+						},
+						InitialDelaySeconds: 30,
+						TimeoutSeconds:      3,
+						PeriodSeconds:       5,
+						SuccessThreshold:    1,
+						FailureThreshold:    3,
+					},
+					StartupProbe: &v1.Probe{
+						ProbeHandler: v1.ProbeHandler{
+							TCPSocket: &v1.TCPSocketAction{},
+						},
+						InitialDelaySeconds: 30,
+						TimeoutSeconds:      3,
+						PeriodSeconds:       5,
+						SuccessThreshold:    1,
+						FailureThreshold:    3,
+					},
+				},
+			},
+			exp: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "testname",
+					Namespace: "testnamespace",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Strategy: appsv1.DeploymentStrategy{
+						Type: appsv1.RecreateDeploymentStrategyType,
+					},
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"apps": "testname",
+						},
+					},
+					Template: v1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"apps": "testname",
+							},
+						},
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								{
+									Name:            "proxy",
+									Image:           fmt.Sprintf("%s:%s", "apache/shardingsphere-proxy", "5.1.2"),
+									ImagePullPolicy: v1.PullIfNotPresent,
+									Ports: []v1.ContainerPort{
+										{
+											ContainerPort: 3307,
+										},
+									},
+									Env: []v1.EnvVar{
+										{
+											Name:  "PORT",
+											Value: strconv.FormatInt(int64(3307), 10),
+										},
+									},
+									LivenessProbe: &v1.Probe{
+										ProbeHandler: v1.ProbeHandler{
+											TCPSocket: &v1.TCPSocketAction{},
+										},
+										InitialDelaySeconds: 30,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       5,
+										SuccessThreshold:    1,
+										FailureThreshold:    3,
+									},
+									ReadinessProbe: &v1.Probe{
+										ProbeHandler: v1.ProbeHandler{
+											TCPSocket: &v1.TCPSocketAction{},
+										},
+										InitialDelaySeconds: 30,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       5,
+										SuccessThreshold:    1,
+										FailureThreshold:    3,
+									},
+									StartupProbe: &v1.Probe{
+										ProbeHandler: v1.ProbeHandler{
+											TCPSocket: &v1.TCPSocketAction{},
+										},
+										InitialDelaySeconds: 30,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       5,
+										SuccessThreshold:    1,
+										FailureThreshold:    3,
+									},
+									VolumeMounts: []v1.VolumeMount{
+										{
+											Name:      "config",
+											MountPath: "/opt/shardingsphere-proxy/conf",
+										},
+									},
+								},
+							},
+							Volumes: []v1.Volume{
+								{
+									Name: "config",
+									VolumeSource: v1.VolumeSource{
+										ConfigMap: &v1.ConfigMapVolumeSource{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: "shardingsphere-proxy-config",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			message: "Normal ShardingSphereProxy definition should lead to normal Deployment",
+		},
+	}
+
+	for _, c := range cases {
+		act := ConstructCascadingDeployment(c.proxy)
+		assert.Equal(t, c.exp.ObjectMeta.Name, act.ObjectMeta.Name, c.message)
+		assert.Equal(t, c.exp.ObjectMeta.Namespace, act.ObjectMeta.Namespace, c.message)
+		// assert.EqualValues(t, c.exp.Spec, act.Spec, c.message)
+		if c.proxy != nil {
+			if c.proxy.Spec.AutomaticScaling != nil {
+				assert.Equal(t, c.exp.Spec.Replicas, act.Spec.Replicas, c.message)
+			}
+			if c.proxy.Spec.Resources != nil {
+				assert.EqualValues(t, c.exp.Spec.Template.Spec.Containers[0].Resources, act.Spec.Template.Spec.Containers[0].Resources, c.message)
+			}
+			if c.proxy.Spec.LivenessProbe != nil {
+				assert.EqualValues(t, c.exp.Spec.Template.Spec.Containers[0].LivenessProbe, act.Spec.Template.Spec.Containers[0].LivenessProbe, c.message)
+			}
+			if c.proxy.Spec.ReadinessProbe != nil {
+				assert.EqualValues(t, c.exp.Spec.Template.Spec.Containers[0].ReadinessProbe, act.Spec.Template.Spec.Containers[0].ReadinessProbe, c.message)
+			}
+			if c.proxy.Spec.StartupProbe != nil {
+				assert.EqualValues(t, c.exp.Spec.Template.Spec.Containers[0].StartupProbe, act.Spec.Template.Spec.Containers[0].StartupProbe, c.message)
+			}
+			if len(c.proxy.Spec.ImagePullSecrets) > 0 {
+				assert.EqualValues(t, c.exp.Spec.Template.Spec.ImagePullSecrets, act.Spec.Template.Spec.ImagePullSecrets, c.message)
+			}
+		}
+	}
+}
+
+func Test_ConstructCascadingService(t *testing.T) {
+
+}
+
+func Test_addInitContaienr(t *testing.T) {
+
+}
+
+func Test_processOptionalParameter(t *testing.T) {
+
+}
+
+func Test_ConstructCascadingConfigmap(t *testing.T) {
+
+}
+
+func Test_ConstructHPA(t *testing.T) {
+
+}
+
+func Test_ToYAML(t *testing.T) {
+
+}
+
+func Test_UpdateDeployment(t *testing.T) {
+
+}
+
+func Test_UpdateService(t *testing.T) {
+
+}
+
+func Test_UpdateHPA(t *testing.T) {
+
+}
+
+func Test_fromInt32(t *testing.T) {
+
 }
