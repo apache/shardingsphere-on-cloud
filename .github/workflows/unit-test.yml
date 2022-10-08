@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: Unit Test 
+name: Unit Test
 
 on:
   pull_request
@@ -32,5 +32,9 @@ jobs:
           go-version: '^1.18.1'
       - name: "unit test"
         run: |
-          cd shardingsphere-operator/pkg/reconcile
+          cd shardingsphere-operator
           go test --count=1 -race -coverprofile=coverage.txt -covermode=atomic -v ./...
+      - name: "Code coverage"
+        uses: codecov/codecov-action@v2
+        with:
+          files: ./shardingsphere-operator/coverage.txt
