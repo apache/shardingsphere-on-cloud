@@ -34,3 +34,10 @@ jobs:
         run: |
           cd shardingsphere-operator/pkg/reconcile
           go test --count=1 -race -coverprofile=coverage.txt -covermode=atomic -v ./...
+      - name: "Code coverage"
+        run: |
+          cd shardingsphere-operator
+          go test --count=1 -race -coverprofile=coverage.txt -covermode=atomic -v ./...
+      - uses: codecov/codecov-action@v2
+        with:
+          files: ./shardingsphere-operator/coverage.txt
