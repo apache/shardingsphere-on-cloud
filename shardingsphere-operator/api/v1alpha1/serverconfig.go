@@ -105,8 +105,4 @@ type ClusterConfig struct {
 	Type string `json:"type" yaml:"type"`
 	// Persist repository configuration
 	Repository RepositoryConfig `json:"repository" yaml:"repository"`
-	// Whether overwrite persistent configuration with local configuration
-	// If it is false, it will not upload the local configuration to ZooKeeper.
-	// If it is true, it will upload the local configuration to ZooKeeper and overwrite the original configuration of ZooKeeper.
-	Overwrite bool `json:"overwrite" yaml:"overwrite"`
 }

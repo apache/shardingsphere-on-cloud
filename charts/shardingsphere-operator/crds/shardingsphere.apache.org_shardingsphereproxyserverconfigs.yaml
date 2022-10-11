@@ -93,12 +93,6 @@ spec:
                 description: ClusterConfig needs to fill in the relevant configuration
                   required by Cluster mode
                 properties:
-                  overwrite:
-                    description: Whether overwrite persistent configuration with local
-                      configuration If it is false, it will not upload the local configuration
-                      to ZooKeeper. If it is true, it will upload the local configuration
-                      to ZooKeeper and overwrite the original configuration of ZooKeeper.
-                    type: boolean
                   repository:
                     description: Persist repository configuration
                     properties:
@@ -150,7 +144,6 @@ spec:
                     - Cluster
                     type: string
                 required:
-                - overwrite
                 - repository
                 - type
                 type: object
