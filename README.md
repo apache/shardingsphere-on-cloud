@@ -46,7 +46,7 @@ The ShardingSphere Operator uses predefined CustomResourceDefinitions for descri
 
 With the help of ShardingSphere-Operator you can create a ShardingSphere-Proxy cluster including the ZooKeeper cluster in minutes.
 
-For installation of SharingSphere-Operator, you will need a Kubernetes cluster. No matter it is a managed Kubernetes service like AWS EKS or self-hosted Kubernetes, or just a mini-kube, you can easily install ShardingSphere-Operator with respective [ShardingSphere Operator Helm Charts](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/charts/shardingsphere-cluster), and apply the manifests in [ShardingSphere Cluster Helm Charts](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/charts/shardingsphere-cluster) describing the expected Apache ShardingSphere deployment. **Kubernetes 1.18+ is recommended**. 
+For installation of SharingSphere-Operator, you will need a Kubernetes cluster. No matter it is a managed Kubernetes service like AWS EKS or self-hosted Kubernetes, or just a mini-kube, you can easily install ShardingSphere-Operator with respective [ShardingSphere Operator Helm Charts](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/charts/shardingsphere-operator), and apply the manifests in [ShardingSphere Operator Cluster Helm Charts](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/charts/shardingsphere-operator-cluster) describing the expected Apache ShardingSphere deployment. **Kubernetes 1.18+ is recommended**. 
 
 ### Internal Architecture
 

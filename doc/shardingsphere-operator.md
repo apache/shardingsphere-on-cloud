@@ -15,16 +15,16 @@ helm install shardingsphere-operator shardingsphere-operator -n shardingsphere-o
 
 ## Install ShardingSphere-Proxy cluster
 
-Configuration [below](#shardingsphere-proxy-cluster-parameters) configuration content, configuration file location shardingsphere-cluster/values.yaml
+Configuration [below](#shardingsphere-proxy-cluster-parameters) configuration content, configuration file location shardingsphere-operator-cluster/values.yaml
 run 
 
 ### Source Code Install
 ```shell
 kubectl create ns  shardingsphere
-cd charts/shardingsphere-cluster
+cd charts/shardingsphere-operator-cluster
 helm dependency build
 cd ../
-helm install  shardingsphere-cluster shardingsphere-cluster -n shardingsphere
+helm install  shardingsphere-operator-cluster shardingsphere-operator-cluster -n shardingsphere
 ```
 
 ## Online Install ShardingSphere-Proxy cluster && ShardingSphere-Operator (temporarily unavailable)
@@ -33,7 +33,7 @@ helm repo add shardingspherecloud https://sphereex.github.io/shardingsphere-on-c
 kubectl create ns  shardingsphere-operator
 helm install shardingsphere-operator shardingspherecloud/shardingsphere-operator -n shardingsphere-operator
 kubectl create ns  shardingsphere
-helm install  shardingsphere-cluster shardingspherecloud/shardingsphere-cluster -n shardingsphere
+helm install  shardingsphere-operator-cluster shardingspherecloud/shardingsphere-operator-cluster -n shardingsphere
 ```
 
 ##  Parameters
@@ -151,7 +151,7 @@ health:
   healthProbePort: 8081
 ```
 
-shardingsphere-cluster/values.yaml
+shardingsphere-operator-cluster/values.yaml
 
 ```yaml
 # @section ShardingSphere-Proxy cluster parameters
@@ -278,7 +278,7 @@ zookeeper:
 ## Clean
 
 ```shell
-helm uninstall shardingsphere-cluster -n shardingsphere
+helm uninstall shardingsphere-operator-cluster -n shardingsphere
 helm uninstall shardingsphere-operator -n shardingsphere-operator
 kubectl delete crd shardingsphereproxies.shardingsphere.apache.org shardingsphereproxyserverconfigs.shardingsphere.apache.org
 ```

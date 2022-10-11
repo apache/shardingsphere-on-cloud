@@ -46,14 +46,14 @@ jobs:
         run: |
           set -x 
           kubectl create namespace shardingsphere
-          cd charts/shardingsphere-cluster
+          cd charts/shardingsphere-operator-cluster
           helm dependency build
           cd ../
-          helm install shardingsphere-cluster shardingsphere-cluster -n shardingsphere --set replicaCount=1
+          helm install shardingsphere-operator-cluster shardingsphere-operator-cluster -n shardingsphere --set replicaCount=1
           kubectl wait --timeout=60s --for=condition=Ready --all pod -n shardingsphere
           kubectl get pod -n shardingsphere --show-labels
           kubectl get svc -n shardingsphere --show-labels
-          kubectl port-forward svc/shardingsphere-cluster 3307:3307 -n shardingsphere &
+          kubectl port-forward svc/shardingsphere-operator-cluster 3307:3307 -n shardingsphere &
           sleep 3
       - name: "Prepare MySQL for ShardingSphere Proxy test"
         run: |
