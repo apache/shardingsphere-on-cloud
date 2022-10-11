@@ -93,10 +93,8 @@ serverConfig:
   ## @param serverConfig.mode.repository.props.retryIntervalMilliseconds Milliseconds of retry interval
   ## @param serverConfig.mode.repository.props.timeToLiveSeconds Seconds of ephemeral data live
   ## @param serverConfig.mode.repository.type Type of persist repository. Now only support ZooKeeper
-  ## @param serverConfig.mode.overwrite Whether overwrite persistent configuration with local configuration
   ## @param serverConfig.props.proxy-frontend-database-protocol-type Default startup protocol
   mode:
-    overwrite: true
     repository:
       props:
         maxRetries: 3

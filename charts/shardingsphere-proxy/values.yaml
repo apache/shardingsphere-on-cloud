@@ -138,9 +138,7 @@ compute:
     ## @param compute.serverConfig.mode.repository.props.operationTimeoutMilliseconds Milliseconds of operation timeout
     ## @param compute.serverConfig.mode.repository.props.retryIntervalMilliseconds Milliseconds of retry interval
     ## @param compute.serverConfig.mode.repository.props.timeToLiveSeconds Seconds of ephemeral data live
-    ## @param compute.serverConfig.mode.repository.props.proxy-frontend-database-protocol-type proxy frontend database protocol type. Only support: PostgreSQL,openGauss,MariaDB,MySQL
     ## @param compute.serverConfig.mode.repository.type Type of persist repository. Now only support ZooKeeper
-    ## @param compute.serverConfig.mode.overwrite Whether overwrite persistent configuration with local configuration
     ##
     mode:
       type: Cluster
@@ -153,8 +151,6 @@ compute:
           retryIntervalMilliseconds: 500
           server-lists: "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}"
           timeToLiveSeconds: 60
-          proxy-frontend-database-protocol-type: MySQL
-      overwrite: true
     ## @param compute.serverConfig.props.proxy-frontend-database-protocol-type proxy frontend database protocol type. Only support: PostgreSQL,openGauss,MariaDB,MySQL
     ##
     props:
