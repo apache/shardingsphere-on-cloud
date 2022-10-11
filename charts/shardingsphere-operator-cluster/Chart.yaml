@@ -16,8 +16,8 @@
 #
 
 apiVersion: v2
-name: shardingsphere-cluster
-description: A Helm chart for ShardingSphere-Cluster
+name: shardingsphere-operator-cluster
+description: A Helm chart for ShardingSphere-Operator-Cluster
 dependencies:
   - condition: zookeeper.enabled
     name: zookeeper
@@ -30,4 +30,4 @@ dependencies:
     version: 1.16.1
 type: application
 version: 0.1.0
-appVersion: "5.1.2"
+appVersion: "5.2.0"
