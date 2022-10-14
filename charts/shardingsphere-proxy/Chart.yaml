@@ -16,9 +16,9 @@
 #
 
 apiVersion: v2
-appVersion: 5.2.0
+appVersion: 5.2.1
 name: apache-shardingsphere-proxy
-version: 1.1.1
+version: 0.1.0
 maintainers:
   - name: dev@shardingsphere.apache.org
 dependencies:
