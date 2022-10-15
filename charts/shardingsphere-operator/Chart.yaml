@@ -16,7 +16,7 @@
 #
 
 apiVersion: v2
-name: shardingsphere-operator
+name: apache-shardingsphere-operator
 description: A Helm chart for ShardingSphere-Operator
 type: application
 version: 0.1.0

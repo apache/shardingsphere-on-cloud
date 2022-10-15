@@ -16,7 +16,7 @@
 #
 
 apiVersion: v2
-name: shardingsphere-operator-cluster
+name: apache-shardingsphere-operator-cluster
 description: A Helm chart for ShardingSphere-Operator-Cluster
 dependencies:
   - condition: zookeeper.enabled
