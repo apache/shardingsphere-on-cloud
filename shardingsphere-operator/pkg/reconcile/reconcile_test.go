@@ -19,13 +19,14 @@ package reconcile
 
 import (
 	"fmt"
+	"strconv"
+	"testing"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
-	"testing"
 )
 
 func Test_IsRunning(t *testing.T) {
@@ -487,7 +488,62 @@ func Test_UpdateDeployment(t *testing.T) {
 }
 
 func Test_UpdateService(t *testing.T) {
+	cases := []struct {
+		proxy   *v1alpha1.ShardingSphereProxy
+		service *v1.Service
+		message string
+	}{
+		{
+			proxy: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{
+					ServiceType: v1alpha1.ServiceType{
+						Type:     "ServiceTypeNodePort",
+						NodePort: 3001,
+					},
+					Port: 3000,
+				},
+			},
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{{
+						Port:     3000,
+						NodePort: 3001,
+					}},
+				},
+			},
+			message: "Service should be updated",
+		},
+		{
+			proxy: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{
+					ServiceType: v1alpha1.ServiceType{
+						Type:     "ServiceTypeNodePort",
+						NodePort: 0,
+					},
+					Port: 3000,
+				},
+			},
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{{
+						Port:     3000,
+						NodePort: 3001,
+					}},
+				},
+			},
+			message: "Service NodePort should not be updated if proxy nodeport is 0",
+		},
+	}
 
+	for _, c := range cases {
+		UpdateService(c.proxy, c.service)
+		assert.Equal(t, c.proxy.Spec.ServiceType.Type, c.service.Spec.Type, c.message)
+		assert.Equal(t, c.proxy.Spec.Port, c.service.Spec.Ports[0].Port, c.message)
+		assert.Equal(t, c.proxy.Spec.Port, c.service.Spec.Ports[0].TargetPort.IntVal, c.message)
+		if c.proxy.Spec.ServiceType.NodePort != 0 {
+			assert.Equal(t, c.proxy.Spec.ServiceType.NodePort, c.service.Spec.Ports[0].NodePort, c.message)
+		}
+	}
 }
 
 func Test_UpdateHPA(t *testing.T) {
