@@ -30,3 +30,5 @@ github:
   collaborators:
     - windghoul
     - mlycore
+  ghp_branch: gh-pages
+  ghp_path: /
