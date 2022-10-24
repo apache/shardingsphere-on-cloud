@@ -1,41 +1,62 @@
 apiVersion: v1
 entries:
-  shardingsphere-cluster:
-  - apiVersion: v2
-    appVersion: 5.1.2
-    created: "2022-07-21T11:50:04.51889+08:00"
-    dependencies:
-    - condition: zookeeper.enabled
-      name: zookeeper
-      repository: https://charts.bitnami.com/bitnami
-      version: 9.2.7
-    - name: common
-      repository: https://charts.bitnami.com/bitnami
-      tags:
-      - bitnami-common
-      version: 1.16.1
-    description: A Helm chart for ShardingSphere-Cluster
-    digest: 0b84a9ab7e606b013fbd4af1ecc096d4246a41ea204005b7f9bfcbe4b7081a9d
-    name: shardingsphere-cluster
-    type: application
-    urls:
-    - https://github.com/SphereEx/shardingsphere-on-cloud/releases/download/v0.1.0/shardingsphere-cluster-0.1.0.tgz
-    version: 0.1.0
-  shardingsphere-operator:
-  - apiVersion: v2
-    appVersion: 0.1.0
-    created: "2022-07-21T11:50:04.520444+08:00"
-    dependencies:
-    - name: common
-      repository: https://charts.bitnami.com/bitnami
-      tags:
-      - bitnami-common
-      version: 1.16.1
-    description: A Helm chart for ShardingSphere-Operator
-    digest: 3d015fef72f959f85693c82990e769bd73ccee5e04d2449a95b1be8bbf988fe3
-    name: shardingsphere-operator
-    type: application
-    urls:
-    - https://github.com/SphereEx/shardingsphere-on-cloud/releases/download/v0.1.0/shardingsphere-operator-0.1.0.tgz
-    version: 0.1.0
-generated: "2022-07-21T11:50:04.513959+08:00"
+  apache-shardingsphere-operator-charts:
+    - apiVersion: v2
+      appVersion: 0.1.0
+      created: "2022-10-24T17:12:53.260884+08:00"
+      dependencies:
+        - name: common
+          repository: https://charts.bitnami.com/bitnami
+          tags:
+            - bitnami-common
+          version: 1.16.1
+      description: A Helm chart for ShardingSphere-Operator
+      digest: cb40945271169b0b2b41c634df13b114dcc1a4be39323810e36f956ad6601c3f
+      name: apache-shardingsphere-operator-charts
+      type: application
+      urls:
+        - https://github.com/apache/shardingsphere-on-cloud/releases/download/v0.1.0/apache-shardingsphere-operator-charts-0.1.0.tgz
+      version: 0.1.0
+  apache-shardingsphere-operator-cluster-charts:
+    - apiVersion: v2
+      appVersion: 5.2.1
+      created: "2022-10-24T17:12:53.265262+08:00"
+      dependencies:
+        - condition: zookeeper.enabled
+          name: zookeeper
+          repository: https://charts.bitnami.com/bitnami
+          version: 9.2.7
+        - name: common
+          repository: https://charts.bitnami.com/bitnami
+          tags:
+            - bitnami-common
+          version: 1.16.1
+      description: A Helm chart for ShardingSphere-Operator-Cluster
+      digest: dc740cdb533ada8aa08d0b8b5466ab0e76b0892e18101361c3c3e58eebbe20c7
+      name: apache-shardingsphere-operator-cluster-charts
+      type: application
+      urls:
+        - https://github.com/apache/shardingsphere-on-cloud/releases/download/v0.1.0/apache-shardingsphere-operator-cluster-charts-0.1.0.tgz
+      version: 0.1.0
+  apache-shardingsphere-proxy-charts:
+    - apiVersion: v2
+      appVersion: 5.2.1
+      created: "2022-10-24T17:12:53.272234+08:00"
+      dependencies:
+        - condition: governance.enabled
+          name: governance
+          repository: file://./charts/governance
+          version: 1.x.x
+        - name: common
+          repository: https://charts.bitnami.com/bitnami
+          tags:
+            - bitnami-common
+          version: 1.x.x
+      digest: 25f58255246f5b682d318658a5f4de0fc9a077331caf7eaed96ad700c5a38977
+      maintainers:
+        - name: dev@shardingsphere.apache.org
+      name: apache-shardingsphere-proxy-charts
+      urls:
+        - https://github.com/apache/shardingsphere-on-cloud/releases/download/v0.1.0/apache-shardingsphere-proxy-charts-0.1.0.tgz
+      version: 0.1.0
+generated: "2022-10-24T17:12:53.259178+08:00"
