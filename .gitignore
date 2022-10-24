@@ -25,6 +25,6 @@ testbin/*
 *~
 shardingsphere-operator/build/certs/
 shardingsphere-operator/config/
-charts/shardingsphere-operator-cluster/charts/
-charts/shardingsphere-operator/charts/
+charts/apache-shardingsphere-operator-cluster-charts/charts/
+charts/apache-shardingsphere-operator-charts/charts/
 **/Chart.lock
