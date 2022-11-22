@@ -1,5 +1,5 @@
 # Apache ShardingSphere-Operator Charts
-The Apache ShardingSphere-Operator is used to quickly install Apache ShardingSphere-Proxy Cluster. 
+The Apache ShardingSphere-Operator is used to quickly install an Apache ShardingSphere-Proxy Cluster. 
 
 ## Install
 Use the following command to install:
@@ -28,4 +28,4 @@ helm unstall [RELEASE_NAME]
 | `health.healthProbePort` | operator health check port                  | `8081`                    |
 
 ## Next
-Next, you need to look `apache-shardingsphere-operator-cluster-charts` to install ShardingSphere Cluster, 
+For the next step, please search for `apache-shardingsphere-operator-cluster-charts` in artifacthub.io to complete the install of ShardingSphere Cluster, 
