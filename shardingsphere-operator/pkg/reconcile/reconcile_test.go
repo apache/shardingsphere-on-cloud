@@ -19,6 +19,9 @@ package reconcile
 
 import (
 	"fmt"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/utils/pointer"
 	"strconv"
 	"testing"
 
@@ -637,7 +640,152 @@ func Test_UpdateService(t *testing.T) {
 }
 
 func Test_UpdateHPA(t *testing.T) {
+	cases := []struct {
+		proxy   *v1alpha1.ShardingSphereProxy
+		hpa     *autoscalingv2beta2.HorizontalPodAutoscaler
+		message string
+	}{
+		{
+			proxy: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{
+					AutomaticScaling: &v1alpha1.AutomaticScaling{
+						Enable:           true,
+						ScaleUpWindows:   15,
+						ScaleDownWindows: 30,
+						MaxInstance:      5,
+						MinInstance:      3,
+						Target:           70,
+					},
+				},
+			},
+			hpa: &autoscalingv2beta2.HorizontalPodAutoscaler{
+				Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
+					ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
+						Kind:       "Deployment",
+						Name:       "test",
+						APIVersion: appsv1.SchemeGroupVersion.String(),
+					},
+					MinReplicas: pointer.Int32(3),
+					MaxReplicas: 10,
+					Metrics: []autoscalingv2beta2.MetricSpec{
+						{
+							Type: autoscalingv2beta2.ResourceMetricSourceType,
+							Resource: &autoscalingv2beta2.ResourceMetricSource{
+								Name: "cpu",
+								Target: autoscalingv2beta2.MetricTarget{
+									Type:               autoscalingv2beta2.UtilizationMetricType,
+									AverageUtilization: pointer.Int32(60),
+								},
+							},
+						},
+					},
+					Behavior: &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
+						ScaleUp: &autoscalingv2beta2.HPAScalingRules{
+							StabilizationWindowSeconds: pointer.Int32(15),
+						},
+						ScaleDown: &autoscalingv2beta2.HPAScalingRules{
+							StabilizationWindowSeconds: pointer.Int32(60),
+							Policies: []autoscalingv2beta2.HPAScalingPolicy{
+								{
+									Type:          autoscalingv2beta2.PodsScalingPolicy,
+									Value:         1,
+									PeriodSeconds: 30,
+								},
+							},
+						},
+					},
+				},
+			},
+			message: "hpa should be updated",
+		},
+	}
 
+	for _, c := range cases {
+		UpdateHPA(c.proxy, c.hpa)
+		assert.Equal(t, c.proxy.Spec.AutomaticScaling.Target, *c.hpa.Spec.Metrics[0].Resource.Target.AverageUtilization)
+		assert.Equal(t, c.proxy.Spec.AutomaticScaling.ScaleDownWindows, *c.hpa.Spec.Behavior.ScaleDown.StabilizationWindowSeconds)
+	}
+}
+
+func Test_UpdateHPAMetric(t *testing.T) {
+	cases := []struct {
+		proxy   *v1alpha1.ShardingSphereProxy
+		hpa     *autoscalingv2beta2.HorizontalPodAutoscaler
+		message string
+	}{
+		{
+			proxy: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{
+					AutomaticScaling: &v1alpha1.AutomaticScaling{
+						Enable:           true,
+						ScaleUpWindows:   15,
+						ScaleDownWindows: 30,
+						MaxInstance:      5,
+						MinInstance:      3,
+						Target:           70,
+						CustomMetrics: []autoscalingv2beta2.MetricSpec{
+							{
+								Type: "pods",
+								Pods: &autoscalingv2beta2.PodsMetricSource{
+									Metric: autoscalingv2beta2.MetricIdentifier{
+										Name: "latency_seconds_test_avg",
+									},
+									Target: autoscalingv2beta2.MetricTarget{
+										Type:         autoscalingv2beta2.AverageValueMetricType,
+										AverageValue: resource.NewQuantity(12, resource.DecimalSI),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			hpa: &autoscalingv2beta2.HorizontalPodAutoscaler{
+				Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
+					ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
+						Kind:       "Deployment",
+						Name:       "test",
+						APIVersion: appsv1.SchemeGroupVersion.String(),
+					},
+					MinReplicas: pointer.Int32(3),
+					MaxReplicas: 10,
+					Metrics: []autoscalingv2beta2.MetricSpec{
+						{
+							Type: autoscalingv2beta2.ResourceMetricSourceType,
+							Resource: &autoscalingv2beta2.ResourceMetricSource{
+								Name: "cpu",
+								Target: autoscalingv2beta2.MetricTarget{
+									Type:               autoscalingv2beta2.UtilizationMetricType,
+									AverageUtilization: pointer.Int32(60),
+								},
+							},
+						},
+					},
+					Behavior: &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
+						ScaleUp: &autoscalingv2beta2.HPAScalingRules{
+							StabilizationWindowSeconds: pointer.Int32(15),
+						},
+						ScaleDown: &autoscalingv2beta2.HPAScalingRules{
+							StabilizationWindowSeconds: pointer.Int32(60),
+							Policies: []autoscalingv2beta2.HPAScalingPolicy{
+								{
+									Type:          autoscalingv2beta2.PodsScalingPolicy,
+									Value:         1,
+									PeriodSeconds: 30,
+								},
+							},
+						},
+					},
+				},
+			},
+			message: "hpa should be updated",
+		},
+	}
+
+	for _, c := range cases {
+		UpdateHPA(c.proxy, c.hpa)
+		assert.Equal(t, c.proxy.Spec.AutomaticScaling.CustomMetrics, c.hpa.Spec.Metrics)
+	}
 }
 
 func Test_fromInt32(t *testing.T) {

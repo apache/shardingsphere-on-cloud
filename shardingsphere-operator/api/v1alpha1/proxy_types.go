@@ -18,6 +18,7 @@
 package v1alpha1
 
 import (
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -25,7 +26,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-//ServiceType defines the Service in Kubernetes of ShardingSphere-Proxy
+// ServiceType defines the Service in Kubernetes of ShardingSphere-Proxy
 type ServiceType struct {
 	// +kubebuilder:validation:Enum=ClusterIP;NodePort;LoadBalancer;ExternalName
 
@@ -45,7 +46,7 @@ type ServiceType struct {
 	NodePort int32 `json:"nodePort"`
 }
 
-//MySQLDriver Defines the mysql-driven version in ShardingSphere-proxy
+// MySQLDriver Defines the mysql-driven version in ShardingSphere-proxy
 type MySQLDriver struct {
 	// +kubebuilder:validation:Pattern=`^([1-9]\d|[1-9])(\.([1-9]\d|\d)){2}$`
 	// mysql-driven version,must be x.y.z
@@ -66,6 +67,8 @@ type AutomaticScaling struct {
 	MaxInstance int32 `json:"maxInstance,omitempty"`
 	// +optional
 	MinInstance int32 `json:"minInstance,omitempty"`
+	// +optional
+	CustomMetrics []autoscalingv2beta2.MetricSpec `json:"customMetrics,omitempty"`
 }
 
 // ProxySpec defines the desired state of ShardingSphereProxy

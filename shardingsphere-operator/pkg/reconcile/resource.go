@@ -256,6 +256,12 @@ func ConstructCascadingConfigmap(proxyConfig *v1alpha1.ShardingSphereProxyServer
 
 // ConstructHPA Create HPA if you need
 func ConstructHPA(proxy *v1alpha1.ShardingSphereProxy) *autoscalingv2beta2.HorizontalPodAutoscaler {
+	var metrics = ConstructDefaultHPAMetric(&proxy.Spec.AutomaticScaling.Target)
+
+	if len(proxy.Spec.AutomaticScaling.CustomMetrics) > 0 {
+		metrics = proxy.Spec.AutomaticScaling.CustomMetrics
+	}
+
 	return &autoscalingv2beta2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxy.Name,
@@ -272,18 +278,7 @@ func ConstructHPA(proxy *v1alpha1.ShardingSphereProxy) *autoscalingv2beta2.Horiz
 			},
 			MinReplicas: &proxy.Spec.AutomaticScaling.MinInstance,
 			MaxReplicas: proxy.Spec.AutomaticScaling.MaxInstance,
-			Metrics: []autoscalingv2beta2.MetricSpec{
-				{
-					Type: autoscalingv2beta2.ResourceMetricSourceType,
-					Resource: &autoscalingv2beta2.ResourceMetricSource{
-						Name: "cpu",
-						Target: autoscalingv2beta2.MetricTarget{
-							Type:               autoscalingv2beta2.UtilizationMetricType,
-							AverageUtilization: &proxy.Spec.AutomaticScaling.Target,
-						},
-					},
-				},
-			},
+			Metrics:     metrics,
 			Behavior: &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
 				ScaleUp: &autoscalingv2beta2.HPAScalingRules{
 					StabilizationWindowSeconds: &proxy.Spec.AutomaticScaling.ScaleUpWindows,
@@ -302,6 +297,21 @@ func ConstructHPA(proxy *v1alpha1.ShardingSphereProxy) *autoscalingv2beta2.Horiz
 		},
 	}
 
+}
+
+func ConstructDefaultHPAMetric(target *int32) []autoscalingv2beta2.MetricSpec {
+	return []autoscalingv2beta2.MetricSpec{
+		{
+			Type: autoscalingv2beta2.ResourceMetricSourceType,
+			Resource: &autoscalingv2beta2.ResourceMetricSource{
+				Name: "cpu",
+				Target: autoscalingv2beta2.MetricTarget{
+					Type:               autoscalingv2beta2.UtilizationMetricType,
+					AverageUtilization: target,
+				},
+			},
+		},
+	}
 }
 
 // ToYaml Convert ShardingSphereProxyServerConfig spec content to yaml format
@@ -339,11 +349,16 @@ func UpdateService(proxy *v1alpha1.ShardingSphereProxy, runtimeService *v1.Servi
 }
 
 func UpdateHPA(proxy *v1alpha1.ShardingSphereProxy, runtimeHPA *autoscalingv2beta2.HorizontalPodAutoscaler) {
-	runtimeHPA.Spec.Metrics[0].Resource.Target.AverageUtilization = &proxy.Spec.AutomaticScaling.Target
 	runtimeHPA.Spec.Behavior.ScaleDown.StabilizationWindowSeconds = &proxy.Spec.AutomaticScaling.ScaleDownWindows
 	runtimeHPA.Spec.Behavior.ScaleUp.StabilizationWindowSeconds = &proxy.Spec.AutomaticScaling.ScaleUpWindows
 	runtimeHPA.Spec.MaxReplicas = proxy.Spec.AutomaticScaling.MaxInstance
 	runtimeHPA.Spec.MinReplicas = &proxy.Spec.AutomaticScaling.MinInstance
+	if len(proxy.Spec.AutomaticScaling.CustomMetrics) > 0 {
+		runtimeHPA.Spec.Metrics = proxy.Spec.AutomaticScaling.CustomMetrics
+	} else {
+		// We need to reconstruct the default hpa metric when the user deletes the custom metric.
+		runtimeHPA.Spec.Metrics = ConstructDefaultHPAMetric(&proxy.Spec.AutomaticScaling.Target)
+	}
 }
 
 func fromInt32(val int32) intstr.IntOrString {
