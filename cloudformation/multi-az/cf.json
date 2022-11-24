@@ -1,0 +1,1001 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Deploy a ShardingSphere Proxy Cluster in MultiAz mode",
+  "Parameters": {
+    "ZookeeperInstanceType": {
+      "Type": "String",
+      "Default": "t2.nano"
+    },
+    "ShardingSphereInstanceType": {
+      "Type": "String",
+      "Default": "t2.micro"
+    },
+    "KeyName": {
+      "Type": "String",
+      "Default": "test-tf",
+      "Description": "The ssh keypair for remote connetcion"
+    },
+    "ImageId": {
+      "Type": "AWS::EC2::Image::Id",
+      "Default": "ami-094bbd9e922dc515d"
+    },
+    "VpcId": {
+      "Type": "String",
+      "Default": "vpc-0ef2b7440d3ade8d5"
+    },
+    "Subnets": {
+      "Type": "CommaDelimitedList",
+      "Default": "subnet-0f388a6f23063b8c9,subnet-0bc2cd85facb5ca06,subnet-009077567350ef1b7",
+      "Description": "List of subnets sorted by availability zone in your VPC"
+    },
+    "SecurityGroupIds": {
+      "Type": "CommaDelimitedList",
+      "Default": "sg-008e74936b3f9de19"
+    },
+    "HostedZoneName": {
+      "Type": "String",
+      "Default": "tsphere-ex.com"
+    },
+    "HostedZoneId": {
+      "Type": "String",
+      "Default": "Z07855663B17FC5XE8A3O"
+    },
+    "ShardingSpherePort": {
+      "Type": "String",
+      "Default": 3307
+    },
+    "ShardingSphereVersion": {
+      "Type": "String",
+      "Default": "5.2.1"
+    },
+    "ShardingSphereJavaMemOpts": {
+      "Type": "String",
+      "Default": "-Xmx512m -Xms512m -Xmn128m "
+    },
+    "ZookeeperVersion": {
+      "Type": "String",
+      "Default": "3.7.1"
+    },
+    "ZookeeperHeap": {
+      "Type": "String",
+      "Default": 1024,
+      "Description": "The maximum heap size given to ZooKeeper"
+    }
+  },
+  "Resources": {
+    "ZK1": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": {
+                "Ref": "AWS::Region"
+              }
+            }
+          ]
+        },
+        "InstanceType": {
+          "Ref": "ZookeeperInstanceType"
+        },
+        "ImageId": {
+          "Ref": "ImageId"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SubnetId": {
+          "Fn::Select": [
+            0,
+            {
+              "Ref": "Subnets"
+            }
+          ]
+        },
+        "SecurityGroupIds": {
+          "Ref": "SecurityGroupIds"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ZK-1"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Sub": [
+              "#cloud-config\n\npackages:\n- java\n- nc\n\nwrite_files:\n- path: /run/zookeeper.service\n  permissions: 0644\n  content: |\n    [Unit]\n    Description=ZooKeeper Service\n    Documentation=http://zookeeper.apache.org\n    Requires=network.target\n    After=network.target\n    [Service]\n    Type=forking\n    User=zookeeper\n    Group=zookeeper\n    ExecStart=/usr/local/zookeeper/bin/zkServer.sh start /usr/local/zookeeper/conf/zoo.cfg\n    ExecStop=/usr/lib/zookeeper/bin/zkServer.sh stop /usr/local/zookeeper/conf/zoo.cfg\n    ExecReload=/usr/lib/zookeeper/bin/zkServer.sh restart /usr/local/zookeeper/conf/zoo.cfg\n    WorkingDirectory=/usr/local/zookeeper\n    PIDFile=/usr/local/zookeeper/data/zookeeper_server.pid\n    Environment=ZK_SERVER_HEAP=${ZK_HEAP}\n    [Install]\n    WantedBy=default.target\n    \n- path: /run/zoo.cfg\n  permissions: 0644\n  content: |\n    # The number of milliseconds of each tick\n    tickTime=2000\n    # The number of ticks that the initial \n    # synchronization phase can take\n    initLimit=10\n    # The number of ticks that can pass between \n    # sending a request and getting an acknowledgement\n    syncLimit=5\n    # the directory where the snapshot is stored.\n    # do not use /tmp for storage, /tmp here is just \n    # example sakes.\n    dataDir=/usr/local/zookeeper/data\n    # the port at which the clients will connect\n    clientPort=2181\n    # the maximum number of client connections.\n    # increase this if you need to handle more clients\n    #maxClientCnxns=60\n    #\n    # Be sure to read the maintenance section of the \n    # administrator guide before turning on autopurge.\n    #\n    # http://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_maintenance\n    #\n    # The number of snapshots to retain in dataDir\n    #autopurge.snapRetainCount=3\n    # Purge task interval in hours\n    # Set to \"0\" to disable auto purge feature\n    #autopurge.purgeInterval=1\n\n    ## Metrics Providers\n    #\n    # https://prometheus.io Metrics Exporter\n    #metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider\n    #metricsProvider.httpPort=7000\n    #metricsProvider.exportJvmInfo=true\n    4lw.commands.whitelist=stat, ruok, conf, isro\n    ${SERVERS}\n    \n- path: /run/install_zk.sh\n  permissions: 0700\n  content: |\n    #!/bin/bash\n    echo create zk user\n    useradd zookeeper -s /sbin/nologin || :\n\n    echo Installing Zookeeper v${VERSION}\n    wget -O /run/zk.tgz https://archive.apache.org/dist/zookeeper/zookeeper-${VERSION}/apache-zookeeper-${VERSION}-bin.tar.gz\n    mkdir -p /usr/local/zookeeper\n    tar zxvf /run/zk.tgz --strip 1 -C /usr/local/zookeeper\n    mkdir -p /usr/local/zookeeper/data\n    echo ${INDEX} > /usr/local/zookeeper/data/myid\n    /bin/cp -avf /run/zoo.cfg /usr/local/zookeeper/conf/zoo.cfg\n    /bin/cp -avf /run/zookeeper.service /usr/lib/systemd/system/zookeeper.service\n    chown -R zookeeper:zookeeper /usr/local/zookeeper\n    systemctl daemon-reload\n    systemctl enable zookeeper\n    systemctl start zookeeper\n\nruncmd:\n- /run/install_zk.sh\n  ",
+              {
+                "SERVERS": {
+                  "Fn::Sub": "server.1=zk-1.${HostedZoneName}:2888:3888\n    server.2=zk-2.${HostedZoneName}:2888:3888\n    server.3=zk-3.${HostedZoneName}:2888:3888"
+                },
+                "VERSION": {
+                  "Ref": "ZookeeperVersion"
+                },
+                "ZK_HEAP": {
+                  "Ref": "ZookeeperHeap"
+                },
+                "INDEX": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    "zoneZK1": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "HostedZoneId"
+        },
+        "Name": {
+          "Fn::Sub": "zk-1.${HostedZoneName}"
+        },
+        "Type": "A",
+        "ResourceRecords": [
+          {
+            "Fn::GetAtt": [
+              "ZK1",
+              "PrivateIp"
+            ]
+          }
+        ],
+        "TTL": "60"
+      }
+    },
+    "ZK2": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": {
+                "Ref": "AWS::Region"
+              }
+            }
+          ]
+        },
+        "InstanceType": {
+          "Ref": "ZookeeperInstanceType"
+        },
+        "ImageId": {
+          "Ref": "ImageId"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SubnetId": {
+          "Fn::Select": [
+            1,
+            {
+              "Ref": "Subnets"
+            }
+          ]
+        },
+        "SecurityGroupIds": {
+          "Ref": "SecurityGroupIds"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ZK-2"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Sub": [
+              "#cloud-config\n\npackages:\n- java\n- nc\n\nwrite_files:\n- path: /run/zookeeper.service\n  permissions: 0644\n  content: |\n    [Unit]\n    Description=ZooKeeper Service\n    Documentation=http://zookeeper.apache.org\n    Requires=network.target\n    After=network.target\n    [Service]\n    Type=forking\n    User=zookeeper\n    Group=zookeeper\n    ExecStart=/usr/local/zookeeper/bin/zkServer.sh start /usr/local/zookeeper/conf/zoo.cfg\n    ExecStop=/usr/lib/zookeeper/bin/zkServer.sh stop /usr/local/zookeeper/conf/zoo.cfg\n    ExecReload=/usr/lib/zookeeper/bin/zkServer.sh restart /usr/local/zookeeper/conf/zoo.cfg\n    WorkingDirectory=/usr/local/zookeeper\n    PIDFile=/usr/local/zookeeper/data/zookeeper_server.pid\n    Environment=ZK_SERVER_HEAP=${ZK_HEAP}\n    [Install]\n    WantedBy=default.target\n    \n- path: /run/zoo.cfg\n  permissions: 0644\n  content: |\n    # The number of milliseconds of each tick\n    tickTime=2000\n    # The number of ticks that the initial \n    # synchronization phase can take\n    initLimit=10\n    # The number of ticks that can pass between \n    # sending a request and getting an acknowledgement\n    syncLimit=5\n    # the directory where the snapshot is stored.\n    # do not use /tmp for storage, /tmp here is just \n    # example sakes.\n    dataDir=/usr/local/zookeeper/data\n    # the port at which the clients will connect\n    clientPort=2181\n    # the maximum number of client connections.\n    # increase this if you need to handle more clients\n    #maxClientCnxns=60\n    #\n    # Be sure to read the maintenance section of the \n    # administrator guide before turning on autopurge.\n    #\n    # http://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_maintenance\n    #\n    # The number of snapshots to retain in dataDir\n    #autopurge.snapRetainCount=3\n    # Purge task interval in hours\n    # Set to \"0\" to disable auto purge feature\n    #autopurge.purgeInterval=1\n\n    ## Metrics Providers\n    #\n    # https://prometheus.io Metrics Exporter\n    #metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider\n    #metricsProvider.httpPort=7000\n    #metricsProvider.exportJvmInfo=true\n    4lw.commands.whitelist=stat, ruok, conf, isro\n    ${SERVERS}\n    \n- path: /run/install_zk.sh\n  permissions: 0700\n  content: |\n    #!/bin/bash\n    echo create zk user\n    useradd zookeeper -s /sbin/nologin || :\n\n    echo Installing Zookeeper v${VERSION}\n    wget -O /run/zk.tgz https://archive.apache.org/dist/zookeeper/zookeeper-${VERSION}/apache-zookeeper-${VERSION}-bin.tar.gz\n    mkdir -p /usr/local/zookeeper\n    tar zxvf /run/zk.tgz --strip 1 -C /usr/local/zookeeper\n    mkdir -p /usr/local/zookeeper/data\n    echo ${INDEX} > /usr/local/zookeeper/data/myid\n    /bin/cp -avf /run/zoo.cfg /usr/local/zookeeper/conf/zoo.cfg\n    /bin/cp -avf /run/zookeeper.service /usr/lib/systemd/system/zookeeper.service\n    chown -R zookeeper:zookeeper /usr/local/zookeeper\n    systemctl daemon-reload\n    systemctl enable zookeeper\n    systemctl start zookeeper\n\nruncmd:\n- /run/install_zk.sh\n  ",
+              {
+                "SERVERS": {
+                  "Fn::Sub": "server.1=zk-1.${HostedZoneName}:2888:3888\n    server.2=zk-2.${HostedZoneName}:2888:3888\n    server.3=zk-3.${HostedZoneName}:2888:3888"
+                },
+                "VERSION": {
+                  "Ref": "ZookeeperVersion"
+                },
+                "ZK_HEAP": {
+                  "Ref": "ZookeeperHeap"
+                },
+                "INDEX": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    "zoneZK2": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "HostedZoneId"
+        },
+        "Name": {
+          "Fn::Sub": "zk-2.${HostedZoneName}"
+        },
+        "Type": "A",
+        "ResourceRecords": [
+          {
+            "Fn::GetAtt": [
+              "ZK2",
+              "PrivateIp"
+            ]
+          }
+        ],
+        "TTL": "60"
+      }
+    },
+    "ZK3": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            2,
+            {
+              "Fn::GetAZs": {
+                "Ref": "AWS::Region"
+              }
+            }
+          ]
+        },
+        "InstanceType": {
+          "Ref": "ZookeeperInstanceType"
+        },
+        "ImageId": {
+          "Ref": "ImageId"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SubnetId": {
+          "Fn::Select": [
+            2,
+            {
+              "Ref": "Subnets"
+            }
+          ]
+        },
+        "SecurityGroupIds": {
+          "Ref": "SecurityGroupIds"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ZK-3"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Sub": [
+              "#cloud-config\n\npackages:\n- java\n- nc\n\nwrite_files:\n- path: /run/zookeeper.service\n  permissions: 0644\n  content: |\n    [Unit]\n    Description=ZooKeeper Service\n    Documentation=http://zookeeper.apache.org\n    Requires=network.target\n    After=network.target\n    [Service]\n    Type=forking\n    User=zookeeper\n    Group=zookeeper\n    ExecStart=/usr/local/zookeeper/bin/zkServer.sh start /usr/local/zookeeper/conf/zoo.cfg\n    ExecStop=/usr/lib/zookeeper/bin/zkServer.sh stop /usr/local/zookeeper/conf/zoo.cfg\n    ExecReload=/usr/lib/zookeeper/bin/zkServer.sh restart /usr/local/zookeeper/conf/zoo.cfg\n    WorkingDirectory=/usr/local/zookeeper\n    PIDFile=/usr/local/zookeeper/data/zookeeper_server.pid\n    Environment=ZK_SERVER_HEAP=${ZK_HEAP}\n    [Install]\n    WantedBy=default.target\n    \n- path: /run/zoo.cfg\n  permissions: 0644\n  content: |\n    # The number of milliseconds of each tick\n    tickTime=2000\n    # The number of ticks that the initial \n    # synchronization phase can take\n    initLimit=10\n    # The number of ticks that can pass between \n    # sending a request and getting an acknowledgement\n    syncLimit=5\n    # the directory where the snapshot is stored.\n    # do not use /tmp for storage, /tmp here is just \n    # example sakes.\n    dataDir=/usr/local/zookeeper/data\n    # the port at which the clients will connect\n    clientPort=2181\n    # the maximum number of client connections.\n    # increase this if you need to handle more clients\n    #maxClientCnxns=60\n    #\n    # Be sure to read the maintenance section of the \n    # administrator guide before turning on autopurge.\n    #\n    # http://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_maintenance\n    #\n    # The number of snapshots to retain in dataDir\n    #autopurge.snapRetainCount=3\n    # Purge task interval in hours\n    # Set to \"0\" to disable auto purge feature\n    #autopurge.purgeInterval=1\n\n    ## Metrics Providers\n    #\n    # https://prometheus.io Metrics Exporter\n    #metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider\n    #metricsProvider.httpPort=7000\n    #metricsProvider.exportJvmInfo=true\n    4lw.commands.whitelist=stat, ruok, conf, isro\n    ${SERVERS}\n    \n- path: /run/install_zk.sh\n  permissions: 0700\n  content: |\n    #!/bin/bash\n    echo create zk user\n    useradd zookeeper -s /sbin/nologin || :\n\n    echo Installing Zookeeper v${VERSION}\n    wget -O /run/zk.tgz https://archive.apache.org/dist/zookeeper/zookeeper-${VERSION}/apache-zookeeper-${VERSION}-bin.tar.gz\n    mkdir -p /usr/local/zookeeper\n    tar zxvf /run/zk.tgz --strip 1 -C /usr/local/zookeeper\n    mkdir -p /usr/local/zookeeper/data\n    echo ${INDEX} > /usr/local/zookeeper/data/myid\n    /bin/cp -avf /run/zoo.cfg /usr/local/zookeeper/conf/zoo.cfg\n    /bin/cp -avf /run/zookeeper.service /usr/lib/systemd/system/zookeeper.service\n    chown -R zookeeper:zookeeper /usr/local/zookeeper\n    systemctl daemon-reload\n    systemctl enable zookeeper\n    systemctl start zookeeper\n\nruncmd:\n- /run/install_zk.sh\n  ",
+              {
+                "SERVERS": {
+                  "Fn::Sub": "server.1=zk-1.${HostedZoneName}:2888:3888\n    server.2=zk-2.${HostedZoneName}:2888:3888\n    server.3=zk-3.${HostedZoneName}:2888:3888"
+                },
+                "VERSION": {
+                  "Ref": "ZookeeperVersion"
+                },
+                "ZK_HEAP": {
+                  "Ref": "ZookeeperHeap"
+                },
+                "INDEX": 3
+              }
+            ]
+          }
+        }
+      }
+    },
+    "zoneZK3": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "HostedZoneId"
+        },
+        "Name": {
+          "Fn::Sub": "zk-3.${HostedZoneName}"
+        },
+        "Type": "A",
+        "ResourceRecords": [
+          {
+            "Fn::GetAtt": [
+              "ZK3",
+              "PrivateIp"
+            ]
+          }
+        ],
+        "TTL": "60"
+      }
+    },
+    "networkiface0": {
+      "Type": "AWS::EC2::NetworkInterface",
+      "Properties": {
+        "SubnetId": {
+          "Fn::Select": [
+            0,
+            {
+              "Ref": "Subnets"
+            }
+          ]
+        }
+      }
+    },
+    "networkiface1": {
+      "Type": "AWS::EC2::NetworkInterface",
+      "Properties": {
+        "SubnetId": {
+          "Fn::Select": [
+            1,
+            {
+              "Ref": "Subnets"
+            }
+          ]
+        }
+      }
+    },
+    "networkiface2": {
+      "Type": "AWS::EC2::NetworkInterface",
+      "Properties": {
+        "SubnetId": {
+          "Fn::Select": [
+            2,
+            {
+              "Ref": "Subnets"
+            }
+          ]
+        }
+      }
+    },
+    "launchtemplate0": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateName": {
+          "Fn::Sub": [
+            "shardingsphere-${TMPL_NAME}",
+            {
+              "TMPL_NAME": {
+                "Fn::Select": [
+                  0,
+                  {
+                    "Fn::GetAZs": {
+                      "Ref": "AWS::Region"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "LaunchTemplateData": {
+          "ImageId": {
+            "Ref": "ImageId"
+          },
+          "InstanceType": {
+            "Ref": "ShardingSphereInstanceType"
+          },
+          "KeyName": {
+            "Ref": "KeyName"
+          },
+          "MetadataOptions": {
+            "HttpEndpoint": "enabled",
+            "HttpTokens": "required",
+            "InstanceMetadataTags": "enabled"
+          },
+          "Monitoring": {
+            "Enabled": true
+          },
+          "NetworkInterfaces": [
+            {
+              "DeleteOnTermination": false,
+              "DeviceIndex": 0,
+              "NetworkInterfaceId": {
+                "Fn::GetAtt": [
+                  "networkiface0",
+                  "Id"
+                ]
+              }
+            }
+          ],
+          "TagSpecifications": [
+            {
+              "ResourceType": "instance",
+              "Tags": [
+                {
+                  "Key": "Name",
+                  "Value": "shardingsphere-1"
+                }
+              ]
+            }
+          ],
+          "UserData": {
+            "Fn::Base64": {
+              "Fn::Sub": [
+                "#cloud-config\n\npackages:\n- java\n- nc\n\nwrite_files:\n- path: /run/shardingsphere.service\n  permissions: 0644\n  content: |\n    [Unit]\n    Description=ShardingSphere Service\n    Requires=network.target\n    After=network.target\n    [Service]\n    Type=forking\n    LimitNOFILE=65536\n    ExecStart=/usr/local/shardingsphere/bin/start.sh\n    ExecStop=/usr/local/shardingsphere/bin/stop.sh\n    Environment=\"JAVA_MEM_COMMON_OPTS=${JAVA_MEM_OPTS}\"\n    Restart=on-abort\n    [Install]\n    WantedBy=default.target\n\n- path: /run/server.yaml\n  permissions: 0644\n  content: |\n    mode:\n      type: Cluster\n      repository:\n        type: ZooKeeper\n        props:\n          namespace: governance_ds\n          server-lists: ${ZK_SERVERS}\n          retryIntervalMilliseconds: 500\n          timeToLiveSeconds: 60\n          maxRetries: 3\n          operationTimeoutMilliseconds: 500\n    rules:\n    - !AUTHORITY\n      users:\n        - root@%:root\n        - sharding@:sharding\n      provider:\n        type: ALL_PERMITTED\n    - !TRANSACTION\n      defaultType: XA\n      providerType: Atomikos\n    - !SQL_PARSER\n      sqlCommentParseEnabled: true\n      sqlStatementCache:\n        initialCapacity: 2000\n        maximumSize: 65535\n      parseTreeCache:\n        initialCapacity: 128\n        maximumSize: 1024\n    props:\n      max-connections-size-per-query: 1\n      kernel-executor-size: 16  # Infinite by default.\n      proxy-frontend-flush-threshold: 128  # The default value is 128.\n      proxy-hint-enabled: false\n      sql-show: false\n      check-table-metadata-enabled: false\n      # Proxy backend query fetch size. A larger value may increase the memory usage of ShardingSphere Proxy.\n      # The default value is -1, which means set the minimum value for different JDBC drivers.\n      proxy-backend-query-fetch-size: -1\n      proxy-frontend-executor-size: 0 # Proxy frontend executor size. The default value is 0, which means let Netty decide.\n      # Available options of proxy backend executor suitable: OLAP(default), OLTP. The OLTP option may reduce time cost of writing packets to client, but it may increase the latency of SQL execution\n      # and block other clients if client connections are more than `proxy-frontend-executor-size`, especially executing slow SQL.\n      proxy-backend-executor-suitable: OLAP\n      proxy-frontend-max-connections: 0 # Less than or equal to 0 means no limitation.\n      # Available sql federation type: NONE (default), ORIGINAL, ADVANCED\n      sql-federation-type: NONE\n      # Available proxy backend driver type: JDBC (default), ExperimentalVertx\n      proxy-backend-driver-type: JDBC\n      proxy-mysql-default-version: 5.7.22 # In the absence of schema name, the default version will be used.\n      proxy-default-port: 3307 # Proxy default port.\n      proxy-netty-backlog: 1024 # Proxy netty backlog.\n\n- path: /run/install_shardingsphere.sh\n  permissions: 0700\n  content: |\n    echo Installing ShardingSphere v${VERSION}\n    wget -O /run/ss.tar.gz https://archive.apache.org/dist/shardingsphere/${VERSION}/apache-shardingsphere-${VERSION}-shardingsphere-proxy-bin.tar.gz\n    mkdir -p /usr/local/shardingsphere\n    tar xvf /run/ss.tar.gz --strip 1 -C /usr/local/shardingsphere\n    /bin/cp -avf /run/server.yaml /usr/local/shardingsphere/conf/server.yaml\n    /bin/cp -avf /run/shardingsphere.service /usr/lib/systemd/system/shardingsphere.service\n    systemctl daemon-reload\n    systemctl enable shardingsphere\n    systemctl start shardingsphere\n\nruncmd:\n- /run/install_shardingsphere.sh\n",
+                {
+                  "ZK_SERVERS": {
+                    "Fn::Sub": "zk-1.${HostedZoneName}:2181,zk-2.${HostedZoneName}:2181,zk-3.${HostedZoneName}:2181"
+                  },
+                  "VERSION": {
+                    "Ref": "ShardingSphereVersion"
+                  },
+                  "JAVA_MEM_OPTS": {
+                    "Ref": "ShardingSphereJavaMemOpts"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "launchtemplate1": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateName": {
+          "Fn::Sub": [
+            "shardingsphere-${TMPL_NAME}",
+            {
+              "TMPL_NAME": {
+                "Fn::Select": [
+                  1,
+                  {
+                    "Fn::GetAZs": {
+                      "Ref": "AWS::Region"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "LaunchTemplateData": {
+          "ImageId": {
+            "Ref": "ImageId"
+          },
+          "InstanceType": {
+            "Ref": "ShardingSphereInstanceType"
+          },
+          "KeyName": {
+            "Ref": "KeyName"
+          },
+          "MetadataOptions": {
+            "HttpEndpoint": "enabled",
+            "HttpTokens": "required",
+            "InstanceMetadataTags": "enabled"
+          },
+          "Monitoring": {
+            "Enabled": true
+          },
+          "NetworkInterfaces": [
+            {
+              "DeleteOnTermination": false,
+              "DeviceIndex": 0,
+              "NetworkInterfaceId": {
+                "Fn::GetAtt": [
+                  "networkiface1",
+                  "Id"
+                ]
+              }
+            }
+          ],
+          "TagSpecifications": [
+            {
+              "ResourceType": "instance",
+              "Tags": [
+                {
+                  "Key": "Name",
+                  "Value": "shardingsphere-2"
+                }
+              ]
+            }
+          ],
+          "UserData": {
+            "Fn::Base64": {
+              "Fn::Sub": [
+                "#cloud-config\n\npackages:\n- java\n- nc\n\nwrite_files:\n- path: /run/shardingsphere.service\n  permissions: 0644\n  content: |\n    [Unit]\n    Description=ShardingSphere Service\n    Requires=network.target\n    After=network.target\n    [Service]\n    Type=forking\n    LimitNOFILE=65536\n    ExecStart=/usr/local/shardingsphere/bin/start.sh\n    ExecStop=/usr/local/shardingsphere/bin/stop.sh\n    Environment=\"JAVA_MEM_COMMON_OPTS=${JAVA_MEM_OPTS}\"\n    Restart=on-abort\n    [Install]\n    WantedBy=default.target\n\n- path: /run/server.yaml\n  permissions: 0644\n  content: |\n    mode:\n      type: Cluster\n      repository:\n        type: ZooKeeper\n        props:\n          namespace: governance_ds\n          server-lists: ${ZK_SERVERS}\n          retryIntervalMilliseconds: 500\n          timeToLiveSeconds: 60\n          maxRetries: 3\n          operationTimeoutMilliseconds: 500\n    rules:\n    - !AUTHORITY\n      users:\n        - root@%:root\n        - sharding@:sharding\n      provider:\n        type: ALL_PERMITTED\n    - !TRANSACTION\n      defaultType: XA\n      providerType: Atomikos\n    - !SQL_PARSER\n      sqlCommentParseEnabled: true\n      sqlStatementCache:\n        initialCapacity: 2000\n        maximumSize: 65535\n      parseTreeCache:\n        initialCapacity: 128\n        maximumSize: 1024\n    props:\n      max-connections-size-per-query: 1\n      kernel-executor-size: 16  # Infinite by default.\n      proxy-frontend-flush-threshold: 128  # The default value is 128.\n      proxy-hint-enabled: false\n      sql-show: false\n      check-table-metadata-enabled: false\n      # Proxy backend query fetch size. A larger value may increase the memory usage of ShardingSphere Proxy.\n      # The default value is -1, which means set the minimum value for different JDBC drivers.\n      proxy-backend-query-fetch-size: -1\n      proxy-frontend-executor-size: 0 # Proxy frontend executor size. The default value is 0, which means let Netty decide.\n      # Available options of proxy backend executor suitable: OLAP(default), OLTP. The OLTP option may reduce time cost of writing packets to client, but it may increase the latency of SQL execution\n      # and block other clients if client connections are more than `proxy-frontend-executor-size`, especially executing slow SQL.\n      proxy-backend-executor-suitable: OLAP\n      proxy-frontend-max-connections: 0 # Less than or equal to 0 means no limitation.\n      # Available sql federation type: NONE (default), ORIGINAL, ADVANCED\n      sql-federation-type: NONE\n      # Available proxy backend driver type: JDBC (default), ExperimentalVertx\n      proxy-backend-driver-type: JDBC\n      proxy-mysql-default-version: 5.7.22 # In the absence of schema name, the default version will be used.\n      proxy-default-port: 3307 # Proxy default port.\n      proxy-netty-backlog: 1024 # Proxy netty backlog.\n\n- path: /run/install_shardingsphere.sh\n  permissions: 0700\n  content: |\n    echo Installing ShardingSphere v${VERSION}\n    wget -O /run/ss.tar.gz https://archive.apache.org/dist/shardingsphere/${VERSION}/apache-shardingsphere-${VERSION}-shardingsphere-proxy-bin.tar.gz\n    mkdir -p /usr/local/shardingsphere\n    tar xvf /run/ss.tar.gz --strip 1 -C /usr/local/shardingsphere\n    /bin/cp -avf /run/server.yaml /usr/local/shardingsphere/conf/server.yaml\n    /bin/cp -avf /run/shardingsphere.service /usr/lib/systemd/system/shardingsphere.service\n    systemctl daemon-reload\n    systemctl enable shardingsphere\n    systemctl start shardingsphere\n\nruncmd:\n- /run/install_shardingsphere.sh\n",
+                {
+                  "ZK_SERVERS": {
+                    "Fn::Sub": "zk-1.${HostedZoneName}:2181,zk-2.${HostedZoneName}:2181,zk-3.${HostedZoneName}:2181"
+                  },
+                  "VERSION": {
+                    "Ref": "ShardingSphereVersion"
+                  },
+                  "JAVA_MEM_OPTS": {
+                    "Ref": "ShardingSphereJavaMemOpts"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "launchtemplate2": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateName": {
+          "Fn::Sub": [
+            "shardingsphere-${TMPL_NAME}",
+            {
+              "TMPL_NAME": {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::GetAZs": {
+                      "Ref": "AWS::Region"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "LaunchTemplateData": {
+          "ImageId": {
+            "Ref": "ImageId"
+          },
+          "InstanceType": {
+            "Ref": "ShardingSphereInstanceType"
+          },
+          "KeyName": {
+            "Ref": "KeyName"
+          },
+          "MetadataOptions": {
+            "HttpEndpoint": "enabled",
+            "HttpTokens": "required",
+            "InstanceMetadataTags": "enabled"
+          },
+          "Monitoring": {
+            "Enabled": true
+          },
+          "NetworkInterfaces": [
+            {
+              "DeleteOnTermination": false,
+              "DeviceIndex": 0,
+              "NetworkInterfaceId": {
+                "Fn::GetAtt": [
+                  "networkiface2",
+                  "Id"
+                ]
+              }
+            }
+          ],
+          "TagSpecifications": [
+            {
+              "ResourceType": "instance",
+              "Tags": [
+                {
+                  "Key": "Name",
+                  "Value": "shardingsphere-3"
+                }
+              ]
+            }
+          ],
+          "UserData": {
+            "Fn::Base64": {
+              "Fn::Sub": [
+                "#cloud-config\n\npackages:\n- java\n- nc\n\nwrite_files:\n- path: /run/shardingsphere.service\n  permissions: 0644\n  content: |\n    [Unit]\n    Description=ShardingSphere Service\n    Requires=network.target\n    After=network.target\n    [Service]\n    Type=forking\n    LimitNOFILE=65536\n    ExecStart=/usr/local/shardingsphere/bin/start.sh\n    ExecStop=/usr/local/shardingsphere/bin/stop.sh\n    Environment=\"JAVA_MEM_COMMON_OPTS=${JAVA_MEM_OPTS}\"\n    Restart=on-abort\n    [Install]\n    WantedBy=default.target\n\n- path: /run/server.yaml\n  permissions: 0644\n  content: |\n    mode:\n      type: Cluster\n      repository:\n        type: ZooKeeper\n        props:\n          namespace: governance_ds\n          server-lists: ${ZK_SERVERS}\n          retryIntervalMilliseconds: 500\n          timeToLiveSeconds: 60\n          maxRetries: 3\n          operationTimeoutMilliseconds: 500\n    rules:\n    - !AUTHORITY\n      users:\n        - root@%:root\n        - sharding@:sharding\n      provider:\n        type: ALL_PERMITTED\n    - !TRANSACTION\n      defaultType: XA\n      providerType: Atomikos\n    - !SQL_PARSER\n      sqlCommentParseEnabled: true\n      sqlStatementCache:\n        initialCapacity: 2000\n        maximumSize: 65535\n      parseTreeCache:\n        initialCapacity: 128\n        maximumSize: 1024\n    props:\n      max-connections-size-per-query: 1\n      kernel-executor-size: 16  # Infinite by default.\n      proxy-frontend-flush-threshold: 128  # The default value is 128.\n      proxy-hint-enabled: false\n      sql-show: false\n      check-table-metadata-enabled: false\n      # Proxy backend query fetch size. A larger value may increase the memory usage of ShardingSphere Proxy.\n      # The default value is -1, which means set the minimum value for different JDBC drivers.\n      proxy-backend-query-fetch-size: -1\n      proxy-frontend-executor-size: 0 # Proxy frontend executor size. The default value is 0, which means let Netty decide.\n      # Available options of proxy backend executor suitable: OLAP(default), OLTP. The OLTP option may reduce time cost of writing packets to client, but it may increase the latency of SQL execution\n      # and block other clients if client connections are more than `proxy-frontend-executor-size`, especially executing slow SQL.\n      proxy-backend-executor-suitable: OLAP\n      proxy-frontend-max-connections: 0 # Less than or equal to 0 means no limitation.\n      # Available sql federation type: NONE (default), ORIGINAL, ADVANCED\n      sql-federation-type: NONE\n      # Available proxy backend driver type: JDBC (default), ExperimentalVertx\n      proxy-backend-driver-type: JDBC\n      proxy-mysql-default-version: 5.7.22 # In the absence of schema name, the default version will be used.\n      proxy-default-port: 3307 # Proxy default port.\n      proxy-netty-backlog: 1024 # Proxy netty backlog.\n\n- path: /run/install_shardingsphere.sh\n  permissions: 0700\n  content: |\n    echo Installing ShardingSphere v${VERSION}\n    wget -O /run/ss.tar.gz https://archive.apache.org/dist/shardingsphere/${VERSION}/apache-shardingsphere-${VERSION}-shardingsphere-proxy-bin.tar.gz\n    mkdir -p /usr/local/shardingsphere\n    tar xvf /run/ss.tar.gz --strip 1 -C /usr/local/shardingsphere\n    /bin/cp -avf /run/server.yaml /usr/local/shardingsphere/conf/server.yaml\n    /bin/cp -avf /run/shardingsphere.service /usr/lib/systemd/system/shardingsphere.service\n    systemctl daemon-reload\n    systemctl enable shardingsphere\n    systemctl start shardingsphere\n\nruncmd:\n- /run/install_shardingsphere.sh\n",
+                {
+                  "ZK_SERVERS": {
+                    "Fn::Sub": "zk-1.${HostedZoneName}:2181,zk-2.${HostedZoneName}:2181,zk-3.${HostedZoneName}:2181"
+                  },
+                  "VERSION": {
+                    "Ref": "ShardingSphereVersion"
+                  },
+                  "JAVA_MEM_OPTS": {
+                    "Ref": "ShardingSphereJavaMemOpts"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "ssinternallb": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Name": "shardingsphere-internal-lb",
+        "Scheme": "internal",
+        "Type": "network",
+        "SubnetMappings": [
+          {
+            "SubnetId": {
+              "Fn::Select": [
+                0,
+                {
+                  "Ref": "Subnets"
+                }
+              ]
+            }
+          },
+          {
+            "SubnetId": {
+              "Fn::Select": [
+                1,
+                {
+                  "Ref": "Subnets"
+                }
+              ]
+            }
+          },
+          {
+            "SubnetId": {
+              "Fn::Select": [
+                2,
+                {
+                  "Ref": "Subnets"
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "shardingsphere"
+          }
+        ]
+      }
+    },
+    "sslbtg": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Name": "shardingsphere-lb-tg",
+        "Port": {
+          "Ref": "ShardingSpherePort"
+        },
+        "Protocol": "TCP",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "TargetGroupAttributes": [
+          {
+            "Key": "preserve_client_ip.enabled",
+            "Value": "false"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "shardingsphere"
+          }
+        ]
+      }
+    },
+    "autoscaling0": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AutoScalingGroupName": "shardingsphere-0",
+        "AvailabilityZones": [
+          {
+            "Fn::Select": [
+              0,
+              {
+                "Fn::GetAZs": {
+                  "Ref": "AWS::Region"
+                }
+              }
+            ]
+          }
+        ],
+        "DesiredCapacity": "1",
+        "MaxSize": "1",
+        "MinSize": "1",
+        "HealthCheckGracePeriod": 60,
+        "HealthCheckType": "EC2",
+        "TargetGroupARNs": [
+          {
+            "Ref": "sslbtg"
+          }
+        ],
+        "LaunchTemplate": {
+          "LaunchTemplateName": {
+            "Fn::Sub": [
+              "shardingsphere-${TMPL_NAME}",
+              {
+                "TMPL_NAME": {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::GetAZs": {
+                        "Ref": "AWS::Region"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "launchtemplate0",
+              "LatestVersionNumber"
+            ]
+          }
+        }
+      }
+    },
+    "autoscaling1": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AutoScalingGroupName": "shardingsphere-1",
+        "AvailabilityZones": [
+          {
+            "Fn::Select": [
+              1,
+              {
+                "Fn::GetAZs": {
+                  "Ref": "AWS::Region"
+                }
+              }
+            ]
+          }
+        ],
+        "DesiredCapacity": "1",
+        "MaxSize": "1",
+        "MinSize": "1",
+        "HealthCheckGracePeriod": 60,
+        "HealthCheckType": "EC2",
+        "TargetGroupARNs": [
+          {
+            "Ref": "sslbtg"
+          }
+        ],
+        "LaunchTemplate": {
+          "LaunchTemplateName": {
+            "Fn::Sub": [
+              "shardingsphere-${TMPL_NAME}",
+              {
+                "TMPL_NAME": {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::GetAZs": {
+                        "Ref": "AWS::Region"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "launchtemplate1",
+              "LatestVersionNumber"
+            ]
+          }
+        }
+      }
+    },
+    "autoscaling2": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AutoScalingGroupName": "shardingsphere-2",
+        "AvailabilityZones": [
+          {
+            "Fn::Select": [
+              2,
+              {
+                "Fn::GetAZs": {
+                  "Ref": "AWS::Region"
+                }
+              }
+            ]
+          }
+        ],
+        "DesiredCapacity": "1",
+        "MaxSize": "1",
+        "MinSize": "1",
+        "HealthCheckGracePeriod": 60,
+        "HealthCheckType": "EC2",
+        "TargetGroupARNs": [
+          {
+            "Ref": "sslbtg"
+          }
+        ],
+        "LaunchTemplate": {
+          "LaunchTemplateName": {
+            "Fn::Sub": [
+              "shardingsphere-${TMPL_NAME}",
+              {
+                "TMPL_NAME": {
+                  "Fn::Select": [
+                    2,
+                    {
+                      "Fn::GetAZs": {
+                        "Ref": "AWS::Region"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "launchtemplate2",
+              "LatestVersionNumber"
+            ]
+          }
+        }
+      }
+    },
+    "sslblistener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "Port": {
+          "Ref": "ShardingSpherePort"
+        },
+        "LoadBalancerArn": {
+          "Ref": "ssinternallb"
+        },
+        "Protocol": "TCP",
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "sslbtg"
+            }
+          }
+        ]
+      }
+    },
+    "ssinternaldomain": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "HostedZoneId"
+        },
+        "Name": {
+          "Fn::Sub": "shardingsphere.${HostedZoneName}"
+        },
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": {
+            "Fn::GetAtt": [
+              "ssinternallb",
+              "CanonicalHostedZoneID"
+            ]
+          },
+          "DNSName": {
+            "Fn::GetAtt": [
+              "ssinternallb",
+              "DNSName"
+            ]
+          },
+          "EvaluateTargetHealth": true
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "ssinternaldomain": {
+      "Value": {
+        "Ref": "ssinternaldomain"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-ShardingSphere-Internal-Domain"
+        }
+      }
+    },
+    "ZK1": {
+      "Value": {
+        "Fn::Join": [
+          ":",
+          [
+            {
+              "Ref": "ZK1"
+            },
+            {
+              "Fn::GetAtt": [
+                "ZK1",
+                "PrivateIp"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "ZK1",
+                "AvailabilityZone"
+              ]
+            }
+          ]
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-Zookeeper-Server-1"
+        }
+      }
+    },
+    "zoneZK1": {
+      "Value": {
+        "Ref": "zoneZK1"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-Zookeeper-Domain-1"
+        }
+      }
+    },
+    "ZK2": {
+      "Value": {
+        "Fn::Join": [
+          ":",
+          [
+            {
+              "Ref": "ZK2"
+            },
+            {
+              "Fn::GetAtt": [
+                "ZK2",
+                "PrivateIp"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "ZK2",
+                "AvailabilityZone"
+              ]
+            }
+          ]
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-Zookeeper-Server-2"
+        }
+      }
+    },
+    "zoneZK2": {
+      "Value": {
+        "Ref": "zoneZK2"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-Zookeeper-Domain-2"
+        }
+      }
+    },
+    "ZK3": {
+      "Value": {
+        "Fn::Join": [
+          ":",
+          [
+            {
+              "Ref": "ZK3"
+            },
+            {
+              "Fn::GetAtt": [
+                "ZK3",
+                "PrivateIp"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "ZK3",
+                "AvailabilityZone"
+              ]
+            }
+          ]
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-Zookeeper-Server-3"
+        }
+      }
+    },
+    "zoneZK3": {
+      "Value": {
+        "Ref": "zoneZK3"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-Zookeeper-Domain-3"
+        }
+      }
+    }
+  }
+}
