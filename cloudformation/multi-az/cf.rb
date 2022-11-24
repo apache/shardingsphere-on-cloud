@@ -42,6 +42,7 @@ CloudFormation {
   Parameter("VpcId") {
     String
     Default "vpc-0ef2b7440d3ade8d5"
+    Description "The id of your VPC"
   }
 
   Parameter("Subnets") {
@@ -53,16 +54,19 @@ CloudFormation {
   Parameter("SecurityGroupIds") {
     Type 'CommaDelimitedList'
     Default "sg-008e74936b3f9de19"
+    Description "List of the id of the SecurityGroups, The security group needs to allow ports 2888, 3888, and 2181 of the zk server to pass through."
   }
 
   Parameter("HostedZoneName") {
     String
-    Default "tsphere-ex.com"
+    Default "shardingsphere.org"
+    Description "The name of the internal hosted zone, CloudFormation will automatically create `proxy.[InternalHostedZoneName]` for other services to use"
   }
 
   Parameter("HostedZoneId") {
     String
     Default "Z07855663B17FC5XE8A3O"
+    Description "The zone id corresponding to HostedZoneName"
   }
 
   Parameter("ShardingSpherePort") {
@@ -264,7 +268,7 @@ CloudFormation {
 
   Route53_RecordSet("ssinternaldomain") {
     HostedZoneId Ref("HostedZoneId")
-    Name FnSub("shardingsphere.${HostedZoneName}")
+    Name FnSub("proxy.${HostedZoneName}")
     Type "A"
     AliasTarget do 
       HostedZoneId FnGetAtt("ssinternallb", "CanonicalHostedZoneID")
