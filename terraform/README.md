@@ -61,7 +61,7 @@ module "shardingsphere" {
 Step2: Set environments for AK/SK
 ```shell
 export AWS_ACCESS_KEY_ID="accesskey"
-export AWS_SECRET_ACCESS_KEY="ecretkey"
+export AWS_SECRET_ACCESS_KEY="secretkey"
 ```
 
 Step3: Initial Terraform working directory
