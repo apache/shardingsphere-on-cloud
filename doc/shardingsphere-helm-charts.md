@@ -4,18 +4,17 @@
 
 ### Online installation
 
-***NOTE: Currently the managed Charts storage is under migration, this way of installation is NOT AVAILABLE these days***
-
 1. Add ShardingSphere-Proxy to the local helm repo:
 
 ```shell
-helm repo add shardingsphere https://shardingsphere.apache.org/charts
+helm repo add shardingsphere-proxy https://apache.github.io/shardingsphere-on-cloud
+helm repo update
 ```
 
-1. Install ShardingSphere-Proxy charts:
+2. Install ShardingSphere-Proxy charts:
 
 ```shell
-helm install shardingsphere-proxy shardingsphere/shardingsphere-proxy
+helm install shardingsphere-proxy shardingsphere/apache-shardingsphere-proxy-charts --version 0.1.0
 ```
 
 ### Source installation
@@ -23,16 +22,16 @@ helm install shardingsphere-proxy shardingsphere/shardingsphere-proxy
 1. Charts will be installed with default configuration if the following commands are executed:
 
 ```shell
-cd shardingsphere-proxy/charts/governance
+cd charts/apache-shardingsphere-proxy-charts/charts/governance
 helm dependency build 
 cd ../..
 helm dependency build 
 cd ..
-helm install shardingsphere-proxy shardingsphere-proxy
+helm install shardingsphere-proxy apache-shardingsphere-proxy-charts
 ```
-1. Please refer to the configuration items description below for more details:
+Note: Please refer to the configuration items description below for more details.
 
-1. Execute `helm list` to acquire all installed releases.
+2. Execute `helm list` to acquire all installed releases.
 
 ### Uninstall
 
