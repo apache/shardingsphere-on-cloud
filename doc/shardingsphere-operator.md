@@ -2,38 +2,55 @@
 
 ## Install ShardingSphere-Operator
 
-Configuration [below](#shardingsphere-operator-parameters) configuration content, configuration file location shardingsphere-operator/values.yaml
+Configuration [below](#shardingsphere-operator-parameters) configuration content, configuration file location apache-shardingsphere-operator-charts/values.yaml
 run
+
+### Online Install
+```shell
+kubectl create ns shardingsphere-operator
+helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
+helm repo update
+helm install shardingsphere-operator shardingsphere/apache-shardingsphere-operator-charts --version 0.1.0 -n shardingsphere-operator
+```
+
 ### Source Code Install 
 ```shell
-kubectl create ns  shardingsphere-operator
-cd charts/shardingsphere-operator/
+kubectl create ns shardingsphere-operator
+cd charts/apache-shardingsphere-operator-charts/
 helm dependency build
 cd ../
-helm install shardingsphere-operator shardingsphere-operator -n shardingsphere-operator
+helm install shardingsphere-operator apache-shardingsphere-operator-charts -n shardingsphere-operator
 ```
 
 ## Install ShardingSphere-Proxy cluster
 
-Configuration [below](#shardingsphere-proxy-cluster-parameters) configuration content, configuration file location shardingsphere-operator-cluster/values.yaml
+Configuration [below](#shardingsphere-proxy-cluster-parameters) configuration content, configuration file location apache-shardingsphere-operator-cluster-charts/values.yaml
 run 
+
+## Online Install
+```shell
+kubectl create ns shardingsphere
+helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
+helm repo update
+helm install shardingsphere shardingsphere/apache-shardingsphere-operator-cluster-charts --version 0.1.0 -n shardingsphere
+```
 
 ### Source Code Install
 ```shell
-kubectl create ns  shardingsphere
-cd charts/shardingsphere-operator-cluster
+kubectl create ns shardingsphere
+cd charts/apache-shardingsphere-operator-cluster-charts
 helm dependency build
 cd ../
-helm install  shardingsphere-operator-cluster shardingsphere-operator-cluster -n shardingsphere
+helm install shardingsphere apache-shardingsphere-operator-cluster-charts -n shardingsphere
 ```
 
-## Online Install ShardingSphere-Proxy cluster && ShardingSphere-Operator (temporarily unavailable)
+## Online Install ShardingSphere-Proxy cluster && ShardingSphere-Operator
 ```shell
-helm repo add shardingspherecloud https://sphereex.github.io/shardingsphere-on-cloud/
+helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
 kubectl create ns  shardingsphere-operator
-helm install shardingsphere-operator shardingspherecloud/shardingsphere-operator -n shardingsphere-operator
+helm install shardingsphere-operator shardingsphere/apache-shardingsphere-operator-charts --version 0.1.0 -n shardingsphere-operator
 kubectl create ns  shardingsphere
-helm install  shardingsphere-operator-cluster shardingspherecloud/shardingsphere-operator-cluster -n shardingsphere
+helm install shardingsphere shardingsphere/apache-shardingsphere-operator-cluster-charts --version 0.1.0 -n shardingsphere
 ```
 
 ##  Parameters
@@ -109,7 +126,7 @@ helm install  shardingsphere-operator-cluster shardingspherecloud/shardingsphere
 
 ## Configuration Example
 
-shardingsphere-operator/values.yaml
+apache-shardingsphere-operator-charts/values.yaml
 
 ```yaml
 ## @section ShardingSphere-Proxy operator parameters
@@ -151,7 +168,7 @@ health:
   healthProbePort: 8081
 ```
 
-shardingsphere-operator-cluster/values.yaml
+apache-shardingsphere-operator-cluster-charts/values.yaml
 
 ```yaml
 # @section ShardingSphere-Proxy cluster parameters
@@ -278,7 +295,7 @@ zookeeper:
 ## Clean
 
 ```shell
-helm uninstall shardingsphere-operator-cluster -n shardingsphere
+helm uninstall shardingsphere -n shardingsphere
 helm uninstall shardingsphere-operator -n shardingsphere-operator
 kubectl delete crd shardingsphereproxies.shardingsphere.apache.org shardingsphereproxyserverconfigs.shardingsphere.apache.org
 ```
