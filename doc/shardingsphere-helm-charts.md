@@ -7,7 +7,7 @@
 1. Add ShardingSphere-Proxy to the local helm repo:
 
 ```shell
-helm repo add shardingsphere-proxy https://apache.github.io/shardingsphere-on-cloud
+helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
 helm repo update
 ```
 

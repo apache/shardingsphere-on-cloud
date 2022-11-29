@@ -48,9 +48,9 @@ helm install shardingsphere apache-shardingsphere-operator-cluster-charts -n sha
 ```shell
 helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
 kubectl create ns  shardingsphere-operator
-helm install shardingsphere-operator shardingsphere/apache-shardingsphere-operator-charts --version 0.1.0
+helm install shardingsphere-operator shardingsphere/apache-shardingsphere-operator-charts --version 0.1.0 -n shardingsphere-operator
 kubectl create ns  shardingsphere
-helm install shardingsphere shardingsphere/apache-shardingsphere-operator-cluster-charts --version 0.1.0
+helm install shardingsphere shardingsphere/apache-shardingsphere-operator-cluster-charts --version 0.1.0 -n shardingsphere
 ```
 
 ##  Parameters
