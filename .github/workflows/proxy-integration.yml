@@ -37,12 +37,12 @@ jobs:
           set -x 
           export TEST_NAMESPACE="shardingsphere-system"
           kubectl create namespace ${TEST_NAMESPACE}
-          cd charts/shardingsphere-proxy/charts/governance
+          cd charts/apache-shardingsphere-proxy-charts/charts/governance
           helm dependency build 
           cd ../..
           helm dependency build 
           cd ..
-          helm install shardingsphere-proxy shardingsphere-proxy -n ${TEST_NAMESPACE} --set compute.replicas=1
+          helm install shardingsphere-proxy apache-shardingsphere-proxy-charts -n ${TEST_NAMESPACE} --set compute.replicas=1
           kubectl wait --timeout=60s --for=condition=Ready --all pod -n ${TEST_NAMESPACE}
           kubectl get pod,svc -n ${TEST_NAMESPACE} --show-labels
           cd ..
