@@ -159,6 +159,9 @@ func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *appsv1.D
 }
 
 func ConstructCascadingService(proxy *v1alpha1.ShardingSphereProxy) *v1.Service {
+	if proxy == nil || reflect.DeepEqual(proxy, &v1alpha1.ShardingSphereProxy{}) {
+		return &v1.Service{}
+	}
 
 	svc := v1.Service{
 		ObjectMeta: metav1.ObjectMeta{

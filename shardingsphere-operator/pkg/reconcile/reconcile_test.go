@@ -463,7 +463,68 @@ func Test_ConstructCascadingDeployment(t *testing.T) {
 }
 
 func Test_ConstructCascadingService(t *testing.T) {
+	cases := []struct {
+		proxy   *v1alpha1.ShardingSphereProxy
+		exp     *v1.Service
+		message string
+	}{
+		{
+			exp:     &v1.Service{},
+			message: "Nil ShardingSphereProxy definition should lead to empty Service",
+		},
+		{
+			proxy:   &v1alpha1.ShardingSphereProxy{},
+			exp:     &v1.Service{},
+			message: "Empty ShardingSphereProxy definition should lead to empty Service",
+		},
+		{
+			proxy: &v1alpha1.ShardingSphereProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "testname",
+					Namespace: "testnamespace",
+				},
+				Spec: v1alpha1.ProxySpec{
+					ServiceType: v1alpha1.ServiceType{
+						Type:     v1.ServiceTypeNodePort,
+						NodePort: 33007,
+					},
+					Port: 3307,
+				},
+			},
+			exp: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "testname",
+					Namespace: "testnamespace",
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"apps": "testname",
+					},
+					Type: v1.ServiceTypeNodePort,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "proxy-port",
+							TargetPort: fromInt32(3307),
+							Port:       3307,
+							NodePort:   33007,
+						},
+					},
+				},
+			},
+			message: "Normal ShardingSphereProxy definition should lead to normal Service",
+		},
+	}
 
+	for _, c := range cases {
+		act := ConstructCascadingService(c.proxy)
+		assert.Equal(t, c.exp.ObjectMeta.Name, act.ObjectMeta.Name, c.message)
+		assert.Equal(t, c.exp.ObjectMeta.Namespace, act.ObjectMeta.Namespace, c.message)
+		if c.proxy != nil {
+			assert.EqualValues(t, c.exp.Spec.Selector, act.Spec.Selector, c.message)
+			assert.Equal(t, c.exp.Spec.Type, act.Spec.Type, c.message)
+			assert.Equal(t, c.exp.Spec.Ports, act.Spec.Ports, c.message)
+		}
+	}
 }
 
 func Test_addInitContaienr(t *testing.T) {
