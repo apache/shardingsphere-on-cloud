@@ -1,2 +1,2 @@
-ShardingSphere Operator
+Apache ShardingSphere Operator
 ---

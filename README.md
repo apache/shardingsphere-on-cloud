@@ -12,7 +12,7 @@ This repository collects scripts, tools, manifests and documentations, and provi
 
 The solutions currently included in this project are:
 
-* [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/shardingsphere-proxy)
+* [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts)
 * [The ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
 
 ## Current Status
