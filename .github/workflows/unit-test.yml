@@ -18,8 +18,11 @@
 name: Unit Test
 
 on:
-  pull_request
-
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'shardingsphere-operator/**'
+      - '.github/workflows/unit-test.yml'
 jobs:
   operator:
     runs-on: ubuntu-latest
