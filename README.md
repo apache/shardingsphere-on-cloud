@@ -17,7 +17,7 @@ The solutions currently included in this project are:
 
 ## Current Status
 
-Currently, either the [ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/shardingsphere-proxy) and the [ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) make up the latest version as (5.2.0) of ShardingSphere Proxy. Refer and follow the Quick Start guide to get up and running. 
+Currently, either the [ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts) and the [ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) make up the latest version as (5.2.0) of ShardingSphere Proxy. Refer and follow the Quick Start guide to get up and running. 
 
 * [The ShardingSphere Helm Charts QuickStart](#quick-start)
 * [The ShardingSphere Operator QuickStart](#quick-start-1)
