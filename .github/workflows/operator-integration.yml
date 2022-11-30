@@ -17,7 +17,13 @@
 
 name: Integration Test for Operator Helm Charts
 
-on: pull_request 
+on: 
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'charts/apache-shardingsphere-operator-cluster-cluster-charts/**'
+      - 'charts/apache-shardingsphere-operator-cluster-charts/**'
+      - '.github/workflows/operator-integration.yml' 
 
 jobs:
   run:

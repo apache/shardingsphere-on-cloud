@@ -17,7 +17,12 @@
 
 name: Integration Test for Proxy Helm Charts
 
-on: push 
+on: 
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'charts/apache-shardingsphere-proxy-charts/**'
+      - '.github/workflows/proxy-integration.yml' 
 
 jobs:
   run:
