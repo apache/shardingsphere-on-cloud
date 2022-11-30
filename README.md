@@ -2,7 +2,7 @@
 
 **Apache ShardingSphere Official Website:** [https://shardingsphere.apache.org/](https://shardingsphere.apache.org/)
 
-[![GitHub release](https://img.shields.io/github/release/SphereEx/shardingsphere-on-cloud.svg)](https://github.com/apache/shardingsphere-on-cloud/releases)
+[![GitHub release](https://img.shields.io/github/release/apache/shardingsphere-on-cloud.svg)](https://github.com/apache/shardingsphere-on-cloud/releases)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/ShardingSphere.svg?style=social&label=Follow%20%40ShardingSphere)](https://twitter.com/ShardingSphere)
 [![Slack](https://img.shields.io/badge/%20Slack-ShardingSphere%20Channel-blueviolet)](https://join.slack.com/t/apacheshardingsphere/shared_invite/zt-sbdde7ie-SjDqo9~I4rYcR18bq0SYTg)
@@ -12,12 +12,12 @@ This repository collects scripts, tools, manifests and documentations, and provi
 
 The solutions currently included in this project are:
 
-* [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/shardingsphere-proxy)
+* [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts)
 * [The ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
 
 ## Current Status
 
-Currently, either the [ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/shardingsphere-proxy) and the [ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) make up the latest version as (5.2.0) of ShardingSphere Proxy. Refer and follow the Quick Start guide to get up and running. 
+Currently, either the [ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts) and the [ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) make up the latest version as (5.2.0) of ShardingSphere Proxy. Refer and follow the Quick Start guide to get up and running. 
 
 * [The ShardingSphere Helm Charts QuickStart](#quick-start)
 * [The ShardingSphere Operator QuickStart](#quick-start-1)
@@ -36,7 +36,7 @@ ShardingSphere Helm Charts uses [Helm](https://helm.sh/) to provide guidance for
 
 ### Quick Start
 
-Please follow these [instructions](./doc/shardingsphere-helm-charts.md) to deploy a ShardingSphere cluster with version 5.2.0.
+Please follow these [instructions](./docs/shardingsphere-helm-charts.md) to deploy a ShardingSphere cluster with version 5.2.0.
 
 ## ShardingSphere Operator
 
@@ -46,11 +46,11 @@ The ShardingSphere Operator uses predefined CustomResourceDefinitions for descri
 
 With the help of ShardingSphere-Operator you can create a ShardingSphere-Proxy cluster including the ZooKeeper cluster in minutes.
 
-For installation of SharingSphere-Operator, you will need a Kubernetes cluster. No matter it is a managed Kubernetes service like AWS EKS or self-hosted Kubernetes, or just a mini-kube, you can easily install ShardingSphere-Operator with respective [ShardingSphere Operator Helm Charts](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/charts/shardingsphere-operator), and apply the manifests in [ShardingSphere Operator Cluster Helm Charts](https://github.com/SphereEx/shardingsphere-on-cloud/tree/main/charts/shardingsphere-operator-cluster) describing the expected Apache ShardingSphere deployment. **Kubernetes 1.18+ is recommended**. 
+For installation of SharingSphere-Operator, you will need a Kubernetes cluster. No matter it is a managed Kubernetes service like AWS EKS or self-hosted Kubernetes, or just a mini-kube, you can easily install ShardingSphere-Operator with respective [ShardingSphere Operator Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-operator-charts), and apply the manifests in [ShardingSphere Operator Cluster Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-operator-cluster-charts) describing the expected Apache ShardingSphere deployment. **Kubernetes 1.18+ is recommended**. 
 
 ### Internal Architecture
 
-![img.png](./doc/images/ss-operatorIA.png)
+![img.png](./docs/images/ss-operatorIA.png)
 
 ### Current Status
 
@@ -58,7 +58,7 @@ Minimum Viable Product
 
 ### Quick Start 
 
-Please follows [instructions](./doc/shardingsphere-operator.md) to deploy a ShardingSphere cluster with version 5.2.0.
+Please follows [instructions](./docs/shardingsphere-operator.md) to deploy a ShardingSphere cluster with version 5.2.0.
 
 ### Features
 
@@ -110,4 +110,4 @@ To contribute to this project, refer to [Contributing](CONTRIBUTING.md).
 
 ## License
 
-Apache License 2.0, see [LICENSE](https://github.com/SphereEx/shardingsphere-on-cloud/blob/main/LICENSE).
+Apache License 2.0, see [LICENSE](https://github.com/apache/shardingsphere-on-cloud/blob/main/LICENSE).
