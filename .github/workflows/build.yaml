@@ -19,6 +19,10 @@ name: Create and publish a Docker image
 
 on:
   push:
+    branches:
+      - 'release-v*'
+    paths:
+      - 'shardingsphere-operator/**'
     tags:
 env:
   REGISTRY: ghcr.io
