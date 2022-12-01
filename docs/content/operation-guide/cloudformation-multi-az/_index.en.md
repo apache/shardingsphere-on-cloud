@@ -1,5 +1,5 @@
 +++
-pre = "<b>2.4 </b>"
+pre = "<b>3.4 </b>"
 title = "CloudFormation deploys ShardingSphere Proxy Cluster in Multiple AZs"
 weight = 4
 chapter = true
@@ -13,7 +13,7 @@ As an important part of the data infrastructure, the shardingSphere Proxy cluste
 
 We will create a shardingSphere Proxy highly available cluster as shown in the following architecture diagram:
 
-![](../../../../img/overview/terraform.png)
+![](../../../img/overview/terraform.png)
 
 The Amazon resources created are as follows:
 
@@ -42,51 +42,51 @@ To create ShardingSphere Proxy highly available cluster, you need to prepare the
 
 1. Enter Amazon CloudFormation service and create Stacks.
 
-![](../../../../img/operation-guide/4-1.PNG)
+![](../../../img/operation-guide/4-1.PNG)
 
 Click `Choose File` button to upload the prepared CloudFormation configuration.
 
-![](../../../../img/operation-guide/4-2.PNG)
+![](../../../img/operation-guide/4-2.PNG)
 
 Click Next after uploading.
 
 2. Fill the resources you have prepared into the relevant locations below.
 
-![](../../../../img/operation-guide/4-3.PNG)
+![](../../../img/operation-guide/4-3.PNG)
 
-![](../../../../img/operation-guide/4-4.PNG)
+![](../../../img/operation-guide/4-4.PNG)
 
 After filling in the corresponding parameters, click Next.
 
 3. Configure 'stack' related parameters according to your actual situation.
 
-![](../../../../img/operation-guide/4-5.PNG)
+![](../../../img/operation-guide/4-5.PNG)
 
-![](../../../../img/operation-guide/4-6.PNG)
+![](../../../img/operation-guide/4-6.PNG)
 
 Click Next after configuration.
 
 4. Configure 'Review'.
 
-![](../../../../img/operation-guide/4-7.PNG)
+![](../../../img/operation-guide/4-7.PNG)
 
-![](../../../../img/operation-guide/4-8.PNG)
+![](../../../img/operation-guide/4-8.PNG)
 
-![](../../../../img/operation-guide/4-9.PNG)
+![](../../../img/operation-guide/4-9.PNG)
 
 Confirm and click `Submit`.
 
 5. After the above operations, you will enter the creation phase.
 
-![](../../../../img/operation-guide/4-10.PNG)
+![](../../../img/operation-guide/4-10.PNG)
 
-![](../../../../img/operation-guide/4-11.PNG)
+![](../../../img/operation-guide/4-11.PNG)
 
-![](../../../../img/operation-guide/4-12.PNG)
+![](../../../img/operation-guide/4-12.PNG)
 
 6. Wait for a while. After the creation, enter the 'Outputs' tab, as shown in the following figure.
 
-![](../../../../img/operation-guide/4-13.PNG)
+![](../../../img/operation-guide/4-13.PNG)
 
 The value corresponding to 'ssinernaldomain' is the domain name we need.
 

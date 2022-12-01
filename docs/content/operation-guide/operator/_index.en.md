@@ -1,5 +1,5 @@
 +++
-pre = "<b>2.2 </b>"
+pre = "<b>3.2 </b>"
 title = "ShardingSphere-Operator User Manual"
 weight = 2
 chapter = true

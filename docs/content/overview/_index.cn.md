@@ -24,11 +24,11 @@ ShardingSphere-on-Cloud 项目是面向 Apache ShardingSphere 的云上解决方
 
 - ShardingSphere-Operator 示意图
 
-![Operator 示意图](../../../../img/overview/operator.png)
+![Operator 示意图](../../img/overview/operator.png)
 
 - ShardingSphere-Terraform 示意图
 
-![Terraform 示意图](../../../../img/overview/terraform.png)
+![Terraform 示意图](../../img/overview/terraform.png)
 
 ## 项目功能
 

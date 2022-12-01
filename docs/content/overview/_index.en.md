@@ -24,11 +24,11 @@ At present, the terms involved in this warehouse are from common cloud service p
 
 - ShardingSphere-Operator Diagram
 
-![Operator Diagram](../../../../img/overview/operator.png)
+![Operator Diagram](../../img/overview/operator.png)
 
 - ShardingSphere-Terraform Diagram
 
-![Terraform Diagram](../../../../img/overview/terraform.png)
+![Terraform Diagram](../../img/overview/terraform.png)
 
 ## Feature List
 
