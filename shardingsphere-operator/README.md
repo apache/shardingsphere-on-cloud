@@ -10,7 +10,7 @@ For installation of SharingSphere-Operator, you will need a Kubernetes cluster. 
 
 ### Internal Architecture
 
-![img.png](./docs/images/ss-operatorIA.png)
+![img.png](../docs/images/ss-operatorIA.png)
 
 ### Current Status
 
