@@ -14,7 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-
+## @section Name parameters
+## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
+nameOverride: apache-shardingsphere-proxy
 ## @section Governance-Node parameters
 ## @param governance.enabled Switch to enable or disable the governance helm chart
 ##

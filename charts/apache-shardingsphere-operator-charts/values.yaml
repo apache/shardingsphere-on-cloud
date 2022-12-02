@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+## @section Name parameters
+## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
+##
+nameOverride: apache-shardingsphere-operator
 ## @section ShardingSphere operator parameters
 ## @param replicaCount operator replica count
 ##
