@@ -9,7 +9,7 @@ chapter = true
 
 ### Online Installation
 
-1. Add SharedingSphere-Proxy to the local Helm warehouse:
+1. Add ShardingSphere-Proxy to the local Helm warehouse:
 
 ```shell
 helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
@@ -39,7 +39,7 @@ Note: Please refer to the configuration description below for details.
 
 2. Execute `helm list` to get the list of all installed releases.
 
-### Uninstallation
+### Uninstall
 
 1. By default, all publishing records are deleted and can be retained by adding '-- keep history'.
 
@@ -61,7 +61,7 @@ helm uninstall shardingsphere-proxy
 | -------------------- | ----------------------------------------------------- | ------ |
 | `governance.enabled` | Switch to enable or disable the governance helm chart | `true` |
 
-### ZooKeeper Parameters of Governance Node
+### Governance Node ZooKeeper Parameters
 
 | Name                                             | Description                                          | Value               |
 | ------------------------------------------------ | ---------------------------------------------------- | ------------------- |
@@ -75,7 +75,7 @@ helm uninstall shardingsphere-proxy
 | `governance.zookeeper.resources.requests.memory` | The requested memory for the ZooKeeper containers    | `256Mi`             |
 | `governance.zookeeper.resources.requests.cpu`    | The requested cpu for the ZooKeeper containers       | `250m`              |
 
-### ShardingSphere-Proxy Parameters of Compute Node
+### Compute Node ShardingSphere-Proxy Parameters 
 
 | Name                                | Description                                                  | Value                         |
 | ----------------------------------- | ------------------------------------------------------------ |-------------------------------|
@@ -202,11 +202,11 @@ compute:
   ##
   serverConfig:
     ## @section Compute-Node ShardingSphere-Proxy ServerConfiguration authority parameters
-    ## NOTE: It is used to set up initial user to login compute node, and authority data of storage node.
+    ## NOTE: It‘s used to set up initial user to login 他和compute node, and  storage node authority data.
     ## ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/yaml-config/authentication/
     ## @param compute.serverConfig.authority.privilege.type authority provider for storage node, the default value is ALL_PERMITTED
     ## @param compute.serverConfig.authority.users[0].password Password for compute node.
-    ## @param compute.serverConfig.authority.users[0].user Username,authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host
+    ## @param compute.serverConfig.authority.users[0].user Username, authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host
     ##
     authority:
       privilege:
