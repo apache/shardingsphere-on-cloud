@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+## @section Name parameters
+## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
+##
+nameOverride: apache-shardingsphere-operator-cluster
 ## @section ShardingSphere-Proxy cluster parameters
 ## @param replicaCount ShardingSphere-Proxy cluster starts the number of replicas, Note: After you enable automaticScaling, this parameter will no longer take effect
 ## @param proxyVersion ShardingSphere-Proxy cluster version
@@ -80,7 +84,7 @@ serverConfig:
   ##
   authority:
     privilege:
-      type: ALL_PRIVILEGES_PERMITTED
+      type: ALL_PERMITTED
     users:
       - password: root
         user: root@%

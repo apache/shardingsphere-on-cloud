@@ -2,24 +2,24 @@
 
 ## Procedure
 
-### Online installation
+### Online Installation
 
-1. Add ShardingSphere-Proxy to the local helm repo:
+1. Add SharedingSphere-Proxy to the local Helm warehouse:
 
 ```shell
 helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
 helm repo update
 ```
 
-2. Install ShardingSphere-Proxy charts:
+2. Install ShardingSphere-Proxy Charts:
 
 ```shell
-helm install shardingsphere-proxy shardingsphere/apache-shardingsphere-proxy-charts --version 0.1.0
+helm install shardingsphere-proxy shardingsphere/apache-shardingsphere-proxy-charts 
 ```
 
-### Source installation
+### Source Code Installation
 
-1. Charts will be installed with default configuration if the following commands are executed:
+1. Charts can be configured and installed by default using the following command:
 
 ```shell
 cd charts/apache-shardingsphere-proxy-charts/charts/governance
@@ -29,27 +29,34 @@ helm dependency build
 cd ..
 helm install shardingsphere-proxy apache-shardingsphere-proxy-charts
 ```
-Note: Please refer to the configuration items description below for more details.
 
-2. Execute `helm list` to acquire all installed releases.
+Note: Please refer to the configuration description below for details.
 
-### Uninstall
+2. Execute `helm list` to get the list of all installed releases.
 
-1. Delete all release records by default, add `--keep-history` to keep them. 
+### Uninstallation
+
+1. By default, all publishing records are deleted and can be retained by adding '-- keep history'.
 
 ```shell
 helm uninstall shardingsphere-proxy
 ```
 
-## Parameters
+## Parameter Description
 
-### Governance-Node parameters
+### Name parameters
+
+| Name              | Description                                                                                                | Value                         |
+|-------------------|------------------------------------------------------------------------------------------------------------|-------------------------------|
+| `nameOverride   ` | nameOverride String to partially override common.names.fullname template (will maintain the release name)  | `apache-shardingsphere-proxy` |
+
+### Governance Node Parameters
 
 | Name                 | Description                                           | Value  |
 | -------------------- | ----------------------------------------------------- | ------ |
 | `governance.enabled` | Switch to enable or disable the governance helm chart | `true` |
 
-### Governance-Node ZooKeeper parameters
+### ZooKeeper Parameters of Governance Node
 
 | Name                                             | Description                                          | Value               |
 | ------------------------------------------------ | ---------------------------------------------------- | ------------------- |
@@ -63,7 +70,7 @@ helm uninstall shardingsphere-proxy
 | `governance.zookeeper.resources.requests.memory` | The requested memory for the ZooKeeper containers    | `256Mi`             |
 | `governance.zookeeper.resources.requests.cpu`    | The requested cpu for the ZooKeeper containers       | `250m`              |
 
-### Compute-Node ShardingSphere-Proxy parameters
+### ShardingSphere-Proxy Parameters of Compute Node
 
 | Name                                | Description                                                  | Value                         |
 | ----------------------------------- | ------------------------------------------------------------ |-------------------------------|
@@ -81,28 +88,12 @@ helm uninstall shardingsphere-proxy
 | `compute.startPort`                 | ShardingSphere-Proxy start port                              | `3307`                        |
 | `compute.serverConfig`              | Server Configuration file for ShardingSphere-Proxy            | `""`                          |
 
-## Sample
+## Example
 
-values.yaml
-
-```PlainText
-#
-#  Licensed to the Apache Software Foundation (ASF) under one or more
-#  contributor license agreements.  See the NOTICE file distributed with
-#  this work for additional information regarding copyright ownership.
-#  The ASF licenses this file to You under the Apache License, Version 2.0
-#  (the "License"); you may not use this file except in compliance with
-#  the License.  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-#
-
+```yaml
+## @section Name parameters
+## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
+nameOverride: apache-shardingsphere-proxy
 ## @section Governance-Node parameters
 ## @param governance.enabled Switch to enable or disable the governance helm chart
 ##
@@ -155,7 +146,7 @@ compute:
     pullPolicy: IfNotPresent
     ## Overrides the image tag whose default is the chart appVersion.
     ##
-    tag: "5.2.0"
+    tag: "5.2.1"
   ## @param compute.imagePullSecrets Specify docker-registry secret names as an array
   ## e.g：
   ## imagePullSecrets:
@@ -190,7 +181,7 @@ compute:
   ## @param compute.mysqlConnector.version MySQL connector version
   ##
   mysqlConnector:
-    version: "5.1.49"
+    version: "5.1.43"
   ## @param compute.startPort ShardingSphere-Proxy start port
   ## ShardingSphere-Proxy start port
   ## ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/startup/docker/
@@ -214,10 +205,10 @@ compute:
     ##
     authority:
       privilege:
-        type: ALL_PRIVILEGES_PERMITTED
+        type: ALL_PERMITTED
       users:
-      - password: root
-        user: root@%
+        - password: root
+          user: root@%
     ## @section Compute-Node ShardingSphere-Proxy ServerConfiguration mode Configuration parameters
     ## @param compute.serverConfig.mode.type Type of mode configuration. Now only support Cluster mode
     ## @param compute.serverConfig.mode.repository.props.namespace Namespace of registry center
@@ -227,7 +218,6 @@ compute:
     ## @param compute.serverConfig.mode.repository.props.retryIntervalMilliseconds Milliseconds of retry interval
     ## @param compute.serverConfig.mode.repository.props.timeToLiveSeconds Seconds of ephemeral data live
     ## @param compute.serverConfig.mode.repository.type Type of persist repository. Now only support ZooKeeper
-    ## @param compute.serverConfig.mode.overwrite Whether overwrite persistent configuration with local configuration
     ##
     mode:
       type: Cluster
@@ -240,5 +230,9 @@ compute:
           retryIntervalMilliseconds: 500
           server-lists: "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}"
           timeToLiveSeconds: 60
-      overwrite: true
-`
+    ## @param compute.serverConfig.props.proxy-frontend-database-protocol-type proxy frontend database protocol type. Only support: PostgreSQL,openGauss,MariaDB,MySQL
+    ##
+    props:
+      proxy-frontend-database-protocol-type: MySQL
+```
+

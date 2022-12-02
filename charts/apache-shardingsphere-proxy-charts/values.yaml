@@ -14,7 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-
+## @section Name parameters
+## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
+nameOverride: apache-shardingsphere-proxy
 ## @section Governance-Node parameters
 ## @param governance.enabled Switch to enable or disable the governance helm chart
 ##
@@ -67,7 +69,7 @@ compute:
     pullPolicy: IfNotPresent
     ## Overrides the image tag whose default is the chart appVersion.
     ##
-    tag: "5.2.0"
+    tag: "5.2.1"
   ## @param compute.imagePullSecrets Specify docker-registry secret names as an array
   ## e.g：
   ## imagePullSecrets:
@@ -102,7 +104,7 @@ compute:
   ## @param compute.mysqlConnector.version MySQL connector version
   ##
   mysqlConnector:
-    version: "5.1.49"
+    version: "5.1.43"
   ## @param compute.startPort ShardingSphere-Proxy start port
   ## ShardingSphere-Proxy start port
   ## ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/startup/docker/
@@ -126,7 +128,7 @@ compute:
     ##
     authority:
       privilege:
-        type: ALL_PRIVILEGES_PERMITTED
+        type: ALL_PERMITTED
       users:
       - password: root
         user: root@%
