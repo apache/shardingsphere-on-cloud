@@ -202,7 +202,7 @@ compute:
   ##
   serverConfig:
     ## @section Compute-Node ShardingSphere-Proxy ServerConfiguration authority parameters
-    ## NOTE: It‘s used to set up initial user to login 他和compute node, and  storage node authority data.
+    ## NOTE: It‘s used to set up initial user to login to the compute node, and  storage node authority data.
     ## ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/yaml-config/authentication/
     ## @param compute.serverConfig.authority.privilege.type authority provider for storage node, the default value is ALL_PERMITTED
     ## @param compute.serverConfig.authority.users[0].password Password for compute node.
