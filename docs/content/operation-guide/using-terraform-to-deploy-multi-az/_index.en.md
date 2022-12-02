@@ -1,6 +1,6 @@
 +++
 pre = "<b>3.5 </b>"
-title = "Terraform deploys shardingsphere cluster in multiple AZs"
+title = "Terraform Deploys ShardingSphere Cluster in Multiple AZs"
 weight = 5
 chapter = true
 +++
