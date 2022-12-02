@@ -1,5 +1,5 @@
 +++
-pre = "<b>2.4 </b>"
+pre = "<b>3.4 </b>"
 title = "CloudFormation 部署多可用区 ShardingSphere Proxy 集群"
 weight = 4
 chapter = true
@@ -13,7 +13,7 @@ ShardingSphere Proxy 集群作为数据基础设施重要的一部分，集群�
 
 我们将创建如下架构图的 ShardingSphere Proxy 高可用集群：
 
-![](../../../../img/overview/terraform.png)
+![](../../../img/overview/terraform.png)
 
 创建的 Amazon 资源如下：
 1. 每个可用区一个 ZooKeeper 实例。
@@ -38,51 +38,51 @@ ShardingSphere Proxy 集群作为数据基础设施重要的一部分，集群�
 
 1. 进入 Amazon CloudFormation 服务，创建 Stacks。
 
-![](../../../../img/operation-guide/4-1.PNG)
+![](../../../img/operation-guide/4-1.PNG)
 
 点击 `Choose File` 按钮 上传准备好的 CloudFormation 配置。
 
-![](../../../../img/operation-guide/4-2.PNG)
+![](../../../img/operation-guide/4-2.PNG)
 
 上传好后点击 `Next` 按钮。
 
 2. 将您准备好的资源填入以下对应的相关位置。
 
-![](../../../../img/operation-guide/4-3.PNG)
+![](../../../img/operation-guide/4-3.PNG)
 
-![](../../../../img/operation-guide/4-4.PNG)
+![](../../../img/operation-guide/4-4.PNG)
 
 填入相应参数后，点击 `Next`  按钮。
 
 3. 按您实际情况配置 `stack` 相关参数。
 
-![](../../../../img/operation-guide/4-5.PNG)
+![](../../../img/operation-guide/4-5.PNG)
 
-![](../../../../img/operation-guide/4-6.PNG)
+![](../../../img/operation-guide/4-6.PNG)
 
 配置好后点击 `Next` 按钮。
 
 4. 进行配置 `Review`。
 
-![](../../../../img/operation-guide/4-7.PNG)
+![](../../../img/operation-guide/4-7.PNG)
 
-![](../../../../img/operation-guide/4-8.PNG)
+![](../../../img/operation-guide/4-8.PNG)
 
-![](../../../../img/operation-guide/4-9.PNG)
+![](../../../img/operation-guide/4-9.PNG)
 
 确认好点击 `Submit` 按钮。
 
 5. 在上述操作后，将进入创建阶段。
 
-![](../../../../img/operation-guide/4-10.PNG)
+![](../../../img/operation-guide/4-10.PNG)
 
-![](../../../../img/operation-guide/4-11.PNG)
+![](../../../img/operation-guide/4-11.PNG)
 
-![](../../../../img/operation-guide/4-12.PNG)
+![](../../../img/operation-guide/4-12.PNG)
 
 6. 等待一段时间，创建完成后，进入 `Outputs` 标签页，如下图。
 
-![](../../../../img/operation-guide/4-13.PNG)
+![](../../../img/operation-guide/4-13.PNG)
 
 其中 `ssinernaldomain` 对应的值就是我们需要的域名。
 
