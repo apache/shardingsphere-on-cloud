@@ -7,15 +7,15 @@ chapter = true
 
 ## Background
 
-As an important part of the data infrastructure, the shardingSphere Proxy cluster is particularly important for its high availability. This section will introduce how to use CloudFormation to build a shardingSphere proxy cluster from scratch on Amazon to meet high availability.
+ShardingSphere Proxy cluster is an important part of the data infrastructure, and especially significant for its high availability feature. This section introduces how to use CloudFormation to build a ShardingSphere proxy cluster from scratch on Amazon AWS to achieve high availability.
 
 ## Goal
 
-We will create a shardingSphere Proxy highly available cluster as shown in the following architecture diagram:
+We will create a ShardingSphere Proxy highly available cluster as shown in the following architecture diagram:
 
 ![](../../../img/overview/terraform.png)
 
-The Amazon resources created are as follows:
+The AWS resources created are the following:
 
 1. Each AZ has one ZooKeeper instance.
 
@@ -27,20 +27,20 @@ The Amazon resources created are as follows:
 
 ## Quick Start
 
-### Prerequisites
+### Requirements
 
-To create ShardingSphere Proxy highly available cluster, you need to prepare the following resources in advance:
+To create a ShardingSphere Proxy highly available cluster, you need to prepare the following resources:
 1. An ssh keypair used to remotely connect EC2 instances.
 2. One VPC.
 3. The subnet of each AZ.
 4. A SecurityGroup can release the 2888, 3888, 2181 ports used by ZooKeeper Server.
 5. An intranet HostedZone.
 6. A common AMI image, Amazon linux2.
-7. Better get ready CloudFormation [configuration file](https://raw.githubusercontent.com/apache/shardingsphere-on-cloud/main/cloudformation/multi-az/cf.json).
+7. Prepare CloudFormation [configuration file](https://raw.githubusercontent.com/apache/shardingsphere-on-cloud/main/cloudformation/multi-az/cf.json).
 
 ### Procedure
 
-1. Enter Amazon CloudFormation service and create Stacks.
+1. Enter Amazon's CloudFormation service and create Stacks.
 
 ![](../../../img/operation-guide/4-1.PNG)
 
@@ -58,7 +58,7 @@ Click Next after uploading.
 
 After filling in the corresponding parameters, click Next.
 
-3. Configure 'stack' related parameters according to your actual situation.
+3. Configure 'stack' related parameters according to your context.
 
 ![](../../../img/operation-guide/4-5.PNG)
 
@@ -76,7 +76,7 @@ Click Next after configuration.
 
 Confirm and click `Submit`.
 
-5. After the above operations, you will enter the creation phase.
+5. After performing the above operations, you will enter the creation phase.
 
 ![](../../../img/operation-guide/4-10.PNG)
 
@@ -84,13 +84,13 @@ Confirm and click `Submit`.
 
 ![](../../../img/operation-guide/4-12.PNG)
 
-6. Wait for a while. After the creation, enter the 'Outputs' tab, as shown in the following figure.
+6. Wait for a bit, and after the creation, enter the 'Outputs' tab as shown in the following figure.
 
 ![](../../../img/operation-guide/4-13.PNG)
 
 The value corresponding to 'ssinernaldomain' is the domain name we need.
 
-The internal domain name created by default is [proxy.shardingsphere.org](proxy.shardingsphere.org), the port is 3307, and the user name and password are root.
+The internal domain name created by default is [proxy.shardingsphere.org](proxy.shardingsphere.org), the port is 3307, and the username and password are root.
 
 ## User Manual
 
@@ -127,7 +127,7 @@ The internal domain name created by default is [proxy.shardingsphere.org](proxy.
 |zoneZK3|Zookeeper Server3 Internal domain name|{'Fn::Sub': '${AWS::StackName}-Zookeeper-Domain-3'}| {'Ref': 'zoneZK3'}|
 |ssinternaldomain|Internal domain name used externally by ShardingSphere Proxy|{'Fn::Sub': '${AWS::StackName}-ShardingSphere-Internal-Domain'}|{'Ref': 'ssinternaldomain'}|
 
-## Operation and Maintenance
+## DevOps
 
 By default, ZooKeeper and SharedingSphere Proxy services created using our CloudFormation can be managed using Systemd.
 
@@ -173,7 +173,7 @@ systemctl restart shardingsphere
 
 ## Development Manual
 
-This CloudFormat involves the following resource lists.
+This CloudFormation involves the following resource lists:
 
 |Resource Name   |Type|
 |----------------|----|
@@ -211,7 +211,7 @@ You need to follow the steps provided in [cfndsl](https://github.com/cfndsl/cfnd
 cfndsl -u 94.0.0
 ```
 
-2. After modify the configuration of `cf.rb`, run the following command to generate CloudFormation configuration.
+2. After modifying the configuration of `cf.rb`, run the following command to generate a CloudFormation configuration.
 
 ```shell
  cfndsl cf.rb -o cf.json --pretty
