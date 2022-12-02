@@ -51,9 +51,9 @@ To create a ShardingSphere Proxy highly available cluster, you need to prepare t
 5. An intranet HostedZone.
 6. A common AMI image, such as Amazon linux2.
 
-根据上述准备好的资源，修改相应的 `main.tf` 中的参数。
+Modify the parameters in `main.tf` according to the above prepared resources.
 
-### 步骤
+### Procedure
 
 1. Enter the directory of terraform, modify the parameters in `main.tf`  according to the above prepared resources.
 
