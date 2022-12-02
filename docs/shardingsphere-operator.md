@@ -2,18 +2,19 @@
 
 ## Install ShardingSphere-Operator
 
-Configuration [below](#shardingsphere-operator-parameters) configuration content, configuration file location apache-shardingsphere-operator-charts/values.yaml
-run
+The following configuration content and configuration file directory are: apache-shardingsphere-operator-charts/values.yaml.
 
-### Online Install
+### Online Installation
+
 ```shell
-kubectl create ns shardingsphere-operator
-helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
-helm repo update
-helm install shardingsphere-operator shardingsphere/apache-shardingsphere-operator-charts --version 0.1.0 -n shardingsphere-operator
+ kubectl create ns shardingsphere-operator
+ helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
+ helm repo update
+ helm install shardingsphere-operator shardingsphere/apache-shardingsphere-operator-charts --version 0.1.0 -n shardingsphere-operator
 ```
 
-### Source Code Install 
+### Source Code Installation
+
 ```shell
 kubectl create ns shardingsphere-operator
 cd charts/apache-shardingsphere-operator-charts/
@@ -22,12 +23,12 @@ cd ../
 helm install shardingsphere-operator apache-shardingsphere-operator-charts -n shardingsphere-operator
 ```
 
-## Install ShardingSphere-Proxy cluster
+## ShardingSphere-Proxy Cluster Installation
 
-Configuration [below](#shardingsphere-proxy-cluster-parameters) configuration content, configuration file location apache-shardingsphere-operator-cluster-charts/values.yaml
-run 
+The following configuration content and configuration file directory are: apache-shardingsphere-operator-cluster-charts/values.yaml.
 
-## Online Install
+### Online Installation
+
 ```shell
 kubectl create ns shardingsphere
 helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
@@ -35,7 +36,8 @@ helm repo update
 helm install shardingsphere shardingsphere/apache-shardingsphere-operator-cluster-charts --version 0.1.0 -n shardingsphere
 ```
 
-### Source Code Install
+### Source Code Installation
+
 ```shell
 kubectl create ns shardingsphere
 cd charts/apache-shardingsphere-operator-cluster-charts
@@ -44,62 +46,63 @@ cd ../
 helm install shardingsphere apache-shardingsphere-operator-cluster-charts -n shardingsphere
 ```
 
-## Online Install ShardingSphere-Proxy cluster && ShardingSphere-Operator
+## Online Install ShardingSphere-Proxy Cluster and ShardingSphere-Operator
+
 ```shell
 helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
 kubectl create ns  shardingsphere-operator
-helm install shardingsphere-operator shardingsphere/apache-shardingsphere-operator-charts --version 0.1.0 -n shardingsphere-operator
+helm install shardingsphere-operator shardingsphere/apache-shardingsphere-operator-charts --version 0.1.0
 kubectl create ns  shardingsphere
-helm install shardingsphere shardingsphere/apache-shardingsphere-operator-cluster-charts --version 0.1.0 -n shardingsphere
+helm install shardingsphere shardingsphere/apache-shardingsphere-operator-cluster-charts --version 0.1.0
 ```
 
-##  Parameters
+## Parameters
+
 ### ShardingSphere Operator Parameters
 
-| Name                     | Description                                 | Value                     |
-| ------------------------ | ------------------------------------------- | ------------------------- |
-| `replicaCount`           | operator replica count                      | `2`                       |
-| `image.repository`       | operator image name                         | `sahrdingsphere-operator` |
-| `image.pullPolicy`       | image pull policy                           | `IfNotPresent`            |
-| `image.tag`              | image tag                                   | `0.0.1`                   |
-| `imagePullSecrets`       | image pull secret of private repository     | `[]`                      |
-| `resources`              | operator Resources required by the operator | `{}`                      |
-| `webhook.port`           | operator webhook boot port                  | `9443`                    |
-| `health.healthProbePort` | operator health check port                  | `8081`                    |
-
+| Name                     | Description                                                                                               | Value                            |
+|--------------------------|-----------------------------------------------------------------------------------------------------------|----------------------------------|
+| `nameOverride`           | nameOverride String to partially override common.names.fullname template (will maintain the release name) | `apache-shardingsphere-operator` |
+| `replicaCount`           | operator replica count                                                                                    | `2`                              |
+| `image.repository`       | operator image name                                                                                       | `sahrdingsphere-operator`        |
+| `image.pullPolicy`       | image pull policy                                                                                         | `IfNotPresent`                   |
+| `image.tag`              | image tag                                                                                                 | `0.0.1`                          |
+| `imagePullSecrets`       | image pull secret of private repository                                                                   | `[]`                             |
+| `resources`              | operator Resources required by the operator                                                               | `{}`                             |
+| `webhook.port`           | operator webhook boot port                                                                                | `9443`                           |
+| `health.healthProbePort` | operator health check port                                                                                | `8081`                           |
 
 ### ShardingSphere-Proxy Cluster Parameters
 
-| Name                                | Description                                                                                                                                                                                        | Value       |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `replicaCount`                      | ShardingSphere-Proxy cluster starts the number of replicas, Note: After you enable automaticScaling, this parameter will no longer take effect                                                     | `3`         |
-| `proxyVersion`                      | ShardingSphere-Proxy cluster version                                                                                                                                                               | `5.2.0`     |
-| `automaticScaling.enable`           | ShardingSphere-Proxy Whether the ShardingSphere-Proxy cluster has auto-scaling enabled                                                                                                             | `false`     |
-| `automaticScaling.scaleUpWindows`   | ShardingSphere-Proxy automatically scales the stable window                                                                                                                                        | `30`        |
-| `automaticScaling.scaleDownWindows` | ShardingSphere-Proxy automatically shrinks the stabilized window                                                                                                                                   | `30`        |
-| `automaticScaling.target`           | ShardingSphere-Proxy auto-scaling threshold, the value is a percentage, note: at this stage, only cpu is supported as a metric for scaling                                                         | `20`        |
-| `automaticScaling.maxInstance`      | ShardingSphere-Proxy maximum number of scaled-out replicas                                                                                                                                         | `4`         |
-| `automaticScaling.minInstance`      | ShardingSphere-Proxy has a minimum number of boot replicas, and the shrinkage will not be less than this number of replicas                                                                        | `1`         |
-| `resources`                         | ShardingSphere-Proxy starts the requirement resource, and after opening automaticScaling, the resource of the request multiplied by the percentage of target is used to trigger the scaling action | `{}`        |
-| `service.type`                      | ShardingSphere-Proxy external exposure mode                                                                                                                                                        | `ClusterIP` |
-| `service.port`                      | ShardingSphere-Proxy exposes  port                                                                                                                                                                 | `3307`      |
-| `startPort`                         | ShardingSphere-Proxy boot port                                                                                                                                                                     | `3307`      |
-| `mySQLDriver.version`               | ShardingSphere-Proxy The ShardingSphere-Proxy mysql driver version will not be downloaded if it is empty                                                                                           | `5.1.47`    |
+| Name                                | Description                                                                                                                                                                                        | Value                                    |
+|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
+| `nameOverride`                      | nameOverride String to partially override common.names.fullname template (will maintain the release name)                                                                                          | `apache-shardingsphere-operator-cluster` |
+| `replicaCount`                      | ShardingSphere-Proxy cluster starts the number of replicas, Note: After you enable automaticScaling, this parameter will no longer take effect                                                     | `3`                                      |
+| `proxyVersion`                      | ShardingSphere-Proxy cluster version                                                                                                                                                               | `5.2.0`                                  |
+| `automaticScaling.enable`           | ShardingSphere-Proxy Whether the ShardingSphere-Proxy cluster has auto-scaling enabled                                                                                                             | `false`                                  |
+| `automaticScaling.scaleUpWindows`   | ShardingSphere-Proxy automatically scales the stable window                                                                                                                                        | `30`                                     |
+| `automaticScaling.scaleDownWindows` | ShardingSphere-Proxy automatically shrinks the stabilized window                                                                                                                                   | `30`                                     |
+| `automaticScaling.target`           | ShardingSphere-Proxy auto-scaling threshold, the value is a percentage, note: at this stage, only cpu is supported as a metric for scaling                                                         | `20`                                     |
+| `automaticScaling.maxInstance`      | ShardingSphere-Proxy maximum number of scaled-out replicas                                                                                                                                         | `4`                                      |
+| `automaticScaling.minInstance`      | ShardingSphere-Proxy has a minimum number of boot replicas, and the shrinkage will not be less than this number of replicas                                                                        | `1`                                      |
+| `resources`                         | ShardingSphere-Proxy starts the requirement resource, and after opening automaticScaling, the resource of the request multiplied by the percentage of target is used to trigger the scaling action | `{}`                                     |
+| `service.type`                      | ShardingSphere-Proxy external exposure mode                                                                                                                                                        | `ClusterIP`                              |
+| `service.port`                      | ShardingSphere-Proxy exposes  port                                                                                                                                                                 | `3307`                                   |
+| `startPort`                         | ShardingSphere-Proxy boot port                                                                                                                                                                     | `3307`                                   |
+| `mySQLDriver.version`               | ShardingSphere-Proxy The ShardingSphere-Proxy mysql driver version will not be downloaded if it is empty                                                                                           | `5.1.47`                                 |
 
+### ShardingSphere-Proxy ServerConfig Authority Related Parameters of Compute Node
 
-### Compute-Node ShardingSphere-Proxy ServerConfiguration Authority Parameters
+| Name                                       | Description                                                                                                                                    | Value           |
+|--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
+| `serverConfig.authority.privilege.type`    | authority provider for storage node, the default value is ALL_PERMITTED                                                                        | `ALL_PERMITTED` |
+| `serverConfig.authority.users[0].password` | Password for compute node.                                                                                                                     | `root`          |
+| `serverConfig.authority.users[0].user`     | Username,authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host | `root@%`        |
 
-| Name                                       | Description                                                                                                                                    | Value                      |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| `serverConfig.authority.privilege.type`    | authority provider for storage node, the default value is ALL_PERMITTED                                                                        | `ALL_PRIVILEGES_PERMITTED` |
-| `serverConfig.authority.users[0].password` | Password for compute node.                                                                                                                     | `root`                     |
-| `serverConfig.authority.users[0].user`     | Username,authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host | `root@%`                   |
-
-
-### Compute-Node ShardingSphere-Proxy ServerConfiguration Mode Configuration Parameters
+### ShardingSphere-Proxy ServerConfig Mode Related Paraters of Compute Node
 
 | Name                                                              | Description                                                         | Value                                                                  |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+|-------------------------------------------------------------------|---------------------------------------------------------------------|------------------------------------------------------------------------|
 | `serverConfig.mode.type`                                          | Type of mode configuration. Now only support Cluster mode           | `Cluster`                                                              |
 | `serverConfig.mode.repository.props.namespace`                    | Namespace of registry center                                        | `governance_ds`                                                        |
 | `serverConfig.mode.repository.props.server-lists`                 | Server lists of registry center                                     | `{{ printf "%s-zookeeper.%s:2181" .Release.Name .Release.Namespace }}` |
@@ -111,11 +114,10 @@ helm install shardingsphere shardingsphere/apache-shardingsphere-operator-cluste
 | `serverConfig.mode.overwrite`                                     | Whether overwrite persistent configuration with local configuration | `true`                                                                 |
 | `serverConfig.props.proxy-frontend-database-protocol-type`        | Default startup protocol                                            | `MySQL`                                                                |
 
-
 ### ZooKeeper Chart Parameters
 
 | Name                                 | Description                                          | Value               |
-| ------------------------------------ | ---------------------------------------------------- | ------------------- |
+|--------------------------------------|------------------------------------------------------|---------------------|
 | `zookeeper.enabled`                  | Switch to enable or disable the ZooKeeper helm chart | `true`              |
 | `zookeeper.replicaCount`             | Number of ZooKeeper nodes                            | `1`                 |
 | `zookeeper.persistence.enabled`      | Enable persistence on ZooKeeper using PVC(s)         | `false`             |
@@ -123,26 +125,29 @@ helm install shardingsphere shardingsphere/apache-shardingsphere-operator-cluste
 | `zookeeper.persistence.accessModes`  | Persistent Volume access modes                       | `["ReadWriteOnce"]` |
 | `zookeeper.persistence.size`         | Persistent Volume size                               | `8Gi`               |
 
-
-## Configuration Example
+## Examples
 
 apache-shardingsphere-operator-charts/values.yaml
 
 ```yaml
-## @section ShardingSphere-Proxy operator parameters
-## @param replicaCount operator  replica count
+## @section Name parameters
+## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
+##
+nameOverride: apache-shardingsphere-operator
+## @section ShardingSphere operator parameters
+## @param replicaCount operator replica count
 ##
 replicaCount: 2
 image:
   ## @param image.repository operator image name
   ##
-  repository: "sahrdingsphere-operator"
+  repository: "ghcr.io/apache/shardingsphere-on-cloud/apache-shardingsphere-operator"
   ## @param image.pullPolicy image pull policy
   ##
   pullPolicy: IfNotPresent
   ## @param image.tag image tag
   ##
-  tag: "0.0.1"
+  tag: "0.1.0"
 ## @param imagePullSecrets image pull secret of private repository
 ## e.g:
 ## imagePullSecrets:
@@ -166,17 +171,22 @@ webhook:
 ##
 health:
   healthProbePort: 8081
+
 ```
 
 apache-shardingsphere-operator-cluster-charts/values.yaml
 
 ```yaml
-# @section ShardingSphere-Proxy cluster parameters
+## @section Name parameters
+## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
+##
+nameOverride: apache-shardingsphere-operator-cluster
+## @section ShardingSphere-Proxy cluster parameters
 ## @param replicaCount ShardingSphere-Proxy cluster starts the number of replicas, Note: After you enable automaticScaling, this parameter will no longer take effect
 ## @param proxyVersion ShardingSphere-Proxy cluster version
 ##
 replicaCount: "3"
-proxyVersion: "5.2.0"
+proxyVersion: "5.2.1"
 ## @param automaticScaling.enable ShardingSphere-Proxy Whether the ShardingSphere-Proxy cluster has auto-scaling enabled
 ## @param automaticScaling.scaleUpWindows ShardingSphere-Proxy automatically scales the stable window
 ## @param automaticScaling.scaleDownWindows ShardingSphere-Proxy automatically shrinks the stabilized window
@@ -199,11 +209,7 @@ automaticScaling:
 ##   requests:
 ##     cpu: 2
 ##
-resources:
-  limits:
-    cpu: '2'
-  requests:
-    cpu: '1'
+resources: {}
 ## @param service.type ShardingSphere-Proxy external exposure mode
 ## @param service.port ShardingSphere-Proxy exposes  port
 ##
@@ -216,7 +222,13 @@ startPort: 3307
 ## @param mySQLDriver.version ShardingSphere-Proxy The ShardingSphere-Proxy mysql driver version will not be downloaded if it is empty
 ##
 mySQLDriver:
-  version: "5.1.47"
+  version: "5.1.43"
+## @param imagePullSecrets ShardingSphere-Proxy pull private image repository key
+## e.g:
+## imagePullSecrets:
+##   - name: mysecret
+##
+imagePullSecrets: []
 ## @section  ShardingSphere-Proxy ServerConfiguration parameters
 ## NOTE: If you use the sub-charts to deploy Zookeeper, the server-lists field must be "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}",
 ## otherwise please fill in the correct zookeeper address
@@ -234,7 +246,7 @@ serverConfig:
   ##
   authority:
     privilege:
-      type: ALL_PRIVILEGES_PERMITTED
+      type: ALL_PERMITTED
     users:
       - password: root
         user: root@%
@@ -247,10 +259,8 @@ serverConfig:
   ## @param serverConfig.mode.repository.props.retryIntervalMilliseconds Milliseconds of retry interval
   ## @param serverConfig.mode.repository.props.timeToLiveSeconds Seconds of ephemeral data live
   ## @param serverConfig.mode.repository.type Type of persist repository. Now only support ZooKeeper
-  ## @param serverConfig.mode.overwrite Whether overwrite persistent configuration with local configuration
-  ##
+  ## @param serverConfig.props.proxy-frontend-database-protocol-type Default startup protocol
   mode:
-    overwrite: true
     repository:
       props:
         maxRetries: 3
@@ -274,7 +284,7 @@ zookeeper:
   enabled: true
   ## @param zookeeper.replicaCount Number of ZooKeeper nodes
   ##
-  replicaCount: 3
+  replicaCount: 1
   ## ZooKeeper Persistence parameters
   ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
   ## @param zookeeper.persistence.enabled Enable persistence on ZooKeeper using PVC(s)
@@ -289,8 +299,6 @@ zookeeper:
       - ReadWriteOnce
     size: 8Gi
 ```
-
-
 
 ## Clean
 

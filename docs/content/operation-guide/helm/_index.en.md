@@ -12,14 +12,14 @@ chapter = true
 1. Add SharedingSphere-Proxy to the local Helm warehouse:
 
 ```shell
-helm repo add shardingsphere-proxy https://apache.github.io/shardingsphere-on-cloud
- helm repo update
+helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
+helm repo update
 ```
 
 2. Install ShardingSphere-Proxy Charts:
 
 ```shell
-helm install shardingsphere-proxy shardingsphere/apache-shardingsphere-proxy-charts --version 0.1.0
+helm install shardingsphere-proxy shardingsphere/apache-shardingsphere-proxy-charts 
 ```
 
 ### Source Code Installation
@@ -48,6 +48,12 @@ helm uninstall shardingsphere-proxy
 ```
 
 ## Parameter Description
+
+### Name parameters
+
+| Name              | Description                                                                                                | Value                         |
+|-------------------|------------------------------------------------------------------------------------------------------------|-------------------------------|
+| `nameOverride   ` | nameOverride String to partially override common.names.fullname template (will maintain the release name)  | `apache-shardingsphere-proxy` |
 
 ### Governance Node Parameters
 
@@ -90,23 +96,9 @@ helm uninstall shardingsphere-proxy
 ## Example
 
 ```yaml
-#
-#  Licensed to the Apache Software Foundation (ASF) under one or more
-#  contributor license agreements.  See the NOTICE file distributed with
-#  this work for additional information regarding copyright ownership.
-#  The ASF licenses this file to You under the Apache License, Version 2.0
-#  (the "License"); you may not use this file except in compliance with
-#  the License.  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-#
-
+## @section Name parameters
+## @param nameOverride String to partially override common.names.fullname template (will maintain the release name)
+nameOverride: apache-shardingsphere-proxy
 ## @section Governance-Node parameters
 ## @param governance.enabled Switch to enable or disable the governance helm chart
 ##
@@ -159,7 +151,7 @@ compute:
     pullPolicy: IfNotPresent
     ## Overrides the image tag whose default is the chart appVersion.
     ##
-    tag: "5.2.0"
+    tag: "5.2.1"
   ## @param compute.imagePullSecrets Specify docker-registry secret names as an array
   ## e.g：
   ## imagePullSecrets:
@@ -194,7 +186,7 @@ compute:
   ## @param compute.mysqlConnector.version MySQL connector version
   ##
   mysqlConnector:
-    version: "5.1.49"
+    version: "5.1.43"
   ## @param compute.startPort ShardingSphere-Proxy start port
   ## ShardingSphere-Proxy start port
   ## ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/startup/docker/
@@ -218,10 +210,10 @@ compute:
     ##
     authority:
       privilege:
-        type: ALL_PRIVILEGES_PERMITTED
+        type: ALL_PERMITTED
       users:
-      - password: root
-        user: root@%
+        - password: root
+          user: root@%
     ## @section Compute-Node ShardingSphere-Proxy ServerConfiguration mode Configuration parameters
     ## @param compute.serverConfig.mode.type Type of mode configuration. Now only support Cluster mode
     ## @param compute.serverConfig.mode.repository.props.namespace Namespace of registry center
@@ -231,7 +223,6 @@ compute:
     ## @param compute.serverConfig.mode.repository.props.retryIntervalMilliseconds Milliseconds of retry interval
     ## @param compute.serverConfig.mode.repository.props.timeToLiveSeconds Seconds of ephemeral data live
     ## @param compute.serverConfig.mode.repository.type Type of persist repository. Now only support ZooKeeper
-    ## @param compute.serverConfig.mode.overwrite Whether overwrite persistent configuration with local configuration
     ##
     mode:
       type: Cluster
@@ -244,6 +235,9 @@ compute:
           retryIntervalMilliseconds: 500
           server-lists: "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}"
           timeToLiveSeconds: 60
-      overwrite: true
+    ## @param compute.serverConfig.props.proxy-frontend-database-protocol-type proxy frontend database protocol type. Only support: PostgreSQL,openGauss,MariaDB,MySQL
+    ##
+    props:
+      proxy-frontend-database-protocol-type: MySQL
 ```
 

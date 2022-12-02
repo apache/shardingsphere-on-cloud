@@ -84,7 +84,7 @@ serverConfig:
   ##
   authority:
     privilege:
-      type: ALL_PRIVILEGES_PERMITTED
+      type: ALL_PERMITTED
     users:
       - password: root
         user: root@%
