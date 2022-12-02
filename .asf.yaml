@@ -21,7 +21,7 @@ notifications:
   pullrequests: notifications@shardingsphere.apache.org
 
 github:
-  description: ShardingSphere on Cloud
+  description: A collection of tools and best practices to take ShardingSphere into the cloud
   protected_branches:
     main:
       required_pull_request_reviews:
