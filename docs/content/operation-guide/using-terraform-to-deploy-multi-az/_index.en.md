@@ -7,13 +7,13 @@ chapter = true
 
 ## Background
 
-Terraform is an open source automated infrastructure orchestration tool, which uses the concept of "infrastructure is code" to manage infrastructure changes. Public cloud manufacturers such as AWS, gcp, Azure, aliyun, and ucloud support it, and various providers provided by the community have become a standard in the field of "infrastructure is code".
+Terraform is an open source automated infrastructure orchestration tool, which uses the concept of "infrastructure as code" to manage infrastructure changes. Public cloud providers such as AWS, Google Cloud Platform (GCP), Azure, Alibaba Cloud, and Ucloud support it, as well as various community-supported providers have become a standard in the field of "infrastructure is code".
 
 Terraform has the following advantages:
 
-- Support multi cloud deployment
+- Support multi-cloud deployment
 
-  Terraform is applicable to multi cloud solutions. It deploys similar infrastructure to Alibaba Cloud, other cloud providers or local data centers. Developers can use the same tools and similar configuration files to manage the resources of different cloud providers at the same time.
+  Terraform is applicable to multi-cloud solutions. It deploys similar infrastructure to Alibaba Cloud, other cloud providers or local data centers. Developers can use the same tools and similar configuration files to manage the resources of different cloud providers at the same time.
 
 - Automated manage infrastructure
 
@@ -29,11 +29,11 @@ Terraform has the following advantages:
 
 ## Goal
 
-You can use Terraform to create a shardingSphere high availability cluster on Amazon. The cluster architecture is shown below. More cloud vendors will be supported later.
+You can use Terraform to create a ShardingSphere high availability cluster on Amazon AWS. The cluster architecture is shown below. More cloud providers will be supported in the near future.
 
 ![](../../../img/overview/terraform.png)
 
-The Amazon resources created are as follows:
+The Amazon resources created are the following:
 1. One ZooKeeper instance per AZ.
 2. One Auto Scaling Group per AZ.
 3. Each AZ has a Launch Template, which is used by the Auto Scaling Group to start the SharedingSphere Proxy instance.
@@ -41,7 +41,7 @@ The Amazon resources created are as follows:
 
 ## Quick Start
 
-### Prerequisites
+### Requirements
 
 To create a ShardingSphere Proxy highly available cluster, you need to prepare the following resources in advance:
 1. An ssh keypair used to remotely connect EC2 instances.
@@ -55,7 +55,7 @@ Modify the parameters in `main.tf` according to the above prepared resources.
 
 ### Procedure
 
-1. Enter the directory of terraform, modify the parameters in `main.tf`  according to the above prepared resources.
+1. Enter the terraform directory, modify the parameters in `main.tf`  according to the above prepared resources.
 
 ```shell
 git clone --depth=1 https://github.com/apache/shardingsphere-on-cloud.git
@@ -72,7 +72,7 @@ terraform init
 
 ![](../../../img/operation-guide/5-1.png)
 
-3. Run the following command to check the plan that terraform will execute. You can observe whether it meets the expectation.
+3. Run the following command to check the plan that terraform will execute, and check whether it meets your expectations.
 
 ```shell
 terraform plan
@@ -80,7 +80,7 @@ terraform plan
 
 ![](../../../img/operation-guide/5-2.png)
 
-4. If it is as expected, you can execute the following command to create a cluster.
+4. If the plan is as expected, you can execute the following command to create a cluster.
 
 ```shell
 terraform apply
@@ -199,7 +199,7 @@ terraform destroy
 |----|----|
 |[shardingsphere_domain](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#output_shardingsphere_domain)|The domain name provided by the shardingSphere Proxy cluster. Other applications can connect to the proxy through this domain name.|
 
-## Operation and Maintenance
+## DevOps
 
 By default, ZooKeeper and ShardingSphere Proxy services created using our Terraform configuration can be managed using systemd.
 
