@@ -197,8 +197,7 @@ func addInitContainer(dp *appsv1.Deployment, mysql *v1alpha1.MySQLDriver) {
 		dp.Spec.Template.Spec.Containers[0].VolumeMounts = append(dp.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
 			Name:      "mysql-connect-jar",
 			MountPath: "/opt/shardingsphere-proxy/ext-lib",
-		},
-		)
+		})
 
 		dp.Spec.Template.Spec.Volumes = append(dp.Spec.Template.Spec.Volumes, v1.Volume{
 			Name: "mysql-connect-jar",
