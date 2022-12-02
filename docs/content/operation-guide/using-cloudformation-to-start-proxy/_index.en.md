@@ -5,11 +5,11 @@ weight = 3
 chapter = true
 +++
 
-AWS CloudFormation is a simple tool to configure and start any environment and infrastructure in the way of infrastructure is code. The AWS CloudFormation Stack template can help you quickly start Apache ShardingSphere on AWS.
+AWS CloudFormation is a simple tool leveraging infrastructure as code to configure and start any environment and infrastructure. The AWS CloudFormation Stack template can help you to quickly start Apache ShardingSphere on AWS.
 
-## Preconditions
+## Requirements
 
-Before starting, you need to confirm the following checklist:
+Before getting started, you need to confirm the following checklist:
 
 - [ ] The selected region is ap-north-1 (Beijing). Currently, the AMI and related components that protect Apache ShardingSphere Proxy are only valid in the ap-north-1 region
 - [ ] An existing VPC is used to deploy Apache ShardingSphere Proxy
@@ -20,7 +20,7 @@ Before starting, you need to confirm the following checklist:
 
 ## Start ShardingSphere Proxy Cluster
 
-### 1. Create CloudFormat stack with new resources
+### 1. Create CloudFormation stack with new resources
 
 As shown in the figure below:
 
@@ -56,7 +56,7 @@ Review the configuration contents and confirm that all contents meet the expecta
 
 ### 6. Check EC2 instances
 
-A few minutes later, the EC2 instance has started.
+After a few minutes, the EC2 instance will have started.
 
 ![](../../../img/operation-guide/8.PNG)
 
