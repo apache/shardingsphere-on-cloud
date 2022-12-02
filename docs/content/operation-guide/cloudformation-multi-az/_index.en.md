@@ -115,7 +115,7 @@ The internal domain name created by default is [proxy.shardingsphere.org](proxy.
 |ZookeeperInstanceType     |EC2 instance type of ZooKeeper Server                             |String            |t2.nano|
 |ZookeeperVersion          |Version number of Zookeeper Server                                      |String            |3.7.1|
 
-#### 输出列表
+#### Output List
 
 |Name |Description|Export Name|Value|
 |----|---|--------|--|
