@@ -65,7 +65,7 @@ CloudFormation {
 
   Parameter("HostedZoneId") {
     String
-    Default "Z07855663B17FC5XE8A3O"
+    Default "Z07043461249YRLI6CRZ8"
     Description "The zone id corresponding to HostedZoneName"
   }
 
@@ -84,6 +84,24 @@ CloudFormation {
     Default "-Xmx512m -Xms512m -Xmn128m "
   }
 
+  Parameter("ShardingSphereProxyAsgDesiredCapacity") {
+    String
+    Default "3"
+    Description "The desired capacity is the initial capacity of the Auto Scaling group at the time of its creation and the capacity it attempts to maintain. see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-as-group.html#cfn-as-group-desiredcapacitytype, The default value is 3"
+  }
+
+  Parameter("ShardingSphereProxyAsgMaxSize") {
+    String
+    Default "6"
+    Description "The maximum size of ShardingSphere Proxy Auto Scaling Group. The default values is 6"
+  }
+
+  Parameter("ShardingSphereProxyAsgHealthCheckGracePeriod") {
+    Integer
+    Default 60
+    Description "The amount of time, in seconds, that Amazon EC2 Auto Scaling waits before checking the health status of an EC2 instance that has come into service and marking it unhealthy due to a failed health check. see https://docs.aws.amazon.com/autoscaling/ec2/userguide/health-check-grace-period.html"
+  }
+
   Parameter("ZookeeperVersion") {
     String
     Default "3.7.1"
@@ -94,6 +112,7 @@ CloudFormation {
     Default 1024
     Description "The maximum heap size given to ZooKeeper"
   }
+
 
 
   (0..2).each do |i| 
@@ -136,64 +155,49 @@ CloudFormation {
     }
   end
 
-  (0..2).each do |i| 
-    name = "networkiface#{i}"
-    EC2_NetworkInterface(name) {
-      SubnetId FnSelect(i, Ref("Subnets"))
-    }
-  end
-  
-  (0..2).each do |i| 
-    name = "launchtemplate#{i}"
-    EC2_LaunchTemplate(name) {
-      LaunchTemplateName FnSub("shardingsphere-${TMPL_NAME}", :TMPL_NAME => FnSelect(i, FnGetAZs(Ref('AWS::Region'))))
-      LaunchTemplateData do 
-        ImageId Ref("ImageId")
-        InstanceType Ref("ShardingSphereInstanceType")
-        KeyName Ref("KeyName")
+  launchtemplate_resource_name = "shardingsphereproxyLaunchtemplate"
+  launchtemplate_name = "shardingsphereproxy-launchtemplate"
 
-        MetadataOptions do
-          HttpEndpoint "enabled"
-          HttpTokens   "required"
-          InstanceMetadataTags "enabled"
-        end
+  EC2_LaunchTemplate(launchtemplate_resource_name) {
+    LaunchTemplateName launchtemplate_name
+    LaunchTemplateData do
+      ImageId Ref("ImageId")
+      InstanceType Ref("ShardingSphereInstanceType")
+      KeyName Ref("KeyName")
 
-        Monitoring do
-          Enabled  true
-        end
-
-        NetworkInterfaces [
-          {
-            :DeleteOnTermination => false,
-            :DeviceIndex => 0,
-            :NetworkInterfaceId => FnGetAtt("networkiface#{i}", "Id")
-          }
-        ]
-        
-        TagSpecifications [
-          {
-            :ResourceType => "instance",
-            :Tags => [
-              {
-                :Key => "Name",
-                :Value => "shardingsphere-#{i+1}"
-              }
-            ]
-          }
-        ]
-
-        UserData FnBase64(
-          FnSub(
-            IO.read("./shardingsphere-cloud-init.yml"), 
-            :ZK_SERVERS => FnSub((0..2).map{|i| "zk-#{i+1}.${HostedZoneName}:2181" }.join(",")), 
-            :VERSION => Ref("ShardingSphereVersion"),
-            :JAVA_MEM_OPTS => Ref("ShardingSphereJavaMemOpts")
-          )
-        )
+      MetadataOptions do
+        HttpEndpoint "enabled"
+        HttpTokens   "required"
+        InstanceMetadataTags "enabled"
       end
-    }
-  end
-  
+
+      Monitoring do
+        Enabled  true
+      end
+
+      TagSpecifications [
+        {
+          :ResourceType => "instance",
+          :Tags => [
+            {
+              :Key => "Name",
+              :Value => "shardingsphere-proxy"
+            }
+          ]
+        }
+      ]
+
+      UserData FnBase64(
+        FnSub(
+          IO.read("./shardingsphere-cloud-init.yml"),
+          :ZK_SERVERS => FnSub((0..2).map{|i| "zk-#{i+1}.${HostedZoneName}:2181" }.join(",")),
+          :VERSION => Ref("ShardingSphereVersion"),
+          :JAVA_MEM_OPTS => Ref("ShardingSphereJavaMemOpts")
+        )
+      )
+    end
+  }
+
   ElasticLoadBalancingV2_LoadBalancer("ssinternallb") {
     Name "shardingsphere-internal-lb"
     Scheme "internal"
@@ -233,26 +237,24 @@ CloudFormation {
     ]
   }
 
-  (0..2).each do |i| 
-    name = "autoscaling#{i}"
-    AutoScaling_AutoScalingGroup(name) {
-      AutoScalingGroupName "shardingsphere-#{i}" 
-      AvailabilityZones [FnSelect(i, FnGetAZs(Ref("AWS::Region")))]
-      DesiredCapacity "1"
-      MaxSize "1"
-      MinSize "1"
-      HealthCheckGracePeriod  60
-      HealthCheckType "EC2"
+  asg_resource_name = "shardingsphereproxyAsg"
+  asg_name = "shardingsphereproxy-asg"
+  AutoScaling_AutoScalingGroup(asg_resource_name) {
+    AutoScalingGroupName asg_name
+    AvailabilityZones FnGetAZs(Ref("AWS::Region"))
+    DesiredCapacity Ref("ShardingSphereProxyAsgDesiredCapacity")
+    MinSize "1"
+    MaxSize Ref("ShardingSphereProxyAsgMaxSize")
+    HealthCheckGracePeriod  Ref("ShardingSphereProxyAsgHealthCheckGracePeriod")
+    HealthCheckType "ELB"
 
-      TargetGroupARNs [ Ref("sslbtg")]
+    TargetGroupARNs [ Ref("sslbtg")]
 
-      LaunchTemplate do
-        LaunchTemplateName  FnSub("shardingsphere-${TMPL_NAME}", :TMPL_NAME => FnSelect(i, FnGetAZs(Ref('AWS::Region'))))
-        Version FnGetAtt("launchtemplate#{i}", "LatestVersionNumber")
-      end
-    }
-  end
-  
+    LaunchTemplate do
+      LaunchTemplateName launchtemplate_name
+      Version FnGetAtt(launchtemplate_resource_name, "LatestVersionNumber")
+    end
+  }
 
   ElasticLoadBalancingV2_Listener("sslblistener") {
     Port Ref("ShardingSpherePort")
