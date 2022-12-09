@@ -36,7 +36,9 @@ write_files:
     ExecStart=/usr/local/shardingsphere/bin/start.sh
     ExecStop=/usr/local/shardingsphere/bin/stop.sh
     Environment="JAVA_MEM_COMMON_OPTS=${JAVA_MEM_OPTS}"
-    Restart=on-abort
+    Restart=always
+    RestartSec=3
+    StartLimitInterval=0
     [Install]
     WantedBy=default.target
 
