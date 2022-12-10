@@ -24,7 +24,7 @@ nameOverride: apache-shardingsphere-operator-cluster
 ## @param proxyVersion ShardingSphere-Proxy cluster version
 ##
 replicaCount: "3"
-proxyVersion: "5.2.1"
+proxyVersion: "5.3.0"
 ## @param automaticScaling.enable ShardingSphere-Proxy Whether the ShardingSphere-Proxy cluster has auto-scaling enabled
 ## @param automaticScaling.scaleUpWindows ShardingSphere-Proxy automatically scales the stable window
 ## @param automaticScaling.scaleDownWindows ShardingSphere-Proxy automatically shrinks the stabilized window
