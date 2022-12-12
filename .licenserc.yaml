@@ -36,5 +36,8 @@ header:
     - '**/go.sum'
     - 'shardingsphere-operator/build/.dockerignore'
     - 'shardingsphere-operator/api/v1alpha1/zz_generated.deepcopy.go'
+    - 'cloudformation/multi-az/*.conf'
+    - 'cloudformation/multi-az/*.service'
+    - 'cloudformation/multi-az/*.json'
 
   comment: on-failure

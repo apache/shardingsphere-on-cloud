@@ -18,12 +18,14 @@
 CloudFormation {
   Description "Deploy a ShardingSphere Proxy Cluster in MultiAz mode"
 
+
+
   Parameter("ZookeeperInstanceType") {
     String
     Default "t2.nano"
   }
 
-  Parameter("ShardingSphereInstanceType") {
+  Parameter("ShardingSphereProxyInstanceType") {
     String
     Default "t2.micro"
   }
@@ -69,12 +71,12 @@ CloudFormation {
     Description "The zone id corresponding to HostedZoneName"
   }
 
-  Parameter("ShardingSpherePort") {
+  Parameter("ShardingSphereProxyPort") {
     Integer
     Default 3307
   }
 
-  Parameter("ShardingSphereVersion") {
+  Parameter("ShardingSphereProxyVersion") {
     String
     Default "5.2.1"
   }
@@ -98,7 +100,7 @@ CloudFormation {
 
   Parameter("ShardingSphereProxyAsgHealthCheckGracePeriod") {
     Integer
-    Default 60
+    Default 120
     Description "The amount of time, in seconds, that Amazon EC2 Auto Scaling waits before checking the health status of an EC2 instance that has come into service and marking it unhealthy due to a failed health check. see https://docs.aws.amazon.com/autoscaling/ec2/userguide/health-check-grace-period.html"
   }
 
@@ -155,15 +157,121 @@ CloudFormation {
     }
   end
 
-  launchtemplate_resource_name = "shardingsphereproxyLaunchtemplate"
-  launchtemplate_name = "shardingsphereproxy-launchtemplate"
+  role_name = "ShardingSphereProxySTSRole"
+  IAM_Role(role_name) {
+    RoleName role_name
+    AssumeRolePolicyDocument(
+        :Version => "2012-10-17",
+        :Statement => [
+            {
+              :Action => "sts:AssumeRole",
+              :Principal => {
+                :Service => "ec2.amazonaws.com"
+              },
+              :Effect => "Allow"
+            }
+        ]
+    )
+  }
 
-  EC2_LaunchTemplate(launchtemplate_resource_name) {
+  policy_name = "ShardingSphereProxyAccessPolicy"
+  IAM_Policy(policy_name) do
+    PolicyName policy_name
+    PolicyDocument(
+      :Version => "2012-10-17",
+      :Statement => [
+          {
+            "Action": [
+              "cloudwatch:PutMetricData",
+              "ec2:DescribeTags",
+              "logs:PutLogEvents",
+              "logs:DescribeLogStreams",
+              "logs:DescribeLogGroups",
+              "logs:CreateLogStream",
+              "logs:CreateLogGroup"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
+          }
+      ]
+    )
+    Role Ref(role_name)
+  end
+
+  instance_profile_name = "ShardingSphereProxyInstanceProfile"
+  IAM_InstanceProfile(instance_profile_name) do
+    InstanceProfileName instance_profile_name
+    Roles [Ref(role_name)]
+  end
+
+  asg_name = "ShardingSphereProxyASG"
+  launchtemplate_name = "ShardingSphereProxyLaunchtemplate"
+
+  EC2_LaunchTemplate(launchtemplate_name) {
+    Metadata(
+      "AWS::CloudFormation::Init" => {
+          :configSets => {
+              :default => [
+                  "01_setupCfnHup", "02_config-amazon-cloudwatch-agent", "03_restart_amazon-cloudwatch-agent"
+              ],
+              :UpdateEnvironment => [ "02_config-amazon-cloudwatch-agent", "03_restart_amazon-cloudwatch-agent" ],
+          },
+
+          "02_config-amazon-cloudwatch-agent" => {
+              :files => {
+                  "/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json" => {
+                      :content => IO.read("./cloudwatch-agent.json")
+                  }
+              }
+          },
+          "03_restart_amazon-cloudwatch-agent" => {
+              :commands => {
+                  "01_stop_service" => {
+                      :command => "/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a stop"
+                  },
+                  "02_start_service" => {
+                      :command => "/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s"
+                  }
+             }
+          },
+          "01_setupCfnHup" => {
+              :files => {
+                  "/etc/cfn/cfn-hup.conf" => {
+                      :content => FnSub(IO.read("./cfn-hup.conf")),
+                      :mode => "000400",
+                      :owner => "root",
+                      :group => "root",
+                  },
+                  "/etc/cfn/hooks.d/amazon-cloudwatch-agent-auto-reloader.conf" => {
+                      :content => FnSub(IO.read("./cloudwatch-agent-auto-reloader.conf"), :LaunchTemplateName => launchtemplate_name),
+                      :mode => "000400",
+                      :owner => "root",
+                      :group => "root",
+                  },
+                  "/lib/systemd/system/cfn-hup.service" => {
+                      :content => FnSub(IO.read("./cfn-hup.service"))
+                  }
+              },
+              :commands => {
+                  "01enable_cfn_hup" => {
+                      :command => FnSub("systemctl enable cfn-hup.service")
+                  },
+                  "02start_cfn_hup" => {
+                      :command => FnSub("systemctl start cfn-hup.service")
+                  }
+              }
+          }
+      }
+    )
+
     LaunchTemplateName launchtemplate_name
     LaunchTemplateData do
       ImageId Ref("ImageId")
-      InstanceType Ref("ShardingSphereInstanceType")
+      InstanceType Ref("ShardingSphereProxyInstanceType")
       KeyName Ref("KeyName")
+      IamInstanceProfile do
+        Name Ref(instance_profile_name)
+      end
 
       MetadataOptions do
         HttpEndpoint "enabled"
@@ -181,7 +289,7 @@ CloudFormation {
           :Tags => [
             {
               :Key => "Name",
-              :Value => "shardingsphere-proxy"
+              :Value => "ShardingSphereProxy"
             }
           ]
         }
@@ -191,15 +299,19 @@ CloudFormation {
         FnSub(
           IO.read("./shardingsphere-cloud-init.yml"),
           :ZK_SERVERS => FnSub((0..2).map{|i| "zk-#{i+1}.${HostedZoneName}:2181" }.join(",")),
-          :VERSION => Ref("ShardingSphereVersion"),
-          :JAVA_MEM_OPTS => Ref("ShardingSphereJavaMemOpts")
+          :VERSION => Ref("ShardingSphereProxyVersion"),
+          :JAVA_MEM_OPTS => Ref("ShardingSphereJavaMemOpts"),
+          :LaunchTemplateName => launchtemplate_name,
+          :ASGName => asg_name,
         )
       )
     end
   }
 
-  ElasticLoadBalancingV2_LoadBalancer("ssinternallb") {
-    Name "shardingsphere-internal-lb"
+  lb_name = "ShardingSphereProxyLB"
+
+  ElasticLoadBalancingV2_LoadBalancer(lb_name) {
+    Name lb_name
     Scheme "internal"
     Type "network"
     
@@ -212,16 +324,18 @@ CloudFormation {
     Tags [
       Tag do
         Key "Name"
-        Value "shardingsphere"
+        Value "ShardingSphereProxy"
       end
     ]
   }
 
 
-  ElasticLoadBalancingV2_TargetGroup("sslbtg") {
-    Name "shardingsphere-lb-tg"
-    Port Ref("ShardingSpherePort")
+  tg_name = "ShardingSphereProxyLBTG"
+  ElasticLoadBalancingV2_TargetGroup(tg_name) {
+    Name tg_name
+    Port Ref("ShardingSphereProxyPort")
     Protocol "TCP"
+    HealthyThresholdCount 2
     VpcId Ref("VpcId")
     TargetGroupAttributes [
       TargetGroupAttribute do
@@ -232,14 +346,13 @@ CloudFormation {
     Tags [
       Tag do
         Key "Name"
-        Value "shardingsphere"
+        Value "ShardingSphereProxy"
       end
     ]
   }
 
-  asg_resource_name = "shardingsphereproxyAsg"
-  asg_name = "shardingsphereproxy-asg"
-  AutoScaling_AutoScalingGroup(asg_resource_name) {
+
+  AutoScaling_AutoScalingGroup(asg_name) {
     AutoScalingGroupName asg_name
     AvailabilityZones FnGetAZs(Ref("AWS::Region"))
     DesiredCapacity Ref("ShardingSphereProxyAsgDesiredCapacity")
@@ -248,40 +361,44 @@ CloudFormation {
     HealthCheckGracePeriod  Ref("ShardingSphereProxyAsgHealthCheckGracePeriod")
     HealthCheckType "ELB"
 
-    TargetGroupARNs [ Ref("sslbtg")]
+    TargetGroupARNs [ Ref(tg_name)]
 
     LaunchTemplate do
       LaunchTemplateName launchtemplate_name
-      Version FnGetAtt(launchtemplate_resource_name, "LatestVersionNumber")
+      Version FnGetAtt(launchtemplate_name, "LatestVersionNumber")
     end
+
+    CreationPolicy("ResourceSignal", { :Count => 3,  :Timeout => "PT15M" })
   }
 
-  ElasticLoadBalancingV2_Listener("sslblistener") {
-    Port Ref("ShardingSpherePort")
-    LoadBalancerArn Ref("ssinternallb")
+  listener_name = "ShardingSphereProxyLBListener"
+  ElasticLoadBalancingV2_Listener(listener_name) {
+    Port Ref("ShardingSphereProxyPort")
+    LoadBalancerArn Ref(lb_name)
     Protocol "TCP"
     DefaultActions [
       {
         :Type => "forward",
-        :TargetGroupArn => Ref("sslbtg")
+        :TargetGroupArn => Ref(tg_name)
       }
     ]
   }
 
-  Route53_RecordSet("ssinternaldomain") {
+  domain_name = "ShardingSphereProxyInternalDomain"
+  Route53_RecordSet(domain_name) {
     HostedZoneId Ref("HostedZoneId")
     Name FnSub("proxy.${HostedZoneName}")
     Type "A"
     AliasTarget do 
-      HostedZoneId FnGetAtt("ssinternallb", "CanonicalHostedZoneID")
-      DNSName FnGetAtt("ssinternallb", "DNSName")
+      HostedZoneId FnGetAtt(lb_name, "CanonicalHostedZoneID")
+      DNSName FnGetAtt(lb_name, "DNSName")
       EvaluateTargetHealth true
     end
   }
 
-  Output("ssinternaldomain") do
-    Value Ref("ssinternaldomain")
-    Export FnSub("${AWS::StackName}-ShardingSphere-Internal-Domain")
+  Output(domain_name) do
+    Value Ref(domain_name)
+    Export FnSub("${AWS::StackName}-ShardingSphereProxy-Internal-Domain")
   end
 
   (0..2).each do |i|
