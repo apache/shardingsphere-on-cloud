@@ -528,86 +528,86 @@ func Test_ConstructCascadingService(t *testing.T) {
 }
 
 func Test_addInitContaienr(t *testing.T) {
-    cases := []struct{
-        deploy *appsv1.Deployment
-        mysql *v1alpha1.MySQLDriver
-        message string
-    }{
-        {
-            deploy: &appsv1.Deployment{
-                Spec: appsv1.DeploymentSpec{
-                    Template: v1.PodTemplateSpec{
-                        Spec: v1.PodSpec{
-                            InitContainers: []v1.Container{},
-                            Containers: []v1.Container{
-                                {
-                                    VolumeMounts: []v1.VolumeMount{},
-                                },
-                            },
-                            Volumes: []v1.Volume{},
-                        },
-                    },
-                },
-            },
-            mysql: &v1alpha1.MySQLDriver{
-                Version: "5.1.47",
-            },
-            message: "Add InitContainer for MySQL Driver",
-        },
-    }
+	cases := []struct {
+		deploy  *appsv1.Deployment
+		mysql   *v1alpha1.MySQLDriver
+		message string
+	}{
+		{
+			deploy: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							InitContainers: []v1.Container{},
+							Containers: []v1.Container{
+								{
+									VolumeMounts: []v1.VolumeMount{},
+								},
+							},
+							Volumes: []v1.Volume{},
+						},
+					},
+				},
+			},
+			mysql: &v1alpha1.MySQLDriver{
+				Version: "5.1.47",
+			},
+			message: "Add InitContainer for MySQL Driver",
+		},
+	}
 
-    for _, c := range cases {
-        addInitContainer(c.deploy, c.mysql)
-        assert.Equal(t, c.deploy.Spec.Template.Spec.InitContainers[0].Name, "download-mysql-connect", c.message)
-    }
+	for _, c := range cases {
+		addInitContainer(c.deploy, c.mysql)
+		assert.Equal(t, c.deploy.Spec.Template.Spec.InitContainers[0].Name, "download-mysql-connect", c.message)
+	}
 }
 
 func Test_processOptionalParameter(t *testing.T) {
-    /*
-    cases := []struct{
+	/*
+	   cases := []struct{
 
-    }{
-        {
+	   }{
+	       {
 
-        },
-    }
+	       },
+	   }
 
-    for _, c := range cases {
+	   for _, c := range cases {
 
-    }
-    */
+	   }
+	*/
 }
 
 func Test_ConstructCascadingConfigmap(t *testing.T) {
-    /*
-    cases := []struct{
+	/*
+	   cases := []struct{
 
-    }{
-        {
+	   }{
+	       {
 
-        },
-    }
+	       },
+	   }
 
-    for _, c := range cases {
+	   for _, c := range cases {
 
-    }
-    */
+	   }
+	*/
 }
 
 func Test_ConstructHPA(t *testing.T) {
-    /*
-    cases := []struct{
+	/*
+	   cases := []struct{
 
-    }{
-        {
+	   }{
+	       {
 
-        },
-    }
+	       },
+	   }
 
-    for _, c := range cases {
+	   for _, c := range cases {
 
-    }
-    */
+	   }
+	*/
 }
 
 func Test_ToYAML(t *testing.T) {
