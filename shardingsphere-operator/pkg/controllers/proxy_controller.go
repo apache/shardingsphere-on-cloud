@@ -89,11 +89,6 @@ func (r *ProxyReconciler) reconcile(ctx context.Context, req ctrl.Request, rt *v
 		return res, err
 	}
 
-	if res, err := r.reconcileHPA(ctx, req.NamespacedName, rt); err != nil {
-		log.Error(err, "Error reconcile HPA")
-		return res, err
-	}
-
 	if res, err := r.reconcileService(ctx, req.NamespacedName, rt); err != nil {
 		log.Error(err, "Error reconcile Service")
 		return res, err
@@ -102,6 +97,12 @@ func (r *ProxyReconciler) reconcile(ctx context.Context, req ctrl.Request, rt *v
 		log.Error(err, "Error reconcile Pod list")
 		return res, err
 	}
+
+	if res, err := r.reconcileHPA(ctx, req.NamespacedName, rt); err != nil {
+		log.Error(err, "Error reconcile HPA")
+		return res, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -109,16 +110,16 @@ func (r *ProxyReconciler) reconcileDeployment(ctx context.Context, namespacedNam
 	deploy := &appsv1.Deployment{}
 
 	var err error
-	if err = r.Get(ctx, namespacedName, deploy); err != nil && !apierrors.IsNotFound(err) {
-		return ctrl.Result{}, err
-	}
-
-	if apierrors.IsNotFound(err) {
-		exp := reconcile.NewDeployment(ssproxy)
-		if err := r.Create(ctx, exp); err != nil {
-			ssproxy.SetInitializationFailed()
-			_ = r.Status().Update(ctx, ssproxy)
+	if err = r.Get(ctx, namespacedName, deploy); err != nil {
+		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
+		} else {
+			exp := reconcile.NewDeployment(ssproxy)
+			if err := r.Create(ctx, exp); err != nil {
+				ssproxy.SetInitializationFailed()
+				_ = r.Status().Update(ctx, ssproxy)
+				return ctrl.Result{}, err
+			}
 		}
 	} else {
 		act := deploy.DeepCopy()
@@ -134,21 +135,21 @@ func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types
 	hpa := &autoscalingv2beta2.HorizontalPodAutoscaler{}
 
 	var err error
-	if err := r.Get(ctx, namespacedName, hpa); err != nil && !apierrors.IsNotFound(err) {
-		return ctrl.Result{}, err
-	}
-
-	if apierrors.IsNotFound(err) {
-		if ssproxy.Spec.AutomaticScaling != nil {
-			exp := reconcile.NewHPA(ssproxy)
-			if err := r.Create(ctx, exp); err != nil {
-				ssproxy.SetInitializationFailed()
-				_ = r.Status().Update(ctx, ssproxy)
-				return ctrl.Result{}, err
+	if err = r.Get(ctx, namespacedName, hpa); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		} else {
+			if ssproxy.Spec.AutomaticScaling != nil && ssproxy.Spec.AutomaticScaling.Enable {
+				exp := reconcile.NewHPA(ssproxy)
+				if err := r.Create(ctx, exp); err != nil {
+					ssproxy.SetInitializationFailed()
+					_ = r.Status().Update(ctx, ssproxy)
+					return ctrl.Result{}, err
+				}
 			}
 		}
 	} else {
-		if ssproxy.Spec.AutomaticScaling == nil {
+		if ssproxy.Spec.AutomaticScaling == nil || !ssproxy.Spec.AutomaticScaling.Enable {
 			if err := r.Delete(ctx, hpa); err != nil {
 				return ctrl.Result{}, err
 			}
@@ -160,6 +161,7 @@ func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types
 			}
 		}
 	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -167,20 +169,19 @@ func (r *ProxyReconciler) reconcileService(ctx context.Context, namespacedName t
 	service := &v1.Service{}
 
 	var err error
-	if err = r.Get(ctx, namespacedName, service); err != nil && !apierrors.IsNotFound(err) {
-		return ctrl.Result{}, err
-	}
-
-	if apierrors.IsNotFound(err) {
-		exp := reconcile.NewService(ssproxy)
-		if err := r.Create(ctx, exp); err != nil {
-			ssproxy.SetInitializationFailed()
-			_ = r.Status().Update(ctx, ssproxy)
-			// log.Error(err, "Error creating cascaded service")
+	if err = r.Get(ctx, namespacedName, service); err != nil {
+		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
+		} else {
+			exp := reconcile.NewService(ssproxy)
+			if err := r.Create(ctx, exp); err != nil {
+				ssproxy.SetInitializationFailed()
+				_ = r.Status().Update(ctx, ssproxy)
+				return ctrl.Result{}, err
+			}
+			ssproxy.SetInitialized()
+			return ctrl.Result{RequeueAfter: WaitingForReady}, nil
 		}
-		ssproxy.SetInitialized()
-		return ctrl.Result{RequeueAfter: WaitingForReady}, nil
 	} else {
 		act := service.DeepCopy()
 		reconcile.UpdateService(ssproxy, act)
@@ -188,12 +189,12 @@ func (r *ProxyReconciler) reconcileService(ctx context.Context, namespacedName t
 			return ctrl.Result{}, err
 		}
 	}
+
 	return ctrl.Result{}, nil
 }
 
 func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name string, ssproxy *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
 	podList := &v1.PodList{}
-	// err := r.List(ctx, podList, client.InNamespace(req.Namespace), client.MatchingLabels(map[string]string{"apps": req.Name}))
 	if err := r.List(ctx, podList, client.InNamespace(namespace), client.MatchingLabels(map[string]string{"apps": name})); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -208,9 +209,7 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 			}
 		} else {
 			if ssproxy.Status.Phase != v1alpha1.StatusReady {
-				// log.Info("Status is now ready!")
 				ssproxy.SetReady(readyNodes)
-				// } else if readyNodes != *runtimeDeployment.Spec.Replicas {
 			} else if readyNodes != ssproxy.Spec.Replicas {
 				ssproxy.UpdateReadyNodes(readyNodes)
 			}
@@ -227,7 +226,6 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 	}
 
 	return result, nil
-	// log.Info("RuntimeCRD status ", "status", rt.Status)
 }
 
 // SetupWithManager sets up the controller with the Manager.
