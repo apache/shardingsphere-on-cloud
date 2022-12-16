@@ -171,20 +171,23 @@ else echo failed;exit 1;fi;mv /mysql-connector-java-{{ .Version }}.jar /opt/shar
 
 // UpdateDeployment FIXME:merge UpdateDeployment and ConstructCascadingDeployment
 func UpdateDeployment(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *v1.Deployment {
-	act.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
-	if proxy.Spec.AutomaticScaling == nil {
+	if proxy.Spec.AutomaticScaling == nil || !proxy.Spec.AutomaticScaling.Enable {
 		act.Spec.Replicas = &proxy.Spec.Replicas
 	}
-	act.Spec.Template.Spec.Volumes[0].ConfigMap.Name = proxy.Spec.ProxyConfigName
+
+	act.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
 	act.Spec.Template.Spec.Containers[0].Env[0].Value = strconv.FormatInt(int64(proxy.Spec.Port), 10)
 	act.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = proxy.Spec.Port
-	if proxy.Spec.MySQLDriver.Version != "" {
-		addInitContainer(act, proxy.Spec.MySQLDriver)
-	}
 	act.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resources
 	act.Spec.Template.Spec.Containers[0].LivenessProbe = proxy.Spec.LivenessProbe
 	act.Spec.Template.Spec.Containers[0].ReadinessProbe = proxy.Spec.ReadinessProbe
 	act.Spec.Template.Spec.Containers[0].StartupProbe = proxy.Spec.StartupProbe
+
+	act.Spec.Template.Spec.Volumes[0].ConfigMap.Name = proxy.Spec.ProxyConfigName
+
+	if proxy.Spec.MySQLDriver.Version != "" {
+		addInitContainer(act, proxy.Spec.MySQLDriver)
+	}
 
 	exp := act.DeepCopy()
 	return exp
