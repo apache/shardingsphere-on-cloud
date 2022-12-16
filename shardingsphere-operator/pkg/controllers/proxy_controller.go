@@ -23,13 +23,16 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile"
+
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	logger "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -61,106 +64,144 @@ type ProxyReconciler struct {
 func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logger.FromContext(ctx)
 
-	run := &v1alpha1.ShardingSphereProxy{}
-	err := r.Get(ctx, req.NamespacedName, run)
+	rt, err := r.getRuntimeShardingSphereProxy(ctx, req.NamespacedName)
 	if apierrors.IsNotFound(err) {
 		log.Info("Resource in work queue no longer exists!")
 		return ctrl.Result{}, nil
 	} else if err != nil {
-		log.Error(err, "Error getting  CRD resource")
+		log.Error(err, "Error getting CRD resource")
 		return ctrl.Result{}, err
 	}
 
-	runtimeDeployment := &appsv1.Deployment{}
-	err = r.Get(ctx, req.NamespacedName, runtimeDeployment)
-	if err != nil && !apierrors.IsNotFound(err) {
-		log.Error(err, "Error getting cascaded HPA")
-		return ctrl.Result{}, err
+	return r.reconcile(ctx, req, rt)
+}
+
+func (r *ProxyReconciler) getRuntimeShardingSphereProxy(ctx context.Context, namespacedName types.NamespacedName) (*v1alpha1.ShardingSphereProxy, error) {
+	rt := &v1alpha1.ShardingSphereProxy{}
+	err := r.Get(ctx, namespacedName, rt)
+	return rt, err
+}
+
+func (r *ProxyReconciler) reconcile(ctx context.Context, req ctrl.Request, rt *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
+	log := logger.FromContext(ctx)
+	if res, err := r.reconcileDeployment(ctx, req.NamespacedName, rt); err != nil {
+		log.Error(err, "Error reconcile Deployment")
+		return res, err
 	}
-	if apierrors.IsNotFound(err) {
-		cascadingDeployment := reconcile.ConstructCascadingDeployment(run)
-		err = r.Create(ctx, cascadingDeployment)
-		if err != nil {
-			run.SetInitializationFailed()
-			_ = r.Status().Update(ctx, run)
-			log.Error(err, "Error creating cascaded deployment")
+
+	if res, err := r.reconcileService(ctx, req.NamespacedName, rt); err != nil {
+		log.Error(err, "Error reconcile Service")
+		return res, err
+	}
+	if res, err := r.reconcilePodList(ctx, req.Namespace, req.Name, rt); err != nil {
+		log.Error(err, "Error reconcile Pod list")
+		return res, err
+	}
+
+	if res, err := r.reconcileHPA(ctx, req.NamespacedName, rt); err != nil {
+		log.Error(err, "Error reconcile HPA")
+		return res, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *ProxyReconciler) reconcileDeployment(ctx context.Context, namespacedName types.NamespacedName, ssproxy *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
+	deploy := &appsv1.Deployment{}
+
+	var err error
+	if err = r.Get(ctx, namespacedName, deploy); err != nil {
+		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
+		} else {
+			exp := reconcile.NewDeployment(ssproxy)
+			if err := r.Create(ctx, exp); err != nil {
+				ssproxy.SetInitializationFailed()
+				_ = r.Status().Update(ctx, ssproxy)
+				return ctrl.Result{}, err
+			}
 		}
 	} else {
-		originDeployment := runtimeDeployment.DeepCopy()
-		reconcile.UpdateDeployment(run, originDeployment)
-		err = r.Update(ctx, originDeployment)
-		if err != nil {
-			log.Error(err, "Error updating cascaded deployment")
+		act := deploy.DeepCopy()
+		exp := reconcile.UpdateDeployment(ssproxy, act)
+
+		//FIXME: using diff to trigger update
+		// if reflect.DeepEqual(act.Spec.Template, exp.Spec.Template) {
+		// 	return ctrl.Result{}, nil
+		// }
+
+		if err := r.Update(ctx, exp); err != nil {
 			return ctrl.Result{Requeue: true}, err
 		}
 	}
-	runtimeHPA := &autoscalingv2beta2.HorizontalPodAutoscaler{}
-	err = r.Get(ctx, req.NamespacedName, runtimeHPA)
-	if err != nil && !apierrors.IsNotFound(err) {
-		log.Error(err, "Error getting cascaded HPA")
-		return ctrl.Result{}, err
-	}
-	if apierrors.IsNotFound(err) {
-		if run.Spec.AutomaticScaling != nil {
-			cascadingHPA := reconcile.ConstructHPA(run)
-			err = r.Create(ctx, cascadingHPA)
-			if err != nil {
-				run.SetInitializationFailed()
-				_ = r.Status().Update(ctx, run)
-				log.Error(err, "Error creating cascaded HPA")
-				return ctrl.Result{}, err
+	return ctrl.Result{}, nil
+}
+
+func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types.NamespacedName, ssproxy *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
+	hpa := &autoscalingv2beta2.HorizontalPodAutoscaler{}
+
+	var err error
+	if err = r.Get(ctx, namespacedName, hpa); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		} else {
+			if ssproxy.Spec.AutomaticScaling != nil && ssproxy.Spec.AutomaticScaling.Enable {
+				exp := reconcile.NewHPA(ssproxy)
+				if err := r.Create(ctx, exp); err != nil {
+					ssproxy.SetInitializationFailed()
+					_ = r.Status().Update(ctx, ssproxy)
+					return ctrl.Result{}, err
+				}
 			}
 		}
 	} else {
-		if run.Spec.AutomaticScaling == nil {
-			err = r.Delete(ctx, runtimeHPA)
-			if err != nil {
-				log.Error(err, "Error delete cascaded HPA")
+		if ssproxy.Spec.AutomaticScaling == nil || !ssproxy.Spec.AutomaticScaling.Enable {
+			if err := r.Delete(ctx, hpa); err != nil {
 				return ctrl.Result{}, err
 			}
 		} else {
-			originHPA := runtimeHPA.DeepCopy()
-			reconcile.UpdateHPA(run, originHPA)
-			err = r.Update(ctx, originHPA)
-			if err != nil {
-				log.Error(err, "Error updating cascaded HPA")
+			act := hpa.DeepCopy()
+			exp := reconcile.UpdateHPA(ssproxy, act)
+			if err := r.Update(ctx, exp); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
 	}
 
-	runtimeService := &v1.Service{}
-	err = r.Get(ctx, req.NamespacedName, runtimeService)
-	if err != nil && !apierrors.IsNotFound(err) {
-		log.Error(err, "Error getting cascaded Service")
-		return ctrl.Result{}, err
-	}
-	if apierrors.IsNotFound(err) {
-		cascadingService := reconcile.ConstructCascadingService(run)
-		err = r.Create(ctx, cascadingService)
-		if err != nil {
-			run.SetInitializationFailed()
-			_ = r.Status().Update(ctx, run)
-			log.Error(err, "Error creating cascaded service")
+	return ctrl.Result{}, nil
+}
+
+func (r *ProxyReconciler) reconcileService(ctx context.Context, namespacedName types.NamespacedName, ssproxy *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
+	service := &v1.Service{}
+
+	var err error
+	if err = r.Get(ctx, namespacedName, service); err != nil {
+		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
+		} else {
+			exp := reconcile.NewService(ssproxy)
+			if err := r.Create(ctx, exp); err != nil {
+				ssproxy.SetInitializationFailed()
+				_ = r.Status().Update(ctx, ssproxy)
+				return ctrl.Result{}, err
+			}
+			ssproxy.SetInitialized()
+			return ctrl.Result{RequeueAfter: WaitingForReady}, nil
 		}
-		run.SetInitialized()
-		return ctrl.Result{RequeueAfter: WaitingForReady}, nil
 	} else {
-		originService := runtimeService.DeepCopy()
-		reconcile.UpdateService(run, originService)
-		err = r.Update(ctx, originService)
-		if err != nil {
-			log.Error(err, "Error updating cascaded service")
+		act := service.DeepCopy()
+		reconcile.UpdateService(ssproxy, act)
+		if err := r.Update(ctx, act); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
+	return ctrl.Result{}, nil
+}
+
+func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name string, ssproxy *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
 	podList := &v1.PodList{}
-	err = r.List(ctx, podList, client.InNamespace(req.Namespace), client.MatchingLabels(map[string]string{"apps": req.Name}))
-	if err != nil {
-		log.Error(err, "Error listing cascaded pod")
+	if err := r.List(ctx, podList, client.InNamespace(namespace), client.MatchingLabels(map[string]string{"apps": name})); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -169,30 +210,27 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if reconcile.IsRunning(podList) {
 		if readyNodes < miniReadyCount {
 			result.RequeueAfter = WaitingForReady
-			if readyNodes != run.Status.ReadyNodes {
-				run.SetPodStarted(readyNodes)
+			if readyNodes != ssproxy.Status.ReadyNodes {
+				ssproxy.SetPodStarted(readyNodes)
 			}
 		} else {
-			if run.Status.Phase != v1alpha1.StatusReady {
-				log.Info("Status is now ready!")
-				run.SetReady(readyNodes)
-			} else if readyNodes != *runtimeDeployment.Spec.Replicas {
-				run.UpdateReadyNodes(readyNodes)
+			if ssproxy.Status.Phase != v1alpha1.StatusReady {
+				ssproxy.SetReady(readyNodes)
+			} else if readyNodes != ssproxy.Spec.Replicas {
+				ssproxy.UpdateReadyNodes(readyNodes)
 			}
 		}
 	} else {
 		// TODO: Waiting for pods to start exceeds the maximum number of retries
-		run.SetPodNotStarted(readyNodes)
+		ssproxy.SetPodNotStarted(readyNodes)
 		result.RequeueAfter = WaitingForReady
 	}
 
 	// TODO: Compare Status with or without modification
-	err = r.Status().Update(ctx, run)
-	if err != nil {
-		log.Error(err, "Error updating status")
+	if err := r.Status().Update(ctx, ssproxy); err != nil {
 		return result, err
 	}
-	log.Info("RuntimeCRD status ", "status", run.Status)
+
 	return result, nil
 }
 
