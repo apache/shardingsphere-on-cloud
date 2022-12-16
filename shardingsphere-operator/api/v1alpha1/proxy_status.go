@@ -56,14 +56,14 @@ type ProxyStatus struct {
 type Conditions []Condition
 
 // Condition
-//| **condition** | **status** | **directions**|
-//| ------------- | ---------- | ---------------------------------------------------- |
-//| Initialized   | true       | Initialization successful|
-//| Initialized   | false      | initialization failed|
-//| Started       | true       | pod started successfully but not ready|
-//| Started       | false      | pod started failed|
-//| Ready         | true       | The pod is ready and can provide external services|
-//| Unknown       | true       | ShardingSphere-Proxy failed to start correctly due to some problems |
+// | **condition** | **status** | **directions**|
+// | ------------- | ---------- | ---------------------------------------------------- |
+// | Initialized   | true       | Initialization successful|
+// | Initialized   | false      | initialization failed|
+// | Started       | true       | pod started successfully but not ready|
+// | Started       | false      | pod started failed|
+// | Ready         | true       | The pod is ready and can provide external services|
+// | Unknown       | true       | ShardingSphere-Proxy failed to start correctly due to some problems |
 type Condition struct {
 	Type           ConditionType      `json:"type"`
 	Status         v1.ConditionStatus `json:"status"`
