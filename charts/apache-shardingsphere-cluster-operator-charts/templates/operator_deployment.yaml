@@ -1,0 +1,67 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: shardingsphere-operator
+  name: {{ template "operator.name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.operator.replicaCount }}
+  selector:
+    matchLabels:
+      app: shardingsphere-operator
+  template:
+    metadata:
+      labels:
+        app: shardingsphere-operator
+    spec:
+      containers:
+        - args:
+            - --health-probe-bind-address=:{{ .Values.operator.health.healthProbePort }}
+            - --leader-elect
+          command:
+            - /operator
+          ports:
+            - name: webhook
+              containerPort: {{ .Values.operator.webhook.port }}
+            - name: healthcheck
+              containerPort: {{ .Values.operator.health.healthProbePort }}
+          image: {{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}
+          imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.operator.health.healthProbePort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          name: operator
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.operator.health.healthProbePort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.operator.resources | nindent 12 }}
+      {{- with .Values.operator.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ template "operator.name" . }}

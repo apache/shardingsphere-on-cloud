@@ -15,26 +15,29 @@
 # limitations under the License.
 #
 
+{{- if .Values.proxyCluster.enabled }}
 apiVersion: shardingsphere.apache.org/v1alpha1
 kind: ShardingSphereProxy
 metadata:
   name: {{ template "common.names.fullname" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
-  version: {{ .Values.proxyVersion | default .Chart.AppVersion }}
+  version: {{ .Values.proxyCluster.proxyVersion | default .Chart.AppVersion }}
   serviceType:
-    type: {{ .Values.service.type }}
-  {{- if .Values.replicaCount }}
-  replicas: {{ .Values.replicaCount }}
+    type: {{ .Values.proxyCluster.service.type }}
+  {{- if .Values.proxyCluster.replicaCount }}
+  replicas: {{ .Values.proxyCluster.replicaCount }}
   {{- end}}
-  {{- if .Values.automaticScaling.enable }}
-  automaticScaling: {{- toYaml .Values.automaticScaling | nindent 4}}
+  {{- if .Values.proxyCluster.automaticScaling.enable }}
+  automaticScaling: {{- toYaml .Values.proxyCluster.automaticScaling | nindent 4}}
   {{- end }}
   proxyConfigName: {{ printf "%s-configuration" (include "common.names.fullname" .) | quote}}
-  port: {{ .Values.startPort }}
-  {{- if .Values.mySQLDriver.version  }}
+  port: {{ .Values.proxyCluster.startPort }}
+  {{- if .Values.proxyCluster.mySQLDriver.version  }}
   mySQLDriver:
-    version: {{ .Values.mySQLDriver.version| quote}}
+    version: {{ .Values.proxyCluster.mySQLDriver.version| quote}}
   {{- end }}
-  {{- if .Values.resources }}
-  resources: {{- toYaml .Values.resources | nindent 4 }}
+  {{- if .Values.proxyCluster.resources }}
+  resources: {{- toYaml .Values.proxyCluster.resources | nindent 4 }}
   {{- end }}
+{{- end }}
