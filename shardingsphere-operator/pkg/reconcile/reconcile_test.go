@@ -306,7 +306,7 @@ func Test_ConstructCascadingDeployment(t *testing.T) {
 					ProxyConfigName:  "shardingsphere-proxy-config",
 					Port:             3307,
 					MySQLDriver:      &v1alpha1.MySQLDriver{},
-					Resources:        &v1.ResourceRequirements{},
+					Resources:        v1.ResourceRequirements{},
 					LivenessProbe: &v1.Probe{
 						ProbeHandler: v1.ProbeHandler{
 							TCPSocket: &v1.TCPSocketAction{},
@@ -443,9 +443,11 @@ func Test_ConstructCascadingDeployment(t *testing.T) {
 			if c.proxy.Spec.AutomaticScaling != nil {
 				assert.Equal(t, c.exp.Spec.Replicas, act.Spec.Replicas, c.message)
 			}
-			if c.proxy.Spec.Resources != nil {
+
+			if len(c.exp.Spec.Template.Spec.Containers) > 0 {
 				assert.EqualValues(t, c.exp.Spec.Template.Spec.Containers[0].Resources, act.Spec.Template.Spec.Containers[0].Resources, c.message)
 			}
+
 			if c.proxy.Spec.LivenessProbe != nil {
 				assert.EqualValues(t, c.exp.Spec.Template.Spec.Containers[0].LivenessProbe, act.Spec.Template.Spec.Containers[0].LivenessProbe, c.message)
 			}
@@ -726,7 +728,7 @@ func Test_UpdateDeployment(t *testing.T) {
 					ProxyConfigName:  "shardingsphere-proxy-config",
 					Port:             3307,
 					MySQLDriver:      &v1alpha1.MySQLDriver{},
-					Resources:        &v1.ResourceRequirements{},
+					Resources:        v1.ResourceRequirements{},
 					LivenessProbe: &v1.Probe{
 						ProbeHandler: v1.ProbeHandler{
 							TCPSocket: &v1.TCPSocketAction{},
@@ -863,7 +865,7 @@ func Test_UpdateDeployment(t *testing.T) {
 		assert.Equal(t, c.proxy.Spec.Replicas, *c.deploy.Spec.Replicas, c.message)
 		assert.Equal(t, c.proxy.Spec.ProxyConfigName, c.deploy.Spec.Template.Spec.Volumes[0].ConfigMap.Name, c.message)
 		assert.Equal(t, c.proxy.Spec.Port, c.deploy.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort, c.message)
-		assert.EqualValues(t, *c.proxy.Spec.Resources, c.deploy.Spec.Template.Spec.Containers[0].Resources, c.message)
+		assert.EqualValues(t, c.proxy.Spec.Resources, c.deploy.Spec.Template.Spec.Containers[0].Resources, c.message)
 		assert.EqualValues(t, c.proxy.Spec.LivenessProbe, c.deploy.Spec.Template.Spec.Containers[0].LivenessProbe, c.message)
 		assert.EqualValues(t, c.proxy.Spec.ReadinessProbe, c.deploy.Spec.Template.Spec.Containers[0].ReadinessProbe, c.message)
 		assert.EqualValues(t, c.proxy.Spec.StartupProbe, c.deploy.Spec.Template.Spec.Containers[0].StartupProbe, c.message)
