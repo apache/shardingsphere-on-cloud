@@ -1,0 +1,207 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
+  name: shardingsphereproxyserverconfigs.shardingsphere.apache.org
+spec:
+  group: shardingsphere.apache.org
+  names:
+    kind: ShardingSphereProxyServerConfig
+    listKind: ShardingSphereProxyServerConfigList
+    plural: shardingsphereproxyserverconfigs
+    singular: shardingsphereproxyserverconfig
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.metadataRepository
+      name: MetadataRepository
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ShardingSphereProxyServerConfig is the Schema for the proxyconfigs
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ProxyConfigSpec defines the desired state of ShardingSphereProxyServerConfig
+            properties:
+              authority:
+                description: Auth  is used to set up initial user to login compute
+                  node, and authority data of storage node.
+                properties:
+                  privilege:
+                    description: Privilege for storage node, the default value is
+                      ALL_PRIVILEGES_PERMITTED
+                    properties:
+                      type:
+                        type: string
+                    required:
+                    - type
+                    type: object
+                  users:
+                    items:
+                      description: 'User is a slice about authorized host and password
+                        for compute node. Format: user:<username>@<hostname>,hostname
+                        is % or empty string means do not care about authorized host
+                        password:<password>'
+                      properties:
+                        password:
+                          type: string
+                        user:
+                          type: string
+                      required:
+                      - password
+                      - user
+                      type: object
+                    type: array
+                required:
+                - users
+                type: object
+              mode:
+                description: ClusterConfig needs to fill in the relevant configuration
+                  required by Cluster mode
+                properties:
+                  repository:
+                    description: Persist repository configuration
+                    properties:
+                      props:
+                        description: Properties of persist repository
+                        properties:
+                          digest:
+                            description: Password of login
+                            type: string
+                          maxRetries:
+                            description: 'MaxRetries Max retries of client connection.
+                              default: 3'
+                            type: integer
+                          namespace:
+                            description: Namespace of registry center
+                            type: string
+                          operationTimeoutMilliseconds:
+                            description: 'OperationTimeoutMilliseconds Milliseconds
+                              of operation timeout. default: 500'
+                            type: integer
+                          retryIntervalMilliseconds:
+                            description: 'RetryIntervalMilliseconds Milliseconds of
+                              retry interval. default: 500'
+                            type: integer
+                          server-lists:
+                            description: Server lists of registry center
+                            type: string
+                          timeToLiveSeconds:
+                            description: 'TimeToLiveSeconds Seconds of ephemeral data
+                              live.default: 60'
+                            type: integer
+                        required:
+                        - namespace
+                        - server-lists
+                        type: object
+                      type:
+                        description: Type of persist repository
+                        enum:
+                        - ZooKeeper
+                        type: string
+                    required:
+                    - props
+                    - type
+                    type: object
+                  type:
+                    description: 'Type of mode configuration. Values only support:
+                      Cluster'
+                    enum:
+                    - Cluster
+                    type: string
+                required:
+                - repository
+                - type
+                type: object
+              props:
+                description: Props Apache ShardingSphere provides the way of property
+                  configuration to configure system level configuration.
+                properties:
+                  check-duplicate-table-enabled:
+                    description: Whether validate duplicate table when application
+                      startup or updated.
+                    type: boolean
+                  check-table-metadata-enabled:
+                    description: Whether validate table meta data consistency when
+                      application startup or updated.
+                    type: boolean
+                  kernel-executor-size:
+                    description: The max thread size of worker group to execute SQL.
+                      One ShardingSphereDataSource will use a independent thread pool,
+                      it does not share thread pool even different data source in
+                      same JVM.
+                    type: integer
+                  proxy-backend-driver-type:
+                    type: string
+                  proxy-backend-executor-suitable:
+                    description: 'Available options of proxy backend executor suitable:
+                      OLAP(default), OLTP. The OLTP option may reduce time cost of
+                      writing packets to client, but it may increase the latency of
+                      SQL execution and block other clients if client connections
+                      are more than proxy-frontend-executor-size, especially executing
+                      slow SQL.'
+                    type: string
+                  proxy-backend-query-fetch-size:
+                    description: ShardingSphereProxy backend query fetch size. A larger
+                      value may increase the memory usage of ShardingSphere ShardingSphereProxy.
+                      The default value is -1, which means set the minimum value for
+                      different JDBC drivers.
+                    type: integer
+                  proxy-frontend-database-protocol-type:
+                    type: string
+                  proxy-frontend-executor-size:
+                    description: ShardingSphereProxy frontend Netty executor size.
+                      The default value is 0, which means let Netty decide.
+                    type: integer
+                type: object
+            required:
+            - authority
+            - mode
+            type: object
+          status:
+            description: ProxyConfigStatus defines the observed state of ShardingSphereProxyServerConfig
+            properties:
+              metadataRepository:
+                type: string
+            required:
+            - metadataRepository
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

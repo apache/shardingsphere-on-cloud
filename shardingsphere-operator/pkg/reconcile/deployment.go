@@ -105,9 +105,9 @@ func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *v1.Deplo
 	if proxy.Spec.AutomaticScaling == nil {
 		dp.Spec.Replicas = &proxy.Spec.Replicas
 	}
-	if proxy.Spec.Resources != nil {
-		dp.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resources
-	}
+
+	dp.Spec.Template.Spec.Containers[0].Resources = proxy.Spec.Resources
+
 	if proxy.Spec.LivenessProbe != nil {
 		dp.Spec.Template.Spec.Containers[0].LivenessProbe = proxy.Spec.LivenessProbe
 	}
@@ -178,7 +178,8 @@ func UpdateDeployment(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *
 	act.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
 	act.Spec.Template.Spec.Containers[0].Env[0].Value = strconv.FormatInt(int64(proxy.Spec.Port), 10)
 	act.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = proxy.Spec.Port
-	act.Spec.Template.Spec.Containers[0].Resources = *proxy.Spec.Resources
+
+	act.Spec.Template.Spec.Containers[0].Resources = proxy.Spec.Resources
 	act.Spec.Template.Spec.Containers[0].LivenessProbe = proxy.Spec.LivenessProbe
 	act.Spec.Template.Spec.Containers[0].ReadinessProbe = proxy.Spec.ReadinessProbe
 	act.Spec.Template.Spec.Containers[0].StartupProbe = proxy.Spec.StartupProbe
