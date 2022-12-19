@@ -28,8 +28,7 @@ operator:
   image:
     ## @param image.repository operator image name
     ##
-    #repository: "ghcr.io/apache/shardingsphere-on-cloud/apache-shardingsphere-operator"
-    repository: "uhub.service.ucloud.cn/cloud-ops/apache-shardingsphere-operator"
+    repository: "ghcr.io/apache/shardingsphere-on-cloud/apache-shardingsphere-operator"
     ## @param image.pullPolicy image pull policy
     ##
     pullPolicy: IfNotPresent
@@ -41,8 +40,7 @@ operator:
   ## imagePullSecrets:
   ##   - name: mysecret
   ##
-  imagePullSecrets:
-    - name: uhub
+  imagePullSecrets: {}
   ## @param resources operator Resources required by the operator
   ## e.g:
   ## resources:
