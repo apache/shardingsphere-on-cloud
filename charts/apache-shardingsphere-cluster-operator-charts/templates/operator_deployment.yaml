@@ -39,8 +39,6 @@ spec:
           command:
             - /operator
           ports:
-            - name: webhook
-              containerPort: {{ .Values.operator.webhook.port }}
             - name: healthcheck
               containerPort: {{ .Values.operator.health.healthProbePort }}
           image: {{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}
