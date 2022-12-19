@@ -50,10 +50,6 @@ operator:
   ##     cpu: 2
   ##
   resources: {}
-  ## @param webhook.port operator webhook boot port
-  ##
-  webhook:
-    port: 9443
   ## @param health.healthProbePort operator health check port
   ##
   health:
