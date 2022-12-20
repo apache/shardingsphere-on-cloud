@@ -123,15 +123,11 @@ func (r *ProxyReconciler) reconcileDeployment(ctx context.Context, namespacedNam
 		}
 	} else {
 		act := deploy.DeepCopy()
-		exp := reconcile.UpdateDeployment(ssproxy, act)
-
-		//FIXME: using diff to trigger update
-		// if reflect.DeepEqual(act.Spec.Template, exp.Spec.Template) {
-		// 	return ctrl.Result{}, nil
-		// }
-
-		if err := r.Update(ctx, exp); err != nil {
-			return ctrl.Result{Requeue: true}, err
+		exp, diff := reconcile.UpdateDeployment(ssproxy, act)
+		if diff {
+			if err := r.Update(ctx, exp); err != nil {
+				return ctrl.Result{Requeue: true}, err
+			}
 		}
 	}
 	return ctrl.Result{}, nil
