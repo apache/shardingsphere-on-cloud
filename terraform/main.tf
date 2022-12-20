@@ -40,16 +40,16 @@ module "zk" {
 }
 
 module "shardingsphere" {
-  depends_on             = [module.zk]
-  source                 = "./shardingsphere"
-  cluster_size           = 3
-  shardingsphere_version = "5.2.1"
-  key_name               = "test-tf"
-  image_id               = "ami-094bbd9e922dc515d"
-  instance_type          = "t3.medium"
-  lb_listener_port       = 3307
-  vpc_id                 = "vpc-0ef2b7440d3ade8d5"
-  subnet_ids             = ["subnet-0f388a6f23063b8c9", "subnet-0bc2cd85facb5ca06", "subnet-009077567350ef1b7"]
-  security_groups     = ["sg-008e74936b3f9de19"]
-  zk_servers             = module.zk.zk_node_domain
+  depends_on                    = [module.zk]
+  source                        = "./shardingsphere"
+  cluster_size                  = 3
+  shardingsphere_proxy_version  = "5.2.1"
+  key_name                      = "test-tf"
+  image_id                      = "ami-094bbd9e922dc515d"
+  instance_type                 = "t3.medium"
+  lb_listener_port              = 3307
+  vpc_id                        = "vpc-0ef2b7440d3ade8d5"
+  subnet_ids                    = ["subnet-0f388a6f23063b8c9", "subnet-0bc2cd85facb5ca06", "subnet-009077567350ef1b7"]
+  security_groups               = ["sg-008e74936b3f9de19"]
+  zk_servers                    = module.zk.zk_node_domain
 }
