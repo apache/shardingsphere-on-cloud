@@ -84,21 +84,21 @@ func (r *ProxyReconciler) getRuntimeShardingSphereProxy(ctx context.Context, nam
 
 func (r *ProxyReconciler) reconcile(ctx context.Context, req ctrl.Request, rt *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
 	log := logger.FromContext(ctx)
-	if res, err := r.reconcileDeployment(ctx, req.NamespacedName, rt); err != nil {
+	if res, err := r.reconcileDeployment(ctx, req.NamespacedName); err != nil {
 		log.Error(err, "Error reconcile Deployment")
 		return res, err
 	}
 
-	if res, err := r.reconcileService(ctx, req.NamespacedName, rt); err != nil {
+	if res, err := r.reconcileService(ctx, req.NamespacedName); err != nil {
 		log.Error(err, "Error reconcile Service")
 		return res, err
 	}
-	if res, err := r.reconcilePodList(ctx, req.Namespace, req.Name, rt); err != nil {
+	if res, err := r.reconcilePodList(ctx, req.Namespace, req.Name); err != nil {
 		log.Error(err, "Error reconcile Pod list")
 		return res, err
 	}
 
-	if res, err := r.reconcileHPA(ctx, req.NamespacedName, rt); err != nil {
+	if res, err := r.reconcileHPA(ctx, req.NamespacedName); err != nil {
 		log.Error(err, "Error reconcile HPA")
 		return res, err
 	}
@@ -106,11 +106,15 @@ func (r *ProxyReconciler) reconcile(ctx context.Context, req ctrl.Request, rt *v
 	return ctrl.Result{}, nil
 }
 
-func (r *ProxyReconciler) reconcileDeployment(ctx context.Context, namespacedName types.NamespacedName, ssproxy *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
+func (r *ProxyReconciler) reconcileDeployment(ctx context.Context, namespacedName types.NamespacedName) (ctrl.Result, error) {
+	ssproxy, err := r.getRuntimeShardingSphereProxy(ctx, namespacedName)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	deploy := &appsv1.Deployment{}
 
-	var err error
-	if err = r.Get(ctx, namespacedName, deploy); err != nil {
+	if err := r.Get(ctx, namespacedName, deploy); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		} else {
@@ -123,21 +127,27 @@ func (r *ProxyReconciler) reconcileDeployment(ctx context.Context, namespacedNam
 		}
 	} else {
 		act := deploy.DeepCopy()
-		exp, diff := reconcile.UpdateDeployment(ssproxy, act)
-		if diff {
-			if err := r.Update(ctx, exp); err != nil {
-				return ctrl.Result{Requeue: true}, err
-			}
+
+		exp := reconcile.UpdateDeployment(ssproxy, act)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if err := r.Update(ctx, exp); err != nil {
+			return ctrl.Result{Requeue: true}, err
 		}
 	}
 	return ctrl.Result{}, nil
 }
 
-func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types.NamespacedName, ssproxy *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
+func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types.NamespacedName) (ctrl.Result, error) {
+	ssproxy, err := r.getRuntimeShardingSphereProxy(ctx, namespacedName)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	hpa := &autoscalingv2beta2.HorizontalPodAutoscaler{}
 
-	var err error
-	if err = r.Get(ctx, namespacedName, hpa); err != nil {
+	if err := r.Get(ctx, namespacedName, hpa); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		} else {
@@ -167,11 +177,15 @@ func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types
 	return ctrl.Result{}, nil
 }
 
-func (r *ProxyReconciler) reconcileService(ctx context.Context, namespacedName types.NamespacedName, ssproxy *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
+func (r *ProxyReconciler) reconcileService(ctx context.Context, namespacedName types.NamespacedName) (ctrl.Result, error) {
+	ssproxy, err := r.getRuntimeShardingSphereProxy(ctx, namespacedName)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	service := &v1.Service{}
 
-	var err error
-	if err = r.Get(ctx, namespacedName, service); err != nil {
+	if err := r.Get(ctx, namespacedName, service); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		} else {
@@ -186,8 +200,8 @@ func (r *ProxyReconciler) reconcileService(ctx context.Context, namespacedName t
 		}
 	} else {
 		act := service.DeepCopy()
-		reconcile.UpdateService(ssproxy, act)
-		if err := r.Update(ctx, act); err != nil {
+		exp := reconcile.UpdateService(ssproxy, act)
+		if err := r.Update(ctx, exp); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -195,7 +209,7 @@ func (r *ProxyReconciler) reconcileService(ctx context.Context, namespacedName t
 	return ctrl.Result{}, nil
 }
 
-func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name string, ssproxy *v1alpha1.ShardingSphereProxy) (ctrl.Result, error) {
+func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name string) (ctrl.Result, error) {
 	podList := &v1.PodList{}
 	if err := r.List(ctx, podList, client.InNamespace(namespace), client.MatchingLabels(map[string]string{"apps": name})); err != nil {
 		return ctrl.Result{}, err
@@ -203,27 +217,35 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 
 	result := ctrl.Result{}
 	readyNodes := reconcile.CountingReadyPods(podList)
+
+	rt, err := r.getRuntimeShardingSphereProxy(ctx, types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	})
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if reconcile.IsRunning(podList) {
 		if readyNodes < miniReadyCount {
 			result.RequeueAfter = WaitingForReady
-			if readyNodes != ssproxy.Status.ReadyNodes {
-				ssproxy.SetPodStarted(readyNodes)
+			if readyNodes != rt.Status.ReadyNodes {
+				rt.SetPodStarted(readyNodes)
 			}
 		} else {
-			if ssproxy.Status.Phase != v1alpha1.StatusReady {
-				ssproxy.SetReady(readyNodes)
-			} else if readyNodes != ssproxy.Spec.Replicas {
-				ssproxy.UpdateReadyNodes(readyNodes)
+			if rt.Status.Phase != v1alpha1.StatusReady {
+				rt.SetReady(readyNodes)
+			} else if readyNodes != rt.Spec.Replicas {
+				rt.UpdateReadyNodes(readyNodes)
 			}
 		}
 	} else {
 		// TODO: Waiting for pods to start exceeds the maximum number of retries
-		ssproxy.SetPodNotStarted(readyNodes)
+		rt.SetPodNotStarted(readyNodes)
 		result.RequeueAfter = WaitingForReady
 	}
 
 	// TODO: Compare Status with or without modification
-	if err := r.Status().Update(ctx, ssproxy); err != nil {
+	if err := r.Status().Update(ctx, rt); err != nil {
 		return result, err
 	}
 
