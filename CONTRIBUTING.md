@@ -1,20 +1,6 @@
-# Contributing to ShardingSphere Operator
+# Contributing to ShardingSphere on Cloud 
 
-Thanks for your interest in contributing to ShardingSphere Operator! This document outlines some of the conventions on building, running, and testing ShardingSphere Operator, the development workflow, commit message formatting, contact points and other resources.
-
-
-
-# First ShardingSphere Operator Pull Request
-
-## Prerequisites
-
-To build ShardingSphere Operator from scratch you will need to install the following tools:
-
-* [Git](https://git-scm.com/)
-* [Golang 1.17](https://golang.org/dl/)
-* [make](https://www.gnu.org/savannah-checkouts/gnu/make/make.html)
-* [Kubernetes 1.20+](https://github.com/kubernetes/kubernetes)
-* [Kubebuilder 3.4.1+](https://github.com/kubernetes-sigs/kubebuilder)
+Thanks for your interest in contributing to ShardingSphere on Cloud!
 
 ## Pull Requests
 
@@ -24,13 +10,13 @@ To build ShardingSphere Operator from scratch you will need to install the follo
       # git clone https://github.com/<yourname>/shardingsphere-on-cloud.git
       # cd shardingsphere-on-cloud
 
-      # git remote add upstream https://github.com/SphereEx/shardingsphere-on-cloud.git
+      # git remote add upstream https://github.com/apache/shardingsphere-on-cloud.git
 
       # git remote -v
       origin	https://github.com/<your name>/shardingsphere-on-cloud.git (fetch)
       origin	https://github.com/<your name>/shardingsphere-on-cloud.git (push)
-      upstream	https://github.com/database-mesh/shardingsphere-on-cloud.git (fetch)
-      upstream	https://github.com/database-mesh/shardingsphere-on-cloud.git (push)
+      upstream	https://github.com/apache/shardingsphere-on-cloud.git (fetch)
+      upstream	https://github.com/apache/shardingsphere-on-cloud.git (push)
       ```
 2. Open a regular issue for binding the pull request.
 3. Submit a Draft Pull Requests, tag your work in progress.
@@ -112,7 +98,7 @@ More types:
 * `chore`: updating grunt tasks etc; no production code change.
 
 ## Issues
-ShardingSphere Operator uses [GitHub issues](https://github.com/SphereEx/shardingsphere-on-cloud/issues) to track bugs. Please include necessary information and instructions to reproduce your issue.
+ShardingSphere Operator uses [GitHub issues](https://github.com/apache/shardingsphere-on-cloud/issues) to track bugs. Please include necessary information and instructions to reproduce your issue.
 
 ## Code of Conduct
 Please refer to the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md), which describes the expectations for interactions within the community. 
