@@ -150,21 +150,10 @@ func addInitContainer(dp *v1.Deployment, mysql *v1alpha1.MySQLDriver) {
 		})
 	}
 
-	/*
-			scriptStr := strings.Builder{}
-			t1, _ := template.New("shell").Parse(`wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{ .Version }}.jar;
-		wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{ .Version }}/mysql-connector-java-{{ .Version }}.jar.md5;
-		if [ $(md5sum /mysql-connector-java-{{ .Version }}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-{{ .Version }}.jar.md5) ];
-		then echo success;
-		else echo failed;exit 1;fi;mv /mysql-connector-java-{{ .Version }}.jar /opt/shardingsphere-proxy/ext-lib`)
-			_ = t1.Execute(&scriptStr, mysql)
-	*/
-
 	dp.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
-			Name:  "download-mysql-connect",
-			Image: "busybox:1.35.0",
-			// Command: []string{"/bin/sh", "-c", scriptStr.String()},
+			Name:    "download-mysql-connect",
+			Image:   "busybox:1.35.0",
 			Command: []string{"/bin/sh", "-c", script},
 			Env: []corev1.EnvVar{
 				{
@@ -184,83 +173,62 @@ func addInitContainer(dp *v1.Deployment, mysql *v1alpha1.MySQLDriver) {
 }
 
 // UpdateDeployment FIXME:merge UpdateDeployment and ConstructCascadingDeployment
-func UpdateDeployment(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) (*v1.Deployment, bool) {
+func UpdateDeployment(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *v1.Deployment {
 	exp := act.DeepCopy()
-	var diff bool
 
 	if proxy.Spec.AutomaticScaling == nil || !proxy.Spec.AutomaticScaling.Enable {
-		exp.Spec.Replicas, diff = updateReplicas(proxy, act)
+		exp.Spec.Replicas = updateReplicas(proxy, act)
 	}
-
-<<<<<<< HEAD
-	act.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
-	act.Spec.Template.Spec.Containers[0].Env[0].Value = strconv.FormatInt(int64(proxy.Spec.Port), 10)
-	act.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = proxy.Spec.Port
-
-	act.Spec.Template.Spec.Containers[0].Resources = proxy.Spec.Resources
-	act.Spec.Template.Spec.Containers[0].LivenessProbe = proxy.Spec.LivenessProbe
-	act.Spec.Template.Spec.Containers[0].ReadinessProbe = proxy.Spec.ReadinessProbe
-	act.Spec.Template.Spec.Containers[0].StartupProbe = proxy.Spec.StartupProbe
-=======
-	exp.Spec.Template, diff = updatePodTemplateSpec(proxy, act)
-	return exp, diff
+	exp.Spec.Template = updatePodTemplateSpec(proxy, act)
+	return exp
 }
->>>>>>> refactor: update deployment reconcile
 
-func updateReplicas(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) (*int32, bool) {
+func updateReplicas(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *int32 {
 	if *act.Spec.Replicas != proxy.Spec.Replicas {
-		return &proxy.Spec.Replicas, true
+		return &proxy.Spec.Replicas
 	}
-	return act.Spec.Replicas, false
+	return act.Spec.Replicas
 }
 
-func updatePodTemplateSpec(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) (corev1.PodTemplateSpec, bool) {
+func updatePodTemplateSpec(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) corev1.PodTemplateSpec {
 	exp := act.Spec.Template.DeepCopy()
 
-	SSProxyContainer, diff := updateSSProxyContainer(proxy, act)
-	if diff {
-		for i, _ := range exp.Spec.Containers {
-			if exp.Spec.Containers[i].Name == "proxy" {
-				exp.Spec.Containers[i] = *SSProxyContainer
-			}
+	SSProxyContainer := updateSSProxyContainer(proxy, act)
+	for i, _ := range exp.Spec.Containers {
+		if exp.Spec.Containers[i].Name == "proxy" {
+			exp.Spec.Containers[i] = *SSProxyContainer
 		}
 	}
 
-	initContainer, diff := updateInitContainer(proxy, act)
-	if diff {
-		for i, _ := range exp.Spec.InitContainers {
-			if exp.Spec.InitContainers[i].Name == "download-mysql-connect" {
-				exp.Spec.InitContainers[i] = *initContainer
-			}
+	initContainer := updateInitContainer(proxy, act)
+	for i, _ := range exp.Spec.InitContainers {
+		if exp.Spec.InitContainers[i].Name == "download-mysql-connect" {
+			exp.Spec.InitContainers[i] = *initContainer
 		}
 	}
 
-	configName, diff := updateConfigName(proxy, act)
-	if diff {
-		exp.Spec.Volumes[0].ConfigMap.Name = configName
-	}
+	configName := updateConfigName(proxy, act)
+	exp.Spec.Volumes[0].ConfigMap.Name = configName
 
-	return *exp, diff
+	return *exp
 }
 
-func updateConfigName(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) (string, bool) {
+func updateConfigName(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) string {
 	if act.Spec.Template.Spec.Volumes[0].ConfigMap.Name != proxy.Spec.ProxyConfigName {
-		return proxy.Spec.ProxyConfigName, true
+		return proxy.Spec.ProxyConfigName
 	}
-	return act.Spec.Template.Spec.Volumes[0].ConfigMap.Name, false
+	return act.Spec.Template.Spec.Volumes[0].ConfigMap.Name
 }
 
-func updateInitContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) (*corev1.Container, bool) {
+func updateInitContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *corev1.Container {
 	var exp *corev1.Container
-	var diff bool
 
 	for _, c := range act.Spec.Template.Spec.InitContainers {
 		if c.Name == "download-mysql-connect" {
-			for _, env := range c.Env {
-				if env.Name == "VERSION" {
-					if env.Value != proxy.Spec.MySQLDriver.Version {
-						diff = true
-						env.Value = proxy.Spec.MySQLDriver.Version
+			for i, _ := range c.Env {
+				if c.Env[i].Name == "VERSION" {
+					if c.Env[i].Value != proxy.Spec.MySQLDriver.Version {
+						c.Env[i].Value = proxy.Spec.MySQLDriver.Version
 					}
 				}
 			}
@@ -268,11 +236,10 @@ func updateInitContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment
 		}
 	}
 
-	return exp, diff
+	return exp
 }
 
-func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) (*corev1.Container, bool) {
-	var diff bool
+func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *corev1.Container {
 	var exp *corev1.Container
 
 	for _, c := range act.Spec.Template.Spec.Containers {
@@ -281,41 +248,36 @@ func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deploym
 
 			tag := strings.Split(c.Image, ":")[1]
 			if tag != proxy.Spec.Version {
-				diff = true
 				exp.Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
 			}
 
 			if proxy.Spec.Resources != nil && !reflect.DeepEqual(c.Resources, *proxy.Spec.Resources) {
-				diff = true
 				exp.Resources = *proxy.Spec.Resources
 			}
 
 			if proxy.Spec.LivenessProbe != nil && !reflect.DeepEqual(c.LivenessProbe, *proxy.Spec.LivenessProbe) {
-				diff = true
 				exp.LivenessProbe = proxy.Spec.LivenessProbe
 			}
 
 			if proxy.Spec.ReadinessProbe != nil && !reflect.DeepEqual(c.ReadinessProbe, *proxy.Spec.ReadinessProbe) {
-				diff = true
 				exp.ReadinessProbe = proxy.Spec.ReadinessProbe
 			}
 
 			if proxy.Spec.StartupProbe != nil && !reflect.DeepEqual(c.StartupProbe, *proxy.Spec.StartupProbe) {
-				diff = true
 				exp.StartupProbe = proxy.Spec.StartupProbe
 			}
 
-			for _, e := range c.Env {
-				if e.Name == "PORT" {
+			for i, _ := range c.Env {
+				if c.Env[i].Name == "PORT" {
 					proxyPort := strconv.FormatInt(int64(proxy.Spec.Port), 10)
-					if e.Value != proxyPort {
-						diff = true
-						e.Value = proxyPort
+					if c.Env[i].Value != proxyPort {
+						c.Env[i].Value = proxyPort
 						exp.Ports[0].ContainerPort = proxy.Spec.Port
 					}
 				}
 			}
+			exp.Env = c.Env
 		}
 	}
-	return exp, diff
+	return exp
 }
