@@ -62,11 +62,14 @@ func ConstructCascadingService(proxy *v1alpha1.ShardingSphereProxy) *v1.Service 
 	return &svc
 }
 
-func UpdateService(proxy *v1alpha1.ShardingSphereProxy, runtimeService *v1.Service) {
+func UpdateService(proxy *v1alpha1.ShardingSphereProxy, runtimeService *v1.Service) *v1.Service {
+	exp := &v1.Service{}
 	runtimeService.Spec.Type = proxy.Spec.ServiceType.Type
 	runtimeService.Spec.Ports[0].Port = proxy.Spec.Port
 	runtimeService.Spec.Ports[0].TargetPort = fromInt32(proxy.Spec.Port)
 	if proxy.Spec.ServiceType.NodePort != 0 {
 		runtimeService.Spec.Ports[0].NodePort = proxy.Spec.ServiceType.NodePort
 	}
+	exp = runtimeService.DeepCopy()
+	return exp
 }

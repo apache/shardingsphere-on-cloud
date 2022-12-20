@@ -28,3 +28,5 @@ shardingsphere-operator/config/
 charts/apache-shardingsphere-operator-cluster-charts/charts/
 charts/apache-shardingsphere-operator-charts/charts/
 **/Chart.lock
+test
+certs

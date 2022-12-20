@@ -860,15 +860,15 @@ func Test_UpdateDeployment(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		UpdateDeployment(c.proxy, c.deploy)
-		assert.Equal(t, fmt.Sprintf("%s:%s", imageName, c.proxy.Spec.Version), c.deploy.Spec.Template.Spec.Containers[0].Image, c.message)
-		assert.Equal(t, c.proxy.Spec.Replicas, *c.deploy.Spec.Replicas, c.message)
-		assert.Equal(t, c.proxy.Spec.ProxyConfigName, c.deploy.Spec.Template.Spec.Volumes[0].ConfigMap.Name, c.message)
-		assert.Equal(t, c.proxy.Spec.Port, c.deploy.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort, c.message)
-		assert.EqualValues(t, c.proxy.Spec.Resources, c.deploy.Spec.Template.Spec.Containers[0].Resources, c.message)
-		assert.EqualValues(t, c.proxy.Spec.LivenessProbe, c.deploy.Spec.Template.Spec.Containers[0].LivenessProbe, c.message)
-		assert.EqualValues(t, c.proxy.Spec.ReadinessProbe, c.deploy.Spec.Template.Spec.Containers[0].ReadinessProbe, c.message)
-		assert.EqualValues(t, c.proxy.Spec.StartupProbe, c.deploy.Spec.Template.Spec.Containers[0].StartupProbe, c.message)
+		exp := UpdateDeployment(c.proxy, c.deploy)
+		assert.Equal(t, fmt.Sprintf("%s:%s", imageName, c.proxy.Spec.Version), exp.Spec.Template.Spec.Containers[0].Image, c.message)
+		assert.Equal(t, c.proxy.Spec.Replicas, *exp.Spec.Replicas, c.message)
+		assert.Equal(t, c.proxy.Spec.ProxyConfigName, exp.Spec.Template.Spec.Volumes[0].ConfigMap.Name, c.message)
+		assert.Equal(t, c.proxy.Spec.Port, exp.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort, c.message)
+		assert.EqualValues(t, c.proxy.Spec.Resources, exp.Spec.Template.Spec.Containers[0].Resources, c.message)
+		assert.EqualValues(t, c.proxy.Spec.LivenessProbe, exp.Spec.Template.Spec.Containers[0].LivenessProbe, c.message)
+		assert.EqualValues(t, c.proxy.Spec.ReadinessProbe, exp.Spec.Template.Spec.Containers[0].ReadinessProbe, c.message)
+		assert.EqualValues(t, c.proxy.Spec.StartupProbe, exp.Spec.Template.Spec.Containers[0].StartupProbe, c.message)
 	}
 }
 
