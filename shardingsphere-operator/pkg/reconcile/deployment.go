@@ -251,9 +251,7 @@ func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deploym
 				exp.Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
 			}
 
-			if proxy.Spec.Resources != nil && !reflect.DeepEqual(c.Resources, *proxy.Spec.Resources) {
-				exp.Resources = *proxy.Spec.Resources
-			}
+			exp.Resources = proxy.Spec.Resources
 
 			if proxy.Spec.LivenessProbe != nil && !reflect.DeepEqual(c.LivenessProbe, *proxy.Spec.LivenessProbe) {
 				exp.LivenessProbe = proxy.Spec.LivenessProbe
