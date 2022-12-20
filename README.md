@@ -10,6 +10,8 @@
 
 This repository collects scripts, tools, manifests and documentations, and provides a home for [Apache ShardingSphere](https://shardingsphere.apache.org/) on cloud solutions.
 
+## Current Status
+
 The solutions currently included in this project are:
 
 * [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts)
@@ -24,6 +26,8 @@ To contribute to this project, refer to [Contributing](CONTRIBUTING.md).
 ## Community & Support
 
 <hr>
+
+:link: [ShardingSphere on Cloud Docs](https://shardingsphere.apache.org/oncloud/current/en/overview/). Best for: Manuals and best practices.
 
 :link: [Mailing List](https://shardingsphere.apache.org/community/en/contribute/subscribe/). Best for: Apache community updates, releases, changes.
 
