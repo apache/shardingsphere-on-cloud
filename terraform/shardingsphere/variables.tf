@@ -19,9 +19,27 @@ variable "cluster_size" {
   description = "The cluster size that same size as available_zones"
 }
 
-variable "shardingsphere_version" {
+variable "shardingsphere_proxy_version" {
   type        = string
-  description = "The shardingsphere version"
+  description = "The shardingsphere proxy version"
+}
+
+variable "shardingsphere_proxy_asg_desired_capacity" {
+  type        = string
+  default     = "3"
+  description = "The desired capacity is the initial capacity of the Auto Scaling group at the time of its creation and the capacity it attempts to maintain. see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-as-group.html#cfn-as-group-desiredcapacitytype, The default value is 3"
+}
+
+variable "shardingsphere_proxy_asg_max_size" {
+  type        = string
+  default     = "6"
+  description = "The maximum size of ShardingSphere Proxy Auto Scaling Group. The default values is 6"
+}
+
+variable "shardingsphere_proxy_asg_healthcheck_grace_period" {
+  type        = number
+  default     = 120
+  description = "The amount of time, in seconds, that Amazon EC2 Auto Scaling waits before checking the health status of an EC2 instance that has come into service and marking it unhealthy due to a failed health check. see https://docs.aws.amazon.com/autoscaling/ec2/userguide/health-check-grace-period.html"
 }
 
 variable "image_id" {
@@ -52,7 +70,7 @@ variable "subnet_ids" {
 variable "security_groups" {
   type        = list(string)
   default     = []
-  description = "List of The Security groups"
+  description = "List of The Security group IDs"
 }
 
 variable "lb_listener_port" {

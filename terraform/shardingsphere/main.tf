@@ -28,16 +28,69 @@ resource "aws_network_interface" "ss" {
   security_groups = var.security_groups
 }
 
+resource "aws_iam_role" "sts" {
+  name = "shardingsphere-proxy-sts-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "ss" {
+  name = "sharidngsphere-proxy-policy"
+  role = aws_iam_role.sts.id
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "cloudwatch:PutMetricData",
+        "ec2:DescribeTags",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams",
+        "logs:DescribeLogGroups",
+        "logs:CreateLogStream",
+        "logs:CreateLogGroup"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_instance_profile" "ss" {
+  name = "shardingsphere-proxy-instance-profile"
+  role = aws_iam_role.sts.name
+}
+
 resource "aws_launch_template" "ss" {
-  count                                = var.cluster_size
-  name                                 = "ss-${element(data.aws_availability_zones.available.names, count.index)}"
+  name                                 = "shardingsphere-proxy-launch-template"
   image_id                             = var.image_id
   instance_initiated_shutdown_behavior = "terminate"
   instance_type                        = var.instance_type
   key_name                             = var.key_name
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ss.name
+  }
 
   user_data = base64encode(templatefile("${path.module}/cloud-init.yml", {
-    version    = var.shardingsphere_version
+    version    = var.shardingsphere_proxy_version
     zk_servers = join(",", var.zk_servers)
   }))
 
@@ -52,38 +105,28 @@ resource "aws_launch_template" "ss" {
     enabled = true
   }
 
-  network_interfaces {
-    delete_on_termination = false
-    device_index          = 0
-    network_interface_id  = element(aws_network_interface.ss.*.id, count.index)
-  }
+  vpc_security_group_ids = var.security_groups
 
   tag_specifications {
     resource_type = "instance"
 
     tags = {
-      Name = "ss-${count.index + 1}"
+      Name = "shardingsphere-proxy"
     }
   }
 }
 
 resource "aws_autoscaling_group" "ss" {
-  count                     = var.cluster_size
-  name                      = "ss-${count.index + 1}"
-  availability_zones        = [element(data.aws_availability_zones.available.names, count.index)]
-  desired_capacity          = 1
-  max_size                  = 1
+  name                      = "shardingsphere-proxy-asg"
+  availability_zones        = data.aws_availability_zones.available.names
+  desired_capacity          = var.shardingsphere_proxy_asg_desired_capacity
   min_size                  = 1
-  health_check_grace_period = 300
-  health_check_type         = "EC2"
+  max_size                  = var.shardingsphere_proxy_asg_max_size
+  health_check_grace_period = var.shardingsphere_proxy_asg_healthcheck_grace_period
+  health_check_type         = "ELB"
 
   launch_template {
-    id = element(aws_launch_template.ss.*.id,
-      index(
-        aws_launch_template.ss.*.name,
-        "ss-${element(data.aws_availability_zones.available.names, count.index)}"
-      )
-    )
+    id      = aws_launch_template.ss.id
     version = "$Latest"
   }
 
@@ -107,25 +150,30 @@ resource "aws_lb" "ss" {
   }
 
   tags = {
-    Name = "shardingsphere"
+    Name = "shardingsphere-proxy"
   }
 }
 
 resource "aws_lb_target_group" "ss_tg" {
-  name               = "shardingsphere-lb-tg"
+  name               = "shardingsphere-proxy-lb-tg"
   port               = var.lb_listener_port
   protocol           = "TCP"
   vpc_id             = var.vpc_id
   preserve_client_ip = false
 
+  health_check {
+  	protocol = "TCP"
+    healthy_threshold = 2
+    unhealthy_threshold = 2
+  }
+
   tags = {
-    Name = "shardingsphere"
+    Name = "shardingsphere-proxy"
   }
 }
 
 resource "aws_autoscaling_attachment" "asg_attachment_lb" {
-  count                  = var.cluster_size
-  autoscaling_group_name = element(aws_autoscaling_group.ss.*.id, count.index)
+  autoscaling_group_name = aws_autoscaling_group.ss.id
   lb_target_group_arn    = aws_lb_target_group.ss_tg.arn
 }
 
@@ -141,7 +189,7 @@ resource "aws_lb_listener" "ss" {
   }
 
   tags = {
-    Name = "shardingsphere"
+    Name = "shardingsphere-proxy"
   }
 }
 
