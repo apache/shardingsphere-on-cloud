@@ -1,20 +1,6 @@
-# Contributing to ShardingSphere Operator
+# Contributing to ShardingSphere on Cloud 
 
-Thanks for your interest in contributing to ShardingSphere Operator! This document outlines some of the conventions on building, running, and testing ShardingSphere Operator, the development workflow, commit message formatting, contact points and other resources.
-
-
-
-# First ShardingSphere Operator Pull Request
-
-## Prerequisites
-
-To build ShardingSphere Operator from scratch you will need to install the following tools:
-
-* [Git](https://git-scm.com/)
-* [Golang 1.17](https://golang.org/dl/)
-* [make](https://www.gnu.org/savannah-checkouts/gnu/make/make.html)
-* [Kubernetes 1.20+](https://github.com/kubernetes/kubernetes)
-* [Kubebuilder 3.4.1+](https://github.com/kubernetes-sigs/kubebuilder)
+Thanks for your interest in contributing to ShardingSphere on Cloud!
 
 ## Pull Requests
 
