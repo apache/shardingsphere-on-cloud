@@ -59,7 +59,7 @@ test: manifests generate fmt envtest ## Run tests.
 
 .PHONY: build
 build: generate fmt ## Build manager binary.
-	go build -o bin/manager main.go
+	go build -o bin/manager cmd/shardingsphere-operator/main.go
 
 .PHONY: run
 run: manifests generate fmt ## Run a controller from your host.
