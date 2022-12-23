@@ -21,18 +21,18 @@ packages:
 - netcat
 
 write_files:
-- path: /run/shardingsphere.service
+- path: /run/shardingsphere-proxy.service
   permissions: 0644
   content: |
     [Unit]
-    Description=ShardingSphere Service
+    Description=ShardingSphere Proxy Service
     Requires=network.target
     After=network.target
     [Service]
     Type=forking
     LimitNOFILE=65536
-    ExecStart=/usr/local/shardingsphere/bin/start.sh
-    ExecStop=/usr/local/shardingsphere/bin/stop.sh
+    ExecStart=/usr/local/shardingsphere-proxy/bin/start.sh
+    ExecStop=/usr/local/shardingsphere-proxy/bin/stop.sh
     Restart=always
     RestartSec=3
     StartLimitInterval=0
@@ -111,21 +111,21 @@ write_files:
           maxRetries: 3
           operationTimeoutMilliseconds: 500
 %{ endif }
-- path: /run/install_shardingsphere.sh
+- path: /run/install_shardingsphere_proxy.sh
   permissions: 0700
   content: |
     #!/bin/bash
     echo Installing ShardingSphere v${version}
     wget -O /run/ss.tar.gz https://mirrors.huaweicloud.com/apache/shardingsphere/${version}/apache-shardingsphere-${version}-shardingsphere-proxy-bin.tar.gz
-    mkdir -p /usr/local/shardingsphere
-    tar xvf /run/ss.tar.gz --strip 1 -C /usr/local/shardingsphere
+    mkdir -p /usr/local/shardingsphere-proxy
+    tar xvf /run/ss.tar.gz --strip 1 -C /usr/local/shardingsphere-proxy
     if [ -f /run/server.yaml ]; then
-      /bin/cp -avf /run/server.yaml /usr/local/shardingsphere/conf/server.yaml
+      /bin/cp -avf /run/server.yaml /usr/local/shardingsphere-proxy/conf/server.yaml
     fi
-    /bin/cp -avf /run/shardingsphere.service /usr/lib/systemd/system/shardingsphere.service
+    /bin/cp -avf /run/shardingsphere-proxy.service /usr/lib/systemd/system/shardingsphere-proxy.service
     systemctl daemon-reload
-    systemctl enable shardingsphere
-    systemctl start shardingsphere
+    systemctl enable shardingsphere-proxy
+    systemctl start shardingsphere-proxy
 
 runcmd:
-- bash /run/install_shardingsphere.sh
+- bash /run/install_shardingsphere_proxy.sh
