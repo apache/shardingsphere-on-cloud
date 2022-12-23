@@ -91,6 +91,7 @@ resource "aws_launch_template" "ss" {
 
   user_data = base64encode(templatefile("${path.module}/cloud-init.yml", {
     version    = var.shardingsphere_proxy_version
+    version_elems = split(".", var.shardingsphere_proxy_version)
     zk_servers = join(",", var.zk_servers)
   }))
 
