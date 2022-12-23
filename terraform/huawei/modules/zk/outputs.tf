@@ -13,32 +13,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-header:
-  license:
-    spdx-id: Apache-2.0
-    copyright-owner: Apache Software Foundation
 
-  paths-ignore:
-    - '.github/ISSUE_TEMPLATE/**'
-    - '.github/PULL_REQUEST_TEMPLATE'
-    - '**/.gitignore'
-    - 'docs/**'
-    - '**/*.md'
-    - '**/.helmignore'
-    - '**/LICENSE'
-    - '**/NOTICE'
-    - '**/*.toml'
-    - '**/Makefile'
-    - 'shardingsphere-operator/PROJECT'
-    - '**/go.mod'
-    - '**/go.sum'
-    - 'shardingsphere-operator/build/.dockerignore'
-    - 'shardingsphere-operator/api/v1alpha1/zz_generated.deepcopy.go'
-    - 'cloudformation/multi-az/*.conf'
-    - 'cloudformation/multi-az/*.service'
-    - 'cloudformation/multi-az/*.json'
-    - '**/*.json'
+output "zk_node_private_ip" {
+  value       = huaweicloud_compute_instance.zk.*.access_ip_v4
+  description = "The private ips of zookeeper instances"
+}
 
-  comment: on-failure
+output "zk_node_domain" {
+  value       = [for idx, _ in huaweicloud_compute_instance.zk.*.id : "zk-${idx + 1}.${var.zone_name}"]
+  description = "The private domain names of zookeeper instances for use by ShardingSphere Proxy"
+}

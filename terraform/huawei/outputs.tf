@@ -13,32 +13,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-header:
-  license:
-    spdx-id: Apache-2.0
-    copyright-owner: Apache Software Foundation
+output "zk_node_domain" {
+  value       = module.zk.zk_node_domain
+  description = "The domain of zookeeper instances"
+}
 
-  paths-ignore:
-    - '.github/ISSUE_TEMPLATE/**'
-    - '.github/PULL_REQUEST_TEMPLATE'
-    - '**/.gitignore'
-    - 'docs/**'
-    - '**/*.md'
-    - '**/.helmignore'
-    - '**/LICENSE'
-    - '**/NOTICE'
-    - '**/*.toml'
-    - '**/Makefile'
-    - 'shardingsphere-operator/PROJECT'
-    - '**/go.mod'
-    - '**/go.sum'
-    - 'shardingsphere-operator/build/.dockerignore'
-    - 'shardingsphere-operator/api/v1alpha1/zz_generated.deepcopy.go'
-    - 'cloudformation/multi-az/*.conf'
-    - 'cloudformation/multi-az/*.service'
-    - 'cloudformation/multi-az/*.json'
-    - '**/*.json'
-
-  comment: on-failure
+output "shardingsphere_domain" {
+  value       = "${var.shardingsphere_proxy_doamin_prefix_name}.${var.zone_name}"
+  description = "The domain name of the ShardingSphere Proxy Cluster for use by other services"
+}

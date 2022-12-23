@@ -1,0 +1,64 @@
+{
+  "agent": {
+    "metrics_collection_interval": 10,
+    "logfile": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log"
+  },
+  "metrics": {
+    "append_dimensions": {
+      "AutoScalingGroupName": "$${aws:AutoScalingGroupName}",
+      "ImageId": "$${aws:ImageId}",
+      "InstanceId": "$${aws:InstanceId}",
+      "InstanceType": "$${aws:InstanceType}"
+    },
+    "metrics_collected": {
+      "cpu": {
+        "measurement": [
+          "cpu_usage_system",
+          "cpu_usage_idle",
+          "cpu_usage_nice",
+          "cpu_usage_guest",
+          "cpu_usage_steal"
+        ]
+      },
+      "mem": {
+        "measurement": [
+          "mem_used_percent"
+        ]
+      },
+      "net": {
+        "resources": [
+          "eth0"
+        ],
+        "measurement": [
+          "bytes_sent",
+          "bytes_recv",
+          "drop_in",
+          "drop_out"
+        ]
+      },
+      "netstat": {
+        "measurement": [
+          "tcp_established",
+          "tcp_syn_sent",
+          "tcp_close"
+        ],
+        "metrics_collection_interval": 60
+      }
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/usr/local/shardingsphere/logs/*.log",
+            "log_group_name": "shardingsphere-proxy.log",
+            "timezone": "UTC",
+            "timestamp_format": "%Y-%m-%d %H:%M:%S,%f"
+          }
+        ]
+      }
+    },
+    "force_flush_interval" : 15
+  }
+}
