@@ -9,8 +9,6 @@ terraform {
 
 provider "huaweicloud" {
   region     = "cn-north-9"
-  access_key = "QRB7MPJP7VUU0B4YZ6DG"
-  secret_key = "fudVo9UGGAv919NUMwFULdyeoTeS2Xww5Z3KXpLS"
 }
 
 locals {
