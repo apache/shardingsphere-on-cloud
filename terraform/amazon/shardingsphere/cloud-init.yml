@@ -39,6 +39,7 @@ write_files:
     [Install]
     WantedBy=default.target
 
+%{ if element(version_elems, 0) <= 5 && element(version_elems, 1) < 3 }
 - path: /run/server.yaml
   permissions: 0644
   content: |
@@ -93,7 +94,23 @@ write_files:
       proxy-mysql-default-version: 5.7.22 # In the absence of schema name, the default version will be used.
       proxy-default-port: 3307 # Proxy default port.
       proxy-netty-backlog: 1024 # Proxy netty backlog.
-
+%{ endif }
+%{ if element(version_elems, 0) >= 5 && element(version_elems, 1) > 2 }
+- path: /run/server.yaml
+  permissions: 0644
+  content: |
+    mode:
+      type: Cluster
+      repository:
+        type: ZooKeeper
+        props:
+          namespace: governance_ds
+          server-lists: ${zk_servers}
+          retryIntervalMilliseconds: 500
+          timeToLiveSeconds: 60
+          maxRetries: 3
+          operationTimeoutMilliseconds: 500
+%{ endif }
 - path: /run/install_shardingsphere_proxy.sh
   permissions: 0700
   content: |
@@ -101,7 +118,9 @@ write_files:
     wget -O /run/ss.tar.gz https://archive.apache.org/dist/shardingsphere/${version}/apache-shardingsphere-${version}-shardingsphere-proxy-bin.tar.gz
     mkdir -p /usr/local/shardingsphere-proxy
     tar xvf /run/ss.tar.gz --strip 1 -C /usr/local/shardingsphere-proxy
-    /bin/cp -avf /run/server.yaml /usr/local/shardingsphere-proxy/conf/server.yaml
+    if [ -f /run/server.yaml ]; then
+      /bin/cp -avf /run/server.yaml /usr/local/shardingsphere-proxy/conf/server.yaml
+    fi
     /bin/cp -avf /run/shardingsphere-proxy.service /usr/lib/systemd/system/shardingsphere-proxy.service
     systemctl daemon-reload
     systemctl enable shardingsphere-proxy
