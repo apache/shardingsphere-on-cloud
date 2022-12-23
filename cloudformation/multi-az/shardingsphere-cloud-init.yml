@@ -23,18 +23,18 @@ packages:
 - nc
 
 write_files:
-- path: /run/shardingsphere.service
+- path: /run/shardingsphere-proxy.service
   permissions: 0644
   content: |
     [Unit]
-    Description=ShardingSphere Service
+    Description=ShardingSphere Proxy Service
     Requires=network.target
     After=network.target
     [Service]
     Type=forking
     LimitNOFILE=65536
-    ExecStart=/usr/local/shardingsphere/bin/start.sh
-    ExecStop=/usr/local/shardingsphere/bin/stop.sh
+    ExecStart=/usr/local/shardingsphere-proxy/bin/start.sh
+    ExecStop=/usr/local/shardingsphere-proxy/bin/stop.sh
     Environment="JAVA_MEM_COMMON_OPTS=${JAVA_MEM_OPTS}"
     Restart=always
     RestartSec=3
@@ -97,18 +97,18 @@ write_files:
       proxy-default-port: 3307 # Proxy default port.
       proxy-netty-backlog: 1024 # Proxy netty backlog.
 
-- path: /run/install_shardingsphere.sh
+- path: /run/install_shardingsphere_proxy.sh
   permissions: 0700
   content: |
     echo Installing ShardingSphere v${VERSION}
     wget -O /run/ss.tar.gz https://archive.apache.org/dist/shardingsphere/${VERSION}/apache-shardingsphere-${VERSION}-shardingsphere-proxy-bin.tar.gz
-    mkdir -p /usr/local/shardingsphere
-    tar xvf /run/ss.tar.gz --strip 1 -C /usr/local/shardingsphere
-    /bin/cp -avf /run/server.yaml /usr/local/shardingsphere/conf/server.yaml
-    /bin/cp -avf /run/shardingsphere.service /usr/lib/systemd/system/shardingsphere.service
+    mkdir -p /usr/local/shardingsphere-proxy
+    tar xvf /run/ss.tar.gz --strip 1 -C /usr/local/shardingsphere-proxy
+    /bin/cp -avf /run/server.yaml /usr/local/shardingsphere-proxy/conf/server.yaml
+    /bin/cp -avf /run/shardingsphere-proxy.service /usr/lib/systemd/system/shardingsphere-proxy.service
     systemctl daemon-reload
-    systemctl enable shardingsphere
-    systemctl start shardingsphere
+    systemctl enable shardingsphere-proxy
+    systemctl start shardingsphere-proxy
 
 - path: /run/install_cloudwatch.sh
   permissions: 0700
@@ -118,5 +118,5 @@ write_files:
     /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource ${LaunchTemplateName} --region ${AWS::Region} --configsets default
     /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource ${ASGName} --region ${AWS::Region}
 runcmd:
-- /run/install_shardingsphere.sh
+- /run/install_shardingsphere_proxy.sh
 - /run/install_cloudwatch.sh
