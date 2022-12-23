@@ -39,5 +39,6 @@ header:
     - 'cloudformation/multi-az/*.conf'
     - 'cloudformation/multi-az/*.service'
     - 'cloudformation/multi-az/*.json'
+    - 'terraform/**.json'
 
   comment: on-failure
