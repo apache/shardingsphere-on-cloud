@@ -20,6 +20,7 @@ package manager
 import (
 	"context"
 	"flag"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/metrics"
 	"os"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -114,6 +115,15 @@ func (mgr *Manager) SetReadyzCheck(path string, check healthz.Checker) *Manager 
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
+	return mgr
+}
+
+func (mgr *Manager) SetMetrics() *Manager {
+	if err := mgr.Add(metrics.NewLeaderElectionMetric(mgr.Elected())); err != nil {
+		setupLog.Error(err, "unable to add LeaderElection Metric")
+		os.Exit(1)
+	}
+
 	return mgr
 }
 

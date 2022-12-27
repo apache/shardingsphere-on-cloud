@@ -35,6 +35,7 @@ func main() {
 	if err := manager.New(opt).
 		SetHealthzCheck("healthz", healthz.Ping).
 		SetReadyzCheck("readyz", healthz.Ping).
+		SetMetrics().
 		Start(ctrl.SetupSignalHandler()); err != nil {
 		os.Exit(1)
 	}
