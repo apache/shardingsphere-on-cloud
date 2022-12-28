@@ -36,15 +36,15 @@ helm install shardingsphere-cluster apache-shardingsphere-cluster-operator-chart
 | `nameOverride`    | nameOverride String to partially override common.names.fullname template (will maintain the release name) | `apache-shardingsphere-proxy-cluster` |
 
 ### ShardingSphere-Cluster Operator 参数
-| Name                              | Description                                                                                               | Value                            |
-|-----------------------------------|-----------------------------------------------------------------------------------------------------------|----------------------------------|
-| `operator.replicaCount`           | operator replica count                                                                                    | `2`                              |
-| `operator.image.repository`       | operator image name                                                                                       | `sahrdingsphere-operator`        |
-| `operator.image.pullPolicy`       | image pull policy                                                                                         | `IfNotPresent`                   |
-| `operator.image.tag`              | image tag                                                                                                 | `0.0.1`                          |
-| `operator.imagePullSecrets`       | image pull secret of private repository                                                                   | `[]`                             |
-| `operator.resources`              | operator Resources required by the operator                                                               | `{}`                             |
-| `operator.health.healthProbePort` | operator health check port                                                                                | `8081`                           |
+| Name                              | Description                                                                                                | Value                                                                   |
+|-----------------------------------|------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| `operator.replicaCount`           | operator replica count                                                                                     | `2`                                                                     |
+| `operator.image.repository`       | operator image name                                                                                        | `ghcr.io/apache/shardingsphere-on-cloud/apache-shardingsphere-operator` |
+| `operator.image.pullPolicy`       | image pull policy                                                                                          | `IfNotPresent`                                                          |
+| `operator.image.tag`              | image tag                                                                                                  | `0.1.1`                                                                 |
+| `operator.imagePullSecrets`       | image pull secret of private repository                                                                    | `[]`                                                                    |
+| `operator.resources`              | operator Resources required by the operator                                                                | `{}`                                                                    |
+| `operator.health.healthProbePort` | operator health check port                                                                                 | `8081`                                                                  |
 
 ### ShardingSphere-Proxy Cluster 参数
 
