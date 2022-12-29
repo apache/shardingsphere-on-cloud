@@ -1,4 +1,4 @@
-#
+{{/*#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -13,21 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+#*/}}
 
-apiVersion: v2
-name: apache-shardingsphere-proxy-cluster-operator-charts
-description: The ShardingSphere Proxy Cluster Kubernetes Operator automates provisioning, management, and operations of ShardingSphere Proxy clusters running on Kubernetes.
-dependencies:
-  - condition: proxyCluster.zookeeper.enabled
-    name: zookeeper
-    repository: https://charts.bitnami.com/bitnami
-    version: 9.2.7
-  - name: common
-    repository: https://charts.bitnami.com/bitnami
-    tags:
-      - bitnami-common
-    version: 1.16.1
-type: application
-version: 0.1.1
-appVersion: "5.3.0"
+{{- define "operator.name" -}}
+shardingsphere-operator
+{{- end -}}
