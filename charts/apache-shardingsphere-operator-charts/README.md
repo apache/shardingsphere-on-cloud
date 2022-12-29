@@ -1,4 +1,4 @@
-# Apache ShardingSphere-Cluster Operator Charts
+# Apache ShardingSphere Operator Charts
 The Apache ShardingSphere-Operator is used to quickly install Apache ShardingSphere-Proxy Cluster. 
 This Chart will install ShardingSphere-Proxy Cluster using the CRD provided by ShardingSphere-Operator.
 
