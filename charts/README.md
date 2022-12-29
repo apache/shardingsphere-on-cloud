@@ -28,5 +28,5 @@ The ShardingSphere-Cluster Operator uses predefined CustomResourceDefinitions fo
 
 ### Quick Start 
 
-Please follows [instructions](./apache-shardingsphere-cluster-operator-charts/README.md) to deploy a ShardingSphere cluster with version 5.3.0.
+Please follows [instructions](apache-shardingsphere-operator-charts/README.md) to deploy a ShardingSphere cluster with version 5.3.0.
 

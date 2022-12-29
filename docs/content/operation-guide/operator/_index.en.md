@@ -15,25 +15,25 @@ The following configuration content and configuration file directory are: apache
  kubectl create ns shardingsphere-operator
  helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
  helm repo update
- helm install shardingsphere-cluster shardingsphere/apache-shardingsphere-cluster-operator-charts -n shardingsphere-operator
+ helm install shardingsphere-cluster shardingsphere/apache-shardingsphere-operator-charts -n shardingsphere-operator
 ```
 
 ### Source Code Installation
 
 ```shell
 kubectl create ns shardingsphere-operator
-cd charts/apache-shardingsphere-cluster-operator-charts/
+cd charts/apache-shardingsphere-operator-charts/
 helm dependency build
 cd ../
-helm install shardingsphere-cluster apache-shardingsphere-cluster-operator-charts -n shardingsphere-operator
+helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n shardingsphere-operator
 ```
 
 ## Parameters
 
 ### Common parameters
-| Name              | Description                                                                                               | Value                                 |
-|-------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------|
-| `nameOverride`    | nameOverride String to partially override common.names.fullname template (will maintain the release name) | `apache-shardingsphere-proxy-cluster` |
+| Name              | Description                                                                                               | Value                  |
+|-------------------|-----------------------------------------------------------------------------------------------------------|------------------------|
+| `nameOverride`    | nameOverride String to partially override common.names.fullname template (will maintain the release name) | `shardingsphere-proxy` |
 
 ### ShardingSphere Operator Parameters
 

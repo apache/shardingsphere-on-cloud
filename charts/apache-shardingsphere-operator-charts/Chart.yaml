@@ -17,13 +17,17 @@
 
 apiVersion: v2
 name: apache-shardingsphere-operator-charts
-description: A Helm chart for ShardingSphere-Operator
-type: application
-version: 0.1.1
-appVersion: "0.1.1"
+description: The ShardingSphere Kubernetes Operator automates provisioning, management, and operations of ShardingSphere Proxy clusters running on Kubernetes.
 dependencies:
+  - condition: proxyCluster.zookeeper.enabled
+    name: zookeeper
+    repository: https://charts.bitnami.com/bitnami
+    version: 9.2.7
   - name: common
     repository: https://charts.bitnami.com/bitnami
     tags:
       - bitnami-common
     version: 1.16.1
+type: application
+version: 0.1.1
+appVersion: "5.3.0"
