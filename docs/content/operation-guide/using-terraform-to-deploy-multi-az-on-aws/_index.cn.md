@@ -1,6 +1,6 @@
 +++
 pre = "<b>3.5 </b>"
-title = "Terraform 部署多可用区 ShardingSphere 集群"
+title = "Terraform 在 AWS 上部署多可用区 ShardingSphere 集群"
 weight = 5
 chapter = true
 +++
@@ -29,14 +29,14 @@ Terraform 有以下优点：
 
 ## 目标
 
-能够使用 Terraform 在 Amazon 上创建 ShardingSphere 高可用集群，创建的集群架构图如下，后续会支持更多的云厂商。
+能够使用 Terraform 在 AWS 上创建 ShardingSphere 高可用集群，创建的集群架构图如下，后续会支持更多的云厂商。
 
 ![](../../../img/overview/terraform.png)
 
 创建的 Amazon 资源如下：
 1. 每个可用区一个 ZooKeeper 实例。
-2. 每个可用区一个 Auto Scaling Group。
-3. 每个可用区一个 Launch Template，用于 Auto Scaling Group 启动 ShardingSphere Proxy 实例。
+2. 一个 Auto Scaling Group。
+3. 一个 Launch Template，用于 Auto Scaling Group 启动 ShardingSphere Proxy 实例。
 4. 一个内网 Network LoadBalancer，给应用使用。
 
 ## 快速开始
@@ -59,10 +59,10 @@ Terraform 有以下优点：
 
 ```shell
 git clone --depth=1 https://github.com/apache/shardingsphere-on-cloud.git
-cd shardingsphere-on-cloud/terraform
+cd shardingsphere-on-cloud/terraform/amazon
 ```
 
-以下提到的命令都需要在 `terraform` 目录中执行。
+以下提到的命令都需要在 `amazon` 目录中执行。
 
 2. 运行以下命令初始化 terraform。
 
@@ -112,15 +112,15 @@ terraform destroy
 
 |名称|源|
 |----|--|
-|[zk](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#ZK)|./zk|
-|[shardingsphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#shardingsphere)|./shardingsphere|
+|[zk](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#ZK)|./zk|
+|[shardingsphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#shardingsphere)|./shardingsphere|
 
 ### 输出
 
-|名称 |类型|描述|
-|---------------------|----|---|
-|[shardingsphere_domain](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#output_shardingsphere_domain)|string|最终的对内提供的 SharidngSphere Proxy 域名，其他应用可以通过此域名连接到 Proxy|
-|[zk_node_domain](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#output_zk_node_domain)       |list(string)|ZooKeeper 服务对应的域名列表|
+| 名称                                                                                                                                 |类型|描述|
+|------------------------------------------------------------------------------------------------------------------------------------|----|---|
+| [shardingsphere_domain](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#output_shardingsphere_domain) |string|最终的对内提供的 SharidngSphere Proxy 域名，其他应用可以通过此域名连接到 Proxy|
+| [zk_node_domain](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#output_zk_node_domain)               |list(string)|ZooKeeper 服务对应的域名列表|
 
 ### 模块详细信息
 
@@ -179,25 +179,25 @@ terraform destroy
 
 **输入**
 
-|名称|描述|类型|默认值|是否依赖|
-|----|---|----|------|-------|
-|[cluster_size](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_cluster_size)|与可用区相同数量的集群大小|number|n/a|yes|
-|[hosted_zone_name](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_hosted_zone_name)|私有 zone 名称|string|"shardingsphere.org"|no|
-|[image_id](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_image_id)|AMI 镜像 ID|string|n/a|yes|
-|[instance_type](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_instance_type)|EC2 实例类型|string|n/a|yes|
-|[key_name](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_key_name)|SSH 密钥对|string|n/a|yes|
-|[lb_listener_port](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_lb_listener_port)|ShardingSphere Proxy 启动端口|string|n/a|yes|
-|[security_groups](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_security_groups)|Security Group 列表|list(string)|[]|no|
-|[shardingsphere_version](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_shardingsphere_version)|ShardingSphere Proxy 版本|string|n/a|yes|
-|[subnet_ids](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_subnet_ids)|VPC 中按可用区排序的子网列表|list(string)|n/a|yes|
-|[vpc_id](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_vpc_id)|VPC ID|string|n/a|yes|
-|[zk_servers](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#input_zk_servers)|Zookeeper Servers|list(string)|n/a|yes|
+| 名称                                                                                                                                  |描述|类型|默认值|是否依赖|
+|-------------------------------------------------------------------------------------------------------------------------------------|---|----|------|-------|
+| [cluster_size](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_cluster_size)                     |与可用区相同数量的集群大小|number|n/a|yes|
+| [hosted_zone_name](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_hosted_zone_name)             |私有 zone 名称|string|"shardingsphere.org"|no|
+| [image_id](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_image_id)                             |AMI 镜像 ID|string|n/a|yes|
+| [instance_type](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_instance_type)                   |EC2 实例类型|string|n/a|yes|
+| [key_name](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_key_name)                             |SSH 密钥对|string|n/a|yes|
+| [lb_listener_port](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_lb_listener_port)             |ShardingSphere Proxy 启动端口|string|n/a|yes|
+| [security_groups](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_security_groups)               |Security Group 列表|list(string)|[]|no|
+| [shardingsphere_version](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_shardingsphere_version) |ShardingSphere Proxy 版本|string|n/a|yes|
+| [subnet_ids](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_subnet_ids)                         |VPC 中按可用区排序的子网列表|list(string)|n/a|yes|
+| [vpc_id](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_vpc_id)                                 |VPC ID|string|n/a|yes|
+| [zk_servers](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#input_zk_servers)                         |Zookeeper Servers|list(string)|n/a|yes|
 
 **输出**
 
-|名称|描述|
-|----|----|
-|[shardingsphere_domain](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform#output_shardingsphere_domain)|ShardingSphere Proxy 集群对内提供的域名，其他应用可以通过此域名连接到 Proxy|
+| 名称                                                                                                                                 |描述|
+|------------------------------------------------------------------------------------------------------------------------------------|----|
+| [shardingsphere_domain](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform/amazon#output_shardingsphere_domain) |ShardingSphere Proxy 集群对内提供的域名，其他应用可以通过此域名连接到 Proxy|
 
 ## 运维
 
@@ -228,17 +228,17 @@ systemctl restart zookeeper
 #### 启动
 
 ```shell
-systemctl start shardingsphere
+systemctl start shardingsphere-proxy
 ```
 
 #### 停止
 
 ```shell
-systemctl stop shardingsphere
+systemctl stop shardingsphere-proxy
 ```
 
 #### 重启
 
 ```shell
-systemctl restart shardingsphere
+systemctl restart shardingsphere-proxy
 ```

@@ -62,7 +62,7 @@ AWS CloudFormation 是一个以基础设施即代码的方式配置和启动任�
 
 ### 7. 检查 ShardingSphere Proxy 和 ZooKeeper 状态
 
-使用 `systemctl status shardingsphere` 和 `./bin/zkServer.sh status` 来检查组件的运行状态。
+使用 `systemctl status shardingsphere-proxy` 和 `./bin/zkServer.sh status` 来检查组件的运行状态。
 
 ![](../../../img/operation-guide/9.PNG)
 

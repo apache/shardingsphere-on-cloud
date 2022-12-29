@@ -3,10 +3,7 @@ Helm Charts
 
 ## Current Status
 
-Currently, either the [ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts) and the [ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) make up the latest version as (5.2.0) of ShardingSphere Proxy. Refer and follow the Quick Start guide to get up and running. 
-
-* [The ShardingSphere Helm Charts QuickStart](#quick-start)
-* [The ShardingSphere Operator QuickStart](#quick-start-1)
+Currently, either the [ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts) and the [ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) make up the latest version as (5.3.0) of ShardingSphere Proxy.
 
 ### Requirements
 
@@ -22,14 +19,14 @@ ShardingSphere Helm Charts uses [Helm](https://helm.sh/) to provide guidance for
 
 ### Quick Start
 
-Please follow these [instructions](./docs/shardingsphere-helm-charts.md) to deploy a ShardingSphere cluster with version 5.2.0.
+Please follow these [instructions](./apache-shardingsphere-proxy-charts/README.md) to deploy a ShardingSphere cluster with version 5.3.0.
 
 
-## ShardingSphere Operator Helm Charts
+## ShardingSphere-Cluster Operator Helm Charts
 
-The ShardingSphere Operator uses predefined CustomResourceDefinitions for describing an Apache ShardingSphere Deployment on Kubernetes.
+The ShardingSphere-Cluster Operator uses predefined CustomResourceDefinitions for describing an Apache ShardingSphere Deployment on Kubernetes.
 
 ### Quick Start 
 
-Please follows [instructions](./docs/shardingsphere-operator.md) to deploy a ShardingSphere cluster with version 5.2.0.
+Please follows [instructions](./apache-shardingsphere-cluster-operator-charts/README.md) to deploy a ShardingSphere cluster with version 5.3.0.
 
