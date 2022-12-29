@@ -17,7 +17,7 @@
 
 apiVersion: v2
 name: apache-shardingsphere-operator-charts
-description: The ShardingSphere Proxy Cluster Kubernetes Operator automates provisioning, management, and operations of ShardingSphere Proxy clusters running on Kubernetes.
+description: The ShardingSphere Kubernetes Operator automates provisioning, management, and operations of ShardingSphere Proxy clusters running on Kubernetes.
 dependencies:
   - condition: proxyCluster.zookeeper.enabled
     name: zookeeper
