@@ -22,6 +22,26 @@ notifications:
 
 github:
   description: A collection of tools and best practices to take ShardingSphere into the cloud
+  labels:
+    - database-plus
+    - database
+    - distributed-database
+    - distributed-sql-database
+    - distributed-transactions
+    - database-cluster
+    - rdbms
+    - sql
+    - mysql
+    - postgresql
+    - shard
+    - encrypt
+    - dba
+    - oltp
+    - bigdata
+    - hacktoberfest
+    - cloud
+    - kubernetes
+    - operator
   protected_branches:
     main:
       required_pull_request_reviews:
