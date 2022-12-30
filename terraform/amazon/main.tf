@@ -30,7 +30,7 @@ provider "aws" {
 }
 
 module "zk" {
-  source              = "./zk"
+  source              = "./modules/zk"
   cluster_size        = 3
   key_name            = "test-tf"
   instance_type       = "t2.nano"
@@ -41,7 +41,7 @@ module "zk" {
 
 module "shardingsphere" {
   depends_on                    = [module.zk]
-  source                        = "./shardingsphere"
+  source                        = "./modules/shardingsphere"
   cluster_size                  = 3
   shardingsphere_proxy_version  = "5.2.1"
   key_name                      = "test-tf"
