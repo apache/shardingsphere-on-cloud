@@ -39,6 +39,9 @@ github:
     - oltp
     - bigdata
     - hacktoberfest
+    - cloud
+    - kubernetes
+    - operator
   protected_branches:
     main:
       required_pull_request_reviews:
