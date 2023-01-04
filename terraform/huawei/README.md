@@ -11,7 +11,7 @@ So `source = "./shardingsphere"` in your module.
 ```hcl
 module "shardingsphere_proxy" {
   source                       = "./shardingsphere"
-  shardingsphere_proxy_version = "5.3.0"
+  shardingsphere_proxy_version = "5.3.1"
   image_id                     = ""
   key_name                     = "test-tf"
   flavor_id                    = "c7.large.2"

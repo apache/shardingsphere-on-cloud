@@ -52,7 +52,7 @@ helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n sha
 | Name                                             | Description                                                                                                                                                                                        | Value       |
 |--------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|
 | `proxyCluster.replicaCount`                      | ShardingSphere-Proxy cluster starts the number of replicas, Note: After you enable automaticScaling, this parameter will no longer take effect                                                     | `3`         |
-| `proxyCluster.proxyVersion`                      | ShardingSphere-Proxy cluster version                                                                                                                                                               | `5.3.0`     |
+| `proxyCluster.proxyVersion`                      | ShardingSphere-Proxy cluster version                                                                                                                                                               | `5.3.1`     |
 | `proxyCluster.automaticScaling.enable`           | ShardingSphere-Proxy Whether the ShardingSphere-Proxy cluster has auto-scaling enabled                                                                                                             | `false`     |
 | `proxyCluster.automaticScaling.scaleUpWindows`   | ShardingSphere-Proxy automatically scales the stable window                                                                                                                                        | `30`        |
 | `proxyCluster.automaticScaling.scaleDownWindows` | ShardingSphere-Proxy automatically shrinks the stabilized window                                                                                                                                   | `30`        |
@@ -152,7 +152,7 @@ proxyCluster:
   ## @param proxyVersion ShardingSphere-Proxy cluster version
   ##
   replicaCount: "3"
-  proxyVersion: "5.3.0"
+  proxyVersion: "5.3.1"
   ## @param automaticScaling.enable ShardingSphere-Proxy Whether the ShardingSphere-Proxy cluster has auto-scaling enabled
   ## @param automaticScaling.scaleUpWindows ShardingSphere-Proxy automatically scales the stable window
   ## @param automaticScaling.scaleDownWindows ShardingSphere-Proxy automatically shrinks the stabilized window
