@@ -6,7 +6,7 @@ chapter = true
 +++
 
 ## Background
-For an introduction to Terraform, please refer to [link](../using-terraform-to-deploy-multi-az-on-aws/_index.en.md).
+For an introduction to Terraform, please refer to this [link](../using-terraform-to-deploy-multi-az-on-aws/_index.en.md).
 
 ## Goal
 
@@ -34,7 +34,7 @@ To create a ShardingSphere Proxy highly available cluster, you need to prepare t
 
 ### Procedure
 
-1. Enter the terraform directory, create the `terraform.tfvars` file  according to the above prepared resources.
+1. Enter the Terraform directory, create the `terraform.tfvars` file  according to the above prepared resources.
 
 ```shell
 git clone --depth=1 https://github.com/apache/shardingsphere-on-cloud.git
@@ -54,7 +54,7 @@ lb_listener_port             = 3307
 zk_flavor_id                 = "s6.medium.2"
 ```
 
-2. RUn the following command to set AK/SK and Region.
+2. Run the following command to set AK/SK and Region.
 ```shell
 export HW_ACCESS_KEY="AK"
 export HW_SECRET_KEY="SK"
