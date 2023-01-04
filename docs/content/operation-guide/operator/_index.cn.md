@@ -266,6 +266,8 @@ zookeeper:
       - ReadWriteOnce
     size: 8Gi
 
+```
+
 ## 清理
 
 ```shell
