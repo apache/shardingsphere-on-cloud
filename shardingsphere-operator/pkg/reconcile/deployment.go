@@ -261,10 +261,12 @@ func updatePodTemplateSpec(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployme
 		}
 	}
 
-	initContainer := updateInitContainer(proxy, act)
-	for i, _ := range exp.Spec.InitContainers {
-		if exp.Spec.InitContainers[i].Name == "download-mysql-connect" {
-			exp.Spec.InitContainers[i] = *initContainer
+	if proxy.Spec.MySQLDriver != nil {
+		initContainer := updateInitContainer(proxy, act)
+		for i, _ := range exp.Spec.InitContainers {
+			if exp.Spec.InitContainers[i].Name == "download-mysql-connect" {
+				exp.Spec.InitContainers[i] = *initContainer
+			}
 		}
 	}
 
