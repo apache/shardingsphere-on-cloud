@@ -27,6 +27,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func Test_ConstructCascadingDeployment(t *testing.T) {
@@ -49,6 +50,10 @@ func Test_ConstructCascadingDeployment(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "testname",
 					Namespace: "testnamespace",
+					Annotations: map[string]string{
+						AnnoRollingUpdateMaxSurge:       "3",
+						AnnoRollingUpdateMaxUnavailable: "1",
+					},
 				},
 				Spec: v1alpha1.ProxySpec{
 					Version: "5.1.2",
@@ -99,7 +104,11 @@ func Test_ConstructCascadingDeployment(t *testing.T) {
 				},
 				Spec: appsv1.DeploymentSpec{
 					Strategy: appsv1.DeploymentStrategy{
-						Type: appsv1.RecreateDeploymentStrategyType,
+						Type: appsv1.RollingUpdateDeploymentStrategyType,
+						RollingUpdate: &appsv1.RollingUpdateDeployment{
+							MaxUnavailable: func(v int) *intstr.IntOrString { p := intstr.FromInt(v); return &p }(1),
+							MaxSurge:       func(v int) *intstr.IntOrString { p := intstr.FromInt(v); return &p }(3),
+						},
 					},
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
@@ -212,6 +221,22 @@ func Test_ConstructCascadingDeployment(t *testing.T) {
 			}
 			if len(c.proxy.Spec.ImagePullSecrets) > 0 {
 				assert.EqualValues(t, c.exp.Spec.Template.Spec.ImagePullSecrets, act.Spec.Template.Spec.ImagePullSecrets, c.message)
+			}
+
+			if c.proxy.Annotations[AnnoRollingUpdateMaxSurge] != "" {
+				assert.Equal(t, c.exp.Spec.Strategy.RollingUpdate.MaxSurge.StrVal, act.Spec.Strategy.RollingUpdate.MaxSurge.StrVal, c.message)
+			} else {
+				if c.exp.Name != "" && act.Spec.Strategy.RollingUpdate != nil {
+					assert.Equal(t, 1, act.Spec.Strategy.RollingUpdate.MaxSurge.IntVal, c.message)
+				}
+			}
+
+			if c.proxy.Annotations[AnnoRollingUpdateMaxUnavailable] != "" {
+				assert.Equal(t, c.exp.Spec.Strategy.RollingUpdate.MaxUnavailable.StrVal, act.Spec.Strategy.RollingUpdate.MaxUnavailable.StrVal, c.message)
+			} else {
+				if c.exp.Name != "" && act.Spec.Strategy.RollingUpdate != nil {
+					assert.Equal(t, 0, act.Spec.Strategy.RollingUpdate.MaxUnavailable.StrVal, c.message)
+				}
 			}
 		}
 	}
