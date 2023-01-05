@@ -27,14 +27,38 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func NewDeployment(ssproxy *v1alpha1.ShardingSphereProxy) *v1.Deployment {
 	return ConstructCascadingDeployment(ssproxy)
 }
+
+const (
+	AnnoRollingUpdateMaxSurge       = "shardingsphereproxy.shardingsphere.org/rolling-update-max-surge"
+	AnnoRollingUpdateMaxUnavailable = "shardingsphereproxy.shardingsphere.org/rolling-update-max-unavailable"
+)
+
 func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *v1.Deployment {
 	if proxy == nil || reflect.DeepEqual(proxy, &v1alpha1.ShardingSphereProxy{}) {
 		return &v1.Deployment{}
+	}
+
+	var (
+		maxUnavailable intstr.IntOrString
+		maxSurge       intstr.IntOrString
+	)
+
+	if proxy.Annotations[AnnoRollingUpdateMaxUnavailable] != "" {
+		maxUnavailable = intstr.FromString(proxy.Annotations[AnnoRollingUpdateMaxUnavailable])
+	} else {
+		maxUnavailable = intstr.FromInt(0)
+	}
+
+	if proxy.Annotations[AnnoRollingUpdateMaxSurge] != "" {
+		maxSurge = intstr.FromString(proxy.Annotations[AnnoRollingUpdateMaxSurge])
+	} else {
+		maxSurge = intstr.FromInt(1)
 	}
 
 	dp := &v1.Deployment{
@@ -47,7 +71,11 @@ func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *v1.Deplo
 		},
 		Spec: v1.DeploymentSpec{
 			Strategy: v1.DeploymentStrategy{
-				Type: v1.RecreateDeploymentStrategyType,
+				Type: v1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &v1.RollingUpdateDeployment{
+					MaxUnavailable: &maxUnavailable,
+					MaxSurge:       &maxSurge,
+				},
 			},
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
