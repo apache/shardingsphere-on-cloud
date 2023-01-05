@@ -28,7 +28,7 @@ helm unstall [RELEASE_NAME]
 | `operator.replicaCount`           | operator replica count                      | `2`                                                                     |
 | `operator.image.repository`       | operator image name                         | `ghcr.io/apache/shardingsphere-on-cloud/apache-shardingsphere-operator` |
 | `operator.image.pullPolicy`       | image pull policy                           | `IfNotPresent`                                                          |
-| `operator.image.tag`              | image tag                                   | `0.1.1`                                                                 |
+| `operator.image.tag`              | image tag                                   | `0.1.2`                                                                 |
 | `operator.imagePullSecrets`       | image pull secret of private repository     | `[]`                                                                    |
 | `operator.resources`              | operator Resources required by the operator | `{}`                                                                    |
 | `operator.health.healthProbePort` | operator health check port                  | `8081`                                                                  |
@@ -38,7 +38,7 @@ helm unstall [RELEASE_NAME]
 | Name                                             | Description                                                                                                                                                                                        | Value       |
 |--------------------------------------------------| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |-------------|
 | `proxyCluster.replicaCount`                      | ShardingSphere-Proxy cluster starts the number of replicas, Note: After you enable automaticScaling, this parameter will no longer take effect                                                     | `3`         |
-| `proxyCluster.proxyVersion`                      | ShardingSphere-Proxy cluster version                                                                                                                                                               | `5.3.0`     |
+| `proxyCluster.proxyVersion`                      | ShardingSphere-Proxy cluster version                                                                                                                                                               | `5.3.1`     |
 | `proxyCluster.automaticScaling.enable`           | ShardingSphere-Proxy Whether the ShardingSphere-Proxy cluster has auto-scaling enabled                                                                                                             | `false`     |
 | `proxyCluster.automaticScaling.scaleUpWindows`   | ShardingSphere-Proxy automatically scales the stable window                                                                                                                                        | `30`        |
 | `proxyCluster.automaticScaling.scaleDownWindows` | ShardingSphere-Proxy automatically shrinks the stabilized window                                                                                                                                   | `30`        |

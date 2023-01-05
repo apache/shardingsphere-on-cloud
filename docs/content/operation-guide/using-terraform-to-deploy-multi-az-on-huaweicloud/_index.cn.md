@@ -44,7 +44,7 @@ cd shardingsphere-on-cloud/terraform/huawei
 `terraform.tfvars` 示例内容如下：
 
 ```hcl
-shardingsphere_proxy_version = "5.3.0"
+shardingsphere_proxy_version = "5.3.1"
 image_id                     = ""
 key_name                     = "test-tf"
 flavor_id                    = "c7.large.2"
