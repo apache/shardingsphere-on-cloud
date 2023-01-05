@@ -50,13 +50,15 @@ func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *v1.Deplo
 	)
 
 	if proxy.Annotations[AnnoRollingUpdateMaxUnavailable] != "" {
-		maxUnavailable = intstr.FromString(proxy.Annotations[AnnoRollingUpdateMaxUnavailable])
+		n, _ := strconv.Atoi(proxy.Annotations[AnnoRollingUpdateMaxUnavailable])
+		maxUnavailable = intstr.FromInt(n)
 	} else {
 		maxUnavailable = intstr.FromInt(0)
 	}
 
 	if proxy.Annotations[AnnoRollingUpdateMaxSurge] != "" {
-		maxSurge = intstr.FromString(proxy.Annotations[AnnoRollingUpdateMaxSurge])
+		n, _ := strconv.Atoi(proxy.Annotations[AnnoRollingUpdateMaxSurge])
+		maxSurge = intstr.FromInt(n)
 	} else {
 		maxSurge = intstr.FromInt(1)
 	}
@@ -203,6 +205,33 @@ func addInitContainer(dp *v1.Deployment, mysql *v1alpha1.MySQLDriver) {
 // UpdateDeployment FIXME:merge UpdateDeployment and ConstructCascadingDeployment
 func UpdateDeployment(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *v1.Deployment {
 	exp := act.DeepCopy()
+
+	var (
+		maxUnavailable intstr.IntOrString
+		maxSurge       intstr.IntOrString
+	)
+
+	if proxy.Annotations[AnnoRollingUpdateMaxUnavailable] != "" {
+		n, _ := strconv.Atoi(proxy.Annotations[AnnoRollingUpdateMaxUnavailable])
+		maxUnavailable = intstr.FromInt(n)
+	} else {
+		maxUnavailable = intstr.FromInt(0)
+	}
+
+	if proxy.Annotations[AnnoRollingUpdateMaxSurge] != "" {
+		n, _ := strconv.Atoi(proxy.Annotations[AnnoRollingUpdateMaxSurge])
+		maxSurge = intstr.FromInt(n)
+	} else {
+		maxSurge = intstr.FromInt(1)
+	}
+
+	exp.Spec.Strategy.Type = v1.RollingUpdateDeploymentStrategyType
+	if exp.Spec.Strategy.RollingUpdate == nil {
+		exp.Spec.Strategy.RollingUpdate = &v1.RollingUpdateDeployment{}
+	}
+
+	exp.Spec.Strategy.RollingUpdate.MaxSurge = &maxSurge
+	exp.Spec.Strategy.RollingUpdate.MaxUnavailable = &maxUnavailable
 
 	if proxy.Spec.AutomaticScaling == nil || !proxy.Spec.AutomaticScaling.Enable {
 		exp.Spec.Replicas = updateReplicas(proxy, act)
