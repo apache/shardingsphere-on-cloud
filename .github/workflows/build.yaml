@@ -16,14 +16,10 @@
 #
 
 name: Create and publish a Docker image
-
 on:
-  push:
-    branches:
-      - 'release-v*'
-    paths:
-      - 'shardingsphere-operator/**'
-    tags:
+  release:
+    types:
+      - published
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/apache-shardingsphere-operator
@@ -55,10 +51,9 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
-          context: .
+          context: ./shardingsphere-operator
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           file: shardingsphere-operator/build/Dockerfile
-
 
