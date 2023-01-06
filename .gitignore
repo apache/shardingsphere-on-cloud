@@ -19,6 +19,7 @@ testbin/*
 !vendor/**/zz_generated.*
 
 # editor and IDE paraphernalia
+.vscode
 .idea
 *.swp
 *.swo
@@ -30,3 +31,4 @@ charts/apache-shardingsphere-operator-charts/charts/
 **/Chart.lock
 test
 certs
+shardingsphere-operator/vendor/

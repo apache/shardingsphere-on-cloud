@@ -27,14 +27,40 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func NewDeployment(ssproxy *v1alpha1.ShardingSphereProxy) *v1.Deployment {
 	return ConstructCascadingDeployment(ssproxy)
 }
+
+const (
+	AnnoRollingUpdateMaxSurge       = "shardingsphereproxy.shardingsphere.org/rolling-update-max-surge"
+	AnnoRollingUpdateMaxUnavailable = "shardingsphereproxy.shardingsphere.org/rolling-update-max-unavailable"
+)
+
 func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *v1.Deployment {
 	if proxy == nil || reflect.DeepEqual(proxy, &v1alpha1.ShardingSphereProxy{}) {
 		return &v1.Deployment{}
+	}
+
+	var (
+		maxUnavailable intstr.IntOrString
+		maxSurge       intstr.IntOrString
+	)
+
+	if proxy.Annotations[AnnoRollingUpdateMaxUnavailable] != "" {
+		n, _ := strconv.Atoi(proxy.Annotations[AnnoRollingUpdateMaxUnavailable])
+		maxUnavailable = intstr.FromInt(n)
+	} else {
+		maxUnavailable = intstr.FromInt(0)
+	}
+
+	if proxy.Annotations[AnnoRollingUpdateMaxSurge] != "" {
+		n, _ := strconv.Atoi(proxy.Annotations[AnnoRollingUpdateMaxSurge])
+		maxSurge = intstr.FromInt(n)
+	} else {
+		maxSurge = intstr.FromInt(1)
 	}
 
 	dp := &v1.Deployment{
@@ -47,7 +73,11 @@ func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *v1.Deplo
 		},
 		Spec: v1.DeploymentSpec{
 			Strategy: v1.DeploymentStrategy{
-				Type: v1.RecreateDeploymentStrategyType,
+				Type: v1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &v1.RollingUpdateDeployment{
+					MaxUnavailable: &maxUnavailable,
+					MaxSurge:       &maxSurge,
+				},
 			},
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -175,6 +205,33 @@ func addInitContainer(dp *v1.Deployment, mysql *v1alpha1.MySQLDriver) {
 // UpdateDeployment FIXME:merge UpdateDeployment and ConstructCascadingDeployment
 func UpdateDeployment(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *v1.Deployment {
 	exp := act.DeepCopy()
+
+	var (
+		maxUnavailable intstr.IntOrString
+		maxSurge       intstr.IntOrString
+	)
+
+	if proxy.Annotations[AnnoRollingUpdateMaxUnavailable] != "" {
+		n, _ := strconv.Atoi(proxy.Annotations[AnnoRollingUpdateMaxUnavailable])
+		maxUnavailable = intstr.FromInt(n)
+	} else {
+		maxUnavailable = intstr.FromInt(0)
+	}
+
+	if proxy.Annotations[AnnoRollingUpdateMaxSurge] != "" {
+		n, _ := strconv.Atoi(proxy.Annotations[AnnoRollingUpdateMaxSurge])
+		maxSurge = intstr.FromInt(n)
+	} else {
+		maxSurge = intstr.FromInt(1)
+	}
+
+	exp.Spec.Strategy.Type = v1.RollingUpdateDeploymentStrategyType
+	if exp.Spec.Strategy.RollingUpdate == nil {
+		exp.Spec.Strategy.RollingUpdate = &v1.RollingUpdateDeployment{}
+	}
+
+	exp.Spec.Strategy.RollingUpdate.MaxSurge = &maxSurge
+	exp.Spec.Strategy.RollingUpdate.MaxUnavailable = &maxUnavailable
 
 	if proxy.Spec.AutomaticScaling == nil || !proxy.Spec.AutomaticScaling.Enable {
 		exp.Spec.Replicas = updateReplicas(proxy, act)
