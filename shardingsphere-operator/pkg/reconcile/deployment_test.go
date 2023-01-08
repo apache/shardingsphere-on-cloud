@@ -457,3 +457,43 @@ func Test_UpdateDeployment(t *testing.T) {
 		assert.EqualValues(t, c.proxy.Spec.StartupProbe, exp.Spec.Template.Spec.Containers[0].StartupProbe, c.message)
 	}
 }
+
+func Test_ReconcileStatus(t *testing.T) {
+	cases := []struct {
+		name    string
+		podlist *v1.PodList
+		exp     *v1alpha1.ProxyStatus
+		message string
+	}{
+		{
+			name:    "empty Podlist",
+			podlist: &v1.PodList{},
+			exp: &v1alpha1.ProxyStatus{
+				Phase: v1alpha1.StatusNotReady,
+				Conditions: []v1alpha1.Condition{
+					{},
+				},
+			},
+			message: "empty Podlist should be ok",
+		},
+		{
+			name: "one initialized",
+		},
+		{
+			name: "two initialized but not started",
+		},
+		{
+			name: "two started but not ready",
+		},
+		{
+			name: "one started and one ready",
+		},
+		{
+			name: "two ready",
+		},
+	}
+
+	for _, c := range cases {
+
+	}
+}

@@ -216,7 +216,6 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 	}
 
 	result := ctrl.Result{}
-	readyNodes := reconcile.CountingReadyPods(podList)
 
 	rt, err := r.getRuntimeShardingSphereProxy(ctx, types.NamespacedName{
 		Namespace: namespace,
@@ -225,9 +224,23 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
+	rt.Status = *(r.reconcileStatus(podList))
+
+	// TODO: Compare Status with or without modification
+	if err := r.Status().Update(ctx, rt); err != nil {
+		return result, err
+	}
+
+	return ctrl.Result{RequeueAfter: WaitingForReady}, nil
+}
+
+func (r *ProxyReconciler) reconcileStatus(podList *v1.PodList) *v1alpha1.ProxyStatus {
+	rt := &v1alpha1.ShardingSphereProxy{}
+	readyNodes := reconcile.CountingReadyPods(podList)
 	if reconcile.IsRunning(podList) {
 		if readyNodes < miniReadyCount {
-			result.RequeueAfter = WaitingForReady
+			// result.RequeueAfter = WaitingForReady
 			if readyNodes != rt.Status.ReadyNodes {
 				rt.SetPodStarted(readyNodes)
 			}
@@ -241,15 +254,9 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 	} else {
 		// TODO: Waiting for pods to start exceeds the maximum number of retries
 		rt.SetPodNotStarted(readyNodes)
-		result.RequeueAfter = WaitingForReady
+		// result.RequeueAfter = WaitingForReady
 	}
-
-	// TODO: Compare Status with or without modification
-	if err := r.Status().Update(ctx, rt); err != nil {
-		return result, err
-	}
-
-	return result, nil
+	return &rt.Status
 }
 
 // SetupWithManager sets up the controller with the Manager.
