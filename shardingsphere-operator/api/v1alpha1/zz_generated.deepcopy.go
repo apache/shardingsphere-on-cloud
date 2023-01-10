@@ -276,7 +276,7 @@ func (in *ProxyStatus) DeepCopyInto(out *ProxyStatus) {
 	*out = *in
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
-		*out = make(Conditions, len(*in))
+		*out = make([]Condition, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
