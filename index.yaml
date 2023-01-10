@@ -2,6 +2,27 @@ apiVersion: v1
 entries:
   apache-shardingsphere-operator-charts:
   - apiVersion: v2
+    appVersion: 5.3.1
+    created: "2023-01-10T16:18:03.527405+08:00"
+    dependencies:
+    - condition: proxyCluster.zookeeper.enabled
+      name: zookeeper
+      repository: https://charts.bitnami.com/bitnami
+      version: 9.2.7
+    - name: common
+      repository: https://charts.bitnami.com/bitnami
+      tags:
+      - bitnami-common
+      version: 1.16.1
+    description: The ShardingSphere Kubernetes Operator automates provisioning, management,
+      and operations of ShardingSphere Proxy clusters running on Kubernetes.
+    digest: 38244bb098f94525fe347e8fb35552a8df0920921ff33d8c704cec5ab6330dc4
+    name: apache-shardingsphere-operator-charts
+    type: application
+    urls:
+    - https://github.com/apache/shardingsphere-on-cloud/releases/download/0.1.2/release/apache-shardingsphere-operator-charts-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
     appVersion: 0.1.1
     created: "2022-12-06T19:10:06.589912+08:00"
     dependencies:
@@ -76,6 +97,27 @@ entries:
     version: 0.1.0
   apache-shardingsphere-proxy-charts:
   - apiVersion: v2
+    appVersion: 5.3.1
+    created: "2023-01-10T16:18:03.538385+08:00"
+    dependencies:
+    - condition: governance.enabled
+      name: governance
+      repository: file://./charts/governance
+      version: 1.x.x
+    - name: common
+      repository: https://charts.bitnami.com/bitnami
+      tags:
+      - bitnami-common
+      version: 1.x.x
+    description: A Helm chart for ShardingSphere-Proxy-Cluster
+    digest: 4b12487603c0bfee28e02e49149f7a8dadbebb31687165b62ed027218d6eef2d
+    maintainers:
+    - name: dev@shardingsphere.apache.org
+    name: apache-shardingsphere-proxy-charts
+    urls:
+    - https://github.com/apache/shardingsphere-on-cloud/releases/download/0.1.2/release/apache-shardingsphere-proxy-charts-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
     appVersion: 5.3.0
     created: "2022-12-06T19:10:06.600133+08:00"
     dependencies:
@@ -117,4 +159,4 @@ entries:
     urls:
     - https://github.com/apache/shardingsphere-on-cloud/releases/download/0.1.0/apache-shardingsphere-proxy-charts-0.1.0.tgz
     version: 0.1.0
-generated: "2022-12-06T19:10:06.587523+08:00"
+generated: "2023-01-10T16:18:03.518753+08:00"
