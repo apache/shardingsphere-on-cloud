@@ -462,22 +462,25 @@ func Test_ReconcileStatus(t *testing.T) {
 	cases := []struct {
 		name    string
 		podlist v1.PodList
-		exp     *v1alpha1.ProxyStatus
+		exp     *v1alpha1.ShardingSphereProxy
 		spec    v1alpha1.ProxySpec
 		message string
 	}{
 		{
 			name:    "empty Podlist and replicas is zero",
 			podlist: v1.PodList{Items: []v1.Pod{}},
-			spec:    v1alpha1.ProxySpec{Replicas: 0},
-			exp: &v1alpha1.ProxyStatus{
-				Phase:      v1alpha1.StatusNotReady,
-				Conditions: []v1alpha1.Condition{},
-				ReadyNodes: 0,
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{
+					Replicas: 0,
+				},
+				Status: v1alpha1.ProxyStatus{
+					Phase:      v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{},
+					ReadyNodes: 0,
+				},
 			},
 			message: "#0 empty Podlist and replicas is zero should be ok",
 		},
-		//FIXME
 		{
 			name: "#1 empty Podlist and replicas is not zero",
 			podlist: v1.PodList{Items: []v1.Pod{
@@ -488,15 +491,20 @@ func Test_ReconcileStatus(t *testing.T) {
 				},
 			}},
 			spec: v1alpha1.ProxySpec{Replicas: 1},
-			exp: &v1alpha1.ProxyStatus{
-				Phase: v1alpha1.StatusNotReady,
-				Conditions: []v1alpha1.Condition{
-					{
-						Type:   v1alpha1.ConditionDeployed,
-						Status: metav1.ConditionTrue,
-					},
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{
+					Replicas: 1,
 				},
-				ReadyNodes: 0,
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionDeployed,
+							Status: metav1.ConditionTrue,
+						},
+					},
+					ReadyNodes: 0,
+				},
 			},
 			message: "#1 empty Podlist and replicas is not zero should be ok",
 		},
@@ -515,16 +523,20 @@ func Test_ReconcileStatus(t *testing.T) {
 					},
 				},
 			}},
-			spec: v1alpha1.ProxySpec{Replicas: 1},
-			exp: &v1alpha1.ProxyStatus{
-				Phase: v1alpha1.StatusNotReady,
-				Conditions: []v1alpha1.Condition{
-					{
-						Type:   v1alpha1.ConditionDeployed,
-						Status: metav1.ConditionTrue,
-					},
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{
+					Replicas: 1,
 				},
-				ReadyNodes: 0,
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionDeployed,
+							Status: metav1.ConditionTrue,
+						},
+					},
+					ReadyNodes: 0,
+				},
 			},
 			message: "#2 one pending should be ok",
 		},
@@ -543,16 +555,18 @@ func Test_ReconcileStatus(t *testing.T) {
 					},
 				},
 			}},
-			spec: v1alpha1.ProxySpec{Replicas: 1},
-			exp: &v1alpha1.ProxyStatus{
-				Phase: v1alpha1.StatusNotReady,
-				Conditions: []v1alpha1.Condition{
-					{
-						Type:   v1alpha1.ConditionStarted,
-						Status: metav1.ConditionTrue,
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{Replicas: 1},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionStarted,
+							Status: metav1.ConditionTrue,
+						},
 					},
+					ReadyNodes: 0,
 				},
-				ReadyNodes: 0,
 			},
 			message: "#3 one scheduled but not initialized should be ok",
 		},
@@ -582,17 +596,18 @@ func Test_ReconcileStatus(t *testing.T) {
 					},
 				},
 			}},
-			spec: v1alpha1.ProxySpec{Replicas: 2},
-			exp: &v1alpha1.ProxyStatus{
-				Phase: v1alpha1.StatusNotReady,
-				Conditions: []v1alpha1.Condition{
-					{
-						Type:   v1alpha1.ConditionStarted,
-						Status: metav1.ConditionTrue,
-						// LastUpdateTime: ,
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{Replicas: 2},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionStarted,
+							Status: metav1.ConditionTrue,
+						},
 					},
+					ReadyNodes: 0,
 				},
-				ReadyNodes: 0,
 			},
 			message: "#4 two scheduled but not started should be ok",
 		},
@@ -622,17 +637,18 @@ func Test_ReconcileStatus(t *testing.T) {
 					},
 				},
 			}},
-			spec: v1alpha1.ProxySpec{Replicas: 2},
-			exp: &v1alpha1.ProxyStatus{
-				Phase: v1alpha1.StatusNotReady,
-				Conditions: []v1alpha1.Condition{
-					{
-						Type:   v1alpha1.ConditionStarted,
-						Status: metav1.ConditionTrue,
-						// LastUpdateTime: ,
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{Replicas: 2},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionStarted,
+							Status: metav1.ConditionTrue,
+						},
 					},
+					ReadyNodes: 0,
 				},
-				ReadyNodes: 0,
 			},
 			message: "#5 two started but not ready ok",
 		},
@@ -659,21 +675,29 @@ func Test_ReconcileStatus(t *testing.T) {
 								Status: v1.ConditionTrue,
 							},
 						},
+						ContainerStatuses: []v1.ContainerStatus{
+							{
+								Name:  "proxy",
+								Ready: true,
+							},
+						},
 					},
 				},
 			}},
-			spec: v1alpha1.ProxySpec{Replicas: 2},
-			exp: &v1alpha1.ProxyStatus{
-				Phase: v1alpha1.StatusReady,
-				Conditions: []v1alpha1.Condition{
-					{
-						Type:   v1alpha1.ConditionReady,
-						Status: metav1.ConditionTrue,
-						// LastUpdateTime: ,
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{Replicas: 2},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionReady,
+							Status: metav1.ConditionTrue,
+						},
 					},
+					ReadyNodes: 1,
 				},
-				ReadyNodes: 1,
 			},
+
 			message: "#6 one started and one ready should be ok",
 		},
 		{
@@ -688,6 +712,12 @@ func Test_ReconcileStatus(t *testing.T) {
 								Status: v1.ConditionTrue,
 							},
 						},
+						ContainerStatuses: []v1.ContainerStatus{
+							{
+								Name:  "proxy",
+								Ready: true,
+							},
+						},
 					},
 				},
 				{
@@ -699,30 +729,37 @@ func Test_ReconcileStatus(t *testing.T) {
 								Status: v1.ConditionTrue,
 							},
 						},
+						ContainerStatuses: []v1.ContainerStatus{
+							{
+								Name:  "proxy",
+								Ready: true,
+							},
+						},
 					},
 				},
 			}},
-			spec: v1alpha1.ProxySpec{Replicas: 2},
-			exp: &v1alpha1.ProxyStatus{
-				Phase: v1alpha1.StatusReady,
-				Conditions: []v1alpha1.Condition{
-					{
-						Type:   v1alpha1.ConditionReady,
-						Status: metav1.ConditionTrue,
-						// LastUpdateTime: ,
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{Replicas: 2},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionReady,
+							Status: metav1.ConditionTrue,
+						},
 					},
+					ReadyNodes: 2,
 				},
-				ReadyNodes: 2,
 			},
 			message: "#7 two ready should be ok",
 		},
 	}
 
 	for _, c := range cases {
-		act := ReconcileStatus(c.podlist, c.spec)
-		assertReadyNodes(t, c.exp.ReadyNodes, act.ReadyNodes, c.message)
-		assertPhase(t, c.exp.Phase, act.Phase, c.message)
-		assertConditions(t, c.exp.Conditions, act.Conditions, c.message)
+		act := ReconcileStatus(c.podlist, *c.exp)
+		assertReadyNodes(t, c.exp.Status.ReadyNodes, act.ReadyNodes, c.message)
+		assertPhase(t, c.exp.Status.Phase, act.Phase, c.message)
+		assertConditions(t, c.exp.Status.Conditions, act.Conditions, c.message)
 	}
 }
 

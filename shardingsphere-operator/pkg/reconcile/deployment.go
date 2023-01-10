@@ -341,116 +341,53 @@ func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deploym
 	return exp
 }
 
-func FakeReconcileStatus(podList *corev1.PodList) *v1alpha1.ProxyStatus {
-	rt := &v1alpha1.ShardingSphereProxy{}
-	readyNodes := CountingReadyPods(podList)
-	if IsRunning(podList) {
-		if readyNodes < miniReadyCount {
-			// result.RequeueAfter = WaitingForReady
-			if readyNodes != rt.Status.ReadyNodes {
-				rt.SetPodStarted(readyNodes)
-			}
-		} else {
-			if rt.Status.Phase != v1alpha1.StatusReady {
-				rt.SetReady(readyNodes)
-			} else if readyNodes != rt.Spec.Replicas {
-				//FIXME
-				rt.UpdateReadyNodes(readyNodes)
-			}
-		}
-	} else {
-		// TODO: Waiting for pods to start exceeds the maximum number of retries
-		rt.SetPodNotStarted(readyNodes)
-		// result.RequeueAfter = WaitingForReady
-	}
-	return &rt.Status
-}
-
-func ReconcileStatus(podlist corev1.PodList, rt v1alpha1.ShardingSphereProxy) v1alpha1.ProxyStatus {
-	//TODO: compare with the old one
-	readyNodes := func(podlist corev1.PodList) int32 {
-		var cnt int32
-		//FIXME: what about DeletionTimestamp
-		for _, p := range podlist.Items {
-			if p.Status.Phase == corev1.PodRunning {
-				for _, c := range p.Status.Conditions {
-					if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
-						for _, con := range p.Status.ContainerStatuses {
-							if con.Name == "proxy" && con.Ready {
-								cnt++
-							}
+func getReadyNodes(podlist corev1.PodList) int32 {
+	var cnt int32
+	for _, p := range podlist.Items {
+		if p.Status.Phase == corev1.PodRunning {
+			for _, c := range p.Status.Conditions {
+				if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
+					for _, con := range p.Status.ContainerStatuses {
+						if con.Name == "proxy" && con.Ready {
+							cnt++
 						}
 					}
 				}
 			}
 		}
-		return cnt
-	}(podlist)
+	}
+	return cnt
+}
 
-	// if rt.Spec.Replicas == 0 {
-	// 	rt.Status.Phase = v1alpha1.StatusNotReady
-	// 	newCondition(rt.Status.Conditions, v1alpha1.Condition{
-	// 		//FIXME: how to judge if it is deployed
-	// 		Type:           v1alpha1.ConditionDeployed,
-	// 		Status:         metav1.ConditionTrue,
-	// 		LastUpdateTime: metav1.Now(),
-	// 	})
-	// } else {
-	// 	if readyNodes < miniReadyCount {
-	// 		rt.Status.Phase = v1alpha1.StatusNotReady
-	// 		newCondition(rt.Status.Conditions, v1alpha1.Condition{
-	// 			Type:           v1alpha1.ConditionDeployed,
-	// 			Status:         metav1.ConditionTrue,
-	// 			LastUpdateTime: metav1.Now(),
-	// 		})
-	// 	} else {
-	// 		rt.Status.Phase = v1alpha1.StatusReady
-	// 		newCondition(rt.Status.Conditions, v1alpha1.Condition{
-	// 			Type:           v1alpha1.ConditionStarted,
-	// 			Status:         metav1.ConditionTrue,
-	// 			LastUpdateTime: metav1.Now(),
-	// 		})
-	// 	}
-	// }
+func ReconcileStatus(podlist corev1.PodList, rt v1alpha1.ShardingSphereProxy) v1alpha1.ProxyStatus {
+	readyNodes := getReadyNodes(podlist)
 
-	// condition := v1alpha1.Condition{}
-	// if len(podlist.Items) != 0 {
-	// 	for _, p := range podlist.Items {
-	// 		if p.Status.Phase == corev1.PodRunning {
-
-	// 		}
-	// 	}
-	// } else {
-
-	// }
-	status := rt.Status
-
-	status.ReadyNodes = readyNodes
+	rt.Status.ReadyNodes = readyNodes
 	if rt.Spec.Replicas == 0 {
-		status.Phase = v1alpha1.StatusNotReady
+		rt.Status.Phase = v1alpha1.StatusNotReady
 	} else {
 		if readyNodes < miniReadyCount {
-			status.Phase = v1alpha1.StatusNotReady
+			rt.Status.Phase = v1alpha1.StatusNotReady
 		} else {
-			status.Phase = v1alpha1.StatusReady
+			rt.Status.Phase = v1alpha1.StatusReady
 		}
 	}
 
-	if status.Phase == v1alpha1.StatusReady {
-		status.Conditions = newCondition(status.Conditions, v1alpha1.Condition{
+	if rt.Status.Phase == v1alpha1.StatusReady {
+		rt.Status.Conditions = newConditions(rt.Status.Conditions, v1alpha1.Condition{
 			Type:           v1alpha1.ConditionReady,
 			Status:         metav1.ConditionTrue,
 			LastUpdateTime: metav1.Now(),
 		})
 	} else {
 		cond := clusterCondition(podlist)
-		status.Conditions = newCondition(status.Conditions, cond)
+		rt.Status.Conditions = newConditions(rt.Status.Conditions, cond)
 	}
 
-	return status
+	return rt.Status
 }
 
-func newCondition(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v1alpha1.Condition {
+func newConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v1alpha1.Condition {
 	if conditions == nil {
 		conditions = []v1alpha1.Condition{}
 	}
@@ -481,7 +418,6 @@ func clusterCondition(podlist corev1.PodList) v1alpha1.Condition {
 		return cond
 	}
 
-	//FIXME: do not capture ConditionStarted in some cases
 	condStarted := v1alpha1.Condition{
 		Type:           v1alpha1.ConditionStarted,
 		Status:         metav1.ConditionTrue,
@@ -503,24 +439,17 @@ func clusterCondition(podlist corev1.PodList) v1alpha1.Condition {
 		LastUpdateTime: metav1.Now(),
 	}
 
+	//FIXME: do not capture ConditionStarted in some cases
 	for _, p := range podlist.Items {
 		switch p.Status.Phase {
 		case corev1.PodRunning:
-			{
-				return condStarted
-			}
+			return condStarted
 		case corev1.PodUnknown:
-			{
-				return condUnknown
-			}
+			return condUnknown
 		case corev1.PodPending:
-			{
-				return condDeployed
-			}
+			return condDeployed
 		case corev1.PodFailed:
-			{
-				return condFailed
-			}
+			return condFailed
 		}
 	}
 	return cond
