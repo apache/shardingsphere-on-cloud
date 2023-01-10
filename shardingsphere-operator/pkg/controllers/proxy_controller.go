@@ -232,7 +232,6 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 		return result, err
 	}
 
-	// return ctrl.Result{RequeueAfter: WaitingForReady}, nil
 	return ctrl.Result{}, nil
 }
 
