@@ -3,7 +3,7 @@ Helm Charts
 
 ## Current Status
 
-Currently, either the [ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts) and the [ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) make up the latest version as (5.3.0) of ShardingSphere Proxy.
+Currently, either the [ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts) and the [ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator) make up the latest version as (5.3.1) of ShardingSphere Proxy.
 
 ### Requirements
 
@@ -19,7 +19,7 @@ ShardingSphere Helm Charts uses [Helm](https://helm.sh/) to provide guidance for
 
 ### Quick Start
 
-Please follow these [instructions](./apache-shardingsphere-proxy-charts/README.md) to deploy a ShardingSphere cluster with version 5.3.0.
+Please follow these [instructions](./apache-shardingsphere-proxy-charts/README.md) to deploy a ShardingSphere cluster with version 5.3.1.
 
 
 ## ShardingSphere-Cluster Operator Helm Charts
@@ -28,5 +28,5 @@ The ShardingSphere-Cluster Operator uses predefined CustomResourceDefinitions fo
 
 ### Quick Start 
 
-Please follows [instructions](apache-shardingsphere-operator-charts/README.md) to deploy a ShardingSphere cluster with version 5.3.0.
+Please follows [instructions](apache-shardingsphere-operator-charts/README.md) to deploy a ShardingSphere cluster with version 5.3.1.
 

@@ -42,7 +42,7 @@ cd shardingsphere-on-cloud/terraform/huawei
 ```
 The `terraform.tfvars` sample content is as follows:
 ```hcl
-shardingsphere_proxy_version = "5.3.0"
+shardingsphere_proxy_version = "5.3.1"
 image_id                     = ""
 key_name                     = "test-tf"
 flavor_id                    = "c7.large.2"
