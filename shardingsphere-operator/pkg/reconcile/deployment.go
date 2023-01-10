@@ -374,14 +374,14 @@ func ReconcileStatus(podlist corev1.PodList, rt v1alpha1.ShardingSphereProxy) v1
 	}
 
 	if rt.Status.Phase == v1alpha1.StatusReady {
-		rt.Status.Conditions = newConditions(rt.Status.Conditions, v1alpha1.Condition{
+		rt.Status.Conditions = updateReadyConditions(rt.Status.Conditions, v1alpha1.Condition{
 			Type:           v1alpha1.ConditionReady,
 			Status:         metav1.ConditionTrue,
 			LastUpdateTime: metav1.Now(),
 		})
 	} else {
 		cond := clusterCondition(podlist)
-		rt.Status.Conditions = newConditions(rt.Status.Conditions, cond)
+		rt.Status.Conditions = updateNotReadyConditions(rt.Status.Conditions, cond)
 	}
 
 	return rt.Status
@@ -407,6 +407,23 @@ func newConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v
 
 	if !found {
 		conditions = append(conditions, cond)
+	}
+
+	return conditions
+}
+
+func updateReadyConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v1alpha1.Condition {
+	return newConditions(conditions, cond)
+}
+
+func updateNotReadyConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v1alpha1.Condition {
+	cur := newConditions(conditions, cond)
+
+	for idx, _ := range cur {
+		if conditions[idx].Type == v1alpha1.ConditionReady {
+			conditions[idx].LastUpdateTime = metav1.Now()
+			conditions[idx].Status = metav1.ConditionFalse
+		}
 	}
 
 	return conditions
