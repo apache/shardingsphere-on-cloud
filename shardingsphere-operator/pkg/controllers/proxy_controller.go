@@ -103,7 +103,7 @@ func (r *ProxyReconciler) reconcile(ctx context.Context, req ctrl.Request, rt *v
 		return res, err
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: WaitingForReady}, nil
 }
 
 func (r *ProxyReconciler) reconcileDeployment(ctx context.Context, namespacedName types.NamespacedName) (ctrl.Result, error) {
@@ -225,38 +225,15 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 		return ctrl.Result{}, err
 	}
 
-	rt.Status = *(r.reconcileStatus(podList))
+	rt.Status = reconcile.ReconcileStatus(*podList, *rt)
 
 	// TODO: Compare Status with or without modification
 	if err := r.Status().Update(ctx, rt); err != nil {
 		return result, err
 	}
 
-	return ctrl.Result{RequeueAfter: WaitingForReady}, nil
-}
-
-func (r *ProxyReconciler) reconcileStatus(podList *v1.PodList) *v1alpha1.ProxyStatus {
-	rt := &v1alpha1.ShardingSphereProxy{}
-	readyNodes := reconcile.CountingReadyPods(podList)
-	if reconcile.IsRunning(podList) {
-		if readyNodes < miniReadyCount {
-			// result.RequeueAfter = WaitingForReady
-			if readyNodes != rt.Status.ReadyNodes {
-				rt.SetPodStarted(readyNodes)
-			}
-		} else {
-			if rt.Status.Phase != v1alpha1.StatusReady {
-				rt.SetReady(readyNodes)
-			} else if readyNodes != rt.Spec.Replicas {
-				rt.UpdateReadyNodes(readyNodes)
-			}
-		}
-	} else {
-		// TODO: Waiting for pods to start exceeds the maximum number of retries
-		rt.SetPodNotStarted(readyNodes)
-		// result.RequeueAfter = WaitingForReady
-	}
-	return &rt.Status
+	// return ctrl.Result{RequeueAfter: WaitingForReady}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
