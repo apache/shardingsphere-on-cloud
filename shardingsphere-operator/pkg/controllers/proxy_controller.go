@@ -120,8 +120,6 @@ func (r *ProxyReconciler) reconcileDeployment(ctx context.Context, namespacedNam
 		} else {
 			exp := reconcile.NewDeployment(ssproxy)
 			if err := r.Create(ctx, exp); err != nil {
-				ssproxy.SetInitializationFailed()
-				_ = r.Status().Update(ctx, ssproxy)
 				return ctrl.Result{}, err
 			}
 		}
@@ -154,8 +152,6 @@ func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types
 			if ssproxy.Spec.AutomaticScaling != nil && ssproxy.Spec.AutomaticScaling.Enable {
 				exp := reconcile.NewHPA(ssproxy)
 				if err := r.Create(ctx, exp); err != nil {
-					ssproxy.SetInitializationFailed()
-					_ = r.Status().Update(ctx, ssproxy)
 					return ctrl.Result{}, err
 				}
 			}
@@ -191,12 +187,9 @@ func (r *ProxyReconciler) reconcileService(ctx context.Context, namespacedName t
 		} else {
 			exp := reconcile.NewService(ssproxy)
 			if err := r.Create(ctx, exp); err != nil {
-				ssproxy.SetInitializationFailed()
-				_ = r.Status().Update(ctx, ssproxy)
 				return ctrl.Result{}, err
 			}
-			ssproxy.SetInitialized()
-			return ctrl.Result{RequeueAfter: WaitingForReady}, nil
+			return ctrl.Result{}, nil
 		}
 	} else {
 		act := service.DeepCopy()
