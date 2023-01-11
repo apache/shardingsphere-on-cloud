@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +38,9 @@ func NewDeployment(ssproxy *v1alpha1.ShardingSphereProxy) *v1.Deployment {
 const (
 	AnnoRollingUpdateMaxSurge       = "shardingsphereproxy.shardingsphere.org/rolling-update-max-surge"
 	AnnoRollingUpdateMaxUnavailable = "shardingsphereproxy.shardingsphere.org/rolling-update-max-unavailable"
+
+	//miniReadyCount Minimum number of replicas that can be served
+	miniReadyCount = 1
 )
 
 func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *v1.Deployment {
@@ -335,4 +339,135 @@ func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deploym
 		}
 	}
 	return exp
+}
+
+func getReadyNodes(podlist corev1.PodList) int32 {
+	var cnt int32
+	for _, p := range podlist.Items {
+		if p.Status.Phase == corev1.PodRunning {
+			for _, c := range p.Status.Conditions {
+				if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
+					for _, con := range p.Status.ContainerStatuses {
+						if con.Name == "proxy" && con.Ready {
+							cnt++
+						}
+					}
+				}
+			}
+		}
+	}
+	return cnt
+}
+
+func ReconcileStatus(podlist corev1.PodList, rt v1alpha1.ShardingSphereProxy) v1alpha1.ProxyStatus {
+	readyNodes := getReadyNodes(podlist)
+
+	rt.Status.ReadyNodes = readyNodes
+	if rt.Spec.Replicas == 0 {
+		rt.Status.Phase = v1alpha1.StatusNotReady
+	} else {
+		if readyNodes < miniReadyCount {
+			rt.Status.Phase = v1alpha1.StatusNotReady
+		} else {
+			rt.Status.Phase = v1alpha1.StatusReady
+		}
+	}
+
+	if rt.Status.Phase == v1alpha1.StatusReady {
+		rt.Status.Conditions = updateReadyConditions(rt.Status.Conditions, v1alpha1.Condition{
+			Type:           v1alpha1.ConditionReady,
+			Status:         metav1.ConditionTrue,
+			LastUpdateTime: metav1.Now(),
+		})
+	} else {
+		cond := clusterCondition(podlist)
+		rt.Status.Conditions = updateNotReadyConditions(rt.Status.Conditions, cond)
+	}
+
+	return rt.Status
+}
+
+func newConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v1alpha1.Condition {
+	if conditions == nil {
+		conditions = []v1alpha1.Condition{}
+	}
+	if cond.Type == "" {
+		return conditions
+	}
+
+	found := false
+	for idx, _ := range conditions {
+		if conditions[idx].Type == cond.Type {
+			conditions[idx].LastUpdateTime = cond.LastUpdateTime
+			conditions[idx].Status = cond.Status
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		conditions = append(conditions, cond)
+	}
+
+	return conditions
+}
+
+func updateReadyConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v1alpha1.Condition {
+	return newConditions(conditions, cond)
+}
+
+func updateNotReadyConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v1alpha1.Condition {
+	cur := newConditions(conditions, cond)
+
+	for idx, _ := range cur {
+		if conditions[idx].Type == v1alpha1.ConditionReady {
+			conditions[idx].LastUpdateTime = metav1.Now()
+			conditions[idx].Status = metav1.ConditionFalse
+		}
+	}
+
+	return conditions
+}
+
+func clusterCondition(podlist corev1.PodList) v1alpha1.Condition {
+	cond := v1alpha1.Condition{}
+	if len(podlist.Items) == 0 {
+		return cond
+	}
+
+	condStarted := v1alpha1.Condition{
+		Type:           v1alpha1.ConditionStarted,
+		Status:         metav1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	}
+	condUnknown := v1alpha1.Condition{
+		Type:           v1alpha1.ConditionUnknown,
+		Status:         metav1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	}
+	condDeployed := v1alpha1.Condition{
+		Type:           v1alpha1.ConditionDeployed,
+		Status:         metav1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	}
+	condFailed := v1alpha1.Condition{
+		Type:           v1alpha1.ConditionFailed,
+		Status:         metav1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	}
+
+	//FIXME: do not capture ConditionStarted in some cases
+	for _, p := range podlist.Items {
+		switch p.Status.Phase {
+		case corev1.PodRunning:
+			return condStarted
+		case corev1.PodUnknown:
+			return condUnknown
+		case corev1.PodPending:
+			return condDeployed
+		case corev1.PodFailed:
+			return condFailed
+		}
+	}
+	return cond
 }

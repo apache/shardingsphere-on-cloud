@@ -457,3 +457,425 @@ func Test_UpdateDeployment(t *testing.T) {
 		assert.EqualValues(t, c.proxy.Spec.StartupProbe, exp.Spec.Template.Spec.Containers[0].StartupProbe, c.message)
 	}
 }
+
+func Test_ReconcileStatus(t *testing.T) {
+	cases := []struct {
+		name    string
+		podlist v1.PodList
+		exp     *v1alpha1.ShardingSphereProxy
+		spec    v1alpha1.ProxySpec
+		message string
+	}{
+		{
+			name:    "empty Podlist and replicas is zero",
+			podlist: v1.PodList{Items: []v1.Pod{}},
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{
+					Replicas: 0,
+				},
+				Status: v1alpha1.ProxyStatus{
+					Phase:      v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{},
+					ReadyNodes: 0,
+				},
+			},
+			message: "#0 empty Podlist and replicas is zero should be ok",
+		},
+		{
+			name: "#1 empty Podlist and replicas is not zero",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodPending,
+					},
+				},
+			}},
+			spec: v1alpha1.ProxySpec{Replicas: 1},
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{
+					Replicas: 1,
+				},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionDeployed,
+							Status: metav1.ConditionTrue,
+						},
+					},
+					ReadyNodes: 0,
+				},
+			},
+			message: "#1 empty Podlist and replicas is not zero should be ok",
+		},
+		{
+			name: "#2 one pending",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodPending,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodScheduled,
+								Status: v1.ConditionTrue,
+							},
+						},
+					},
+				},
+			}},
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{
+					Replicas: 1,
+				},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionDeployed,
+							Status: metav1.ConditionTrue,
+						},
+					},
+					ReadyNodes: 0,
+				},
+			},
+			message: "#2 one pending should be ok",
+		},
+		{
+			name: "#3 one scheduled but not initialized",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodInitialized,
+								Status: v1.ConditionTrue,
+							},
+						},
+					},
+				},
+			}},
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{Replicas: 1},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionStarted,
+							Status: metav1.ConditionTrue,
+						},
+					},
+					ReadyNodes: 0,
+				},
+			},
+			message: "#3 one scheduled but not initialized should be ok",
+		},
+		{
+			name: "#4 two scheduled but not started",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodInitialized,
+								Status: v1.ConditionTrue,
+							},
+						},
+					},
+				},
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodInitialized,
+								Status: v1.ConditionTrue,
+							},
+						},
+					},
+				},
+			}},
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{Replicas: 2},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionStarted,
+							Status: metav1.ConditionTrue,
+						},
+					},
+					ReadyNodes: 0,
+				},
+			},
+			message: "#4 two scheduled but not started should be ok",
+		},
+		{
+			name: "#5 two started but not ready",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodInitialized,
+								Status: v1.ConditionTrue,
+							},
+						},
+					},
+				},
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodInitialized,
+								Status: v1.ConditionTrue,
+							},
+						},
+					},
+				},
+			}},
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{Replicas: 2},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusNotReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionStarted,
+							Status: metav1.ConditionTrue,
+						},
+					},
+					ReadyNodes: 0,
+				},
+			},
+			message: "#5 two started but not ready ok",
+		},
+		{
+			name: "#6 one started and one ready",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodInitialized,
+								Status: v1.ConditionTrue,
+							},
+						},
+					},
+				},
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodReady,
+								Status: v1.ConditionTrue,
+							},
+						},
+						ContainerStatuses: []v1.ContainerStatus{
+							{
+								Name:  "proxy",
+								Ready: true,
+							},
+						},
+					},
+				},
+			}},
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{Replicas: 2},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionReady,
+							Status: metav1.ConditionTrue,
+						},
+					},
+					ReadyNodes: 1,
+				},
+			},
+
+			message: "#6 one started and one ready should be ok",
+		},
+		{
+			name: "#7 two ready",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodReady,
+								Status: v1.ConditionTrue,
+							},
+						},
+						ContainerStatuses: []v1.ContainerStatus{
+							{
+								Name:  "proxy",
+								Ready: true,
+							},
+						},
+					},
+				},
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodReady,
+								Status: v1.ConditionTrue,
+							},
+						},
+						ContainerStatuses: []v1.ContainerStatus{
+							{
+								Name:  "proxy",
+								Ready: true,
+							},
+						},
+					},
+				},
+			}},
+			exp: &v1alpha1.ShardingSphereProxy{
+				Spec: v1alpha1.ProxySpec{Replicas: 2},
+				Status: v1alpha1.ProxyStatus{
+					Phase: v1alpha1.StatusReady,
+					Conditions: []v1alpha1.Condition{
+						{
+							Type:   v1alpha1.ConditionReady,
+							Status: metav1.ConditionTrue,
+						},
+					},
+					ReadyNodes: 2,
+				},
+			},
+			message: "#7 two ready should be ok",
+		},
+	}
+
+	for _, c := range cases {
+		act := ReconcileStatus(c.podlist, *c.exp)
+		assertReadyNodes(t, c.exp.Status.ReadyNodes, act.ReadyNodes, c.message)
+		assertPhase(t, c.exp.Status.Phase, act.Phase, c.message)
+		assertConditions(t, c.exp.Status.Conditions, act.Conditions, c.message)
+	}
+}
+
+func assertReadyNodes(t *testing.T, exp, act int32, message string) bool {
+	return assert.Equal(t, exp, act, message)
+}
+
+func assertPhase(t *testing.T, exp, act v1alpha1.PhaseStatus, message string) bool {
+	return assert.Equal(t, exp, act, message)
+}
+
+func assertConditions(t *testing.T, exp, act []v1alpha1.Condition, message string) bool {
+	if !assert.Equal(t, len(exp), len(act), message) {
+		return false
+	}
+	for idx, _ := range exp {
+		if !assert.Equal(t, exp[idx].Type, act[idx].Type, message) {
+			return false
+		}
+		if !assert.Equal(t, exp[idx].Status, act[idx].Status, message) {
+			return false
+		}
+	}
+	return true
+}
+
+func Test_ClusterConditions(t *testing.T) {
+	cases := []struct {
+		name    string
+		podlist v1.PodList
+		exp     v1alpha1.Condition
+		message string
+	}{
+		{
+			name: "#0",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{},
+			}},
+			exp: v1alpha1.Condition{},
+		},
+		{
+			name: "#1 PodFailed",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodFailed,
+					},
+				},
+			}},
+			exp: v1alpha1.Condition{
+				Type:           v1alpha1.ConditionFailed,
+				Status:         metav1.ConditionTrue,
+				LastUpdateTime: metav1.Now(),
+			},
+		},
+		{
+			name: "#2 PodPending",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodPending,
+					},
+				},
+			}},
+			exp: v1alpha1.Condition{
+				Type:           v1alpha1.ConditionDeployed,
+				Status:         metav1.ConditionTrue,
+				LastUpdateTime: metav1.Now(),
+			},
+		},
+		{
+			name: "#3 PodRunning",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+					},
+				},
+			}},
+			exp: v1alpha1.Condition{
+				Type:           v1alpha1.ConditionStarted,
+				Status:         metav1.ConditionTrue,
+				LastUpdateTime: metav1.Now(),
+			},
+		},
+		{
+			name: "#4 PodUnknown",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodUnknown,
+					},
+				},
+			}},
+			exp: v1alpha1.Condition{
+				Type:           v1alpha1.ConditionUnknown,
+				Status:         metav1.ConditionTrue,
+				LastUpdateTime: metav1.Now(),
+			},
+		},
+		{
+			name: "#5 PodSucceeded",
+			podlist: v1.PodList{Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodSucceeded,
+					},
+				},
+			}},
+			exp: v1alpha1.Condition{},
+		},
+	}
+
+	for _, c := range cases {
+		act := clusterCondition(c.podlist)
+		assert.Equal(t, c.exp.Type, act.Type, c.name)
+		assert.Equal(t, c.exp.Status, act.Status, c.name)
+	}
+}

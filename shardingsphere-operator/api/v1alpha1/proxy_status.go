@@ -33,10 +33,12 @@ type ConditionType string
 
 // ConditionType shows some states during the startup process of ShardingSphere-Proxy
 const (
+	ConditionDeployed    ConditionType = "Deployed"
 	ConditionInitialized ConditionType = "Initialized"
 	ConditionStarted     ConditionType = "Started"
 	ConditionReady       ConditionType = "Ready"
 	ConditionUnknown     ConditionType = "Unknown"
+	ConditionFailed      ConditionType = "Failed"
 )
 
 // ProxyStatus defines the observed state of ShardingSphereProxy
@@ -48,7 +50,7 @@ type ProxyStatus struct {
 	Phase PhaseStatus `json:"phase"`
 
 	//Conditions The conditions array, the reason and message fields
-	Conditions Conditions `json:"conditions"`
+	Conditions []Condition `json:"conditions"`
 	//ReadyNodes shows the number of replicas that ShardingSphere-Proxy is running normally
 	ReadyNodes int32 `json:"readyNodes"`
 }
@@ -56,14 +58,14 @@ type ProxyStatus struct {
 type Conditions []Condition
 
 // Condition
-// | **condition** | **status** | **directions**|
+// | **phase** | **condition**  | **descriptions**|
 // | ------------- | ---------- | ---------------------------------------------------- |
-// | Initialized   | true       | Initialization successful|
-// | Initialized   | false      | initialization failed|
-// | Started       | true       | pod started successfully but not ready|
-// | Started       | false      | pod started failed|
-// | Ready         | true       | The pod is ready and can provide external services|
-// | Unknown       | true       | ShardingSphere-Proxy failed to start correctly due to some problems |
+// | NotReady      | Deployed   | pods are deployed but are not created or currently pending|
+// | NotReady      | Started    | pods are started but not satisfy ready requirements|
+// | Ready         | Ready      | minimum pods satisfy ready requirements|
+// | NotReady      | Unknown    | can not locate the status of pods |
+// | NotReady      | Failed     | ShardingSphere-Proxy failed to start correctly due to some problems|
+
 type Condition struct {
 	Type           ConditionType      `json:"type"`
 	Status         v1.ConditionStatus `json:"status"`
