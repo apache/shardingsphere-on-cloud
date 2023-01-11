@@ -422,13 +422,13 @@ func updateNotReadyConditions(conditions []v1alpha1.Condition, cond v1alpha1.Con
 	cur := newConditions(conditions, cond)
 
 	for idx, _ := range cur {
-		if conditions[idx].Type == v1alpha1.ConditionReady {
-			conditions[idx].LastUpdateTime = metav1.Now()
-			conditions[idx].Status = metav1.ConditionFalse
+		if cur[idx].Type == v1alpha1.ConditionReady {
+			cur[idx].LastUpdateTime = metav1.Now()
+			cur[idx].Status = metav1.ConditionFalse
 		}
 	}
 
-	return conditions
+	return cur
 }
 
 func clusterCondition(podlist corev1.PodList) v1alpha1.Condition {
