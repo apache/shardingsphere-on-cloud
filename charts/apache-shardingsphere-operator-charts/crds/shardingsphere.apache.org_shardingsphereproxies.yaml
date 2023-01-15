@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -1095,15 +1094,6 @@ spec:
                 description: Conditions The conditions array, the reason and message
                   fields
                 items:
-                  description: Condition | **condition** | **status** | **directions**|
-                    | ------------- | ---------- | ----------------------------------------------------
-                    | | Initialized   | true       | Initialization successful| |
-                    Initialized   | false      | initialization failed| | Started       |
-                    true       | pod started successfully but not ready| | Started       |
-                    false      | pod started failed| | Ready         | true       |
-                    The pod is ready and can provide external services| | Unknown       |
-                    true       | ShardingSphere-Proxy failed to start correctly due
-                    to some problems |
                   properties:
                     lastUpdateTime:
                       format: date-time

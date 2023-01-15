@@ -1,0 +1,1077 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
+  name: computenodes.shardingsphere.apache.org
+spec:
+  group: shardingsphere.apache.org
+  names:
+    kind: ComputeNode
+    listKind: ComputeNodeList
+    plural: computenodes
+    singular: computenode
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.readyInstances
+      name: ReadyInstances
+      type: integer
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.loadBalancer.clusterIP
+      name: ClusterIP
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ComputeNode is the Schema for the ShardingSphere Proxy API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ProxySpec defines the desired state of ShardingSphereProxy
+            properties:
+              bootstrap:
+                description: BootstrapConfig is used for any ShardingSphere Proxy
+                  startup
+                properties:
+                  agentConfig:
+                    description: AgentConfig defines the config for ShardingSphere-Agent,
+                      renderred as agent.yaml
+                    properties:
+                      plugins:
+                        description: AgentPlugin defines a set of plugins for ShardingSphere
+                          Agent
+                        properties:
+                          logging:
+                            description: PluginLogging defines the plugin for logging
+                            properties:
+                              baseLogging:
+                                properties:
+                                  props:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                    x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                            type: object
+                          metrics:
+                            description: PluginMetrics defines the plugin for metrics
+                            properties:
+                              prometheus:
+                                properties:
+                                  host:
+                                    type: string
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  properties:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                    x-kubernetes-preserve-unknown-fields: true
+                                required:
+                                - host
+                                - port
+                                type: object
+                            type: object
+                          tracing:
+                            description: PluginTracing defines the plugin for tracing
+                            properties:
+                              tracing:
+                                properties:
+                                  jaeger:
+                                    properties:
+                                      host:
+                                        type: string
+                                      port:
+                                        format: int32
+                                        type: integer
+                                      props:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                        x-kubernetes-preserve-unknown-fields: true
+                                    required:
+                                    - host
+                                    - port
+                                    type: object
+                                  openTelemetry:
+                                    properties:
+                                      props:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                        x-kubernetes-preserve-unknown-fields: true
+                                    type: object
+                                  skyWalking:
+                                    properties:
+                                      props:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                        x-kubernetes-preserve-unknown-fields: true
+                                    type: object
+                                  zipkin:
+                                    properties:
+                                      host:
+                                        type: string
+                                      port:
+                                        format: int32
+                                        type: integer
+                                      props:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                        x-kubernetes-preserve-unknown-fields: true
+                                    required:
+                                    - host
+                                    - port
+                                    type: object
+                                type: object
+                            type: object
+                        type: object
+                    type: object
+                  logbackConfig:
+                    description: LogbackConfig contains contents of the expected logback.xml
+                    type: string
+                  serverConfig:
+                    description: ServerConfig defines the bootstrap config for a ShardingSphere
+                      Proxy
+                    properties:
+                      authority:
+                        description: ComputeNodeAuth  is used to set up initial user
+                          to login compute node, and authority data of storage node.
+                        properties:
+                          privilege:
+                            description: ComputeNodePrivilege for storage node, the
+                              default value is ALL_PERMITTED
+                            properties:
+                              type:
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          users:
+                            items:
+                              description: 'ComputeNodeUser is a slice about authorized
+                                host and password for compute node. Format: user:<username>@<hostname>,hostname
+                                is % or empty string means do not care about authorized
+                                host password:<password>'
+                              properties:
+                                password:
+                                  type: string
+                                user:
+                                  type: string
+                              required:
+                              - password
+                              - user
+                              type: object
+                            type: array
+                        required:
+                        - users
+                        type: object
+                      mode:
+                        description: ComputeNodeServerMode is the mode for ShardingSphere
+                          Proxy
+                        properties:
+                          repository:
+                            description: Repository is the metadata persistent store
+                              for ShardingSphere
+                            properties:
+                              props:
+                                additionalProperties:
+                                  type: string
+                                description: properties of metadata repository Props
+                                  ComputeNodeClusterProps `json:"props,omitempty"`
+                                type: object
+                                x-kubernetes-preserve-unknown-fields: true
+                              type:
+                                description: type of metadata repository
+                                enum:
+                                - ZooKeeper
+                                - Etcd
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      props:
+                        additionalProperties:
+                          type: string
+                        description: Props *ComputeNodeProps `json:"props,omitempty"`
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                    required:
+                    - authority
+                    - mode
+                    type: object
+                type: object
+              env:
+                description: port is ShardingSphere-Proxy startup port Ports []corev1.ContainerPort
+                  `json:"ports,omitempty"`
+                items:
+                  description: EnvVar represents an environment variable present in
+                    a Container.
+                  properties:
+                    name:
+                      description: Name of the environment variable. Must be a C_IDENTIFIER.
+                      type: string
+                    value:
+                      description: 'Variable references $(VAR_NAME) are expanded using
+                        the previously defined environment variables in the container
+                        and any service environment variables. If a variable cannot
+                        be resolved, the reference in the input string will be unchanged.
+                        Double $$ are reduced to a single $, which allows for escaping
+                        the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the
+                        string literal "$(VAR_NAME)". Escaped references will never
+                        be expanded, regardless of whether the variable exists or
+                        not. Defaults to "".'
+                      type: string
+                    valueFrom:
+                      description: Source for the environment variable's value. Cannot
+                        be used if value is not empty.
+                      properties:
+                        configMapKeyRef:
+                          description: Selects a key of a ConfigMap.
+                          properties:
+                            key:
+                              description: The key to select.
+                              type: string
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?'
+                              type: string
+                            optional:
+                              description: Specify whether the ConfigMap or its key
+                                must be defined
+                              type: boolean
+                          required:
+                          - key
+                          type: object
+                        fieldRef:
+                          description: 'Selects a field of the pod: supports metadata.name,
+                            metadata.namespace, `metadata.labels[''<KEY>'']`, `metadata.annotations[''<KEY>'']`,
+                            spec.nodeName, spec.serviceAccountName, status.hostIP,
+                            status.podIP, status.podIPs.'
+                          properties:
+                            apiVersion:
+                              description: Version of the schema the FieldPath is
+                                written in terms of, defaults to "v1".
+                              type: string
+                            fieldPath:
+                              description: Path of the field to select in the specified
+                                API version.
+                              type: string
+                          required:
+                          - fieldPath
+                          type: object
+                        resourceFieldRef:
+                          description: 'Selects a resource of the container: only
+                            resources limits and requests (limits.cpu, limits.memory,
+                            limits.ephemeral-storage, requests.cpu, requests.memory
+                            and requests.ephemeral-storage) are currently supported.'
+                          properties:
+                            containerName:
+                              description: 'Container name: required for volumes,
+                                optional for env vars'
+                              type: string
+                            divisor:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: Specifies the output format of the exposed
+                                resources, defaults to "1"
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            resource:
+                              description: 'Required: resource to select'
+                              type: string
+                          required:
+                          - resource
+                          type: object
+                        secretKeyRef:
+                          description: Selects a key of a secret in the pod's namespace
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must
+                                be a valid secret key.
+                              type: string
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?'
+                              type: string
+                            optional:
+                              description: Specify whether the Secret or its key must
+                                be defined
+                              type: boolean
+                          required:
+                          - key
+                          type: object
+                      type: object
+                  required:
+                  - name
+                  type: object
+                type: array
+              imagePullSecrets:
+                items:
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                type: array
+              portBindings:
+                description: Service Service `json:"service,omitempty"`
+                items:
+                  properties:
+                    containerPort:
+                      description: Number of port to expose on the pod's IP address.
+                        This must be a valid port number, 0 < x < 65536.
+                      format: int32
+                      type: integer
+                    hostIP:
+                      description: What host IP to bind the external port to.
+                      type: string
+                    name:
+                      description: If specified, this must be an IANA_SVC_NAME and
+                        unique within the pod. Each named port in a pod must have
+                        a unique name. Name for the port that can be referred to by
+                        services.
+                      type: string
+                    nodePort:
+                      description: 'The port on each node on which this service is
+                        exposed when type is NodePort or LoadBalancer.  Usually assigned
+                        by the system. If a value is specified, in-range, and not
+                        in use it will be used, otherwise the operation will fail.  If
+                        not specified, a port will be allocated if this Service requires
+                        one.  If this field is specified when creating a Service which
+                        does not need it, creation will fail. This field will be wiped
+                        when updating a Service to no longer need it (e.g. changing
+                        type from NodePort to ClusterIP). More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport'
+                      format: int32
+                      type: integer
+                    protocol:
+                      default: TCP
+                      description: Protocol for port. Must be UDP, TCP, or SCTP. Defaults
+                        to "TCP".
+                      type: string
+                    servicePort:
+                      description: The port that will be exposed by this service.
+                      format: int32
+                      type: integer
+                  required:
+                  - containerPort
+                  - servicePort
+                  type: object
+                type: array
+              probes:
+                description: ProxyProbe defines the probe actions for LivenesProbe,
+                  ReadinessProbe and StartupProbe
+                properties:
+                  livenessProbe:
+                    description: Probes are not allowed for ephemeral containers.
+                    properties:
+                      exec:
+                        description: Exec specifies the action to take.
+                        properties:
+                          command:
+                            description: Command is the command line to execute inside
+                              the container, the working directory for the command  is
+                              root ('/') in the container's filesystem. The command
+                              is simply exec'd, it is not run inside a shell, so traditional
+                              shell instructions ('|', etc) won't work. To use a shell,
+                              you need to explicitly call out to that shell. Exit
+                              status of 0 is treated as live/healthy and non-zero
+                              is unhealthy.
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      failureThreshold:
+                        description: Minimum consecutive failures for the probe to
+                          be considered failed after having succeeded. Defaults to
+                          3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      grpc:
+                        description: GRPC specifies an action involving a GRPC port.
+                          This is a beta field and requires enabling GRPCContainerProbe
+                          feature gate.
+                        properties:
+                          port:
+                            description: Port number of the gRPC service. Number must
+                              be in the range 1 to 65535.
+                            format: int32
+                            type: integer
+                          service:
+                            description: "Service is the name of the service to place
+                              in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+                              \n If this is not specified, the default behavior is
+                              defined by gRPC."
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      httpGet:
+                        description: HTTPGet specifies the http request to perform.
+                        properties:
+                          host:
+                            description: Host name to connect to, defaults to the
+                              pod IP. You probably want to set "Host" in httpHeaders
+                              instead.
+                            type: string
+                          httpHeaders:
+                            description: Custom headers to set in the request. HTTP
+                              allows repeated headers.
+                            items:
+                              description: HTTPHeader describes a custom header to
+                                be used in HTTP probes
+                              properties:
+                                name:
+                                  description: The header field name
+                                  type: string
+                                value:
+                                  description: The header field value
+                                  type: string
+                              required:
+                              - name
+                              - value
+                              type: object
+                            type: array
+                          path:
+                            description: Path to access on the HTTP server.
+                            type: string
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Name or number of the port to access on the
+                              container. Number must be in the range 1 to 65535. Name
+                              must be an IANA_SVC_NAME.
+                            x-kubernetes-int-or-string: true
+                          scheme:
+                            description: Scheme to use for connecting to the host.
+                              Defaults to HTTP.
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      initialDelaySeconds:
+                        description: 'Number of seconds after the container has started
+                          before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: How often (in seconds) to perform the probe.
+                          Default to 10 seconds. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      successThreshold:
+                        description: Minimum consecutive successes for the probe to
+                          be considered successful after having failed. Defaults to
+                          1. Must be 1 for liveness and startup. Minimum value is
+                          1.
+                        format: int32
+                        type: integer
+                      tcpSocket:
+                        description: TCPSocket specifies an action involving a TCP
+                          port.
+                        properties:
+                          host:
+                            description: 'Optional: Host name to connect to, defaults
+                              to the pod IP.'
+                            type: string
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Number or name of the port to access on the
+                              container. Number must be in the range 1 to 65535. Name
+                              must be an IANA_SVC_NAME.
+                            x-kubernetes-int-or-string: true
+                        required:
+                        - port
+                        type: object
+                      terminationGracePeriodSeconds:
+                        description: Optional duration in seconds the pod needs to
+                          terminate gracefully upon probe failure. The grace period
+                          is the duration in seconds after the processes running in
+                          the pod are sent a termination signal and the time when
+                          the processes are forcibly halted with a kill signal. Set
+                          this value longer than the expected cleanup time for your
+                          process. If this value is nil, the pod's terminationGracePeriodSeconds
+                          will be used. Otherwise, this value overrides the value
+                          provided by the pod spec. Value must be non-negative integer.
+                          The value zero indicates stop immediately via the kill signal
+                          (no opportunity to shut down). This is a beta field and
+                          requires enabling ProbeTerminationGracePeriod feature gate.
+                          Minimum value is 1. spec.terminationGracePeriodSeconds is
+                          used if unset.
+                        format: int64
+                        type: integer
+                      timeoutSeconds:
+                        description: 'Number of seconds after which the probe times
+                          out. Defaults to 1 second. Minimum value is 1. More info:
+                          https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                        format: int32
+                        type: integer
+                    type: object
+                  readinessProbe:
+                    description: Probes are not allowed for ephemeral containers.
+                    properties:
+                      exec:
+                        description: Exec specifies the action to take.
+                        properties:
+                          command:
+                            description: Command is the command line to execute inside
+                              the container, the working directory for the command  is
+                              root ('/') in the container's filesystem. The command
+                              is simply exec'd, it is not run inside a shell, so traditional
+                              shell instructions ('|', etc) won't work. To use a shell,
+                              you need to explicitly call out to that shell. Exit
+                              status of 0 is treated as live/healthy and non-zero
+                              is unhealthy.
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      failureThreshold:
+                        description: Minimum consecutive failures for the probe to
+                          be considered failed after having succeeded. Defaults to
+                          3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      grpc:
+                        description: GRPC specifies an action involving a GRPC port.
+                          This is a beta field and requires enabling GRPCContainerProbe
+                          feature gate.
+                        properties:
+                          port:
+                            description: Port number of the gRPC service. Number must
+                              be in the range 1 to 65535.
+                            format: int32
+                            type: integer
+                          service:
+                            description: "Service is the name of the service to place
+                              in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+                              \n If this is not specified, the default behavior is
+                              defined by gRPC."
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      httpGet:
+                        description: HTTPGet specifies the http request to perform.
+                        properties:
+                          host:
+                            description: Host name to connect to, defaults to the
+                              pod IP. You probably want to set "Host" in httpHeaders
+                              instead.
+                            type: string
+                          httpHeaders:
+                            description: Custom headers to set in the request. HTTP
+                              allows repeated headers.
+                            items:
+                              description: HTTPHeader describes a custom header to
+                                be used in HTTP probes
+                              properties:
+                                name:
+                                  description: The header field name
+                                  type: string
+                                value:
+                                  description: The header field value
+                                  type: string
+                              required:
+                              - name
+                              - value
+                              type: object
+                            type: array
+                          path:
+                            description: Path to access on the HTTP server.
+                            type: string
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Name or number of the port to access on the
+                              container. Number must be in the range 1 to 65535. Name
+                              must be an IANA_SVC_NAME.
+                            x-kubernetes-int-or-string: true
+                          scheme:
+                            description: Scheme to use for connecting to the host.
+                              Defaults to HTTP.
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      initialDelaySeconds:
+                        description: 'Number of seconds after the container has started
+                          before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: How often (in seconds) to perform the probe.
+                          Default to 10 seconds. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      successThreshold:
+                        description: Minimum consecutive successes for the probe to
+                          be considered successful after having failed. Defaults to
+                          1. Must be 1 for liveness and startup. Minimum value is
+                          1.
+                        format: int32
+                        type: integer
+                      tcpSocket:
+                        description: TCPSocket specifies an action involving a TCP
+                          port.
+                        properties:
+                          host:
+                            description: 'Optional: Host name to connect to, defaults
+                              to the pod IP.'
+                            type: string
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Number or name of the port to access on the
+                              container. Number must be in the range 1 to 65535. Name
+                              must be an IANA_SVC_NAME.
+                            x-kubernetes-int-or-string: true
+                        required:
+                        - port
+                        type: object
+                      terminationGracePeriodSeconds:
+                        description: Optional duration in seconds the pod needs to
+                          terminate gracefully upon probe failure. The grace period
+                          is the duration in seconds after the processes running in
+                          the pod are sent a termination signal and the time when
+                          the processes are forcibly halted with a kill signal. Set
+                          this value longer than the expected cleanup time for your
+                          process. If this value is nil, the pod's terminationGracePeriodSeconds
+                          will be used. Otherwise, this value overrides the value
+                          provided by the pod spec. Value must be non-negative integer.
+                          The value zero indicates stop immediately via the kill signal
+                          (no opportunity to shut down). This is a beta field and
+                          requires enabling ProbeTerminationGracePeriod feature gate.
+                          Minimum value is 1. spec.terminationGracePeriodSeconds is
+                          used if unset.
+                        format: int64
+                        type: integer
+                      timeoutSeconds:
+                        description: 'Number of seconds after which the probe times
+                          out. Defaults to 1 second. Minimum value is 1. More info:
+                          https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                        format: int32
+                        type: integer
+                    type: object
+                  startupProbe:
+                    description: Probes are not allowed for ephemeral containers.
+                    properties:
+                      exec:
+                        description: Exec specifies the action to take.
+                        properties:
+                          command:
+                            description: Command is the command line to execute inside
+                              the container, the working directory for the command  is
+                              root ('/') in the container's filesystem. The command
+                              is simply exec'd, it is not run inside a shell, so traditional
+                              shell instructions ('|', etc) won't work. To use a shell,
+                              you need to explicitly call out to that shell. Exit
+                              status of 0 is treated as live/healthy and non-zero
+                              is unhealthy.
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      failureThreshold:
+                        description: Minimum consecutive failures for the probe to
+                          be considered failed after having succeeded. Defaults to
+                          3. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      grpc:
+                        description: GRPC specifies an action involving a GRPC port.
+                          This is a beta field and requires enabling GRPCContainerProbe
+                          feature gate.
+                        properties:
+                          port:
+                            description: Port number of the gRPC service. Number must
+                              be in the range 1 to 65535.
+                            format: int32
+                            type: integer
+                          service:
+                            description: "Service is the name of the service to place
+                              in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+                              \n If this is not specified, the default behavior is
+                              defined by gRPC."
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      httpGet:
+                        description: HTTPGet specifies the http request to perform.
+                        properties:
+                          host:
+                            description: Host name to connect to, defaults to the
+                              pod IP. You probably want to set "Host" in httpHeaders
+                              instead.
+                            type: string
+                          httpHeaders:
+                            description: Custom headers to set in the request. HTTP
+                              allows repeated headers.
+                            items:
+                              description: HTTPHeader describes a custom header to
+                                be used in HTTP probes
+                              properties:
+                                name:
+                                  description: The header field name
+                                  type: string
+                                value:
+                                  description: The header field value
+                                  type: string
+                              required:
+                              - name
+                              - value
+                              type: object
+                            type: array
+                          path:
+                            description: Path to access on the HTTP server.
+                            type: string
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Name or number of the port to access on the
+                              container. Number must be in the range 1 to 65535. Name
+                              must be an IANA_SVC_NAME.
+                            x-kubernetes-int-or-string: true
+                          scheme:
+                            description: Scheme to use for connecting to the host.
+                              Defaults to HTTP.
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      initialDelaySeconds:
+                        description: 'Number of seconds after the container has started
+                          before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        description: How often (in seconds) to perform the probe.
+                          Default to 10 seconds. Minimum value is 1.
+                        format: int32
+                        type: integer
+                      successThreshold:
+                        description: Minimum consecutive successes for the probe to
+                          be considered successful after having failed. Defaults to
+                          1. Must be 1 for liveness and startup. Minimum value is
+                          1.
+                        format: int32
+                        type: integer
+                      tcpSocket:
+                        description: TCPSocket specifies an action involving a TCP
+                          port.
+                        properties:
+                          host:
+                            description: 'Optional: Host name to connect to, defaults
+                              to the pod IP.'
+                            type: string
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Number or name of the port to access on the
+                              container. Number must be in the range 1 to 65535. Name
+                              must be an IANA_SVC_NAME.
+                            x-kubernetes-int-or-string: true
+                        required:
+                        - port
+                        type: object
+                      terminationGracePeriodSeconds:
+                        description: Optional duration in seconds the pod needs to
+                          terminate gracefully upon probe failure. The grace period
+                          is the duration in seconds after the processes running in
+                          the pod are sent a termination signal and the time when
+                          the processes are forcibly halted with a kill signal. Set
+                          this value longer than the expected cleanup time for your
+                          process. If this value is nil, the pod's terminationGracePeriodSeconds
+                          will be used. Otherwise, this value overrides the value
+                          provided by the pod spec. Value must be non-negative integer.
+                          The value zero indicates stop immediately via the kill signal
+                          (no opportunity to shut down). This is a beta field and
+                          requires enabling ProbeTerminationGracePeriod feature gate.
+                          Minimum value is 1. spec.terminationGracePeriodSeconds is
+                          used if unset.
+                        format: int64
+                        type: integer
+                      timeoutSeconds:
+                        description: 'Number of seconds after which the probe times
+                          out. Defaults to 1 second. Minimum value is 1. More info:
+                          https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                        format: int32
+                        type: integer
+                    type: object
+                type: object
+              replicas:
+                description: replicas is the expected number of replicas of ShardingSphere-Proxy
+                format: int32
+                type: integer
+              resources:
+                description: ResourceRequirements describes the compute resource requirements.
+                properties:
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Limits describes the maximum amount of compute resources
+                      allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Requests describes the minimum amount of compute
+                      resources required. If Requests is omitted for a container,
+                      it defaults to Limits if that is explicitly specified, otherwise
+                      to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                    type: object
+                type: object
+              selector:
+                description: selector defines a set of label selectors
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that
+                        contains values, a key, and an operator that relates the key
+                        and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to
+                            a set of values. Valid operators are In, NotIn, Exists
+                            and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the
+                            operator is In or NotIn, the values array must be non-empty.
+                            If the operator is Exists or DoesNotExist, the values
+                            array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single
+                      {key,value} in the matchLabels map is equivalent to an element
+                      of matchExpressions, whose key field is "key", the operator
+                      is "In", and the values array contains only "value". The requirements
+                      are ANDed.
+                    type: object
+                type: object
+              serverVersion:
+                description: version  is the version of ShardingSphere-Proxy
+                type: string
+              serviceType:
+                description: Service Type string describes ingress methods for a service
+                enum:
+                - ClusterIP
+                - NodePort
+                - LoadBalancer
+                - ExternalName
+                type: string
+              storageNodeConnector:
+                description: MySQLDriver Defines the mysql-driven version in ShardingSphere-proxy
+                properties:
+                  type:
+                    description: ConnectorType defines the frontend protocol for ShardingSphere
+                      Proxy
+                    type: string
+                  version:
+                    description: mysql-driven version,must be x.y.z
+                    pattern: ^([1-9]\d|[1-9])(\.([1-9]\d|\d)){2}$
+                    type: string
+                required:
+                - type
+                - version
+                type: object
+            required:
+            - selector
+            type: object
+          status:
+            description: ComputeNodeStatus defines the observed state of ShardingSphere
+              Proxy
+            properties:
+              conditions:
+                description: Conditions The conditions array, the reason and message
+                  fields
+                items:
+                  description: ComputeNodeCondition | **phase** | **condition**  |
+                    **descriptions**| | ------------- | ---------- | ----------------------------------------------------
+                    | | NotReady      | Deployed   | pods are deployed but are not
+                    created or currently pending| | NotReady      | Started    | pods
+                    are started but not satisfy ready requirements| | Ready         |
+                    Ready      | minimum pods satisfy ready requirements| | NotReady      |
+                    Unknown    | can not locate the status of pods | | NotReady      |
+                    Failed     | ShardingSphere-Proxy failed to start correctly due
+                    to some problems|
+                  properties:
+                    lastUpdateTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              loadBalancer:
+                description: LoadBalancer contains the current status of the load-balancer,
+                  if one is present.
+                properties:
+                  clusterIP:
+                    type: string
+                  ingress:
+                    description: Ingress is a list containing ingress points for the
+                      load-balancer. Traffic intended for the service should be sent
+                      to these ingress points.
+                    items:
+                      description: 'LoadBalancerIngress represents the status of a
+                        load-balancer ingress point: traffic intended for the service
+                        should be sent to an ingress point.'
+                      properties:
+                        hostname:
+                          description: Hostname is set for load-balancer ingress points
+                            that are DNS based (typically AWS load-balancers)
+                          type: string
+                        ip:
+                          description: IP is set for load-balancer ingress points
+                            that are IP based (typically GCE or OpenStack load-balancers)
+                          type: string
+                        ports:
+                          description: Ports is a list of records of service ports
+                            If used, every port defined in the service should have
+                            an entry in it
+                          items:
+                            properties:
+                              error:
+                                description: 'Error is to record the problem with
+                                  the service port The format of the error shall comply
+                                  with the following rules: - built-in error values
+                                  shall be specified in this file and those shall
+                                  use CamelCase names - cloud provider specific error
+                                  values must have names that comply with the format
+                                  foo.example.com/CamelCase. --- The regex it matches
+                                  is (dns1123SubdomainFmt/)?(qualifiedNameFmt)'
+                                maxLength: 316
+                                pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                                type: string
+                              port:
+                                description: Port is the port number of the service
+                                  port of which status is recorded here
+                                format: int32
+                                type: integer
+                              protocol:
+                                default: TCP
+                                description: 'Protocol is the protocol of the service
+                                  port of which status is recorded here The supported
+                                  values are: "TCP", "UDP", "SCTP"'
+                                type: string
+                            required:
+                            - port
+                            - protocol
+                            type: object
+                          type: array
+                          x-kubernetes-list-type: atomic
+                      type: object
+                    type: array
+                type: object
+              observedGeneration:
+                description: The generation observed by the deployment controller.
+                format: int64
+                type: integer
+              phase:
+                description: 'ShardingSphere-Proxy phase are a brief summary of the
+                  ShardingSphere-Proxy life cycle There are two possible phase values:
+                  Ready: ShardingSphere-Proxy can already provide external services
+                  NotReady: ShardingSphere-Proxy cannot provide external services'
+                type: string
+              readyInstances:
+                description: ReadyInstances shows the number of replicas that ShardingSphere-Proxy
+                  is running normally
+                format: int32
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
