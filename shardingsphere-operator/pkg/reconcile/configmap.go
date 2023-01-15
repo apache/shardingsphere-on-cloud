@@ -51,13 +51,11 @@ func ComputeNodeNewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	// NOTE: ShardingSphere Proxy 5.3.0 needs a server.yaml no matter if it is empty
 	if !reflect.DeepEqual(cn.Spec.Bootstrap.ServerConfig, v1alpha1.ServerConfig{}) {
 		servconf := cn.Spec.Bootstrap.ServerConfig.DeepCopy()
-		// repo := &v1alpha1.Repository{}
 		if cn.Spec.Bootstrap.ServerConfig.Mode.Type == v1alpha1.ModeTypeCluster {
 			if len(cluster) > 0 {
 				json.Unmarshal([]byte(cluster), &servconf.Mode.Repository)
 			}
 		}
-		// servconf.Mode.Repository = *repo
 		if y, err := yaml.Marshal(servconf); err == nil {
 			cm.Data["server.yaml"] = string(y)
 		}
