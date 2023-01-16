@@ -28,6 +28,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	DefaultExtlibPath = "/opt/shardingsphere-proxy/ext-lib"
+)
+
 func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 	deploy := ComputeNodeDefaultDeployment(cn.GetObjectMeta(), cn.GroupVersionKind())
 
@@ -100,7 +104,7 @@ func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "mysql-connector-java",
-								MountPath: "/opt/shardingsphere-proxy/ext-lib",
+								MountPath: DefaultExtlibPath,
 							},
 						},
 					},
@@ -109,7 +113,7 @@ func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 				deploy.Spec.Template.Spec.Containers[0].VolumeMounts = append(deploy.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
 					Name:      "mysql-connector-java",
 					SubPath:   fmt.Sprintf("mysql-connector-java-%s.jar", cn.Spec.StorageNodeConnector.Version),
-					MountPath: fmt.Sprintf("/opt/shardingsphere-proxy/ext-lib/mysql-connector-java-%s.jar", cn.Spec.StorageNodeConnector.Version),
+					MountPath: fmt.Sprintf("%s/mysql-connector-java-%s.jar", DefaultExtlibPath, cn.Spec.StorageNodeConnector.Version),
 				})
 
 				deploy.Spec.Template.Spec.Volumes = append(deploy.Spec.Template.Spec.Volumes, corev1.Volume{
