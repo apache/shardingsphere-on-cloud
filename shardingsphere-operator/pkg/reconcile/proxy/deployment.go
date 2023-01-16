@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package proxyserver
+package proxy
 
 import (
 	"fmt"

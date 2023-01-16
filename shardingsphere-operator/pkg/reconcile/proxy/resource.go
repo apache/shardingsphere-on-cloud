@@ -15,32 +15,14 @@
  * limitations under the License.
  */
 
-package proxyserver
+package proxy
 
 import (
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func IsRunning(podList *v1.PodList) bool {
-	status := false
-	for _, pod := range podList.Items {
-		if pod.Status.Phase == v1.PodRunning && pod.ObjectMeta.DeletionTimestamp == nil {
-			status = true
-		}
-	}
+const imageName = "apache/shardingsphere-proxy"
 
-	return status
-}
-
-func CountingReadyPods(podList *v1.PodList) int32 {
-	var readyPods int32 = 0
-	for _, pod := range podList.Items {
-		if len(pod.Status.ContainerStatuses) == 0 {
-			continue
-		}
-		if pod.Status.ContainerStatuses[0].Ready && pod.ObjectMeta.DeletionTimestamp == nil {
-			readyPods++
-		}
-	}
-	return readyPods
+func fromInt32(val int32) intstr.IntOrString {
+	return intstr.IntOrString{Type: intstr.Int, IntVal: val}
 }
