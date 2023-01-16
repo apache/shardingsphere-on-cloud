@@ -27,7 +27,7 @@ import (
 
 const imageName = "apache/shardingsphere-proxy"
 
-const logback = `<?xml version="1.0"?>
+const defaultLogback = `<?xml version="1.0"?>
 <configuration>
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -73,7 +73,7 @@ func ConstructCascadingConfigmap(proxyConfig *v1alpha1.ShardingSphereProxyServer
 		},
 		Data: map[string]string{
 			"server.yaml": y,
-			"logback.xml": logback,
+			"logback.xml": defaultLogback,
 		},
 	}
 }

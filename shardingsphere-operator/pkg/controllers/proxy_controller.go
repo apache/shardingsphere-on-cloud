@@ -189,7 +189,6 @@ func (r *ProxyReconciler) reconcileService(ctx context.Context, namespacedName t
 			if err := r.Create(ctx, exp); err != nil {
 				return ctrl.Result{}, err
 			}
-			return ctrl.Result{}, nil
 		}
 	} else {
 		act := service.DeepCopy()
