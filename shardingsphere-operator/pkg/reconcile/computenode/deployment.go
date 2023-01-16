@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package reconcile
+package computenode
 
 import (
 	"fmt"
@@ -30,6 +30,7 @@ import (
 
 const (
 	DefaultExtlibPath = "/opt/shardingsphere-proxy/ext-lib"
+	imageName         = "apache/shardingsphere-proxy"
 )
 
 func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
@@ -39,13 +40,10 @@ func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 	deploy.Name = cn.Name
 	deploy.Namespace = cn.Namespace
 	deploy.Labels = cn.Labels
-	// deploy.Spec.Selector.MatchLabels = cn.Labels
 	deploy.Spec.Selector = cn.Spec.Selector
 	deploy.Spec.Replicas = &cn.Spec.Replicas
 	deploy.Spec.Template.Labels = cn.Labels
 	deploy.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", imageName, cn.Spec.ServerVersion)
-	// TODO: don't use v1.Port directly
-	// deploy.Spec.Template.Spec.Containers[0].Ports = cn.Spec.Ports
 	if deploy.Spec.Template.Spec.Containers[0].Ports == nil {
 		deploy.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{}
 	}

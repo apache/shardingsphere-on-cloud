@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package reconcile
+package proxy
 
 import (
 	"fmt"

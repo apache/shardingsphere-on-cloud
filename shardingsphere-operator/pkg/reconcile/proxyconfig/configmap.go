@@ -15,17 +15,14 @@
  * limitations under the License.
  */
 
-package reconcile
+package proxyconfig
 
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-const imageName = "apache/shardingsphere-proxy"
 
 const defaultLogback = `<?xml version="1.0"?>
 <configuration>
@@ -82,8 +79,4 @@ func ConstructCascadingConfigmap(proxyConfig *v1alpha1.ShardingSphereProxyServer
 func toYaml(proxyConfig *v1alpha1.ShardingSphereProxyServerConfig) string {
 	y, _ := yaml.Marshal(proxyConfig.Spec)
 	return string(y)
-}
-
-func fromInt32(val int32) intstr.IntOrString {
-	return intstr.IntOrString{Type: intstr.Int, IntVal: val}
 }
