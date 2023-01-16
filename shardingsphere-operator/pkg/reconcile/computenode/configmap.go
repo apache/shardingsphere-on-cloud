@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package reconcile
+package computenode
 
 import (
 	"encoding/json"
@@ -93,3 +93,36 @@ func ComputeNodeUpdateConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1
 	exp.Data = ComputeNodeNewConfigMap(cn).Data
 	return exp
 }
+
+const defaultLogback = `<?xml version="1.0"?>
+<configuration>
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="sqlConsole" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{database}] [%X{user}] [%X{host}] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <logger name="ShardingSphere-SQL" level="info" additivity="false">
+        <appender-ref ref="sqlConsole" />
+    </logger>
+    <logger name="org.apache.shardingsphere" level="info" additivity="false">
+        <appender-ref ref="console" />
+    </logger>
+    
+    <logger name="com.zaxxer.hikari" level="error" />
+    
+    <logger name="com.atomikos" level="error" />
+    
+    <logger name="io.netty" level="error" />
+    
+    <root>
+        <level value="info" />
+        <appender-ref ref="console" />
+    </root>
+</configuration> 
+`

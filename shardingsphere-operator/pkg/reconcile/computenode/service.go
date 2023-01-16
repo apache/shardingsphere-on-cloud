@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-package reconcile
+package computenode
 
 import (
-	"reflect"
-
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -84,51 +82,6 @@ func ComputeNodeUpdateService(cn *v1alpha1.ComputeNode, cur *v1.Service) *v1.Ser
 	return exp
 }
 
-func NewService(ssproxy *v1alpha1.ShardingSphereProxy) *v1.Service {
-	return ConstructCascadingService(ssproxy)
-}
-
-func ConstructCascadingService(proxy *v1alpha1.ShardingSphereProxy) *v1.Service {
-	if proxy == nil || reflect.DeepEqual(proxy, &v1alpha1.ShardingSphereProxy{}) {
-		return &v1.Service{}
-	}
-
-	svc := v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      proxy.Name,
-			Namespace: proxy.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(proxy.GetObjectMeta(), proxy.GroupVersionKind()),
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Selector: map[string]string{
-				"apps": proxy.Name,
-			},
-			Type: proxy.Spec.ServiceType.Type,
-			Ports: []v1.ServicePort{
-				{
-					Name:       "proxy-port",
-					TargetPort: fromInt32(proxy.Spec.Port),
-					Port:       proxy.Spec.Port,
-				},
-			},
-		},
-	}
-	if proxy.Spec.ServiceType.Type == v1.ServiceTypeNodePort {
-		svc.Spec.Ports[0].NodePort = proxy.Spec.ServiceType.NodePort
-	}
-	return &svc
-}
-
-func UpdateService(proxy *v1alpha1.ShardingSphereProxy, runtimeService *v1.Service) *v1.Service {
-	exp := &v1.Service{}
-	runtimeService.Spec.Type = proxy.Spec.ServiceType.Type
-	runtimeService.Spec.Ports[0].Port = proxy.Spec.Port
-	runtimeService.Spec.Ports[0].TargetPort = fromInt32(proxy.Spec.Port)
-	if proxy.Spec.ServiceType.NodePort != 0 {
-		runtimeService.Spec.Ports[0].NodePort = proxy.Spec.ServiceType.NodePort
-	}
-	exp = runtimeService.DeepCopy()
-	return exp
-}
+// func fromInt32(val int32) intstr.IntOrString {
+// 	return intstr.IntOrString{Type: intstr.Int, IntVal: val}
+// }

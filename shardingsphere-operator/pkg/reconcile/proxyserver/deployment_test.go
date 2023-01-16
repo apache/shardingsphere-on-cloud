@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package reconcile
+package proxyserver
 
 import (
 	"fmt"
@@ -277,21 +277,6 @@ func Test_addInitContaienr(t *testing.T) {
 	}
 }
 
-func Test_processOptionalParameter(t *testing.T) {
-	/*
-	   cases := []struct{
-
-	   }{
-	       {
-
-	       },
-	   }
-
-	   for _, c := range cases {
-
-	   }
-	*/
-}
 func Test_UpdateDeployment(t *testing.T) {
 	var rep int32 = 3
 	cases := []struct {

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package reconcile
+package computenode
 
 import (
 	"fmt"
@@ -30,6 +30,7 @@ import (
 
 const (
 	DefaultExtlibPath = "/opt/shardingsphere-proxy/ext-lib"
+	imageName         = "apache/shardingsphere-proxy"
 )
 
 func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package reconcile
+package proxyserver
 
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
