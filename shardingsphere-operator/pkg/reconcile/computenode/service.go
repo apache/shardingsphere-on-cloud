@@ -31,11 +31,8 @@ func ComputeNodeNewService(cn *v1alpha1.ComputeNode) *v1.Service {
 	svc.Name = cn.Name
 	svc.Namespace = cn.Namespace
 	svc.Labels = cn.Labels
-	// svc.Spec.Selector = cn.Labels
 	svc.Spec.Selector = cn.Spec.Selector.MatchLabels
-	// svc.Spec.Type = cn.Spec.Service.Type
 	svc.Spec.Type = cn.Spec.ServiceType
-	// svc.Spec.Ports = cn.Spec.Service.Ports
 
 	if svc.Spec.Ports == nil {
 		svc.Spec.Ports = []corev1.ServicePort{}
@@ -81,7 +78,3 @@ func ComputeNodeUpdateService(cn *v1alpha1.ComputeNode, cur *v1.Service) *v1.Ser
 	exp.Spec.ClusterIPs = cur.Spec.ClusterIPs
 	return exp
 }
-
-// func fromInt32(val int32) intstr.IntOrString {
-// 	return intstr.IntOrString{Type: intstr.Int, IntVal: val}
-// }
