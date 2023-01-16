@@ -18,14 +18,10 @@
 package main
 
 import (
-	"os"
-
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/cmd/shardingsphere-operator/manager"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
+	"github.com/mlycore/log"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
@@ -37,6 +33,8 @@ func main() {
 		SetReadyzCheck("readyz", healthz.Ping).
 		SetMetrics().
 		Start(ctrl.SetupSignalHandler()); err != nil {
-		os.Exit(1)
+		log.Fatalf("%s", err)
 	}
+
+	log.Infof("shardingsphere-operator exited")
 }
