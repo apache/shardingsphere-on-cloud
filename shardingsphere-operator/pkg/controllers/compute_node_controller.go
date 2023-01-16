@@ -23,6 +23,7 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	reconcile "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,14 +32,17 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logger "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-const defaultRequeueTime = 10 * time.Second
+const (
+	controllerName     = "compute_node_controller"
+	defaultRequeueTime = 10 * time.Second
+)
 
 type ComputeNodeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Log    logr.Logger
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -53,21 +57,21 @@ func (r *ComputeNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logger.FromContext(ctx)
+	logger := r.Log.WithValues(controllerName, req.NamespacedName)
 
 	cn := &v1alpha1.ComputeNode{}
 	if err := r.Get(ctx, req.NamespacedName, cn); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 		} else {
-			log.Error(err, "get computenode")
+			logger.Error(err, "get computenode")
 			return ctrl.Result{Requeue: true}, err
 		}
 	}
 
 	errors := []error{}
 	if err := r.reconcileDeployment(ctx, cn); err != nil {
-		log.Error(err, "Reconcile Deployment Error")
+		log.Error(err, "reconcile Deployment Error")
 		errors = append(errors, err)
 	}
 	if err := r.reconcileService(ctx, cn); err != nil {
