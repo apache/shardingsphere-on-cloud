@@ -22,20 +22,23 @@ import (
 	"reflect"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/mlycore/log"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func init() {
-	log.SetLevel("debug")
-}
+const (
+	ConfigForLogback = "logback.xml"
+	ConfigForServer  = "server.yaml"
+
+	AnnoClusterRepoConfig = "computenode.shardingsphere.org/server-config-mode-cluster"
+	AnnoLogbackConfig     = "computenode.shardingsphere.org/logback"
+)
 
 func ComputeNodeNewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
-	cluster := cn.Annotations["computenode.shardingsphere.org/server-config-mode-cluster"]
-	logback := cn.Annotations["computenode.shardingsphere.org/logback"]
+	cluster := cn.Annotations[AnnoClusterRepoConfig]
+	logback := cn.Annotations[AnnoLogbackConfig]
 
 	cm := ComputeNodeDefaultConfigMap(cn.GetObjectMeta(), cn.GroupVersionKind())
 	cm.Name = cn.Name
@@ -43,9 +46,9 @@ func ComputeNodeNewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	cm.Labels = cn.Labels
 
 	if len(logback) > 0 {
-		cm.Data["logback.xml"] = logback
+		cm.Data[ConfigForLogback] = logback
 	} else {
-		cm.Data["logback.xml"] = string(defaultLogback)
+		cm.Data[ConfigForLogback] = string(defaultLogback)
 	}
 
 	// NOTE: ShardingSphere Proxy 5.3.0 needs a server.yaml no matter if it is empty
@@ -57,10 +60,10 @@ func ComputeNodeNewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 			}
 		}
 		if y, err := yaml.Marshal(servconf); err == nil {
-			cm.Data["server.yaml"] = string(y)
+			cm.Data[ConfigForServer] = string(y)
 		}
 	} else {
-		cm.Data["server.yaml"] = "# Empty file is needed"
+		cm.Data[ConfigForServer] = "# Empty file is needed"
 	}
 
 	return cm
