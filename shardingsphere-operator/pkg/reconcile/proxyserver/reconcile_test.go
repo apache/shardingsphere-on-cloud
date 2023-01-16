@@ -341,35 +341,11 @@ func Test_ConstructCascadingService(t *testing.T) {
 }
 
 func Test_ConstructCascadingConfigmap(t *testing.T) {
-	/*
-	   cases := []struct{
 
-	   }{
-	       {
-
-	       },
-	   }
-
-	   for _, c := range cases {
-
-	   }
-	*/
 }
 
 func Test_ConstructHPA(t *testing.T) {
-	/*
-	   cases := []struct{
 
-	   }{
-	       {
-
-	       },
-	   }
-
-	   for _, c := range cases {
-
-	   }
-	*/
 }
 
 func Test_ToYAML(t *testing.T) {
