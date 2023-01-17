@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,12 +30,207 @@ import (
 )
 
 const (
-	DefaultExtlibPath = "/opt/shardingsphere-proxy/ext-lib"
-	imageName         = "apache/shardingsphere-proxy"
+	defaultExtlibPath            = "/opt/shardingsphere-proxy/ext-lib"
+	defaultImageName             = "apache/shardingsphere-proxy"
+	defaultImage                 = "apache/shardingsphere-proxy:5.3.0"
+	defaultContainerName         = "shardingsphere-proxy"
+	defaultConfigVolumeName      = "shardingsphere-proxy-config"
+	defaultConfigVolumeMountPath = "/opt/shardingsphere-proxy/conf"
+	defaultMySQLDriverEnvName    = "MYSQL_CONNECTOR_VERSION"
+	defaultMySQLDriverVolumeName = "mysql-connector-java"
+
+	download_script = `wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar;
+wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5;
+if [ $(md5sum /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5) ];
+then echo success;
+else echo failed;exit 1;fi;mv /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar /opt/shardingsphere-proxy/ext-lib`
 )
 
-func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
-	deploy := ComputeNodeDefaultDeployment(cn.GetObjectMeta(), cn.GroupVersionKind())
+func relativeMySQLDriverMountName(v string) string {
+	return fmt.Sprintf("mysql-connector-java-%s.jar", v)
+}
+
+func absoluteMySQLDriverMountName(p, v string) string {
+	return fmt.Sprintf("%s/%s", p, relativeMySQLDriverMountName(v))
+}
+
+type ContainerBuilder interface {
+	SetName(name string) ContainerBuilder
+	Build() *corev1.Container
+}
+
+func NewContainerBuilder() ContainerBuilder {
+	return &containerBuilder{
+		container: DefaultContainer(),
+	}
+}
+
+type containerBuilder struct {
+	container *corev1.Container
+}
+
+func (c *containerBuilder) SetName(name string) ContainerBuilder {
+	c.container.Name = name
+	return c
+}
+
+func (c *containerBuilder) SetImage(image string) ContainerBuilder {
+	c.container.Image = image
+	return c
+}
+
+func (c *containerBuilder) SetPorts(ports []corev1.ContainerPort) ContainerBuilder {
+	c.container.Ports = ports
+	return c
+}
+
+func (c *containerBuilder) SetResources(res corev1.ResourceRequirements) ContainerBuilder {
+	c.container.Resources = res
+	return c
+}
+
+func (c *containerBuilder) SetLivenessProbe(probe *corev1.Probe) ContainerBuilder {
+	c.container.LivenessProbe = probe
+	return c
+}
+
+func (c *containerBuilder) SetReadinessProbe(probe *corev1.Probe) ContainerBuilder {
+	c.container.ReadinessProbe = probe
+	return c
+}
+
+func (c *containerBuilder) SetStartupProbe(probe *corev1.Probe) ContainerBuilder {
+	c.container.StartupProbe = probe
+	return c
+}
+
+func (c *containerBuilder) SetEnv(envs []corev1.EnvVar) ContainerBuilder {
+	c.container.Env = envs
+	return c
+}
+
+func (c *containerBuilder) SetVolumeMount(mount *corev1.VolumeMount) ContainerBuilder {
+	var found bool
+	if c.container.VolumeMounts != nil {
+		for idx, v := range c.container.VolumeMounts {
+			if v.Name == mount.Name {
+				c.container.VolumeMounts[idx] = *mount
+				found = true
+				break
+			}
+		}
+		if !found {
+			c.container.VolumeMounts = append(c.container.VolumeMounts, *mount)
+		}
+	}
+
+	return c
+}
+
+func (c *containerBuilder) Build() *corev1.Container {
+	return c.container
+}
+
+func DefaultContainer() *corev1.Container {
+	con := &corev1.Container{}
+	return con
+}
+
+type DeploymentBuilder interface {
+	SetName(name string) DeploymentBuilder
+	SetNamespace(namespace string) DeploymentBuilder
+	Build() *appsv1.Deployment
+}
+
+func NewDeploymentBuilder(meta metav1.Object, gvk schema.GroupVersionKind) DeploymentBuilder {
+	return &deploymentBuilder{
+		deployment: DefaultDeployment(meta, gvk),
+	}
+}
+
+type deploymentBuilder struct {
+	deployment *appsv1.Deployment
+}
+
+func (d *deploymentBuilder) SetName(name string) DeploymentBuilder {
+	d.deployment.Name = name
+	return d
+}
+
+func (d *deploymentBuilder) SetNamespace(namespace string) DeploymentBuilder {
+	d.deployment.Namespace = namespace
+	return d
+}
+
+func (d *deploymentBuilder) SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder {
+	d.deployment.Labels = labels
+	d.deployment.Spec.Selector = selectors
+	d.deployment.Spec.Template.Labels = labels
+	return d
+}
+
+func (d *deploymentBuilder) SetShardingSphereProxyContainer(proxy *corev1.Container) DeploymentBuilder {
+	var found bool
+	if d.deployment.Spec.Template.Spec.Containers != nil {
+		for idx, c := range d.deployment.Spec.Template.Spec.Containers {
+			if c.Name == defaultContainerName {
+				found = true
+				d.deployment.Spec.Template.Spec.Containers[idx] = *proxy
+				break
+			}
+		}
+
+		if !found {
+			d.deployment.Spec.Template.Spec.Containers = append(d.deployment.Spec.Template.Spec.Containers, *proxy)
+		}
+	}
+
+	return d
+}
+
+func (d *deploymentBuilder) SetInitContainer(init *corev1.Container) DeploymentBuilder {
+	var found bool
+	if d.deployment.Spec.Template.Spec.InitContainers != nil {
+		for idx, c := range d.deployment.Spec.Template.Spec.InitContainers {
+			if c.Name == defaultContainerName {
+				found = true
+				d.deployment.Spec.Template.Spec.InitContainers[idx] = *init
+				break
+			}
+		}
+
+		if !found {
+			d.deployment.Spec.Template.Spec.InitContainers = append(d.deployment.Spec.Template.Spec.InitContainers, *init)
+		}
+	}
+
+	return d
+}
+
+func (d *deploymentBuilder) SetVolume(v *corev1.Volume) DeploymentBuilder {
+	var found bool
+	if d.deployment.Spec.Template.Spec.Volumes != nil {
+		for idx, v := range d.deployment.Spec.Template.Spec.Volumes {
+			if v.Name == v.Name {
+				d.deployment.Spec.Template.Spec.Volumes[idx] = v
+				found = true
+				break
+			}
+		}
+		if !found {
+			d.deployment.Spec.Template.Spec.Volumes = append(d.deployment.Spec.Template.Spec.Volumes, *v)
+		}
+	}
+
+	return d
+}
+
+func (d *deploymentBuilder) Build() *appsv1.Deployment {
+	return d.deployment
+}
+
+func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
+	deploy := DefaultDeployment(cn.GetObjectMeta(), cn.GroupVersionKind())
 
 	// basic information
 	deploy.Name = cn.Name
@@ -43,9 +239,10 @@ func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 	deploy.Spec.Selector = cn.Spec.Selector
 	deploy.Spec.Replicas = &cn.Spec.Replicas
 	deploy.Spec.Template.Labels = cn.Labels
-	deploy.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", imageName, cn.Spec.ServerVersion)
-
-	deploy.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{}
+	deploy.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", defaultImageName, cn.Spec.ServerVersion)
+	if deploy.Spec.Template.Spec.Containers[0].Ports == nil {
+		deploy.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{}
+	}
 	for _, pb := range cn.Spec.PortBindings {
 		deploy.Spec.Template.Spec.Containers[0].Ports = append(deploy.Spec.Template.Spec.Containers[0].Ports, corev1.ContainerPort{
 			Name:          pb.Name,
@@ -58,7 +255,7 @@ func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 	// additional information
 	deploy.Spec.Template.Spec.Containers[0].Resources = cn.Spec.Resources
 	for _, v := range deploy.Spec.Template.Spec.Volumes {
-		if v.Name == "shardingsphere-proxy-config" {
+		if v.Name == defaultConfigVolumeName {
 			v.ConfigMap.LocalObjectReference.Name = cn.Name
 		}
 	}
@@ -82,7 +279,7 @@ func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 			// add or update initContainer
 			if len(deploy.Spec.Template.Spec.InitContainers) > 0 {
 				for idx, v := range deploy.Spec.Template.Spec.InitContainers[0].Env {
-					if v.Name == "MYSQL_CONNECTOR_VERSION" {
+					if v.Name == defaultMySQLDriverEnvName {
 						deploy.Spec.Template.Spec.InitContainers[0].Env[idx].Value = cn.Spec.StorageNodeConnector.Version
 					}
 				}
@@ -94,27 +291,27 @@ func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 						Command: []string{"/bin/sh", "-c", download_script},
 						Env: []corev1.EnvVar{
 							{
-								Name:  "MYSQL_CONNECTOR_VERSION",
+								Name:  defaultMySQLDriverEnvName,
 								Value: cn.Spec.StorageNodeConnector.Version,
 							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      "mysql-connector-java",
-								MountPath: DefaultExtlibPath,
+								Name:      defaultMySQLDriverVolumeName,
+								MountPath: defaultExtlibPath,
 							},
 						},
 					},
 				}
 
 				deploy.Spec.Template.Spec.Containers[0].VolumeMounts = append(deploy.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
-					Name:      "mysql-connector-java",
-					SubPath:   fmt.Sprintf("mysql-connector-java-%s.jar", cn.Spec.StorageNodeConnector.Version),
-					MountPath: fmt.Sprintf("%s/mysql-connector-java-%s.jar", DefaultExtlibPath, cn.Spec.StorageNodeConnector.Version),
+					Name:      defaultMySQLDriverVolumeName,
+					SubPath:   relativeMySQLDriverMountName(cn.Spec.StorageNodeConnector.Version),
+					MountPath: absoluteMySQLDriverMountName(defaultExtlibPath, cn.Spec.StorageNodeConnector.Version),
 				})
 
 				deploy.Spec.Template.Spec.Volumes = append(deploy.Spec.Template.Spec.Volumes, corev1.Volume{
-					Name: "mysql-connector-java",
+					Name: defaultMySQLDriverVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
@@ -126,16 +323,9 @@ func ComputeNodeNewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 	return deploy
 }
 
-const download_script = `wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar;
-wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5;
-if [ $(md5sum /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5) ];
-then echo success;
-else echo failed;exit 1;fi;mv /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar /opt/shardingsphere-proxy/ext-lib`
-
-func ComputeNodeDefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Deployment {
+func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Deployment {
 	defaultMaxUnavailable := intstr.FromInt(0)
 	defaultMaxSurge := intstr.FromInt(3)
-	defaultImage := "apache/shardingsphere-proxy:5.3.0"
 
 	return &v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -164,7 +354,7 @@ func ComputeNodeDefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKin
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:            "shardingsphere-proxy",
+							Name:            defaultContainerName,
 							Image:           defaultImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Ports: []corev1.ContainerPort{
@@ -175,19 +365,19 @@ func ComputeNodeDefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKin
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "shardingsphere-proxy-config",
-									MountPath: "/opt/shardingsphere-proxy/conf",
+									Name:      defaultConfigVolumeName,
+									MountPath: defaultConfigVolumeMountPath,
 								},
 							},
 						},
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "shardingsphere-proxy-config",
+							Name: defaultConfigVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "shardingsphere-proxy-config",
+										Name: defaultConfigVolumeName,
 									},
 								},
 							},
@@ -199,12 +389,12 @@ func ComputeNodeDefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKin
 	}
 }
 
-func ComputeNodeUpdateDeployment(cn *v1alpha1.ComputeNode, cur *v1.Deployment) *v1.Deployment {
+func UpdateDeployment(cn *v1alpha1.ComputeNode, cur *v1.Deployment) *v1.Deployment {
 	exp := &v1.Deployment{}
 	exp.ObjectMeta = cur.ObjectMeta
 	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = cur.Labels
 	exp.Annotations = cur.Annotations
-	exp.Spec = ComputeNodeNewDeployment(cn).Spec
+	exp.Spec = NewDeployment(cn).Spec
 	return exp
 }

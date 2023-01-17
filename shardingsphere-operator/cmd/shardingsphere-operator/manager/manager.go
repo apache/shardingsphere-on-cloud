@@ -93,6 +93,7 @@ func New(opts *Options) *Manager {
 	if err = (&controllers.ProxyReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Log:    mgr.GetLogger(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ShardingSphereProxy")
 		os.Exit(1)
@@ -100,6 +101,7 @@ func New(opts *Options) *Manager {
 	if err = (&controllers.ProxyConfigReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Log:    mgr.GetLogger(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ShardingSphereProxyServerConfig")
 		os.Exit(1)
@@ -109,6 +111,8 @@ func New(opts *Options) *Manager {
 		if err = (&controllers.ComputeNodeReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
+			Log:    mgr.GetLogger(),
+			// Deployment: controllers.NewDeployment(mgr.GetClient()),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ComputeNode")
 			os.Exit(1)
