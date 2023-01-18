@@ -22,6 +22,7 @@ import (
 	"flag"
 	"os"
 
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/metrics"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -109,10 +110,10 @@ func New(opts *Options) *Manager {
 
 	if opts.ComputeNode {
 		if err = (&controllers.ComputeNodeReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-			Log:    mgr.GetLogger(),
-			// Deployment: controllers.NewDeployment(mgr.GetClient()),
+			Client:     mgr.GetClient(),
+			Scheme:     mgr.GetScheme(),
+			Log:        mgr.GetLogger(),
+			Deployment: deployment.NewDeployment(mgr.GetClient()),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ComputeNode")
 			os.Exit(1)

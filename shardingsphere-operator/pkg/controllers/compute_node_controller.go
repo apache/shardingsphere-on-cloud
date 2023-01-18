@@ -32,13 +32,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -56,58 +51,11 @@ type ComputeNodeReconciler struct {
 	// ConfigMap
 }
 
-/*
-type dpHandler struct {
-}
-
-func (h *dpHandler) Create(e event.CreateEvent, ifx workqueue.RateLimitingInterface) {
-	fmt.Printf("create: %s/%s\n", e.Object.GetNamespace(), e.Object.GetName())
-}
-
-func (h *dpHandler) Update(e event.UpdateEvent, ifx workqueue.RateLimitingInterface) {
-	fmt.Printf("update: %s/%s\n", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
-}
-func (h *dpHandler) Delete(e event.DeleteEvent, ifx workqueue.RateLimitingInterface) {
-	fmt.Printf("delete: %s/%s\n", e.Object.GetNamespace(), e.Object.GetName())
-}
-func (h *dpHandler) Generic(e event.GenericEvent, ifx workqueue.RateLimitingInterface) {
-	fmt.Printf("generic: %s/%s\n", e.Object.GetNamespace(), e.Object.GetName())
-}
-*/
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *ComputeNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	c, err := controller.New(computeNodeControllerName, mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return nil
-	}
-
-	// err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForObject{})
-
-	dpHandler := handler.Funcs{
-		CreateFunc: func(e event.CreateEvent, ifx workqueue.RateLimitingInterface) {
-			fmt.Printf("create: %s/%s\n", e.Object.GetNamespace(), e.Object.GetName())
-		},
-		UpdateFunc: func(e event.UpdateEvent, ifx workqueue.RateLimitingInterface) {
-			fmt.Printf("update: %s/%s\n", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
-		},
-		DeleteFunc: func(e event.DeleteEvent, ifx workqueue.RateLimitingInterface) {
-			fmt.Printf("delete: %s/%s\n", e.Object.GetNamespace(), e.Object.GetName())
-		},
-		GenericFunc: func(e event.GenericEvent, ifx workqueue.RateLimitingInterface) {
-			fmt.Printf("generic: %s/%s\n", e.Object.GetNamespace(), e.Object.GetName())
-		},
-	}
-
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &dpHandler)
-	if err == nil {
-		fmt.Printf("%s\n", err)
-	}
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ComputeNode{}).
 		Owns(&appsv1.Deployment{}).
-		Owns(&v1.Pod{}).
 		Owns(&v1.Service{}).
 		Owns(&v1.ConfigMap{}).
 		Complete(r)
@@ -116,10 +64,8 @@ func (r *ComputeNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := r.Log.WithValues(computeNodeControllerName, req.NamespacedName)
 
-	deploy := &appsv1.Deployment{}
-
 	cn := &v1alpha1.ComputeNode{}
-	if err := r.Get(ctx, req.NamespacedName, deploy); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, cn); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Error(err, "computenode not found")
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
@@ -128,10 +74,6 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{Requeue: true}, err
 		}
 	}
-
-	fmt.Printf("namespace/name: %s/%s\n", deploy.Namespace, deploy.Name)
-
-	return ctrl.Result{}, nil
 
 	errors := []error{}
 	if err := r.reconcileDeployment(ctx, cn); err != nil {
@@ -155,21 +97,24 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{Requeue: true}, errors[0]
 	}
 
+	fmt.Printf("time: %s, %s, %s\n", time.Now().Local().String(), req.Namespace, req.Name)
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 }
 
 func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	deploy, found, err := r.getDeploymentByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
-	if err != nil {
-		return err
-	}
-	if !found {
-		if err := r.createDeployment(ctx, cn); err != nil {
+	if found {
+		if err := r.updateDeployment(ctx, cn, deploy); err != nil {
 			return err
 		}
-	}
-	if err := r.updateDeployment(ctx, cn, deploy); err != nil {
-		return err
+	} else {
+		if err != nil {
+			return err
+		} else {
+			if err := r.createDeployment(ctx, cn); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -193,13 +138,16 @@ func (r *ComputeNodeReconciler) updateDeployment(ctx context.Context, cn *v1alph
 
 func (r *ComputeNodeReconciler) getDeploymentByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*appsv1.Deployment, bool, error) {
 	dp, err := r.Deployment.GetByNamespacedName(ctx, namespacedName)
-	if dp != nil && err != nil {
-		return nil, true, nil
+	// found
+	if dp != nil {
+		return dp, true, nil
 	}
+	// error
 	if err != nil {
 		return nil, false, err
 	} else {
-		return dp, false, nil
+		// not found
+		return nil, false, nil
 	}
 }
 
