@@ -76,5 +76,21 @@ func ComputeNodeUpdateService(cn *v1alpha1.ComputeNode, cur *v1.Service) *v1.Ser
 	exp.Spec = ComputeNodeNewService(cn).Spec
 	exp.Spec.ClusterIP = cur.Spec.ClusterIP
 	exp.Spec.ClusterIPs = cur.Spec.ClusterIPs
+	if cn.Spec.ServiceType == corev1.ServiceTypeNodePort {
+		for pb := range cn.Spec.PortBindings {
+			for p := range cur.Spec.Ports {
+				if cn.Spec.PortBindings[pb].Name == cur.Spec.Ports[p].Name {
+					if cur.Spec.Ports[p].NodePort != 0 {
+						for pt := range exp.Spec.Ports {
+							if exp.Spec.Ports[pt].Name == cur.Spec.Ports[p].Name {
+								exp.Spec.Ports[pt].NodePort = cur.Spec.Ports[p].NodePort
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	return exp
 }
