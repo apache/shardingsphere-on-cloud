@@ -19,6 +19,7 @@ package computenode
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -54,8 +55,73 @@ func absoluteMySQLDriverMountName(p, v string) string {
 	return fmt.Sprintf("%s/%s", p, relativeMySQLDriverMountName(v))
 }
 
+type ShardingSphereProxyContainerBuilder interface {
+	ContainerBuilder
+	SetVersion(version string) ShardingSphereProxyContainerBuilder
+}
+
+type shardingSphereProxyContainerBuilder struct {
+	container *corev1.Container
+	ContainerBuilder
+}
+
+func (c *shardingSphereProxyContainerBuilder) SetVersion(version string) ShardingSphereProxyContainerBuilder {
+	if len(strings.Split(c.container.Image, ":")) > 0 {
+		repo := strings.TrimSuffix(c.container.Image, "5.3.0")
+		c.container.Image = fmt.Sprintf("%s%s", repo, version)
+	}
+	return c
+}
+
+func NewShardingSphereProxyContainerBuilder() ShardingSphereProxyContainerBuilder {
+	pb := NewContainerBuilder().
+		SetName(defaultContainerName).
+		SetImage(defaultImage)
+
+	return &shardingSphereProxyContainerBuilder{
+		ContainerBuilder: NewContainerBuilder(),
+		container:        pb.Build(),
+	}
+}
+
+func (b *shardingSphereProxyContainerBuilder) Build() *corev1.Container {
+	return b.container
+}
+
+type BootstrapContainerBuilder interface {
+	ContainerBuilder
+}
+
+type bootstrapContainerBuilder struct {
+	container *corev1.Container
+	ContainerBuilder
+}
+
+func NewBootstrapContainerBuilder() BootstrapContainerBuilder {
+	pb := NewContainerBuilder().
+		SetName(defaultContainerName).
+		SetImage(defaultImage)
+
+	return &bootstrapContainerBuilder{
+		container:        pb.Build(),
+		ContainerBuilder: NewContainerBuilder(),
+	}
+}
+
+func (b *bootstrapContainerBuilder) Build() *corev1.Container {
+	return b.container
+}
+
 type ContainerBuilder interface {
 	SetName(name string) ContainerBuilder
+	SetImage(image string) ContainerBuilder
+	SetPorts(ports []corev1.ContainerPort) ContainerBuilder
+	SetResources(res corev1.ResourceRequirements) ContainerBuilder
+	SetLivenessProbe(probe *corev1.Probe) ContainerBuilder
+	SetReadinessProbe(probe *corev1.Probe) ContainerBuilder
+	SetStartupProbe(probe *corev1.Probe) ContainerBuilder
+	SetEnv(envs []corev1.EnvVar) ContainerBuilder
+	SetVolumeMount(mount *corev1.VolumeMount) ContainerBuilder
 	Build() *corev1.Container
 }
 
@@ -80,7 +146,9 @@ func (c *containerBuilder) SetImage(image string) ContainerBuilder {
 }
 
 func (c *containerBuilder) SetPorts(ports []corev1.ContainerPort) ContainerBuilder {
-	c.container.Ports = ports
+	if ports != nil {
+		c.container.Ports = ports
+	}
 	return c
 }
 
@@ -90,22 +158,46 @@ func (c *containerBuilder) SetResources(res corev1.ResourceRequirements) Contain
 }
 
 func (c *containerBuilder) SetLivenessProbe(probe *corev1.Probe) ContainerBuilder {
-	c.container.LivenessProbe = probe
+	if probe != nil {
+		if c.container.LivenessProbe == nil {
+			c.container.LivenessProbe = &corev1.Probe{}
+		}
+		c.container.LivenessProbe = probe
+	}
 	return c
 }
 
 func (c *containerBuilder) SetReadinessProbe(probe *corev1.Probe) ContainerBuilder {
-	c.container.ReadinessProbe = probe
+	if probe != nil {
+		if c.container.ReadinessProbe == nil {
+			c.container.ReadinessProbe = &corev1.Probe{}
+		}
+		c.container.ReadinessProbe = probe
+	}
 	return c
 }
 
 func (c *containerBuilder) SetStartupProbe(probe *corev1.Probe) ContainerBuilder {
-	c.container.StartupProbe = probe
+	if probe != nil {
+		if c.container.StartupProbe == nil {
+			c.container.StartupProbe = &corev1.Probe{}
+		}
+		c.container.StartupProbe = probe
+	}
 	return c
 }
 
 func (c *containerBuilder) SetEnv(envs []corev1.EnvVar) ContainerBuilder {
-	c.container.Env = envs
+	if envs != nil {
+		c.container.Env = envs
+	}
+	return c
+}
+
+func (c *containerBuilder) SetCommand(cmds []string) ContainerBuilder {
+	if cmds != nil {
+		c.container.Command = cmds
+	}
 	return c
 }
 
@@ -132,13 +224,26 @@ func (c *containerBuilder) Build() *corev1.Container {
 }
 
 func DefaultContainer() *corev1.Container {
-	con := &corev1.Container{}
+	con := &corev1.Container{
+		Name:  "default",
+		Image: "busybox:1.35.0",
+		Ports: []corev1.ContainerPort{},
+		Env:   []corev1.EnvVar{},
+		// LivenessProbe:  &corev1.Probe{},
+		// ReadinessProbe: &corev1.Probe{},
+		// StartupProbe:   &corev1.Probe{},
+		// VolumeMounts: []corev1.VolumeMount{},
+	}
 	return con
 }
 
 type DeploymentBuilder interface {
 	SetName(name string) DeploymentBuilder
 	SetNamespace(namespace string) DeploymentBuilder
+	SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder
+	SetShardingSphereProxyContainer(*corev1.Container) DeploymentBuilder
+	SetInitContainer(*corev1.Container) DeploymentBuilder
+	SetVolume(*corev1.Volume) DeploymentBuilder
 	Build() *appsv1.Deployment
 }
 
@@ -207,12 +312,123 @@ func (d *deploymentBuilder) SetInitContainer(init *corev1.Container) DeploymentB
 	return d
 }
 
+type SharedVolumeAndMountBuilder interface {
+	SetName(name string) SharedVolumeAndMountBuilder
+	SetMountPath(idx int, path string) SharedVolumeAndMountBuilder
+	SetSubPath(idx int, subpath string) SharedVolumeAndMountBuilder
+	SetVolumeMountSize(size int) SharedVolumeAndMountBuilder
+	SetVolumeSourceEmptyDir() SharedVolumeAndMountBuilder
+	SetVolumeSourceConfigMap(name string) SharedVolumeAndMountBuilder
+	Build() (*corev1.Volume, []*corev1.VolumeMount)
+}
+type sharedVolumeAndMountBuilder struct {
+	volume       *corev1.Volume
+	volumeMounts []*corev1.VolumeMount
+}
+
+func NewSharedVolumeAndMountBuilder() SharedVolumeAndMountBuilder {
+	return &sharedVolumeAndMountBuilder{
+		volume:       &corev1.Volume{},
+		volumeMounts: []*corev1.VolumeMount{},
+	}
+}
+
+func (b *sharedVolumeAndMountBuilder) SetName(name string) SharedVolumeAndMountBuilder {
+	b.volume.Name = name
+	for vm := range b.volumeMounts {
+		b.volumeMounts[vm].Name = name
+	}
+	return b
+}
+
+func (b *sharedVolumeAndMountBuilder) SetVolumeMountSize(size int) SharedVolumeAndMountBuilder {
+	b.volumeMounts = make([]*corev1.VolumeMount, size)
+	return b
+}
+
+func (b *sharedVolumeAndMountBuilder) SetMountPath(idx int, path string) SharedVolumeAndMountBuilder {
+	if b.volumeMounts[idx] == nil {
+		b.volumeMounts[idx] = &corev1.VolumeMount{}
+	}
+	b.volumeMounts[idx].MountPath = path
+	return b
+}
+
+func (b *sharedVolumeAndMountBuilder) SetSubPath(idx int, subpath string) SharedVolumeAndMountBuilder {
+	if b.volumeMounts[idx] == nil {
+		b.volumeMounts[idx] = &corev1.VolumeMount{}
+	}
+	b.volumeMounts[idx].SubPath = subpath
+	return b
+}
+
+func (b *sharedVolumeAndMountBuilder) SetVolumeSourceEmptyDir() SharedVolumeAndMountBuilder {
+	b.volume.EmptyDir = &corev1.EmptyDirVolumeSource{}
+	return b
+}
+
+func (b *sharedVolumeAndMountBuilder) SetVolumeSourceConfigMap(name string) SharedVolumeAndMountBuilder {
+	b.volume.ConfigMap.LocalObjectReference.Name = name
+	return b
+}
+
+func (b *sharedVolumeAndMountBuilder) Build() (*corev1.Volume, []*corev1.VolumeMount) {
+	return b.volume, b.volumeMounts
+}
+
+type VolumeAndMountBuilder interface {
+	SetName(string) VolumeAndMountBuilder
+	Build() (*corev1.Volume, *corev1.VolumeMount)
+}
+
+func NewVolumeAndMountBuilder() VolumeAndMountBuilder {
+	return &volumeAndMountBuilder{
+		volume:      &corev1.Volume{},
+		volumemount: &corev1.VolumeMount{},
+	}
+}
+
+type volumeAndMountBuilder struct {
+	volume      *corev1.Volume
+	volumemount *corev1.VolumeMount
+}
+
+func (b *volumeAndMountBuilder) SetName(name string) VolumeAndMountBuilder {
+	b.volume.Name = name
+	b.volumemount.Name = name
+	return b
+}
+
+func (b *volumeAndMountBuilder) SetMountPath(path string) VolumeAndMountBuilder {
+	b.volumemount.MountPath = path
+	return b
+}
+
+func (b *volumeAndMountBuilder) SetSubPath(subpath string) VolumeAndMountBuilder {
+	b.volumemount.SubPath = subpath
+	return b
+}
+
+func (b *volumeAndMountBuilder) SetVolumeSourceEmptyDir() VolumeAndMountBuilder {
+	b.volume.EmptyDir = &corev1.EmptyDirVolumeSource{}
+	return b
+}
+
+func (b *volumeAndMountBuilder) SetVolumeSourceConfigMap(name string) VolumeAndMountBuilder {
+	b.volume.ConfigMap.LocalObjectReference.Name = name
+	return b
+}
+
+func (b *volumeAndMountBuilder) Build() (*corev1.Volume, *corev1.VolumeMount) {
+	return b.volume, b.volumemount
+}
+
 func (d *deploymentBuilder) SetVolume(v *corev1.Volume) DeploymentBuilder {
 	var found bool
 	if d.deployment.Spec.Template.Spec.Volumes != nil {
-		for idx, v := range d.deployment.Spec.Template.Spec.Volumes {
-			if v.Name == v.Name {
-				d.deployment.Spec.Template.Spec.Volumes[idx] = v
+		for idx := range d.deployment.Spec.Template.Spec.Volumes {
+			if d.deployment.Spec.Template.Spec.Volumes[idx].Name == v.Name {
+				d.deployment.Spec.Template.Spec.Volumes[idx] = *v
 				found = true
 				break
 			}

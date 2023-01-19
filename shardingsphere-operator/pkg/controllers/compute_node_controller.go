@@ -121,8 +121,62 @@ func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1a
 }
 
 func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	exp := reconcile.NewDeployment(cn)
-	if err := r.Create(ctx, exp); err != nil {
+	/*
+		exp := reconcile.NewDeployment(cn)
+		if err := r.Create(ctx, exp); err != nil {
+			return err
+		}
+		return nil
+	*/
+
+	builder := reconcile.NewDeploymentBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
+	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector)
+
+	ports := []v1.ContainerPort{}
+	for _, pb := range cn.Spec.PortBindings {
+		ports = append(ports, v1.ContainerPort{
+			Name:          pb.Name,
+			HostIP:        pb.HostIP,
+			ContainerPort: pb.ContainerPort,
+			Protocol:      pb.Protocol,
+		})
+	}
+
+	scb := reconcile.NewShardingSphereProxyContainerBuilder().
+		SetVersion(cn.Spec.ServerVersion).
+		SetPorts(ports).
+		SetResources(cn.Spec.Resources)
+	if cn.Spec.Probes != nil && cn.Spec.Probes.LivenessProbe != nil {
+		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
+	}
+	if cn.Spec.Probes != nil && cn.Spec.Probes.ReadinessProbe != nil {
+		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
+	}
+	if cn.Spec.Probes != nil && cn.Spec.Probes.StartupProbe != nil {
+		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
+	}
+
+	if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypeMySQL {
+		vb := reconcile.NewSharedVolumeAndMountBuilder().
+			SetName("mysql-connector-java").
+			SetVolumeSourceEmptyDir().
+			SetVolumeMountSize(2).
+			SetMountPath(0, "/opt/shardingsphere-proxy/ext-lib").
+			SetMountPath(1, "/opt/shardingsphere-proxy/ext-lib/mysql-connector-java-5.1.47.jar").
+			SetSubPath(1, "mysql-connector-java-5.1.47.jar")
+		v, vms := vb.Build()
+
+		scb.SetVolumeMount(vms[1])
+		sc := scb.Build()
+
+		cb := reconcile.NewBootstrapContainerBuilder().SetVolumeMount(vms[0])
+		con := cb.Build()
+		builder.SetInitContainer(con)
+		builder.SetShardingSphereProxyContainer(sc).SetVolume(v)
+	}
+
+	deploy := builder.Build()
+	if err := r.Create(ctx, deploy); err != nil {
 		return err
 	}
 	return nil
