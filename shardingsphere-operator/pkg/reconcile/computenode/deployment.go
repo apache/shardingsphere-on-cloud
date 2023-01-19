@@ -455,10 +455,9 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 	deploy.Spec.Selector = cn.Spec.Selector
 	deploy.Spec.Replicas = &cn.Spec.Replicas
 	deploy.Spec.Template.Labels = cn.Labels
-	deploy.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", defaultImageName, cn.Spec.ServerVersion)
-	if deploy.Spec.Template.Spec.Containers[0].Ports == nil {
-		deploy.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{}
-	}
+	deploy.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", defaultImage, cn.Spec.ServerVersion)
+
+	deploy.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{}
 	for _, pb := range cn.Spec.PortBindings {
 		deploy.Spec.Template.Spec.Containers[0].Ports = append(deploy.Spec.Template.Spec.Containers[0].Ports, corev1.ContainerPort{
 			Name:          pb.Name,
