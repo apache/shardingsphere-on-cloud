@@ -514,6 +514,7 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 				Value: cn.Spec.StorageNodeConnector.Version,
 			},
 		})
+
 		vb := NewSharedVolumeAndMountBuilder().
 			SetVolumeMountSize(2).
 			SetName(defaultMySQLDriverVolumeName).
@@ -521,10 +522,11 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 			SetMountPath(0, defaultExtlibPath).
 			SetMountPath(1, absoluteMySQLDriverMountName(defaultExtlibPath, cn.Spec.StorageNodeConnector.Version)).
 			SetSubPath(1, relativeMySQLDriverMountName(cn.Spec.StorageNodeConnector.Version))
-		v, vms := vb.Build()
 
+		v, vms := vb.Build()
+		builder.SetVolume(v)
 		scb.SetVolumeMount(vms[1])
-		sc := scb.Build()
+
 		cb := NewBootstrapContainerBuilder().SetVolumeMount(vms[0]).SetEnv([]corev1.EnvVar{
 			{
 				Name:  defaultMySQLDriverEnvName,
@@ -532,9 +534,10 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 			},
 		})
 		con := cb.Build()
-
 		builder.SetInitContainer(con)
-		builder.SetShardingSphereProxyContainer(sc).SetVolume(v)
+
+		sc := scb.Build()
+		builder.SetShardingSphereProxyContainer(sc)
 	}
 	if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypePostgreSQL {
 		sc := scb.Build()
