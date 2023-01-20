@@ -19,7 +19,6 @@ package computenode
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -61,31 +60,23 @@ type ShardingSphereProxyContainerBuilder interface {
 }
 
 type shardingSphereProxyContainerBuilder struct {
-	container *corev1.Container
 	ContainerBuilder
 }
 
 func (c *shardingSphereProxyContainerBuilder) SetVersion(version string) ShardingSphereProxyContainerBuilder {
-	if len(strings.Split(c.container.Image, ":")) > 0 {
-		repo := strings.TrimSuffix(c.container.Image, "5.3.0")
-		c.container.Image = fmt.Sprintf("%s%s", repo, version)
-	}
+	c.SetImage(fmt.Sprintf("%s:%s", defaultImageName, version))
 	return c
 }
 
 func NewShardingSphereProxyContainerBuilder() ShardingSphereProxyContainerBuilder {
-	pb := NewContainerBuilder().
-		SetName(defaultContainerName).
-		SetImage(defaultImage)
-
 	return &shardingSphereProxyContainerBuilder{
-		ContainerBuilder: NewContainerBuilder(),
-		container:        pb.Build(),
+		ContainerBuilder: NewContainerBuilder().
+			SetName(defaultContainerName),
 	}
 }
 
 func (b *shardingSphereProxyContainerBuilder) Build() *corev1.Container {
-	return b.container
+	return b.ContainerBuilder.Build()
 }
 
 type BootstrapContainerBuilder interface {
@@ -93,23 +84,20 @@ type BootstrapContainerBuilder interface {
 }
 
 type bootstrapContainerBuilder struct {
-	container *corev1.Container
 	ContainerBuilder
 }
 
 func NewBootstrapContainerBuilder() BootstrapContainerBuilder {
-	pb := NewContainerBuilder().
-		SetName(defaultContainerName).
-		SetImage(defaultImage)
-
 	return &bootstrapContainerBuilder{
-		container:        pb.Build(),
-		ContainerBuilder: NewContainerBuilder(),
+		ContainerBuilder: NewContainerBuilder().
+			SetName("boostrap").
+			SetImage("busybox:1.35.0").
+			SetCommand([]string{"/bin/sh", "-c", download_script}),
 	}
 }
 
 func (b *bootstrapContainerBuilder) Build() *corev1.Container {
-	return b.container
+	return b.ContainerBuilder.Build()
 }
 
 type ContainerBuilder interface {
@@ -121,6 +109,7 @@ type ContainerBuilder interface {
 	SetReadinessProbe(probe *corev1.Probe) ContainerBuilder
 	SetStartupProbe(probe *corev1.Probe) ContainerBuilder
 	SetEnv(envs []corev1.EnvVar) ContainerBuilder
+	SetCommand(cmds []string) ContainerBuilder
 	SetVolumeMount(mount *corev1.VolumeMount) ContainerBuilder
 	Build() *corev1.Container
 }
@@ -146,6 +135,9 @@ func (c *containerBuilder) SetImage(image string) ContainerBuilder {
 }
 
 func (c *containerBuilder) SetPorts(ports []corev1.ContainerPort) ContainerBuilder {
+	if ports == nil {
+		c.container.Ports = []corev1.ContainerPort{}
+	}
 	if ports != nil {
 		c.container.Ports = ports
 	}
@@ -188,6 +180,9 @@ func (c *containerBuilder) SetStartupProbe(probe *corev1.Probe) ContainerBuilder
 }
 
 func (c *containerBuilder) SetEnv(envs []corev1.EnvVar) ContainerBuilder {
+	if envs == nil {
+		c.container.Env = []corev1.EnvVar{}
+	}
 	if envs != nil {
 		c.container.Env = envs
 	}
@@ -203,6 +198,9 @@ func (c *containerBuilder) SetCommand(cmds []string) ContainerBuilder {
 
 func (c *containerBuilder) SetVolumeMount(mount *corev1.VolumeMount) ContainerBuilder {
 	var found bool
+	if c.container.VolumeMounts == nil {
+		c.container.VolumeMounts = []corev1.VolumeMount{}
+	}
 	if c.container.VolumeMounts != nil {
 		for idx, v := range c.container.VolumeMounts {
 			if v.Name == mount.Name {
@@ -227,12 +225,6 @@ func DefaultContainer() *corev1.Container {
 	con := &corev1.Container{
 		Name:  "default",
 		Image: "busybox:1.35.0",
-		Ports: []corev1.ContainerPort{},
-		Env:   []corev1.EnvVar{},
-		// LivenessProbe:  &corev1.Probe{},
-		// ReadinessProbe: &corev1.Probe{},
-		// StartupProbe:   &corev1.Probe{},
-		// VolumeMounts: []corev1.VolumeMount{},
 	}
 	return con
 }
@@ -241,9 +233,11 @@ type DeploymentBuilder interface {
 	SetName(name string) DeploymentBuilder
 	SetNamespace(namespace string) DeploymentBuilder
 	SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder
-	SetShardingSphereProxyContainer(*corev1.Container) DeploymentBuilder
-	SetInitContainer(*corev1.Container) DeploymentBuilder
-	SetVolume(*corev1.Volume) DeploymentBuilder
+	SetAnnotations(annos map[string]string) DeploymentBuilder
+	SetShardingSphereProxyContainer(con *corev1.Container) DeploymentBuilder
+	SetInitContainer(con *corev1.Container) DeploymentBuilder
+	SetVolume(volume *corev1.Volume) DeploymentBuilder
+	SetReplicas(r *int32) DeploymentBuilder
 	Build() *appsv1.Deployment
 }
 
@@ -274,6 +268,16 @@ func (d *deploymentBuilder) SetLabelsAndSelectors(labels map[string]string, sele
 	return d
 }
 
+func (d *deploymentBuilder) SetAnnotations(annos map[string]string) DeploymentBuilder {
+	d.deployment.Annotations = annos
+	return d
+}
+
+func (d *deploymentBuilder) SetReplicas(r *int32) DeploymentBuilder {
+	d.deployment.Spec.Replicas = r
+	return d
+}
+
 func (d *deploymentBuilder) SetShardingSphereProxyContainer(proxy *corev1.Container) DeploymentBuilder {
 	var found bool
 	if d.deployment.Spec.Template.Spec.Containers != nil {
@@ -295,6 +299,9 @@ func (d *deploymentBuilder) SetShardingSphereProxyContainer(proxy *corev1.Contai
 
 func (d *deploymentBuilder) SetInitContainer(init *corev1.Container) DeploymentBuilder {
 	var found bool
+	if d.deployment.Spec.Template.Spec.InitContainers == nil {
+		d.deployment.Spec.Template.Spec.InitContainers = []corev1.Container{}
+	}
 	if d.deployment.Spec.Template.Spec.InitContainers != nil {
 		for idx, c := range d.deployment.Spec.Template.Spec.InitContainers {
 			if c.Name == defaultContainerName {
@@ -342,7 +349,19 @@ func (b *sharedVolumeAndMountBuilder) SetName(name string) SharedVolumeAndMountB
 }
 
 func (b *sharedVolumeAndMountBuilder) SetVolumeMountSize(size int) SharedVolumeAndMountBuilder {
-	b.volumeMounts = make([]*corev1.VolumeMount, size)
+	if len(b.volumeMounts) != size {
+		vms := make([]*corev1.VolumeMount, size)
+		for vm := range b.volumeMounts {
+			vms = append(vms, b.volumeMounts[vm].DeepCopy())
+		}
+		b.volumeMounts = vms
+	}
+
+	for vm := range b.volumeMounts {
+		if b.volumeMounts[vm] == nil {
+			b.volumeMounts[vm] = &corev1.VolumeMount{}
+		}
+	}
 	return b
 }
 
@@ -363,11 +382,16 @@ func (b *sharedVolumeAndMountBuilder) SetSubPath(idx int, subpath string) Shared
 }
 
 func (b *sharedVolumeAndMountBuilder) SetVolumeSourceEmptyDir() SharedVolumeAndMountBuilder {
-	b.volume.EmptyDir = &corev1.EmptyDirVolumeSource{}
+	if b.volume.EmptyDir == nil {
+		b.volume.EmptyDir = &corev1.EmptyDirVolumeSource{}
+	}
 	return b
 }
 
 func (b *sharedVolumeAndMountBuilder) SetVolumeSourceConfigMap(name string) SharedVolumeAndMountBuilder {
+	if b.volume.ConfigMap == nil {
+		b.volume.ConfigMap = &corev1.ConfigMapVolumeSource{}
+	}
 	b.volume.ConfigMap.LocalObjectReference.Name = name
 	return b
 }
@@ -446,20 +470,12 @@ func (d *deploymentBuilder) Build() *appsv1.Deployment {
 }
 
 func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
-	deploy := DefaultDeployment(cn.GetObjectMeta(), cn.GroupVersionKind())
+	builder := NewDeploymentBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
+	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetReplicas(&cn.Spec.Replicas)
 
-	// basic information
-	deploy.Name = cn.Name
-	deploy.Namespace = cn.Namespace
-	deploy.Labels = cn.Labels
-	deploy.Spec.Selector = cn.Spec.Selector
-	deploy.Spec.Replicas = &cn.Spec.Replicas
-	deploy.Spec.Template.Labels = cn.Labels
-	deploy.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", defaultImage, cn.Spec.ServerVersion)
-
-	deploy.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{}
+	ports := []corev1.ContainerPort{}
 	for _, pb := range cn.Spec.PortBindings {
-		deploy.Spec.Template.Spec.Containers[0].Ports = append(deploy.Spec.Template.Spec.Containers[0].Ports, corev1.ContainerPort{
+		ports = append(ports, corev1.ContainerPort{
 			Name:          pb.Name,
 			HostIP:        pb.HostIP,
 			ContainerPort: pb.ContainerPort,
@@ -467,75 +483,65 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 		})
 	}
 
-	// additional information
-	deploy.Spec.Template.Spec.Containers[0].Resources = cn.Spec.Resources
-	for _, v := range deploy.Spec.Template.Spec.Volumes {
-		if v.Name == defaultConfigVolumeName {
-			v.ConfigMap.LocalObjectReference.Name = cn.Name
-		}
+	scb := NewShardingSphereProxyContainerBuilder().
+		SetVersion(cn.Spec.ServerVersion).
+		SetPorts(ports).
+		SetResources(cn.Spec.Resources)
+	if cn.Spec.Probes != nil && cn.Spec.Probes.LivenessProbe != nil {
+		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
+	}
+	if cn.Spec.Probes != nil && cn.Spec.Probes.ReadinessProbe != nil {
+		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
+	}
+	if cn.Spec.Probes != nil && cn.Spec.Probes.StartupProbe != nil {
+		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
 	}
 
-	if cn.Spec.Probes != nil {
-		if cn.Spec.Probes.StartupProbe != nil {
-			deploy.Spec.Template.Spec.Containers[0].StartupProbe = cn.Spec.Probes.StartupProbe.DeepCopy()
-		}
-		if cn.Spec.Probes.LivenessProbe != nil {
-			deploy.Spec.Template.Spec.Containers[0].LivenessProbe = cn.Spec.Probes.LivenessProbe.DeepCopy()
-		}
-		if cn.Spec.Probes.ReadinessProbe != nil {
-			deploy.Spec.Template.Spec.Containers[0].ReadinessProbe = cn.Spec.Probes.ReadinessProbe.DeepCopy()
-		}
-	}
-	if len(cn.Spec.ImagePullSecrets) > 0 {
-		deploy.Spec.Template.Spec.ImagePullSecrets = cn.Spec.ImagePullSecrets
-	}
-	if cn.Spec.StorageNodeConnector != nil {
-		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypeMySQL {
-			// add or update initContainer
-			if len(deploy.Spec.Template.Spec.InitContainers) > 0 {
-				for idx, v := range deploy.Spec.Template.Spec.InitContainers[0].Env {
-					if v.Name == defaultMySQLDriverEnvName {
-						deploy.Spec.Template.Spec.InitContainers[0].Env[idx].Value = cn.Spec.StorageNodeConnector.Version
-					}
-				}
-			} else {
-				deploy.Spec.Template.Spec.InitContainers = []corev1.Container{
-					{
-						Name:    "boostrap",
-						Image:   "busybox:1.35.0",
-						Command: []string{"/bin/sh", "-c", download_script},
-						Env: []corev1.EnvVar{
-							{
-								Name:  defaultMySQLDriverEnvName,
-								Value: cn.Spec.StorageNodeConnector.Version,
-							},
-						},
-						VolumeMounts: []corev1.VolumeMount{
-							{
-								Name:      defaultMySQLDriverVolumeName,
-								MountPath: defaultExtlibPath,
-							},
-						},
-					},
-				}
+	vcb := NewSharedVolumeAndMountBuilder().
+		SetVolumeMountSize(1).
+		SetName(defaultConfigVolumeName).
+		SetVolumeSourceConfigMap(cn.Name).
+		SetMountPath(0, defaultConfigVolumeMountPath)
+	vc, vmc := vcb.Build()
 
-				deploy.Spec.Template.Spec.Containers[0].VolumeMounts = append(deploy.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
-					Name:      defaultMySQLDriverVolumeName,
-					SubPath:   relativeMySQLDriverMountName(cn.Spec.StorageNodeConnector.Version),
-					MountPath: absoluteMySQLDriverMountName(defaultExtlibPath, cn.Spec.StorageNodeConnector.Version),
-				})
+	builder.SetVolume(vc)
+	scb.SetVolumeMount(vmc[0])
 
-				deploy.Spec.Template.Spec.Volumes = append(deploy.Spec.Template.Spec.Volumes, corev1.Volume{
-					Name: defaultMySQLDriverVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				})
-			}
-		}
+	if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypeMySQL {
+		scb.SetEnv([]corev1.EnvVar{
+			{
+				Name:  defaultMySQLDriverEnvName,
+				Value: cn.Spec.StorageNodeConnector.Version,
+			},
+		})
+		vb := NewSharedVolumeAndMountBuilder().
+			SetVolumeMountSize(2).
+			SetName(defaultMySQLDriverVolumeName).
+			SetVolumeSourceEmptyDir().
+			SetMountPath(0, defaultExtlibPath).
+			SetMountPath(1, absoluteMySQLDriverMountName(defaultExtlibPath, cn.Spec.StorageNodeConnector.Version)).
+			SetSubPath(1, relativeMySQLDriverMountName(cn.Spec.StorageNodeConnector.Version))
+		v, vms := vb.Build()
+
+		scb.SetVolumeMount(vms[1])
+		sc := scb.Build()
+		cb := NewBootstrapContainerBuilder().SetVolumeMount(vms[0]).SetEnv([]corev1.EnvVar{
+			{
+				Name:  defaultMySQLDriverEnvName,
+				Value: cn.Spec.StorageNodeConnector.Version,
+			},
+		})
+		con := cb.Build()
+
+		builder.SetInitContainer(con)
+		builder.SetShardingSphereProxyContainer(sc).SetVolume(v)
+	}
+	if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypePostgreSQL {
+		sc := scb.Build()
+		builder.SetShardingSphereProxyContainer(sc)
 	}
 
-	return deploy
+	return builder.Build()
 }
 
 func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Deployment {
@@ -572,12 +578,6 @@ func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Depl
 							Name:            defaultContainerName,
 							Image:           defaultImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Ports: []corev1.ContainerPort{
-								{
-									Name:          "proxy",
-									ContainerPort: 3307,
-								},
-							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      defaultConfigVolumeName,
