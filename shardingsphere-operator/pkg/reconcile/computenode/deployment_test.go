@@ -32,6 +32,7 @@ import (
 func Test_NewDeployment(t *testing.T) {
 	defaultMaxUnavailable := intstr.FromInt(0)
 	defaultMaxSurge := intstr.FromInt(3)
+	var defaultReplicas int32 = 2
 
 	cases := []struct {
 		id      int
@@ -116,6 +117,7 @@ func Test_NewDeployment(t *testing.T) {
 					},
 				},
 				Spec: v1.DeploymentSpec{
+					Replicas: &defaultReplicas,
 					Strategy: v1.DeploymentStrategy{
 						Type: v1.RollingUpdateDeploymentStrategyType,
 						RollingUpdate: &v1.RollingUpdateDeployment{
@@ -231,7 +233,7 @@ func assertObjectMeta(t *testing.T, exp, act metav1.ObjectMeta) bool {
 func assertDeploymentSpec(t *testing.T, exp, act v1.DeploymentSpec) bool {
 	return assertRollingUpdateDeployment(t, *exp.Strategy.RollingUpdate, *act.Strategy.RollingUpdate) &&
 		assert.Equal(t, exp.Selector, act.Selector, "selectors should be equal") &&
-		assert.ElementsMatch(t, exp.Replicas, act.Replicas, "replicas should be equal") &&
+		assert.Equal(t, exp.Replicas, act.Replicas, "replicas should be equal") &&
 		assertTemplateSpec(t, exp.Template, act.Template)
 }
 
