@@ -55,6 +55,7 @@ func (r *ComputeNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ComputeNode{}).
 		Owns(&appsv1.Deployment{}).
+		Owns(&v1.Pod{}).
 		Owns(&v1.Service{}).
 		Owns(&v1.ConfigMap{}).
 		Complete(r)
@@ -166,6 +167,34 @@ func (r *ComputeNodeReconciler) reconcileService(ctx context.Context, cn *v1alph
 			return err
 		}
 	}
+
+	if cn.Spec.ServiceType == v1.ServiceTypeNodePort {
+		for _, p := range cur.Spec.Ports {
+			for idx := range cn.Spec.PortBindings {
+				if p.Name == cn.Spec.PortBindings[idx].Name {
+					if cn.Spec.PortBindings[idx].NodePort == 0 {
+						cn.Spec.PortBindings[idx].NodePort = p.NodePort
+						if err := r.Update(ctx, cn); err != nil {
+							return err
+						}
+					}
+					break
+				}
+			}
+		}
+	}
+	if cn.Spec.ServiceType == v1.ServiceTypeClusterIP {
+		for idx := range cn.Spec.PortBindings {
+			if cn.Spec.PortBindings[idx].NodePort != 0 {
+				cn.Spec.PortBindings[idx].NodePort = 0
+				if err := r.Update(ctx, cn); err != nil {
+					return err
+				}
+				break
+			}
+		}
+	}
+
 	// update
 	exp := reconcile.ComputeNodeUpdateService(cn, cur)
 	if err := r.Update(ctx, exp); err != nil {
