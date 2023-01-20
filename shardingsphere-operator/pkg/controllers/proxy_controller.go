@@ -23,6 +23,7 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	reconcile "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/proxy"
+	"github.com/go-logr/logr"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -41,12 +42,15 @@ const (
 	WaitingForReady = 10 * time.Second
 	//miniReadyCount Minimum number of replicas that can be served
 	miniReadyCount = 1
+
+	proxyControllerName = "proxy_controller"
 )
 
 // ProxyReconciler reconciles a ShardingSphereProxy object
 type ProxyReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Log    logr.Logger
 }
 
 //+kubebuilder:rbac:groups=shardingsphere.apache.org,resources=proxies,verbs=get;list;watch;create;update;patch;delete
@@ -62,14 +66,14 @@ type ProxyReconciler struct {
 // move the current state of the cluster closer to the desired state.
 
 func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logger.FromContext(ctx)
+	logger := r.Log.WithValues(computeNodeControllerName, req.NamespacedName)
 
 	rt, err := r.getRuntimeShardingSphereProxy(ctx, req.NamespacedName)
 	if apierrors.IsNotFound(err) {
-		log.Info("Resource in work queue no longer exists!")
+		logger.Info("Resource in work queue no longer exists!")
 		return ctrl.Result{}, nil
 	} else if err != nil {
-		log.Error(err, "Error getting CRD resource")
+		logger.Error(err, "Error getting CRD resource")
 		return ctrl.Result{}, err
 	}
 

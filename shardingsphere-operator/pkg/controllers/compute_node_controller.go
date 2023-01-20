@@ -22,7 +22,9 @@ import (
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	reconcile "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,14 +33,21 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logger "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-const defaultRequeueTime = 10 * time.Second
+const (
+	computeNodeControllerName = "compute-node-controller"
+	defaultRequeueTime        = 10 * time.Second
+)
 
 type ComputeNodeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Log    logr.Logger
+
+	Deployment deployment.Deployment
+	// Service
+	// ConfigMap
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -46,40 +55,40 @@ func (r *ComputeNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ComputeNode{}).
 		Owns(&appsv1.Deployment{}).
-		Owns(&v1.Pod{}).
 		Owns(&v1.Service{}).
 		Owns(&v1.ConfigMap{}).
 		Complete(r)
 }
 
 func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logger.FromContext(ctx)
+	logger := r.Log.WithValues(computeNodeControllerName, req.NamespacedName)
 
 	cn := &v1alpha1.ComputeNode{}
 	if err := r.Get(ctx, req.NamespacedName, cn); err != nil {
 		if apierrors.IsNotFound(err) {
+			logger.Error(err, "computenode not found")
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 		} else {
-			log.Error(err, "get computenode")
+			logger.Error(err, "get computenode")
 			return ctrl.Result{Requeue: true}, err
 		}
 	}
 
 	errors := []error{}
 	if err := r.reconcileDeployment(ctx, cn); err != nil {
-		log.Error(err, "Reconcile Deployment Error")
+		logger.Error(err, "reconcile deployment")
 		errors = append(errors, err)
 	}
 	if err := r.reconcileService(ctx, cn); err != nil {
-		log.Error(err, "Reconcile Service Error")
+		logger.Error(err, "reconcile service")
 		errors = append(errors, err)
 	}
 	if err := r.reconcileConfigMap(ctx, cn); err != nil {
-		log.Error(err, "Reconcile ConfigMap Error")
+		logger.Error(err, "reconcile configmap")
 		errors = append(errors, err)
 	}
-	if err := r.reconcileStatus(ctx, cn.Namespace, cn.Name, cn.Labels); err != nil {
-		log.Error(err, "Reconcile PodList Error")
+	if err := r.reconcileStatus(ctx, cn); err != nil {
+		logger.Error(err, "reconcile pod list")
 		errors = append(errors, err)
 	}
 
@@ -91,29 +100,53 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	cur := &appsv1.Deployment{}
-	if err := r.Get(ctx, types.NamespacedName{
-		Namespace: cn.Namespace,
-		Name:      cn.Name,
-	}, cur); err != nil {
-		if apierrors.IsNotFound(err) {
-			// create
-			exp := reconcile.ComputeNodeNewDeployment(cn)
-			if err := r.Create(ctx, exp); err != nil {
-				return err
-			}
-			return nil
-		} else {
+	deploy, found, err := r.getDeploymentByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
+	if found {
+		if err := r.updateDeployment(ctx, cn, deploy); err != nil {
 			return err
 		}
-	}
-	// update
-	exp := reconcile.ComputeNodeUpdateDeployment(cn, cur)
-	if err := r.Update(ctx, exp); err != nil {
-		return err
+	} else {
+		if err != nil {
+			return err
+		} else {
+			if err := r.createDeployment(ctx, cn); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
+}
+
+func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
+	deploy := reconcile.NewDeployment(cn)
+	if err := r.Create(ctx, deploy); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ComputeNodeReconciler) updateDeployment(ctx context.Context, cn *v1alpha1.ComputeNode, deploy *appsv1.Deployment) error {
+	exp := reconcile.UpdateDeployment(cn, deploy)
+	if err := r.Update(ctx, exp); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ComputeNodeReconciler) getDeploymentByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*appsv1.Deployment, bool, error) {
+	dp, err := r.Deployment.GetByNamespacedName(ctx, namespacedName)
+	// found
+	if dp != nil {
+		return dp, true, nil
+	}
+	// error
+	if err != nil {
+		return nil, false, err
+	} else {
+		// not found
+		return nil, false, nil
+	}
 }
 
 func (r *ComputeNodeReconciler) reconcileService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
@@ -170,29 +203,29 @@ func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1al
 	return nil
 }
 
-func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, namespace, name string, labels map[string]string) error {
+func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	podList := &v1.PodList{}
-	if err := r.List(ctx, podList, client.InNamespace(namespace), client.MatchingLabels(labels)); err != nil {
+	if err := r.List(ctx, podList, client.InNamespace(cn.Namespace), client.MatchingLabels(cn.Labels)); err != nil {
 		return err
 	}
 
 	service := &v1.Service{}
 	if err := r.Get(ctx, types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
+		Namespace: cn.Namespace,
+		Name:      cn.Name,
 	}, service); err != nil {
 		return err
 	}
 
 	rt, err := r.getRuntimeComputeNode(ctx, types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
+		Namespace: cn.Namespace,
+		Name:      cn.Name,
 	})
 	if err != nil {
 		return err
 	}
 
-	rt.Status = ReconcileComputeNodeStatus(*podList, *service, *rt)
+	rt.Status = reconcileComputeNodeStatus(*podList, *service, *rt)
 
 	// TODO: Compare Status with or without modification
 	if err := r.Status().Update(ctx, rt); err != nil {
@@ -305,7 +338,7 @@ func clusterCondition(podlist v1.PodList) v1alpha1.ComputeNodeCondition {
 	return cond
 }
 
-func ReconcileComputeNodeStatus(podlist v1.PodList, svc v1.Service, rt v1alpha1.ComputeNode) v1alpha1.ComputeNodeStatus {
+func reconcileComputeNodeStatus(podlist v1.PodList, svc v1.Service, rt v1alpha1.ComputeNode) v1alpha1.ComputeNodeStatus {
 	readyInstances := getReadyInstances(podlist)
 
 	rt.Status.ReadyInstances = readyInstances
