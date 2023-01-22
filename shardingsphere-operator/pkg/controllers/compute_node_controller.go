@@ -234,7 +234,7 @@ func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1al
 
 func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	podList := &v1.PodList{}
-	if err := r.List(ctx, podList, client.InNamespace(cn.Namespace), client.MatchingLabels(cn.Labels)); err != nil {
+	if err := r.List(ctx, podList, client.InNamespace(cn.Namespace), client.MatchingLabels(cn.Spec.Selector.MatchLabels)); err != nil {
 		return err
 	}
 
@@ -255,6 +255,8 @@ func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha
 	}
 
 	rt.Status = reconcileComputeNodeStatus(*podList, *service, *rt)
+
+	rt.Status.Replicas = int32(len(podList.Items))
 
 	// TODO: Compare Status with or without modification
 	if err := r.Status().Update(ctx, rt); err != nil {
