@@ -33,7 +33,7 @@ type ComputeNodeList struct {
 
 // +kubebuilder:printcolumn:JSONPath=".status.readyInstances",name=ReadyInstances,type=integer
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
-// +kubebuilder:printcolumn:JSONPath=".status.loadBalancer.clusterIP",name="ClusterIP",type=string
+// +kubebuilder:printcolumn:JSONPath=".status.loadBalancer.clusterIP",name="Cluster-IP",type=string
 // +kubebuilder:printcolumn:JSONPath=".spec.portBindings[*].servicePort",name="ServicePorts",type=integer
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:object:root=true
