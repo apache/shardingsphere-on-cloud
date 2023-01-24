@@ -22,7 +22,9 @@ import (
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 	reconcile "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -46,8 +48,8 @@ type ComputeNodeReconciler struct {
 	Log    logr.Logger
 
 	Deployment deployment.Deployment
-	// Service
-	// ConfigMap
+	Service    service.Service
+	ConfigMap  configmap.ConfigMap
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -151,23 +153,32 @@ func (r *ComputeNodeReconciler) getDeploymentByNamespacedName(ctx context.Contex
 }
 
 func (r *ComputeNodeReconciler) reconcileService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	cur := &v1.Service{}
-	if err := r.Get(ctx, types.NamespacedName{
-		Namespace: cn.Namespace,
-		Name:      cn.Name,
-	}, cur); err != nil {
-		if apierrors.IsNotFound(err) {
-			// create
-			exp := reconcile.ComputeNodeNewService(cn)
-			if err := r.Create(ctx, exp); err != nil {
-				return err
-			}
-			return nil
-		} else {
+	svc, found, err := r.getServiceByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
+	if found {
+		if err := r.updateService(ctx, cn, svc); err != nil {
 			return err
 		}
+	} else {
+		if err != nil {
+			return err
+		} else {
+			if err := r.createService(ctx, cn); err != nil {
+				return err
+			}
+		}
 	}
+	return nil
+}
 
+func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
+	svc := reconcile.NewService(cn)
+	if err := r.Create(ctx, svc); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, cur *v1.Service) error {
 	if cn.Spec.ServiceType == v1.ServiceTypeNodePort {
 		for _, p := range cur.Spec.Ports {
 			for idx := range cn.Spec.PortBindings {
@@ -195,40 +206,74 @@ func (r *ComputeNodeReconciler) reconcileService(ctx context.Context, cn *v1alph
 		}
 	}
 
-	// update
-	exp := reconcile.ComputeNodeUpdateService(cn, cur)
+	exp := reconcile.UpdateService(cn, cur)
 	if err := r.Update(ctx, exp); err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	cur := &v1.ConfigMap{}
-	if err := r.Get(ctx, types.NamespacedName{
-		Namespace: cn.Namespace,
-		Name:      cn.Name,
-	}, cur); err != nil {
-		if apierrors.IsNotFound(err) {
-			// create
-			exp := reconcile.ComputeNodeNewConfigMap(cn)
-			if err := r.Create(ctx, exp); err != nil {
-				return err
-			}
-			return nil
-		} else {
-			return err
-		}
+func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.Service, bool, error) {
+	svc, err := r.Service.GetByNamespacedName(ctx, namespacedName)
+	// found
+	if svc != nil {
+		return svc, true, nil
 	}
+	// error
+	if err != nil {
+		return nil, false, err
+	} else {
+		// not found
+		return nil, false, nil
+	}
+}
 
-	// update
-	//FIXME: need to rolling update Deployment if ConfigMap indeed updated
-	exp := reconcile.ComputeNodeUpdateConfigMap(cn, cur)
+func (r *ComputeNodeReconciler) createConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
+	cm := reconcile.NewConfigMap(cn)
+	if err := r.Create(ctx, cm); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ComputeNodeReconciler) updateConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode, cm *v1.ConfigMap) error {
+	exp := reconcile.UpdateConfigMap(cn, cm)
 	if err := r.Update(ctx, exp); err != nil {
 		return err
 	}
+	return nil
+}
 
+func (r *ComputeNodeReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.ConfigMap, bool, error) {
+	cm, err := r.ConfigMap.GetByNamespacedName(ctx, namespacedName)
+	// found
+	if cm != nil {
+		return cm, true, nil
+	}
+	// error
+	if err != nil {
+		return nil, false, err
+	} else {
+		// not found
+		return nil, false, nil
+	}
+}
+
+func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
+	cm, found, err := r.getConfigMapByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
+	if found {
+		if err := r.updateConfigMap(ctx, cn, cm); err != nil {
+			return err
+		}
+	} else {
+		if err != nil {
+			return err
+		} else {
+			if err := r.createConfigMap(ctx, cn); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
