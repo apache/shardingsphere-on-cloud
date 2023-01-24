@@ -36,19 +36,17 @@ const (
 	AnnoLogbackConfig     = "computenode.shardingsphere.org/logback"
 )
 
-func ComputeNodeNewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
+func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
+	builder := NewConfigMapBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
+	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabels(cn.Labels).SetAnnotations(cn.Annotations)
+
 	cluster := cn.Annotations[AnnoClusterRepoConfig]
 	logback := cn.Annotations[AnnoLogbackConfig]
 
-	cm := ComputeNodeDefaultConfigMap(cn.GetObjectMeta(), cn.GroupVersionKind())
-	cm.Name = cn.Name
-	cm.Namespace = cn.Namespace
-	cm.Labels = cn.Labels
-
 	if len(logback) > 0 {
-		cm.Data[ConfigForLogback] = logback
+		builder.SetLogback(logback)
 	} else {
-		cm.Data[ConfigForLogback] = string(defaultLogback)
+		builder.SetLogback(string(defaultLogback))
 	}
 
 	// NOTE: ShardingSphere Proxy 5.3.0 needs a server.yaml no matter if it is empty
@@ -60,16 +58,69 @@ func ComputeNodeNewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 			}
 		}
 		if y, err := yaml.Marshal(servconf); err == nil {
-			cm.Data[ConfigForServer] = string(y)
+			builder.SetServerConfig(string(y))
 		}
 	} else {
-		cm.Data[ConfigForServer] = "# Empty file is needed"
+		builder.SetServerConfig("# Empty file is needed")
 	}
 
-	return cm
+	return builder.Build()
 }
 
-func ComputeNodeDefaultConfigMap(meta metav1.Object, gvk schema.GroupVersionKind) *v1.ConfigMap {
+type ConfigMapBuilder interface {
+	SetName(name string) ConfigMapBuilder
+	SetNamespace(namespace string) ConfigMapBuilder
+	SetLabels(labels map[string]string) ConfigMapBuilder
+	SetAnnotations(annos map[string]string) ConfigMapBuilder
+	SetLogback(logback string) ConfigMapBuilder
+	SetServerConfig(serverConfig string) ConfigMapBuilder
+	Build() *v1.ConfigMap
+}
+
+type configmapBuilder struct {
+	configmap *v1.ConfigMap
+}
+
+func NewConfigMapBuilder(meta metav1.Object, gvk schema.GroupVersionKind) ConfigMapBuilder {
+	return &configmapBuilder{
+		configmap: DefaultConfigMap(meta, gvk),
+	}
+}
+
+func (c *configmapBuilder) SetName(name string) ConfigMapBuilder {
+	c.configmap.Name = name
+	return c
+}
+
+func (c *configmapBuilder) SetNamespace(namespace string) ConfigMapBuilder {
+	c.configmap.Namespace = namespace
+	return c
+}
+
+func (c *configmapBuilder) SetLabels(labels map[string]string) ConfigMapBuilder {
+	c.configmap.Labels = labels
+	return c
+}
+
+func (c *configmapBuilder) SetAnnotations(annos map[string]string) ConfigMapBuilder {
+	c.configmap.Annotations = annos
+	return c
+}
+func (c *configmapBuilder) SetLogback(logback string) ConfigMapBuilder {
+	c.configmap.Data[ConfigForLogback] = logback
+	return c
+}
+
+func (c *configmapBuilder) SetServerConfig(serviceConfig string) ConfigMapBuilder {
+	c.configmap.Data[ConfigForServer] = serviceConfig
+	return c
+}
+
+func (c *configmapBuilder) Build() *v1.ConfigMap {
+	return c.configmap
+}
+
+func DefaultConfigMap(meta metav1.Object, gvk schema.GroupVersionKind) *v1.ConfigMap {
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "shardingsphere-proxy",
@@ -84,13 +135,13 @@ func ComputeNodeDefaultConfigMap(meta metav1.Object, gvk schema.GroupVersionKind
 }
 
 // FIXME: check if changed first, then decide if need to respawn the Pods
-func ComputeNodeUpdateConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1.ConfigMap {
+func UpdateConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1.ConfigMap {
 	exp := &v1.ConfigMap{}
 	exp.ObjectMeta = cur.ObjectMeta
 	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = cur.Labels
 	exp.Annotations = cur.Annotations
-	exp.Data = ComputeNodeNewConfigMap(cn).Data
+	exp.Data = NewConfigMap(cn).Data
 	return exp
 }
 
