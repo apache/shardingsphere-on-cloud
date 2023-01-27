@@ -223,7 +223,7 @@ func Test_ComputeNodeUpdateService(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		act := ComputeNodeUpdateService(c.cn, c.cur)
+		act := UpdateService(c.cn, c.cur)
 		assert.Equal(t, act, c.exp, fmt.Sprintf("%d: %s\n", c.id, c.msg))
 	}
 }

@@ -26,31 +26,82 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func ComputeNodeNewService(cn *v1alpha1.ComputeNode) *v1.Service {
-	svc := ComputeNodeDefaultService(cn.GetObjectMeta(), cn.GroupVersionKind())
-	svc.Name = cn.Name
-	svc.Namespace = cn.Namespace
-	svc.Labels = cn.Labels
-	svc.Spec.Selector = cn.Spec.Selector.MatchLabels
-	svc.Spec.Type = cn.Spec.ServiceType
+func NewService(cn *v1alpha1.ComputeNode) *v1.Service {
+	builder := NewServiceBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
+	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetType(cn.Spec.ServiceType)
 
-	if svc.Spec.Ports == nil {
-		svc.Spec.Ports = []corev1.ServicePort{}
-	}
+	ports := []v1.ServicePort{}
 	for _, pb := range cn.Spec.PortBindings {
-		svc.Spec.Ports = append(svc.Spec.Ports, corev1.ServicePort{
+		ports = append(ports, corev1.ServicePort{
 			Name:       pb.Name,
-			TargetPort: intstr.FromInt(int(pb.ContainerPort)),
 			Port:       pb.ServicePort,
-			NodePort:   pb.NodePort,
+			TargetPort: intstr.FromInt(int(pb.ContainerPort)),
 			Protocol:   pb.Protocol,
 		})
 	}
-
-	return svc
+	builder.SetPorts(ports)
+	return builder.Build()
 }
 
-func ComputeNodeDefaultService(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Service {
+type ServiceBuilder interface {
+	SetName(name string) ServiceBuilder
+	SetNamespace(namespace string) ServiceBuilder
+	SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) ServiceBuilder
+	SetAnnotations(anno map[string]string) ServiceBuilder
+	SetType(t corev1.ServiceType) ServiceBuilder
+	SetPorts(ports []corev1.ServicePort) ServiceBuilder
+	Build() *corev1.Service
+}
+
+func NewServiceBuilder(meta metav1.Object, gvk schema.GroupVersionKind) ServiceBuilder {
+	return &serviceBuilder{
+		service: DefaultService(meta, gvk),
+	}
+}
+
+type serviceBuilder struct {
+	service *corev1.Service
+}
+
+func (s *serviceBuilder) SetName(name string) ServiceBuilder {
+	s.service.Name = name
+	return s
+}
+
+func (s *serviceBuilder) SetNamespace(namespace string) ServiceBuilder {
+	s.service.Namespace = namespace
+	return s
+}
+
+func (s *serviceBuilder) SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) ServiceBuilder {
+	s.service.Labels = labels
+	s.service.Spec.Selector = selectors.MatchLabels
+	return s
+}
+
+func (s *serviceBuilder) SetAnnotations(annos map[string]string) ServiceBuilder {
+	s.service.Annotations = annos
+	return s
+}
+
+func (s *serviceBuilder) SetType(t corev1.ServiceType) ServiceBuilder {
+	s.service.Spec.Type = t
+	return s
+}
+
+func (s *serviceBuilder) SetPorts(ports []corev1.ServicePort) ServiceBuilder {
+	if s.service.Spec.Ports == nil {
+		s.service.Spec.Ports = []v1.ServicePort{}
+	}
+	s.service.Spec.Ports = ports
+	return s
+}
+
+func (s *serviceBuilder) Build() *corev1.Service {
+	return s.service
+}
+
+func DefaultService(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "shardingsphere-proxy",
@@ -63,17 +114,16 @@ func ComputeNodeDefaultService(meta metav1.Object, gvk schema.GroupVersionKind) 
 		Spec: v1.ServiceSpec{
 			Selector: map[string]string{},
 			Type:     v1.ServiceTypeClusterIP,
-			Ports:    []v1.ServicePort{},
 		},
 	}
 }
 
-func ComputeNodeUpdateService(cn *v1alpha1.ComputeNode, cur *v1.Service) *v1.Service {
+func UpdateService(cn *v1alpha1.ComputeNode, cur *v1.Service) *v1.Service {
 	exp := &v1.Service{}
 	exp.ObjectMeta = cur.ObjectMeta
 	exp.Labels = cur.Labels
 	exp.Annotations = cur.Annotations
-	exp.Spec = ComputeNodeNewService(cn).Spec
+	exp.Spec = NewService(cn).Spec
 	exp.Spec.ClusterIP = cur.Spec.ClusterIP
 	exp.Spec.ClusterIPs = cur.Spec.ClusterIPs
 	if cn.Spec.ServiceType == corev1.ServiceTypeNodePort {
