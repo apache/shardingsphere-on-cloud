@@ -18,23 +18,21 @@
 package main
 
 import (
+	"os"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/cmd/shardingsphere-operator/manager"
 
-	"github.com/mlycore/log"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
 func main() {
-	opt := manager.ParseOptionsFromFlags()
-	if err := manager.New(opt).
+	if err := manager.SetupWithOptions(manager.ParseOptionsFromCmdFlags()).
 		SetHealthzCheck("healthz", healthz.Ping).
 		SetReadyzCheck("readyz", healthz.Ping).
 		SetMetrics().
 		Start(ctrl.SetupSignalHandler()); err != nil {
-		log.Fatalf("%s", err)
+		os.Exit(1)
 	}
-
-	log.Infof("shardingsphere-operator exited")
 }
