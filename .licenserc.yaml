@@ -34,6 +34,7 @@ header:
     - 'shardingsphere-operator/PROJECT'
     - '**/go.mod'
     - '**/go.sum'
+    - '**/.gitkeep'
     - 'shardingsphere-operator/build/.dockerignore'
     - 'shardingsphere-operator/api/v1alpha1/zz_generated.deepcopy.go'
     - 'cloudformation/multi-az/*.conf'
