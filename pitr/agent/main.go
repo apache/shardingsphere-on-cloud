@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/apache/pitr/agent/internal/handler"
@@ -48,16 +49,25 @@ var (
 var (
 	logLevel string
 	port     string
+	tlsCrt   string
+	tlsKey   string
 )
 
 func init() {
-	// TODO 参数全部通过 flag 输入
-	flag.StringVar(&logLevel, "logLevel", "info", "optional:log level,option values:info or debug,info is default")
-	flag.StringVar(&port, "port", "8888", "optional:8888 is default")
+	// 参数通过 flag 输入
+	flag.StringVar(&logLevel, "logLevel", "info", "optional:log level,option values:info or debug")
+	flag.StringVar(&port, "port", "443", "optional:443 is default")
+
+	flag.StringVar(&tlsCrt, "tlsCrt", "", "Require:TLS certificate file path")
+	flag.StringVar(&tlsKey, "tlsKey", "", "Require:TLS key file path")
 }
 
 func main() {
 	flag.Parse()
+
+	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
+		panic(fmt.Errorf("lack of HTTPs certificate"))
+	}
 
 	var level = zapcore.InfoLevel
 	if logLevel == debugLogLevel {
@@ -89,11 +99,16 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	WindUp()
+	if app != nil {
+		if err := app.Shutdown(); err != nil {
+			log.Field(logging.ErrorKey, err.Error()).Error("http app closed failure")
+		}
+	}
+	log.Info("app windup successfully.")
 	log.Info("app has exited...")
 }
 
-// Serve run an http server on the specified port.
+// Serve run a http server on the specified port.
 func Serve(port string) error {
 	app.Use(
 		middleware.Recover(logging.Log()),
@@ -122,15 +137,5 @@ func Serve(port string) error {
 		return responder.NotFound(ctx, "API not found")
 	})
 
-	return app.Listen(fmt.Sprintf(":%s", port))
-}
-
-func WindUp() {
-	if app != nil {
-		if err := app.Shutdown(); err != nil {
-			log.Field(logging.ErrorKey, err.Error()).Error("http app closed failure")
-		}
-	}
-
-	log.Info("app windup successfully.")
+	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)
 }
