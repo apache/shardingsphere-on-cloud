@@ -51,15 +51,18 @@ var (
 	port     string
 	tlsCrt   string
 	tlsKey   string
+	shell    string
 )
 
 func init() {
 	// 参数通过 flag 输入
 	flag.StringVar(&logLevel, "logLevel", "info", "optional:log level,option values:info or debug")
-	flag.StringVar(&port, "port", "443", "optional:443 is default")
+	flag.StringVar(&port, "port", "443", "HTTP service port")
 
 	flag.StringVar(&tlsCrt, "tlsCrt", "", "Require:TLS certificate file path")
 	flag.StringVar(&tlsKey, "tlsKey", "", "Require:TLS key file path")
+
+	flag.StringVar(&shell, "shell", "/bin/sh", "Shell path")
 }
 
 func main() {
