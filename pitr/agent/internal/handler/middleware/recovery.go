@@ -1,0 +1,45 @@
+/*
+* Licensed to the Apache Software Foundation (ASF) under one or more
+* contributor license agreements.  See the NOTICE file distributed with
+* this work for additional information regarding copyright ownership.
+* The ASF licenses this file to You under the Apache License, Version 2.0
+* (the "License"); you may not use this file except in compliance with
+* the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+ */
+
+package middleware
+
+import (
+	"fmt"
+	"runtime/debug"
+
+	"github.com/gofiber/fiber/v2"
+
+	"github.com/apache/pitr/agent/internal/cons"
+	"github.com/apache/pitr/agent/pkg/logging"
+	"github.com/apache/pitr/agent/pkg/responder"
+)
+
+func Recover(log logging.ILog) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Fields(map[logging.FieldKey]string{
+					logging.RequestID: ctx.Get(cons.RequestID),
+					logging.ErrorKey:  fmt.Sprint(r),
+					logging.Stack:     string(debug.Stack()),
+				}).Error("Global recover.")
+				_ = responder.Error(ctx, cons.Internal)
+			}
+		}()
+		return ctx.Next()
+	}
+}
