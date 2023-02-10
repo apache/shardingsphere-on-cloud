@@ -51,7 +51,6 @@ var (
 	port     string
 	tlsCrt   string
 	tlsKey   string
-	shell    string
 )
 
 func init() {
@@ -61,12 +60,15 @@ func init() {
 
 	flag.StringVar(&tlsCrt, "tlsCrt", "", "Require:TLS certificate file path")
 	flag.StringVar(&tlsKey, "tlsKey", "", "Require:TLS key file path")
-
-	flag.StringVar(&shell, "shell", "/bin/sh", "Shell path")
 }
 
 func main() {
 	flag.Parse()
+
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		panic(fmt.Errorf("shell does not exist"))
+	}
 
 	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
 		panic(fmt.Errorf("lack of HTTPs certificate"))
