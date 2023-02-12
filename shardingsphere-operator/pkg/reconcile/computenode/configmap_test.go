@@ -18,25 +18,32 @@
 package computenode_test
 
 import (
-	"testing"
-
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ Describe("Deployment", func() {
+var _ = Describe("ConfigMap", func() {
 	var (
-		dp = appsv1.Deployment{}
+		cm *corev1.ConfigMap     = &corev1.ConfigMap{}
+		cn *v1alpha1.ComputeNode = &v1alpha1.ComputeNode{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test",
+			},
+		}
 	)
 
 	BeforeEach(func() {
-		dp.Name = "test"
+		cm.Name = "test"
 	})
 
 	Context("Assert Name", func() {
 		It("should be ok", func() {
-			cn := New()	
-			Expect(cn.Name).To(Equal(dp.Name))
+			config := computenode.NewConfigMap(cn)
+			Expect(config.Name).To(Equal(cm.Name))
 		})
 	})
 })
