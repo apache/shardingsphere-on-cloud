@@ -28,22 +28,53 @@ import (
 
 var _ = Describe("ConfigMap", func() {
 	var (
-		cm *corev1.ConfigMap     = &corev1.ConfigMap{}
-		cn *v1alpha1.ComputeNode = &v1alpha1.ComputeNode{
+		expect *corev1.ConfigMap     = &corev1.ConfigMap{}
+		cn     *v1alpha1.ComputeNode = &v1alpha1.ComputeNode{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "test",
+				Name:      "test_name",
+				Namespace: "test_namespace",
+				Labels: map[string]string{
+					"test_key": "test_value",
+				},
+				Annotations: map[string]string{
+					computenode.AnnoLogbackConfig:     "test_logback",
+					computenode.AnnoClusterRepoConfig: "test_cluster_repo_config",
+				},
 			},
 		}
 	)
 
 	BeforeEach(func() {
-		cm.Name = "test"
+		expect.Name = "test_name"
+		expect.Namespace = "test_namespace"
+		expect.Labels = map[string]string{
+			"test_key": "test_value",
+		}
+		expect.Data = map[string]string{}
+		expect.Data[computenode.ConfigDataKeyForLogback] = "test_logback"
+		expect.Data[computenode.ConfigDataKeyForServer] = "test_cluster_repo_config"
 	})
 
-	Context("Assert Name", func() {
-		It("should be ok", func() {
-			config := computenode.NewConfigMap(cn)
-			Expect(config.Name).To(Equal(cm.Name))
+	Context("Assert ObjectMeta", func() {
+		cm := computenode.NewConfigMap(cn)
+		It("name should be equal", func() {
+			Expect(expect.Name).To(Equal(cm.Name))
+		})
+		It("namespace should be equal", func() {
+			Expect(expect.Namespace).To(Equal(cm.Namespace))
+		})
+		It("labels should be equal", func() {
+			Expect(expect.Labels).To(Equal(cm.Labels))
+		})
+	})
+
+	Context("Assert Default Spec Data", func() {
+		cm := computenode.NewConfigMap(cn)
+		It("default logback should be equal", func() {
+			Expect(expect.Data[computenode.AnnoLogbackConfig]).To(Equal(cm.Data[computenode.AnnoLogbackConfig]))
+		})
+		It("default cluster repo config should be equal", func() {
+			Expect(expect.Data[computenode.AnnoClusterRepoConfig]).To(Equal(cm.Data[computenode.AnnoClusterRepoConfig]))
 		})
 	})
 })

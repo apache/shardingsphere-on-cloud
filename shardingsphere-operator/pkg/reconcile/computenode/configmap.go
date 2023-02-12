@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	ConfigForLogback = "logback.xml"
-	ConfigForServer  = "server.yaml"
+	ConfigDataKeyForLogback = "logback.xml"
+	ConfigDataKeyForServer  = "server.yaml"
 
 	AnnoClusterRepoConfig = "computenode.shardingsphere.org/server-config-mode-cluster"
 	AnnoLogbackConfig     = "computenode.shardingsphere.org/logback"
@@ -46,7 +46,7 @@ func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	if len(logback) > 0 {
 		builder.SetLogback(logback)
 	} else {
-		builder.SetLogback(string(defaultLogback))
+		builder.SetLogback(string(DefaultLogback))
 	}
 
 	// NOTE: ShardingSphere Proxy 5.3.0 needs a server.yaml no matter if it is empty
@@ -107,12 +107,12 @@ func (c *configmapBuilder) SetAnnotations(annos map[string]string) ConfigMapBuil
 	return c
 }
 func (c *configmapBuilder) SetLogback(logback string) ConfigMapBuilder {
-	c.configmap.Data[ConfigForLogback] = logback
+	c.configmap.Data[ConfigDataKeyForLogback] = logback
 	return c
 }
 
 func (c *configmapBuilder) SetServerConfig(serviceConfig string) ConfigMapBuilder {
-	c.configmap.Data[ConfigForServer] = serviceConfig
+	c.configmap.Data[ConfigDataKeyForServer] = serviceConfig
 	return c
 }
 
@@ -145,7 +145,7 @@ func UpdateConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1.ConfigMap 
 	return exp
 }
 
-const defaultLogback = `<?xml version="1.0"?>
+const DefaultLogback = `<?xml version="1.0"?>
 <configuration>
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
