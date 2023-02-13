@@ -19,19 +19,17 @@ package syncutils
 
 import (
 	"fmt"
-
-	"github.com/apache/pitr/agent/pkg/logging"
 )
 
-func NewRecoverFuncWithErrRet(msg string, log logging.ILog, fn func() error) func() error {
+func NewRecoverFuncWithErrRet(msg string, fn func() error) func() (err error) {
 	return func() error {
 		defer func() {
 			r := recover()
 			if r != nil {
 				if err, ok := r.(error); ok {
-					log.Error(fmt.Sprintf("NewRecoverFuncWithErrRet[msg=%s],err=%s", msg, err))
+					err = fmt.Errorf("NewRecoverFuncWithErrRet[msg=%s],err=%s", msg, err)
 				} else {
-					log.Error(fmt.Sprintf("NewRecoverFuncWithErrRet[msg=%s],recover msg=%+v", msg, r))
+					err = fmt.Errorf("NewRecoverFuncWithErrRet[msg=%s],recover msg=%+v", msg, r)
 				}
 			}
 		}()

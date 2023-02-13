@@ -18,7 +18,7 @@
 package cons
 
 import (
-	"github.com/apache/pitr/agent/pkg/xerror"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/xerror"
 )
 
 var (

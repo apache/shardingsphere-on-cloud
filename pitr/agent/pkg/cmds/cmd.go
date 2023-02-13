@@ -22,9 +22,17 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/syncutils"
 )
 
-func command(name string, args ...string) error {
+type Output struct {
+	LineNo  uint32 // Start 1
+	Message string
+	Error   error
+}
+
+func Commands(name string, args ...string) (chan *Output, error) {
 	c := "-c"
 	args = append([]string{c}, args...)
 
@@ -32,30 +40,55 @@ func command(name string, args ...string) error {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("can not obtain stdout pipe for command[args=%+v]:%s", args, err)
+		return nil, fmt.Errorf("can not obtain stdout pipe for command[args=%+v]:%s", args, err)
 	}
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("the command is err[args=%+v]:%s", args, err)
+		return nil, fmt.Errorf("the command is err[args=%+v]:%s", args, err)
 	}
 
 	reader := bufio.NewReader(stdout)
 
-	index := 1
-	for {
-		line, err := reader.ReadString('\n')
-		if io.EOF == err {
-			break
-		} else if err != nil {
-			return fmt.Errorf("read string is err[args=%+v]:%s", args, err)
+	output := make(chan *Output, 10)
+	index := uint32(1)
+
+	go func() {
+		if err := syncutils.NewRecoverFuncWithErrRet("", func() error {
+			for {
+				msg, err := reader.ReadString('\n')
+				if io.EOF == err {
+					goto end
+				} else if err != nil {
+					output <- &Output{
+						LineNo:  index,
+						Message: msg,
+						Error:   err,
+					}
+					goto end
+				}
+
+				output <- &Output{
+					LineNo:  index,
+					Message: msg,
+				}
+
+				index++
+			}
+		end:
+			if err := cmd.Wait(); err != nil {
+				output <- &Output{
+					Error: err,
+				}
+			}
+
+			return nil
+		})(); err != nil {
+			// only panic err
+			output <- &Output{
+				Error: err,
+			}
 		}
+		close(output)
+	}()
 
-		fmt.Print(index, "\t", line)
-		index++
-	}
-
-	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("cmd wait is err[args=%+v]:%s", args, err)
-	}
-
-	return nil
+	return output, nil
 }

@@ -25,16 +25,16 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/apache/pitr/agent/internal/handler"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
 
-	"github.com/apache/pitr/agent/internal/handler/middleware"
-	"github.com/apache/pitr/agent/pkg/responder"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/middleware"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/apache/pitr/agent/pkg/logging"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 )
 
 const (
