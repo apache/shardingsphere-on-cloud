@@ -40,10 +40,10 @@ func Commands(name string, args ...string) (chan *Output, error) {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("can not obtain stdout pipe for Commands[args=%+v]:%s", args, err)
+		return nil, fmt.Errorf("can not obtain stdout pipe for command[args=%+v]:%s", args, err)
 	}
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("the Commands is err[args=%+v]:%s", args, err)
+		return nil, fmt.Errorf("the command is err[args=%+v]:%s", args, err)
 	}
 
 	reader := bufio.NewReader(stdout)
