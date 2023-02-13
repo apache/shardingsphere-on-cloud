@@ -17,14 +17,30 @@
 
 package cmds
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 const (
 	sh = "/bin/sh"
 )
 
 func TestCommand(t *testing.T) {
-	if err := command(sh, "ping www.baidu.com"); err != nil {
+	output, err := Commands(sh, "ping www.baidu.com")
+	if err != nil {
 		t.Fatal(err)
 	}
+
+	for {
+		select {
+		case out, ok := <-output:
+			if ok {
+				fmt.Print(out.LineNo, "\t", out.Message)
+			} else {
+				return
+			}
+		}
+	}
+
 }
