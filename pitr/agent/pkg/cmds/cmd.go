@@ -23,7 +23,7 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/apache/pitr/agent/pkg/syncutils"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/syncutils"
 )
 
 type Output struct {

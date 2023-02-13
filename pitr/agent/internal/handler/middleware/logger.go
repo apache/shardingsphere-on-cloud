@@ -23,8 +23,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/apache/pitr/agent/internal/cons"
-	"github.com/apache/pitr/agent/pkg/logging"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 )
 
 func Logger(log logging.ILog) fiber.Handler {

@@ -22,8 +22,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/apache/pitr/agent/internal/cons"
-	"github.com/apache/pitr/agent/pkg/responder"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 )
 
 func RequestIDChecker() fiber.Handler {

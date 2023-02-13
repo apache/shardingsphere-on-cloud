@@ -1,4 +1,4 @@
-module github.com/apache/pitr/cli
+module github.com/apache/shardingsphere-on-cloud/pitr/cli
 
 go 1.20
 

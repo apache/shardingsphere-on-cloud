@@ -1,4 +1,4 @@
-module github.com/apache/pitr/agent
+module github.com/apache/shardingsphere-on-cloud/pitr/agent
 
 go 1.20
 
