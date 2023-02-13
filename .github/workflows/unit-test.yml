@@ -36,7 +36,7 @@ jobs:
       - name: "unit test"
         run: |
           cd shardingsphere-operator
-          go test --count=1 -race -coverprofile=coverage.txt -covermode=atomic -v ./...
+          make test
       - name: "Code coverage"
         uses: codecov/codecov-action@v2
         with:
