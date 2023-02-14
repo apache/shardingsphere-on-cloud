@@ -72,8 +72,8 @@ var _ = Describe("ComputeNodeController", func() {
 					PortBindings: []v1alpha1.PortBinding{
 						{
 							Name:          "port",
-							ContainerPort: 3306,
-							ServicePort:   3306,
+							ContainerPort: 3307,
+							ServicePort:   3307,
 						},
 					},
 				},
