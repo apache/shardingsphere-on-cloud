@@ -292,14 +292,10 @@ type ComputeNodeSpec struct {
 	Probes *ProxyProbe `json:"probes,omitempty"`
 	// +optional
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	// port is ShardingSphere-Proxy startup port
-	// +optional
-	// Ports []corev1.ContainerPort `json:"ports,omitempty"`
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
-	// Service Service `json:"service,omitempty"`
 	// +optional
 	PortBindings []PortBinding `json:"portBindings,omitempty" yaml:"portBinding"`
 
