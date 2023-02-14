@@ -24,12 +24,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 var _ = Describe("ComputeNodeController", func() {
-	Context("testing compute node controller", func() {
+	Context("check related resource created by compute node controller", func() {
 		var cn *v1alpha1.ComputeNode
 		BeforeEach(func() {
 			cn = &v1alpha1.ComputeNode{
@@ -77,15 +78,36 @@ var _ = Describe("ComputeNodeController", func() {
 					},
 				},
 			}
+			Expect(k8sClient.Create(ctx, cn)).To(BeNil())
+		})
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, cn)).To(BeNil())
 		})
 
 		// Integration tests using It blocks are written here.
 		It("should create deployment", func() {
-			Expect(k8sClient.Create(ctx, cn)).To(BeNil())
 			createdDeploy := &appsv1.Deployment{}
-			deployKey := types.NamespacedName{Name: cn.Name, Namespace: cn.Namespace}
+			namespacedName := types.NamespacedName{Name: cn.Name, Namespace: cn.Namespace}
 			Eventually(func() bool {
-				err := k8sClient.Get(ctx, deployKey, createdDeploy)
+				err := k8sClient.Get(ctx, namespacedName, createdDeploy)
+				return err == nil
+			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
+		})
+
+		It("should create service", func() {
+			createdService := &corev1.Service{}
+			namespacedName := types.NamespacedName{Name: cn.Name, Namespace: cn.Namespace}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, namespacedName, createdService)
+				return err == nil
+			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
+		})
+
+		It("should create configmap", func() {
+			createdConfigmap := &corev1.ConfigMap{}
+			namespacedName := types.NamespacedName{Name: cn.Name, Namespace: cn.Namespace}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, namespacedName, createdConfigmap)
 				return err == nil
 			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
 		})
