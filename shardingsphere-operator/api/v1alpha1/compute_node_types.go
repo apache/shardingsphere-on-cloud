@@ -277,7 +277,6 @@ type PortBinding struct {
 
 // ProxySpec defines the desired state of ShardingSphereProxy
 type ComputeNodeSpec struct {
-	// +optional
 	StorageNodeConnector *StorageNodeConnector `json:"storageNodeConnector,omitempty"`
 	// version  is the version of ShardingSphere-Proxy
 	ServerVersion string `json:"serverVersion,omitempty" yaml:"serverVersion"`
