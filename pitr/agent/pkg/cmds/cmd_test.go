@@ -19,6 +19,7 @@ package cmds
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -26,8 +27,11 @@ const (
 	sh = "/bin/sh"
 )
 
+var backup = "gs_probackup backup -B /home/omm/data --instance=ins-default-0 -b full -D /data/opengauss/3.1.1/data/single_node/  2>&1"
+var ping = "ping www.baidu.com"
+
 func TestCommand(t *testing.T) {
-	output, err := Commands(sh, "ping www.baidu.com")
+	output, err := Commands(sh, backup)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,11 +40,26 @@ func TestCommand(t *testing.T) {
 		select {
 		case out, ok := <-output:
 			if ok {
-				fmt.Print(out.LineNo, "\t", out.Message)
+				if out.Error != nil {
+					fmt.Println("err", "\t", out.Error.Error())
+				} else {
+					if out.LineNo == 1 {
+						if strings.Contains(out.Message, "backup ID: ") {
+							arr := strings.Split(out.Message, "backup ID: ")
+							if len(arr) == 2 {
+								arr2 := strings.Split(arr[1], ", backup mode")
+								if len(arr2) == 2 {
+									fmt.Println(out.LineNo, "\t", out.Message)
+									fmt.Println(out.LineNo, "\t", arr2[0])
+								}
+							}
+						}
+
+					}
+				}
 			} else {
 				return
 			}
 		}
 	}
-
 }
