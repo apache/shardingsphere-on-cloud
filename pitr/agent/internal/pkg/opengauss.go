@@ -19,7 +19,8 @@ package pkg
 
 import (
 	"fmt"
-	"strings"
+
+	"github.com/dlclark/regexp2"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/cmds"
 )
@@ -45,14 +46,13 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode, pgData st
 		}
 
 		// get the backup id from the first line
-		if output.LineNo == 1 {
-			if bid, ok := og.getBackupID(output.Message); ok {
-				return bid, nil
-			}
-			//ignore other output
-			go og.ignore(outputs)
-			return "", fmt.Errorf("output[%+v] cannot be resolved", output)
+		bid, err := og.getBackupID(output.Message)
+		if err != nil {
+			return "", fmt.Errorf("og.getBackupID[source=%s] return err=%w", output.Message, err)
 		}
+		//ignore other output
+		go og.ignore(outputs)
+		return bid, nil
 	}
 	return "", fmt.Errorf("unknow err")
 }
@@ -68,20 +68,8 @@ func (og *openGauss) ignore(outputs chan *cmds.Output) {
 	//outputs closed
 }
 
-func (og *openGauss) getBackupID(msg string) (string, bool) {
-	prefix := "backup ID: "
-	suffix := ", backup mode"
-
-	if strings.Contains(msg, prefix) && strings.Contains(msg, suffix) {
-		two := strings.Split(msg, prefix)
-		if len(two) != 2 {
-			return "", false
-		}
-		two = strings.Split(two[1], suffix)
-		if len(two) != 2 {
-			return "", false
-		}
-		return two[0], true
-	}
-	return "", false
+func (og *openGauss) getBackupID(msg string) (string, error) {
+	re := regexp2.MustCompile("(?<=backup ID:\\s+)\\w+(?=,)", 0)
+	match, err := re.FindStringMatch(msg)
+	return match.String(), err
 }

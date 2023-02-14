@@ -3,6 +3,7 @@ package pkg
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestOpenGauss_AsyncBackup(t *testing.T) {
@@ -19,4 +20,6 @@ func TestOpenGauss_AsyncBackup(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(backupID)
+
+	time.Sleep(time.Second * 10)
 }
