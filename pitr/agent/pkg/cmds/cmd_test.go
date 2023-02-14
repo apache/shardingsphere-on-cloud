@@ -19,7 +19,6 @@ package cmds
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 )
 
@@ -41,21 +40,9 @@ func TestCommand(t *testing.T) {
 		case out, ok := <-output:
 			if ok {
 				if out.Error != nil {
-					fmt.Println("err", "\t", out.Error.Error())
+					fmt.Println(out.LineNo, "\t", out.Error.Error())
 				} else {
-					if out.LineNo == 1 {
-						if strings.Contains(out.Message, "backup ID: ") {
-							arr := strings.Split(out.Message, "backup ID: ")
-							if len(arr) == 2 {
-								arr2 := strings.Split(arr[1], ", backup mode")
-								if len(arr2) == 2 {
-									fmt.Println(out.LineNo, "\t", out.Message)
-									fmt.Println(out.LineNo, "\t", arr2[0])
-								}
-							}
-						}
-
-					}
+					fmt.Println(out.LineNo, "\t", out.Message)
 				}
 			} else {
 				return
