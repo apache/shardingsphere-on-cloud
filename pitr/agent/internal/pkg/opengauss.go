@@ -16,3 +16,60 @@
  */
 
 package pkg
+
+import (
+	"fmt"
+
+	"github.com/dlclark/regexp2"
+
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/cmds"
+)
+
+type openGauss struct {
+	shell string
+}
+
+const (
+	_backupFmt = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s 2>&1"
+)
+
+func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode, pgData string) (string, error) {
+	cmd := fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, pgData)
+	outputs, err := cmds.Commands(og.shell, fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, pgData))
+	if err != nil {
+		return "", fmt.Errorf("cmds.Commands[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+
+	for output := range outputs {
+		if output.Error != nil {
+			return "", fmt.Errorf("output.Error[%w] is not nil", output.Error)
+		}
+
+		// get the backup id from the first line
+		bid, err := og.getBackupID(output.Message)
+		if err != nil {
+			return "", fmt.Errorf("og.getBackupID[source=%s] return err=%w", output.Message, err)
+		}
+		//ignore other output
+		go og.ignore(outputs)
+		return bid, nil
+	}
+	return "", fmt.Errorf("unknow err")
+}
+
+func (og *openGauss) ignore(outputs chan *cmds.Output) {
+	defer func() {
+		_ = recover()
+	}()
+
+	for range outputs {
+		//ignore all
+	}
+	//outputs closed
+}
+
+func (og *openGauss) getBackupID(msg string) (string, error) {
+	re := regexp2.MustCompile("(?<=backup ID:\\s+)\\w+(?=,)", 0)
+	match, err := re.FindStringMatch(msg)
+	return match.String(), err
+}

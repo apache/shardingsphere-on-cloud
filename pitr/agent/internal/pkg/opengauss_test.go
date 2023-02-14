@@ -15,38 +15,28 @@
 * limitations under the License.
  */
 
-package cmds
+package pkg
 
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
-const (
-	sh = "/bin/sh"
-)
-
-var backup = "gs_probackup backup -B /home/omm/data --instance=ins-default-0 -b full -D /data/opengauss/3.1.1/data/single_node/  2>&1"
-var ping = "ping www.baidu.com"
-
-func TestCommand(t *testing.T) {
-	output, err := Commands(sh, backup)
+func TestOpenGauss_AsyncBackup(t *testing.T) {
+	og := &openGauss{
+		shell: "/bin/sh",
+	}
+	backupID, err := og.AsyncBackup(
+		"/home/omm/data",
+		"ins-default-0",
+		"full",
+		"/data/opengauss/3.1.1/data/single_node/",
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
+	fmt.Println(backupID)
 
-	for {
-		select {
-		case out, ok := <-output:
-			if ok {
-				if out.Error != nil {
-					fmt.Println(out.LineNo, "\t", out.Error.Error())
-				} else {
-					fmt.Println(out.LineNo, "\t", out.Message)
-				}
-			} else {
-				return
-			}
-		}
-	}
+	time.Sleep(time.Second * 10)
 }
