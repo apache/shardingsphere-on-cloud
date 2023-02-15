@@ -507,41 +507,44 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 	builder.SetVolume(vc)
 	scb.SetVolumeMount(vmc[0])
 
-	if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypeMySQL {
-		scb.SetEnv([]corev1.EnvVar{
-			{
-				Name:  defaultMySQLDriverEnvName,
-				Value: cn.Spec.StorageNodeConnector.Version,
-			},
-		})
+	if cn.Spec.StorageNodeConnector != nil {
+		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypeMySQL {
+			scb.SetEnv([]corev1.EnvVar{
+				{
+					Name:  defaultMySQLDriverEnvName,
+					Value: cn.Spec.StorageNodeConnector.Version,
+				},
+			})
 
-		vb := NewSharedVolumeAndMountBuilder().
-			SetVolumeMountSize(2).
-			SetName(defaultMySQLDriverVolumeName).
-			SetVolumeSourceEmptyDir().
-			SetMountPath(0, defaultExtlibPath).
-			SetMountPath(1, absoluteMySQLDriverMountName(defaultExtlibPath, cn.Spec.StorageNodeConnector.Version)).
-			SetSubPath(1, relativeMySQLDriverMountName(cn.Spec.StorageNodeConnector.Version))
+			vb := NewSharedVolumeAndMountBuilder().
+				SetVolumeMountSize(2).
+				SetName(defaultMySQLDriverVolumeName).
+				SetVolumeSourceEmptyDir().
+				SetMountPath(0, defaultExtlibPath).
+				SetMountPath(1, absoluteMySQLDriverMountName(defaultExtlibPath, cn.Spec.StorageNodeConnector.Version)).
+				SetSubPath(1, relativeMySQLDriverMountName(cn.Spec.StorageNodeConnector.Version))
 
-		v, vms := vb.Build()
-		builder.SetVolume(v)
-		scb.SetVolumeMount(vms[1])
+			v, vms := vb.Build()
+			builder.SetVolume(v)
+			scb.SetVolumeMount(vms[1])
 
-		cb := NewBootstrapContainerBuilder().SetVolumeMount(vms[0]).SetEnv([]corev1.EnvVar{
-			{
-				Name:  defaultMySQLDriverEnvName,
-				Value: cn.Spec.StorageNodeConnector.Version,
-			},
-		})
-		con := cb.Build()
-		builder.SetInitContainer(con)
+			cb := NewBootstrapContainerBuilder().SetVolumeMount(vms[0]).SetEnv([]corev1.EnvVar{
+				{
+					Name:  defaultMySQLDriverEnvName,
+					Value: cn.Spec.StorageNodeConnector.Version,
+				},
+			})
+			con := cb.Build()
+			builder.SetInitContainer(con)
 
-		sc := scb.Build()
-		builder.SetShardingSphereProxyContainer(sc)
-	}
-	if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypePostgreSQL {
-		sc := scb.Build()
-		builder.SetShardingSphereProxyContainer(sc)
+			sc := scb.Build()
+			builder.SetShardingSphereProxyContainer(sc)
+		}
+
+		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypePostgreSQL {
+			sc := scb.Build()
+			builder.SetShardingSphereProxyContainer(sc)
+		}
 	}
 
 	return builder.Build()
