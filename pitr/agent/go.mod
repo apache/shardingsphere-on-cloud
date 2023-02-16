@@ -1,6 +1,6 @@
 module github.com/apache/shardingsphere-on-cloud/pitr/agent
 
-go 1.19
+go 1.20
 
 require (
 	github.com/dlclark/regexp2 v1.8.0
