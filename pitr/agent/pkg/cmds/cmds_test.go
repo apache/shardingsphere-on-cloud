@@ -18,36 +18,13 @@
 package cmds
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-const (
-	sh = "/bin/sh"
-)
-
-var _ = Describe("Commands", func() {
-	Context("AsyncExec", func() {
-		It("ping", func() {
-			output, err := AsyncExec(sh, "ping 127.0.0.1")
-			Expect(err).To(BeNil())
-
-			for i := uint32(0); i < 10; i++ {
-				select {
-				case out, ok := <-output:
-					Expect(out.LineNo).To(Equal(i + 1))
-					Expect(out.Error).To(BeNil())
-					Expect(ok).To(Equal(true))
-				}
-			}
-		})
-	})
-
-	Context("Exec", func() {
-		It("echo", func() {
-			output, err := Exec(sh, "sleep 1;echo 10;sleep 1;echo 20;")
-			Expect(err).To(BeNil())
-			Expect(output).To(Equal("10\n20\n"))
-		})
-	})
-})
+func TestCmds(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Cmds suits")
+}

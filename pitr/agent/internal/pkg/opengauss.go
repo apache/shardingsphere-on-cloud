@@ -35,9 +35,9 @@ const (
 
 func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode, pgData string) (string, error) {
 	cmd := fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, pgData)
-	outputs, err := cmds.Commands(og.shell, fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, pgData))
+	outputs, err := cmds.AsyncExec(og.shell, fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, pgData))
 	if err != nil {
-		return "", fmt.Errorf("cmds.Commands[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+		return "", fmt.Errorf("cmds.AsyncExec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
 	}
 
 	for output := range outputs {
