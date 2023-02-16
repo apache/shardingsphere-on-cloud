@@ -18,17 +18,20 @@
 package pkg
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	. "github.com/onsi/gomega"
 
 	. "github.com/onsi/ginkgo/v2"
+
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 )
 
 var _ = Describe("OpenGauss,requires opengauss environment", func() {
-	Context("AsyncBackup & ShowBackupDetail", func() {
-		It("One backup and show", func() {
+	Context("AsyncBackup & ShowBackupDetail ", func() {
+		It("backup, show and delete", func() {
 			og := &openGauss{
 				shell: "/bin/sh",
 			}
@@ -61,12 +64,18 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 				Expect(backup).NotTo(BeNil())
 				Expect(backup.ID).To(Equal(backupID))
 				if backup.Status == "OK" {
-					goto End
+					goto Del
 				}
 				time.Sleep(time.Second)
 			}
 			Fail("Timeout[60s]")
-		End:
+			return
+		Del:
+			err = og.delBackup(data, instance, backupID)
+			Expect(err).To(BeNil())
+
+			err = og.delBackup(data, instance, backupID)
+			Expect(errors.Is(err, cons.CmdOperateFailed)).To(BeTrue())
 		})
 	})
 })

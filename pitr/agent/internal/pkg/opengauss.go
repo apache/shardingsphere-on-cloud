@@ -19,13 +19,13 @@ package pkg
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg/model"
 
 	"github.com/dlclark/regexp2"
 
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/cmds"
 )
 
@@ -34,8 +34,9 @@ type openGauss struct {
 }
 
 const (
-	_backupFmt = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s 2>&1"
-	_showFmt   = "gs_probackup show --instance=%s --backup-path=%s --backup-id=%s --format=json 2>&1 "
+	_backupFmt    = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s 2>&1"
+	_showFmt      = "gs_probackup show --instance=%s --backup-path=%s --backup-id=%s --format=json 2>&1"
+	_delBackupFmt = "gs_probackup delete --backup-path=%s --instance=%s --backup-id=%s 2>&1"
 )
 
 func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode, pgData string) (string, error) {
@@ -85,6 +86,21 @@ func (og *openGauss) ShowBackupDetail(backupPath, instanceName, backupID string)
 	}
 
 	return nil, fmt.Errorf("backupList[v=%+v],err=%w", list, cons.DataNotFound)
+}
+
+func (og *openGauss) delBackup(backupPath, instanceName, backupID string) error {
+	cmd := fmt.Sprintf(_delBackupFmt, backupPath, instanceName, backupID)
+	_, err := cmds.Exec(og.shell, cmd)
+	if err != nil {
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+	if errors.Is(err, cons.CmdOperateFailed) {
+		return cons.CmdOperateFailed
+	}
+	if err != nil {
+		return fmt.Errorf("cmds.Exec[shell=%s, cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+	return nil
 }
 
 func (og *openGauss) ignore(outputs chan *cmds.Output) {

@@ -23,6 +23,7 @@ import (
 	"io"
 	"os/exec"
 
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/syncutils"
 )
 
@@ -109,5 +110,11 @@ func Exec(name string, args ...string) (string, error) {
 		return "", fmt.Errorf("io.ReadAll return err=%w", err)
 	}
 
+	if err = cmd.Wait(); err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			return "", cons.CmdOperateFailed
+		}
+		return "", cons.Internal
+	}
 	return string(reader), nil
 }
