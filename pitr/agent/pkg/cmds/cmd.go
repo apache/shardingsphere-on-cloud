@@ -20,6 +20,7 @@ package cmds
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os/exec"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/syncutils"
@@ -31,7 +32,8 @@ type Output struct {
 	Error   error
 }
 
-func Commands(name string, args ...string) (chan *Output, error) {
+// AsyncExec Async exec a command
+func AsyncExec(name string, args ...string) (chan *Output, error) {
 	c := "-c"
 	args = append([]string{c}, args...)
 
@@ -85,4 +87,27 @@ func Commands(name string, args ...string) (chan *Output, error) {
 	}()
 
 	return output, nil
+}
+
+// Exec exec a command
+func Exec(name string, args ...string) (string, error) {
+	c := "-c"
+	args = append([]string{c}, args...)
+
+	cmd := exec.Command(name, args...)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return "", fmt.Errorf("can not obtain stdout pipe for command[args=%+v]:%s", args, err)
+	}
+	if err = cmd.Start(); err != nil {
+		return "", fmt.Errorf("the command is err[args=%+v]:%s", args, err)
+	}
+
+	reader, err := io.ReadAll(stdout)
+	if err != nil {
+		return "", fmt.Errorf("io.ReadAll return err=%w", err)
+	}
+
+	return string(reader), nil
 }

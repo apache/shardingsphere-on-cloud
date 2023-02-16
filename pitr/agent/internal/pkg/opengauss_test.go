@@ -19,24 +19,30 @@ package pkg
 
 import (
 	"fmt"
-	"testing"
 	"time"
+
+	. "github.com/onsi/gomega"
+
+	. "github.com/onsi/ginkgo/v2"
 )
 
-func TestOpenGauss_AsyncBackup(t *testing.T) {
-	og := &openGauss{
-		shell: "/bin/sh",
-	}
-	backupID, err := og.AsyncBackup(
-		"/home/omm/data",
-		"ins-default-0",
-		"full",
-		"/data/opengauss/3.1.1/data/single_node/",
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(backupID)
-
-	time.Sleep(time.Second * 10)
-}
+var _ = Describe("OpenGauss,requires opengauss environment", func() {
+	Context("AsyncBackup", func() {
+		It("One backup", func() {
+			og := &openGauss{
+				shell: "/bin/sh",
+			}
+			backupID, err := og.AsyncBackup(
+				"/home/omm/data",
+				"ins-default-0",
+				"full",
+				"/data/opengauss/3.1.1/data/single_node/",
+			)
+            
+			Expect(err).To(BeNil())
+			Expect(backupID).NotTo(BeEmpty())
+			fmt.Println(fmt.Sprintf("BackupID:%s", backupID))
+			time.Sleep(time.Second * 10)
+		})
+	})
+})

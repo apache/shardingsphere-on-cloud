@@ -18,35 +18,36 @@
 package cmds
 
 import (
-	"fmt"
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 const (
 	sh = "/bin/sh"
 )
 
-var backup = "gs_probackup backup -B /home/omm/data --instance=ins-default-0 -b full -D /data/opengauss/3.1.1/data/single_node/  2>&1"
-var ping = "ping www.baidu.com"
+var _ = Describe("Commands", func() {
+	Context("AsyncExec", func() {
+		It("ping", func() {
+			output, err := AsyncExec(sh, "ping 127.0.0.1")
+			Expect(err).To(BeNil())
 
-func TestCommand(t *testing.T) {
-	output, err := Commands(sh, backup)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for {
-		select {
-		case out, ok := <-output:
-			if ok {
-				if out.Error != nil {
-					fmt.Println(out.LineNo, "\t", out.Error.Error())
-				} else {
-					fmt.Println(out.LineNo, "\t", out.Message)
+			for i := uint32(0); i < 10; i++ {
+				select {
+				case out, ok := <-output:
+					Expect(out.LineNo).To(Equal(i + 1))
+					Expect(out.Error).To(BeNil())
+					Expect(ok).To(Equal(true))
 				}
-			} else {
-				return
 			}
-		}
-	}
-}
+		})
+	})
+
+	Context("Exec", func() {
+		It("echo", func() {
+			output, err := Exec(sh, "sleep 1;echo 10;sleep 1;echo 20;")
+			Expect(err).To(BeNil())
+			Expect(output).To(Equal("10\n20\n"))
+		})
+	})
+})
