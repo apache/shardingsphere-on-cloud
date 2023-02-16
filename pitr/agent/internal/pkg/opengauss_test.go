@@ -27,22 +27,46 @@ import (
 )
 
 var _ = Describe("OpenGauss,requires opengauss environment", func() {
-	Context("AsyncBackup", func() {
-		It("One backup", func() {
+	Context("AsyncBackup & ShowBackupDetail", func() {
+		It("One backup and show", func() {
 			og := &openGauss{
 				shell: "/bin/sh",
 			}
+
+			var (
+				data     = "/home/omm/data"
+				instance = "ins-default-0"
+			)
+
 			backupID, err := og.AsyncBackup(
-				"/home/omm/data",
-				"ins-default-0",
+				data,
+				instance,
 				"full",
 				"/data/opengauss/3.1.1/data/single_node/",
 			)
-            
+
 			Expect(err).To(BeNil())
 			Expect(backupID).NotTo(BeEmpty())
 			fmt.Println(fmt.Sprintf("BackupID:%s", backupID))
-			time.Sleep(time.Second * 10)
+
+			// timeout 60s
+			for i := 0; i < 60; i++ {
+				backup, err := og.ShowBackupDetail(
+					data,
+					instance,
+					backupID,
+				)
+
+				Expect(err).To(BeNil())
+				Expect(backup).NotTo(BeNil())
+				Expect(backup.ID).To(Equal(backupID))
+				if backup.Status == "OK" {
+					goto End
+				}
+				time.Sleep(time.Second)
+			}
+			Fail("Timeout[60s]")
+		End:
 		})
 	})
 })

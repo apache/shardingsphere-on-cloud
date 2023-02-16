@@ -24,4 +24,5 @@ import (
 var (
 	Internal          = xerror.New(10000, "Internal error.")
 	InvalidHttpHeader = xerror.New(10001, "Invalid http header.")
+	DataNotFound      = xerror.New(10002, "Data not found.")
 )
