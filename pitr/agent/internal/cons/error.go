@@ -30,6 +30,6 @@ var (
 	NoPermission           = xerror.New(10005, "No permission to operate.")
 	InstanceAlreadyExist   = xerror.New(10006, "The instance already exist.")
 	InstanceNotExist       = xerror.New(10007, "The instance not exist.")
-	StartOpenGaussFailed   = xerror.New(10007, "Failed to start opengauss.")
-	StopOpenGaussFailed    = xerror.New(10007, "Failed to stop opengauss.")
+	StartOpenGaussFailed   = xerror.New(10008, "Failed to start opengauss.")
+	StopOpenGaussFailed    = xerror.New(10009, "Failed to stop opengauss.")
 )
