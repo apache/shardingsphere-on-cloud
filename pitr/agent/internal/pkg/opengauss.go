@@ -44,6 +44,9 @@ const (
 
 	_addInstanceFmt = "gs_probackup add-instance --backup-path=%s --instance=%s --pgdata=%s 2>&1"
 	_delInstanceFmt = "gs_probackup del-instance --backup-path=%s --instance=%s 2>&1"
+
+	_startOpenGaussFmt = "gs_ctl start --pgdata=%s"
+	_stopOpenGaussFmt  = "gs_ctl stop --pgdata=%s"
 )
 
 func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode, pgData string) (string, error) {
@@ -117,6 +120,18 @@ func (og *openGauss) Init(backupPath string) error {
 	return nil
 }
 
+func (og *openGauss) deinit(backupPath string) error {
+	if !strings.HasPrefix(backupPath, "/home/omm/") {
+		return cons.NoPermission
+	}
+
+	cmd := fmt.Sprintf(_deinitFmt, backupPath)
+	if _, err := cmds.Exec(og.shell, cmd); err != nil {
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+	return nil
+}
+
 func (og *openGauss) AddInstance(backupPath, instancee, pgData string) error {
 	cmd := fmt.Sprintf(_addInstanceFmt, backupPath, instancee, pgData)
 	_, err := cmds.Exec(og.shell, cmd)
@@ -143,13 +158,27 @@ func (og *openGauss) DelInstance(backupPath, instancee string) error {
 	return nil
 }
 
-func (og *openGauss) deinit(backupPath string) error {
-	if !strings.HasPrefix(backupPath, "/home/omm/") {
-		return cons.NoPermission
+func (og *openGauss) Start(pgData string) error {
+	cmd := fmt.Sprintf(_startOpenGaussFmt, pgData)
+	_, err := cmds.Exec(og.shell, cmd)
+	// already exist and it's not empty
+	if errors.Is(err, cons.CmdOperateFailed) {
+		return cons.StartOpenGaussFailed
 	}
+	if err != nil {
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+	return nil
+}
 
-	cmd := fmt.Sprintf(_deinitFmt, backupPath)
-	if _, err := cmds.Exec(og.shell, cmd); err != nil {
+func (og *openGauss) Stop(pgData string) error {
+	cmd := fmt.Sprintf(_stopOpenGaussFmt, pgData)
+	_, err := cmds.Exec(og.shell, cmd)
+	// already exist and it's not empty
+	if errors.Is(err, cons.CmdOperateFailed) {
+		return cons.StopOpenGaussFailed
+	}
+	if err != nil {
 		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
 	}
 	return nil

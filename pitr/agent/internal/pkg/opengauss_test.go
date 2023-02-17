@@ -141,4 +141,22 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 			Expect(errors.Is(err, cons.InstanceNotExist)).To(BeTrue())
 		})
 	})
+
+	Context("Start and Stop", func() {
+		It("start and stop:may fail if no instance exists", func() {
+			og := &openGauss{
+				shell: "/bin/sh",
+			}
+
+			var pgData = "/data/opengauss/3.1.1/data/single_node/"
+			err := og.Stop(pgData)
+			Expect(err).To(BeNil())
+
+			err = og.Stop(pgData)
+            Expect(errors.Is(err, cons.StopOpenGaussFailed)).To(BeTrue())
+
+			err = og.Start(pgData)
+			Expect(err).To(BeNil())
+		})
+	})
 })
