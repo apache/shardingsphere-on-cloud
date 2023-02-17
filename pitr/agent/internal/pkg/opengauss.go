@@ -38,6 +38,7 @@ const (
 	_backupFmt    = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s 2>&1"
 	_showFmt      = "gs_probackup show --instance=%s --backup-path=%s --backup-id=%s --format=json 2>&1"
 	_delBackupFmt = "gs_probackup delete --backup-path=%s --instance=%s --backup-id=%s 2>&1"
+	_restoreFmt   = "gs_probackup restore --backup-path=%s --instance=%s --backup-id=%s --pgdata=%s 2>&1"
 
 	_initFmt   = "gs_probackup init --backup-path=%s 2>&1"
 	_deinitFmt = "rm -r %s"
@@ -180,6 +181,22 @@ func (og *openGauss) Stop(pgData string) error {
 	}
 	if err != nil {
 		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+	return nil
+}
+
+// Restore TODO:Dependent environments require integration testing
+func (og *openGauss) Restore(backupPath, instance, backupID, pgData string) error {
+	cmd := fmt.Sprintf(_restoreFmt, backupPath, instance, backupID, pgData)
+	outputs, err := cmds.AsyncExec(og.shell, cmd)
+
+	for output := range outputs {
+		if errors.Is(err, cons.CmdOperateFailed) {
+			return fmt.Errorf("outputs get err=%s,wrap=%w", output.Error, cons.RestoreFailed)
+		}
+		if output.Error != nil {
+			return fmt.Errorf("output.Error[%s] is not nil,wrap=%w", output.Error, cons.RestoreFailed)
+		}
 	}
 	return nil
 }

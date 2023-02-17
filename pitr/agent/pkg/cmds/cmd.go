@@ -72,11 +72,16 @@ func AsyncExec(name string, args ...string) (chan *Output, error) {
 			}
 
 			if err = cmd.Wait(); err != nil {
-				output <- &Output{
-					Error: err,
+				if _, ok := err.(*exec.ExitError); ok {
+					output <- &Output{
+						Error: cons.CmdOperateFailed,
+					}
+				} else {
+					output <- &Output{
+						Error: fmt.Errorf("cmd.Wait return err=%s,wrap=%w", err, cons.Internal),
+					}
 				}
 			}
-
 			return nil
 		})(); err != nil {
 			// only panic err
