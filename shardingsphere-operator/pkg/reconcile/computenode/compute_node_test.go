@@ -208,7 +208,7 @@ var _ = Describe("ComputeNodeController", func() {
 		})
 	})
 
-	Context("verify spec", func() {
+	Context("verify deployment spec", func() {
 		var cn *v1alpha1.ComputeNode
 		BeforeEach(func() {
 			cn = &v1alpha1.ComputeNode{
@@ -262,7 +262,7 @@ var _ = Describe("ComputeNodeController", func() {
 			Expect(k8sClient.Delete(ctx, cn)).To(BeNil())
 		})
 
-		It("verify deployment spec", func() {
+		It("verify deployment spec basic", func() {
 			createdDeploy := &appsv1.Deployment{}
 			namespacedName := types.NamespacedName{Name: cn.Name, Namespace: cn.Namespace}
 			Eventually(func() bool {
@@ -271,20 +271,159 @@ var _ = Describe("ComputeNodeController", func() {
 			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
 			Expect(createdDeploy.Spec.Selector.MatchLabels).To(Equal(cn.Spec.Selector.MatchLabels))
 			Expect(*createdDeploy.Spec.Replicas).To(Equal(cn.Spec.Replicas))
-			//TODO: Add more tests for DeploymentSpec
+		})
+		//TODO: Add more tests for DeploymentSpec
+		It("verify deployment spec volume", func() {})
+		It("verify deployment spec template spec init containers", func() {})
+		It("verify deployment spec template spec containers", func() {})
+		It("verify deployment spec template spec volume mounts", func() {})
+		It("verify deployment spec template spec ports", func() {})
+		It("verify deployment spec template spec image tag", func() {})
+	})
+
+	Context("verify service spec", func() {
+		//TODO: Add BeforeEach and AfterEach here
+		var cn *v1alpha1.ComputeNode
+		BeforeEach(func() {
+			cn = &v1alpha1.ComputeNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-name",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "shardingsphere-proxy",
+					},
+					Annotations: map[string]string{
+						"anno-key": "anno-value",
+					},
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app": "shardingsphere-proxy",
+						},
+					},
+					Replicas: 2,
+					Bootstrap: v1alpha1.BootstrapConfig{
+						ServerConfig: v1alpha1.ServerConfig{
+							Mode: v1alpha1.ComputeNodeServerMode{
+								Repository: v1alpha1.Repository{
+									Type: v1alpha1.RepositoryTypeZookeeper,
+								},
+							},
+							Authority: v1alpha1.ComputeNodeAuthority{
+								Users: []v1alpha1.ComputeNodeUser{
+									{
+										User:     "root",
+										Password: "root",
+									},
+								},
+							},
+						},
+					},
+					StorageNodeConnector: &v1alpha1.StorageNodeConnector{
+						Type:    v1alpha1.ConnectorTypeMySQL,
+						Version: "5.1.47",
+					},
+					PortBindings: []v1alpha1.PortBinding{
+						{
+							Name:          "port",
+							ContainerPort: 3307,
+							ServicePort:   3307,
+						},
+					},
+				},
+			}
+
+			Expect(k8sClient.Create(ctx, cn)).To(BeNil())
+		})
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, cn)).To(BeNil())
 		})
 
-		It("verify service spec", func() {
+		It("verify service spec selectors", func() {
 			createdService := &corev1.Service{}
 			namespacedName := types.NamespacedName{Name: cn.Name, Namespace: cn.Namespace}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, namespacedName, createdService)
 				return err == nil
 			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
-			//TODO: Add more tests for ServiceSpec
+			Expect(createdService.Spec.Selector).To(Equal(cn.Spec.Selector.MatchLabels))
+		})
+		//TODO: Add more tests for ServiceSpec
+		It("verify service spec ports", func() {
+			//e.g. Expect().To(Equal())
+		})
+	})
+
+	Context("verify configmap spec", func() {
+		//TODO: Add BeforeEach and AfterEach here
+		var cn *v1alpha1.ComputeNode
+		BeforeEach(func() {
+			cn = &v1alpha1.ComputeNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-name",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "shardingsphere-proxy",
+					},
+					Annotations: map[string]string{
+						"anno-key": "anno-value",
+					},
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app": "shardingsphere-proxy",
+						},
+					},
+					Replicas: 2,
+					Bootstrap: v1alpha1.BootstrapConfig{
+						ServerConfig: v1alpha1.ServerConfig{
+							Mode: v1alpha1.ComputeNodeServerMode{
+								Repository: v1alpha1.Repository{
+									Type: v1alpha1.RepositoryTypeZookeeper,
+								},
+							},
+							Authority: v1alpha1.ComputeNodeAuthority{
+								Users: []v1alpha1.ComputeNodeUser{
+									{
+										User:     "root",
+										Password: "root",
+									},
+								},
+							},
+						},
+					},
+					StorageNodeConnector: &v1alpha1.StorageNodeConnector{
+						Type:    v1alpha1.ConnectorTypeMySQL,
+						Version: "5.1.47",
+					},
+					PortBindings: []v1alpha1.PortBinding{
+						{
+							Name:          "port",
+							ContainerPort: 3307,
+							ServicePort:   3307,
+						},
+					},
+				},
+			}
+
+			Expect(k8sClient.Create(ctx, cn)).To(BeNil())
+		})
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, cn)).To(BeNil())
+		})
+		It("verify configmap spec serverconfig", func() {
+			createdConfigMap := &corev1.ConfigMap{}
+			namespacedName := types.NamespacedName{Name: cn.Name, Namespace: cn.Namespace}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, namespacedName, createdConfigMap)
+				return err == nil
+			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
+			//e.g. Expect().To(Equal())
 		})
 
-		It("verify configmap spec", func() {
+		It("verify configmap spec logback", func() {
 			createdConfigMap := &corev1.ConfigMap{}
 			namespacedName := types.NamespacedName{Name: cn.Name, Namespace: cn.Namespace}
 			Eventually(func() bool {
@@ -292,7 +431,8 @@ var _ = Describe("ComputeNodeController", func() {
 				return err == nil
 			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
 			//TODO: Add more tests for ConfigMapSpec
+			//e.g. Expect().To(Equal())
 		})
-
 	})
+
 })
