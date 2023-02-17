@@ -78,4 +78,42 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 			Expect(errors.Is(err, cons.CmdOperateFailed)).To(BeTrue())
 		})
 	})
+
+	Context("Init and deinit", func() {
+		It("init backup and clean up the env", func() {
+			og := &openGauss{
+				shell: "/bin/sh",
+			}
+
+			data2 := "/home/omm/data2"
+
+			err := og.init(data2)
+			Expect(err).To(BeNil())
+
+			err = og.init(data2)
+			Expect(err).NotTo(BeNil())
+			Expect(errors.Is(err, cons.BackupPathAlreadyExist)).To(BeTrue())
+
+			err = og.deinit(data2)
+			Expect(err).To(BeNil())
+
+			// repeat validation
+			err = og.init(data2)
+			Expect(err).To(BeNil())
+			err = og.deinit(data2)
+			Expect(err).To(BeNil())
+
+		})
+
+		It("[/home/omm/]:no permission to operate other dirs", func() {
+			og := &openGauss{
+				shell: "/bin/sh",
+			}
+
+			data := "/home/omm2/data"
+
+			err := og.deinit(data)
+			Expect(errors.Is(err, cons.NoPermission)).To(BeTrue())
+		})
+	})
 })
