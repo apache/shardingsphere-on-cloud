@@ -80,17 +80,17 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 	})
 
 	Context("Init and deinit", func() {
-		It("init backup and clean up the env", func() {
+		It("Init backup and clean up the env", func() {
 			og := &openGauss{
 				shell: "/bin/sh",
 			}
 
 			data2 := "/home/omm/data2"
 
-			err := og.init(data2)
+			err := og.Init(data2)
 			Expect(err).To(BeNil())
 
-			err = og.init(data2)
+			err = og.Init(data2)
 			Expect(err).NotTo(BeNil())
 			Expect(errors.Is(err, cons.BackupPathAlreadyExist)).To(BeTrue())
 
@@ -98,7 +98,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 			Expect(err).To(BeNil())
 
 			// repeat validation
-			err = og.init(data2)
+			err = og.Init(data2)
 			Expect(err).To(BeNil())
 			err = og.deinit(data2)
 			Expect(err).To(BeNil())
@@ -114,6 +114,31 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 
 			err := og.deinit(data)
 			Expect(errors.Is(err, cons.NoPermission)).To(BeTrue())
+		})
+	})
+
+	Context("AddInstance and DelInstance", func() {
+		It("instance:add and delete", func() {
+			og := &openGauss{
+				shell: "/bin/sh",
+			}
+
+			var (
+				backupPath = "/home/omm/data"
+				instance   = "ins-test-1"
+				pgData     = "/data/opengauss/3.1.1/data/single_node/"
+			)
+			err := og.AddInstance(backupPath, instance, pgData)
+			Expect(err).To(BeNil())
+
+			err = og.AddInstance(backupPath, instance, pgData)
+			Expect(errors.Is(err, cons.InstanceAlreadyExist)).To(BeTrue())
+
+			err = og.DelInstance(backupPath, instance)
+			Expect(err).To(BeNil())
+
+			err = og.DelInstance(backupPath, instance)
+			Expect(errors.Is(err, cons.InstanceNotExist)).To(BeTrue())
 		})
 	})
 })

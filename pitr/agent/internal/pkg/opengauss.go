@@ -38,8 +38,12 @@ const (
 	_backupFmt    = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s 2>&1"
 	_showFmt      = "gs_probackup show --instance=%s --backup-path=%s --backup-id=%s --format=json 2>&1"
 	_delBackupFmt = "gs_probackup delete --backup-path=%s --instance=%s --backup-id=%s 2>&1"
-	_initFmt      = "gs_probackup init --backup-path=%s 2>&1"
-	_deinitFmt    = "rm -r %s"
+
+	_initFmt   = "gs_probackup init --backup-path=%s 2>&1"
+	_deinitFmt = "rm -r %s"
+
+	_addInstanceFmt = "gs_probackup add-instance --backup-path=%s --instance=%s --pgdata=%s 2>&1"
+	_delInstanceFmt = "gs_probackup del-instance --backup-path=%s --instance=%s 2>&1"
 )
 
 func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode, pgData string) (string, error) {
@@ -100,12 +104,38 @@ func (og *openGauss) delBackup(backupPath, instanceName, backupID string) error 
 	return nil
 }
 
-func (og *openGauss) init(backupPath string) error {
+func (og *openGauss) Init(backupPath string) error {
 	cmd := fmt.Sprintf(_initFmt, backupPath)
 	_, err := cmds.Exec(og.shell, cmd)
 	// already exist and it's not empty
 	if errors.Is(err, cons.CmdOperateFailed) {
 		return cons.BackupPathAlreadyExist
+	}
+	if err != nil {
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+	return nil
+}
+
+func (og *openGauss) AddInstance(backupPath, instancee, pgData string) error {
+	cmd := fmt.Sprintf(_addInstanceFmt, backupPath, instancee, pgData)
+	_, err := cmds.Exec(og.shell, cmd)
+	// already exist and it's not empty
+	if errors.Is(err, cons.CmdOperateFailed) {
+		return cons.InstanceAlreadyExist
+	}
+	if err != nil {
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+	return nil
+}
+
+func (og *openGauss) DelInstance(backupPath, instancee string) error {
+	cmd := fmt.Sprintf(_delInstanceFmt, backupPath, instancee)
+	_, err := cmds.Exec(og.shell, cmd)
+	// already exist and it's not empty
+	if errors.Is(err, cons.CmdOperateFailed) {
+		return cons.InstanceNotExist
 	}
 	if err != nil {
 		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)

@@ -28,4 +28,6 @@ var (
 	CmdOperateFailed       = xerror.New(10003, "Command operate failed.")
 	BackupPathAlreadyExist = xerror.New(10004, "The backup path already exists.")
 	NoPermission           = xerror.New(10005, "No permission to operate.")
+	InstanceAlreadyExist   = xerror.New(10006, "The instance already exist.")
+	InstanceNotExist       = xerror.New(10007, "The instance not exist.")
 )
