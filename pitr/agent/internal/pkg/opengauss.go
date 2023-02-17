@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/dlclark/regexp2"
 
@@ -37,6 +38,8 @@ const (
 	_backupFmt    = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s 2>&1"
 	_showFmt      = "gs_probackup show --instance=%s --backup-path=%s --backup-id=%s --format=json 2>&1"
 	_delBackupFmt = "gs_probackup delete --backup-path=%s --instance=%s --backup-id=%s 2>&1"
+	_initFmt      = "gs_probackup init --backup-path=%s 2>&1"
+	_deinitFmt    = "rm -r %s"
 )
 
 func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode, pgData string) (string, error) {
@@ -94,11 +97,30 @@ func (og *openGauss) delBackup(backupPath, instanceName, backupID string) error 
 	if err != nil {
 		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
 	}
+	return nil
+}
+
+func (og *openGauss) init(backupPath string) error {
+	cmd := fmt.Sprintf(_initFmt, backupPath)
+	_, err := cmds.Exec(og.shell, cmd)
+	// already exist and it's not empty
 	if errors.Is(err, cons.CmdOperateFailed) {
-		return cons.CmdOperateFailed
+		return cons.BackupPathAlreadyExist
 	}
 	if err != nil {
-		return fmt.Errorf("cmds.Exec[shell=%s, cmd=%s] return err=%w", og.shell, cmd, err)
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+	return nil
+}
+
+func (og *openGauss) deinit(backupPath string) error {
+	if !strings.HasPrefix(backupPath, "/home/omm/") {
+		return cons.NoPermission
+	}
+
+	cmd := fmt.Sprintf(_deinitFmt, backupPath)
+	if _, err := cmds.Exec(og.shell, cmd); err != nil {
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
 	}
 	return nil
 }
