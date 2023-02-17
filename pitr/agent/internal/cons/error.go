@@ -32,4 +32,5 @@ var (
 	InstanceNotExist       = xerror.New(10007, "The instance not exist.")
 	StartOpenGaussFailed   = xerror.New(10008, "Failed to start opengauss.")
 	StopOpenGaussFailed    = xerror.New(10009, "Failed to stop opengauss.")
+	RestoreFailed          = xerror.New(10010, "Failed to restore opengauss.")
 )
