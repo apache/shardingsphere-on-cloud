@@ -17,4 +17,67 @@
 
 package cmd
 
-//TODO
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
+
+const (
+	dnBackupPath = "dn-backup-path"
+	dnThreadsNum = "dn-threads-num"
+)
+
+var Backup = &cobra.Command{
+	Use:   "backup",
+	Short: "Backup a database cluster",
+	Run: func(cmd *cobra.Command, args []string) {
+
+		host, err := cmd.Flags().GetString(host)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:host:%s", host))
+
+		port, err := cmd.Flags().GetUint16(port)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:port:%d", port))
+
+		un, err := cmd.Flags().GetString(username)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:username:%s", un))
+
+		pw, err := cmd.Flags().GetString(password)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:password:%s", pw))
+
+		agentPort, err := cmd.Flags().GetUint16(agentPort)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:agentPort:%d", agentPort))
+
+		backupPath, err := cmd.Flags().GetString(dnBackupPath)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:backupPath:%s", backupPath))
+
+		threadsNum, err := cmd.Flags().GetUint16(dnThreadsNum)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:threadsNum:%d", threadsNum))
+	},
+}
+
+func init() {
+	Backup.PersistentFlags().StringP(dnBackupPath, "B", "", "DataNode backup path")
+	Backup.PersistentFlags().Uint16P(dnThreadsNum, "j", 1, "DataNode backup threads nums")
+}

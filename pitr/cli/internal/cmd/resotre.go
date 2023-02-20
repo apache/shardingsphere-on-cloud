@@ -17,4 +17,68 @@
 
 package cmd
 
-//TODO
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
+
+const (
+	backupRecordID = "id"
+	csn            = "csn"
+)
+
+var Restore = &cobra.Command{
+	Use:   "restore",
+	Short: "Restore a database cluster ",
+	Run: func(cmd *cobra.Command, args []string) {
+		host, err := cmd.Flags().GetString(host)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:host:%s", host))
+
+		port, err := cmd.Flags().GetUint16(port)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:port:%d", port))
+
+		un, err := cmd.Flags().GetString(username)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:username:%s", un))
+
+		pw, err := cmd.Flags().GetString(password)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:password:%s", pw))
+
+		agentPort, err := cmd.Flags().GetUint16(agentPort)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:agentPort:%d", agentPort))
+
+		csn, err := cmd.Flags().GetString(csn)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:csn:%s", csn))
+
+		id, err := cmd.Flags().GetString(backupRecordID)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(fmt.Sprintf("flags:id:%s", id))
+
+		fmt.Println("Restore...")
+	},
+}
+
+func init() {
+	Restore.PersistentFlags().StringP(csn, "", "", "commit sequence number")
+	Restore.PersistentFlags().StringP(backupRecordID, "", "", "backup record id")
+}
