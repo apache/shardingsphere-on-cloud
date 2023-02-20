@@ -49,17 +49,20 @@ var (
 var (
 	logLevel string
 	port     string
+	pgData   string
 	tlsCrt   string
 	tlsKey   string
 )
 
 func init() {
 	// 参数通过 flag 输入
-	flag.StringVar(&logLevel, "logLevel", "info", "optional:log level,option values:info or debug")
+	flag.StringVar(&logLevel, "log-level", "info", "optional:log level,option values:info or debug")
 	flag.StringVar(&port, "port", "443", "HTTP service port")
 
-	flag.StringVar(&tlsCrt, "tlsCrt", "", "Require:TLS certificate file path")
-	flag.StringVar(&tlsKey, "tlsKey", "", "Require:TLS key file path")
+	flag.StringVar(&tlsCrt, "tls-crt", "", "Require:TLS certificate file path")
+	flag.StringVar(&tlsKey, "tls-key", "", "Require:TLS key file path")
+
+	flag.StringVar(&pgData, "pgdata", "", "Optional:Get the value from cli flags or env")
 }
 
 func main() {
@@ -68,6 +71,13 @@ func main() {
 	shell := os.Getenv("SHELL")
 	if shell == "" {
 		panic(fmt.Errorf("shell does not exist"))
+	}
+
+	if pgData == "" {
+		pgData = os.Getenv("PGDATA")
+		if pgData == "" {
+			panic(fmt.Errorf("PGDATA:no database directory specified and environment variable PGDATA unset"))
+		}
 	}
 
 	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
