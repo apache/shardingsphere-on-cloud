@@ -56,13 +56,13 @@ var (
 
 func init() {
 	// 参数通过 flag 输入
-	flag.StringVar(&logLevel, "logLevel", "info", "optional:log level,option values:info or debug")
+	flag.StringVar(&logLevel, "log-level", "info", "optional:log level,option values:info or debug")
 	flag.StringVar(&port, "port", "443", "HTTP service port")
 
-	flag.StringVar(&tlsCrt, "tlsCrt", "", "Require:TLS certificate file path")
-	flag.StringVar(&tlsKey, "tlsKey", "", "Require:TLS key file path")
+	flag.StringVar(&tlsCrt, "tls-crt", "", "Require:TLS certificate file path")
+	flag.StringVar(&tlsKey, "tls-key", "", "Require:TLS key file path")
 
-	flag.StringVar(&pgData, "pgData", "", "Optional:Get the value from cli flags or env")
+	flag.StringVar(&pgData, "pgdata", "", "Optional:Get the value from cli flags or env")
 }
 
 func main() {
