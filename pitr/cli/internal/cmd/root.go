@@ -24,13 +24,16 @@ import (
 )
 
 const (
-	backupRecordID = "id"
-	csn            = "csn"
+	host      = "host"
+	port      = "port"
+	username  = "username"
+	password  = "password"
+	agentPort = "agent-port"
 )
 
-var Restore = &cobra.Command{
-	Use:   "restore",
-	Short: "Restore a database cluster ",
+var Root = &cobra.Command{
+	Use:   "gs_pitr",
+	Short: "PITR tools for openGauss",
 	Run: func(cmd *cobra.Command, args []string) {
 		host, err := cmd.Flags().GetString(host)
 		if err != nil {
@@ -61,24 +64,19 @@ var Restore = &cobra.Command{
 			fmt.Println(err)
 		}
 		fmt.Println(fmt.Sprintf("flags:agentPort:%d", agentPort))
-
-		csn, err := cmd.Flags().GetString(csn)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(fmt.Sprintf("flags:csn:%s", csn))
-
-		id, err := cmd.Flags().GetString(backupRecordID)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(fmt.Sprintf("flags:id:%s", id))
-
-		fmt.Println("Restore...")
+	},
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd: true,
+		HiddenDefaultCmd:  true,
 	},
 }
 
 func init() {
-	Restore.PersistentFlags().StringP(csn, "", "", "commit sequence number")
-	Restore.PersistentFlags().StringP(backupRecordID, "", "", "backup record id")
+	Root.PersistentFlags().StringP(host, "H", "", "shardingsphere proxy server host")
+	Root.PersistentFlags().Uint16P(port, "P", 1, "shardingsphere proxy service port")
+	Root.PersistentFlags().StringP(username, "u", "", "shardingsphere proxy username")
+	Root.PersistentFlags().StringP(password, "p", "", "shardingsphere proxy password")
+	Root.PersistentFlags().Uint16P(agentPort, "", 443, "agent server port")
+
+	Root.AddCommand(Backup, Restore, Show)
 }

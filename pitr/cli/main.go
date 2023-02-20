@@ -20,23 +20,11 @@ package main
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/cmd"
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "gs_pitr",
-	Short: "PITR tools for openGauss",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Did nothing...")
-	},
-	CompletionOptions: cobra.CompletionOptions{
-		DisableDefaultCmd: true,
-		HiddenDefaultCmd:  true,
-	},
-}
-
 func main() {
-	if err := rootCmd.Execute(); err != nil {
+	if err := cmd.Root.Execute(); err != nil {
 		fmt.Println(fmt.Sprintf("Err: %s", err))
 	}
 }
