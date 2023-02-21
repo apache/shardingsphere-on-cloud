@@ -21,6 +21,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 )
 
 const (
@@ -34,47 +36,47 @@ var Restore = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		host, err := cmd.Flags().GetString(host)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:host:%s", host))
+		logging.Info(fmt.Sprintf("flags:host:%s", host))
 
 		port, err := cmd.Flags().GetUint16(port)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:port:%d", port))
+		logging.Info(fmt.Sprintf("flags:port:%d", port))
 
 		un, err := cmd.Flags().GetString(username)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:username:%s", un))
+		logging.Info(fmt.Sprintf("flags:username:%s", un))
 
 		pw, err := cmd.Flags().GetString(password)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:password:%s", pw))
+		logging.Info(fmt.Sprintf("flags:password:%s", pw))
 
 		agentPort, err := cmd.Flags().GetUint16(agentPort)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:agentPort:%d", agentPort))
+		logging.Info(fmt.Sprintf("flags:agentPort:%d", agentPort))
 
 		csn, err := cmd.Flags().GetString(csn)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:csn:%s", csn))
+		logging.Info(fmt.Sprintf("flags:csn:%s", csn))
 
 		id, err := cmd.Flags().GetString(backupRecordID)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:id:%s", id))
+		logging.Info(fmt.Sprintf("flags:id:%s", id))
 
-		fmt.Println("Restore...")
+		logging.Info("Restore...")
 	},
 }
 

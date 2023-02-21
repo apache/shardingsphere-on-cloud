@@ -21,6 +21,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 )
 
 const (
@@ -35,45 +37,45 @@ var Backup = &cobra.Command{
 
 		host, err := cmd.Flags().GetString(host)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:host:%s", host))
+		logging.Info(fmt.Sprintf("flags:host:%s", host))
 
 		port, err := cmd.Flags().GetUint16(port)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:port:%d", port))
+		logging.Info(fmt.Sprintf("flags:port:%d", port))
 
 		un, err := cmd.Flags().GetString(username)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:username:%s", un))
+		logging.Info(fmt.Sprintf("flags:username:%s", un))
 
 		pw, err := cmd.Flags().GetString(password)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:password:%s", pw))
+		logging.Info(fmt.Sprintf("flags:password:%s", pw))
 
 		agentPort, err := cmd.Flags().GetUint16(agentPort)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:agentPort:%d", agentPort))
+		logging.Info(fmt.Sprintf("flags:agentPort:%d", agentPort))
 
 		backupPath, err := cmd.Flags().GetString(dnBackupPath)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:backupPath:%s", backupPath))
+		logging.Info(fmt.Sprintf("flags:backupPath:%s", backupPath))
 
 		threadsNum, err := cmd.Flags().GetUint16(dnThreadsNum)
 		if err != nil {
-			fmt.Println(err)
+			logging.Error(err.Error())
 		}
-		fmt.Println(fmt.Sprintf("flags:threadsNum:%d", threadsNum))
+		logging.Info(fmt.Sprintf("flags:threadsNum:%d", threadsNum))
 	},
 }
 
