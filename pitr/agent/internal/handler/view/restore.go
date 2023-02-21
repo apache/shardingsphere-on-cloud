@@ -15,28 +15,46 @@
 * limitations under the License.
  */
 
-package handler
+package view
 
-import (
-	"fmt"
+import "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
+type RestoreIn struct {
+	DbPort       uint16 `json:"db_port"`
+	Username     string `json:"username"`
+	Password     string `json:"password"`
+	Instance     string `json:"instance"`
+	DnBackupPath string `json:"dn_backup_path"`
+	DnBackupId   string `json:"dn_backup_id"`
+}
 
-	"github.com/gofiber/fiber/v2"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
-)
-
-func Backup(ctx *fiber.Ctx) error {
-	in := &view.BackupIn{}
-
-	if err := ctx.BodyParser(in); err != nil {
-		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
+func (in *RestoreIn) Validate() error {
+	if in == nil {
+		return cons.Internal
 	}
 
-	if err := in.Validate(); err != nil {
-		return err
+	if in.DbPort == 0 {
+		return cons.InvalidDbPort
 	}
 
-	return ctx.JSON(in)
+	if in.Username == "" {
+		return cons.MissingUsername
+	}
+
+	if in.Password == "" {
+		return cons.MissingPassword
+	}
+
+	if in.DnBackupPath == "" {
+		return cons.MissingDnBackupPath
+	}
+
+	if in.DnBackupId == "" {
+		return cons.MissingDnBackupId
+	}
+
+	if in.Instance == "" {
+		return cons.MissingInstance
+	}
+	return nil
 }

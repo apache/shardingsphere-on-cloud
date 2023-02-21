@@ -153,7 +153,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 			Expect(err).To(BeNil())
 
 			err = og.Stop(pgData)
-            Expect(errors.Is(err, cons.StopOpenGaussFailed)).To(BeTrue())
+			Expect(errors.Is(err, cons.StopOpenGaussFailed)).To(BeTrue())
 
 			err = og.Start(pgData)
 			Expect(err).To(BeNil())

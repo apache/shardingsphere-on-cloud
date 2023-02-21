@@ -17,8 +17,26 @@
 
 package handler
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"fmt"
+
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
+
+	"github.com/gofiber/fiber/v2"
+
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+)
 
 func Show(ctx *fiber.Ctx) error {
-	return nil
+	in := &view.ShowIn{}
+
+	if err := ctx.BodyParser(in); err != nil {
+		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
+	}
+
+	if err := in.Validate(); err != nil {
+		return err
+	}
+
+	return ctx.JSON(in)
 }
