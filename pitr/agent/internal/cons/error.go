@@ -43,4 +43,5 @@ var (
 	MissingInstance        = xerror.New(10018, "Missing instance.")
 	MissingDnBackupId      = xerror.New(10019, "Missing dn backup id.")
 	BodyParseFailed        = xerror.New(10020, "Invalid http request body.")
+	MissingDbName          = xerror.New(10021, "Missing db name.")
 )

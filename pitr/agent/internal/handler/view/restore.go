@@ -21,6 +21,7 @@ import "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 
 type RestoreIn struct {
 	DbPort       uint16 `json:"db_port"`
+	DbName       string `json:"db_name"`
 	Username     string `json:"username"`
 	Password     string `json:"password"`
 	Instance     string `json:"instance"`
@@ -35,6 +36,10 @@ func (in *RestoreIn) Validate() error {
 
 	if in.DbPort == 0 {
 		return cons.InvalidDbPort
+	}
+
+	if in.DbName == "" {
+		return cons.MissingDbName
 	}
 
 	if in.Username == "" {
