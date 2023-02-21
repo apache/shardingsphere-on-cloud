@@ -18,5 +18,5 @@
 package cons
 
 const (
-	RequestID string = "request-id"
+	RequestID string = "x-request-id"
 )

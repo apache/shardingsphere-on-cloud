@@ -15,10 +15,46 @@
 * limitations under the License.
  */
 
-package handler
+package view
 
-import "github.com/gofiber/fiber/v2"
+import "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 
-func Restore(ctx *fiber.Ctx) error {
+type ShowIn struct {
+	DbPort       uint16 `json:"db_port"`
+	Username     string `json:"username"`
+	Password     string `json:"password"`
+	DnBackupId   string `json:"dn_backup_id"`
+	DnBackupPath string `json:"dn_backup_path"`
+	Instance     string `json:"instance"`
+}
+
+func (in *ShowIn) Validate() error {
+	if in == nil {
+		return cons.Internal
+	}
+
+	if in.DbPort == 0 {
+		return cons.InvalidDbPort
+	}
+
+	if in.Username == "" {
+		return cons.MissingUsername
+	}
+
+	if in.Password == "" {
+		return cons.MissingPassword
+	}
+
+	if in.DnBackupPath == "" {
+		return cons.MissingDnBackupPath
+	}
+
+	if in.DnBackupId == "" {
+		return cons.MissingDnBackupId
+	}
+
+	if in.Instance == "" {
+		return cons.MissingInstance
+	}
 	return nil
 }

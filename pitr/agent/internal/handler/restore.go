@@ -20,15 +20,14 @@ package handler
 import (
 	"fmt"
 
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
-
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
 )
 
-func Backup(ctx *fiber.Ctx) error {
-	in := &view.BackupIn{}
+func Restore(ctx *fiber.Ctx) error {
+	in := &view.RestoreIn{}
 
 	if err := ctx.BodyParser(in); err != nil {
 		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
