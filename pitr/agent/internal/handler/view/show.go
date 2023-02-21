@@ -19,14 +19,26 @@ package view
 
 import "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 
-type ShowIn struct {
-	DbPort       uint16 `json:"db_port"`
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-	DnBackupId   string `json:"dn_backup_id"`
-	DnBackupPath string `json:"dn_backup_path"`
-	Instance     string `json:"instance"`
-}
+type (
+	ShowIn struct {
+		DbPort       uint16 `json:"db_port"`
+		DbName       string `json:"db_name"`
+		Username     string `json:"username"`
+		Password     string `json:"password"`
+		DnBackupId   string `json:"dn_backup_id"`
+		DnBackupPath string `json:"dn_backup_path"`
+		Instance     string `json:"instance"`
+	}
+
+	BackupInfo struct {
+		Id        string `json:"dn_backup_id"`
+		Path      string `json:"dn_backup_path"`
+		Instance  string `json:"instance"`
+		StartTime string `json:"start_time"`
+		EndTime   string `json:"end_time"`
+		Status    string `json:"status"`
+	}
+)
 
 func (in *ShowIn) Validate() error {
 	if in == nil {
@@ -35,6 +47,10 @@ func (in *ShowIn) Validate() error {
 
 	if in.DbPort == 0 {
 		return cons.InvalidDbPort
+	}
+
+	if in.DbName == "" {
+		return cons.MissingDbName
 	}
 
 	if in.Username == "" {
