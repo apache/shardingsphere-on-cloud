@@ -39,8 +39,11 @@ spec:
       name: Phase
       type: string
     - jsonPath: .status.loadBalancer.clusterIP
-      name: ClusterIP
+      name: Cluster-IP
       type: string
+    - jsonPath: .spec.portBindings[*].servicePort
+      name: ServicePorts
+      type: integer
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -245,8 +248,6 @@ spec:
                     type: object
                 type: object
               env:
-                description: port is ShardingSphere-Proxy startup port Ports []corev1.ContainerPort
-                  `json:"ports,omitempty"`
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -362,7 +363,6 @@ spec:
                   type: object
                 type: array
               portBindings:
-                description: Service Service `json:"service,omitempty"`
                 items:
                   properties:
                     containerPort:
@@ -1069,9 +1069,18 @@ spec:
                   is running normally
                 format: int32
                 type: integer
+              replicas:
+                format: int32
+                type: integer
+            required:
+            - replicas
             type: object
         type: object
     served: true
     storage: true
     subresources:
+      scale:
+        labelSelectorPath: .spec.selectors
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.replicas
       status: {}
