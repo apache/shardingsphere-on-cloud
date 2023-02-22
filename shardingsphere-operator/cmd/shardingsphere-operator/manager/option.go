@@ -79,11 +79,16 @@ func ParseOptionsFromCmdFlags() *Options {
 
 func (opts *Options) ParseFeatureGates() []FeatureGateHandler {
 	handlers := []FeatureGateHandler{}
+	if len(opts.FeatureGates) == 0 {
+		return handlers
+	}
 	if gatesVal := strings.Split(opts.FeatureGates, ","); len(gatesVal) > 0 {
 		for i := range gatesVal {
 			gate, enable := func() (string, bool) {
-				gval := strings.Split(gatesVal[i], "=")
-				return gval[0], gval[1] == "true"
+				if gval := strings.Split(gatesVal[i], "="); len(gval) == 2 {
+					return gval[0], gval[1] == "true"
+				}
+				return "", false
 			}()
 
 			if h, ok := featureGatesHandlers[gate]; ok && enable {
