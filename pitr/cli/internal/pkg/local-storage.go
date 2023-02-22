@@ -83,14 +83,14 @@ func (ls *localStorage) init() error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.Mkdir(ls.backupDir, 0777); err != nil {
-				return fmt.Errorf("create root dir failure,dir=%s,err=%s", ls.backupDir, err)
+				return fmt.Errorf("create backup dir failure,dir=%s,err=%s", ls.backupDir, err)
 			}
 		} else if os.IsExist(err) {
 			if !fi.IsDir() {
-				return fmt.Errorf("file has already exist,name=%s", ls.backupDir)
+				return fmt.Errorf("backup:file has already exist,name=%s", ls.backupDir)
 			}
 		} else {
-			return fmt.Errorf("failed to get file info,root dir=%s,err=%s", ls.backupDir, err)
+			return fmt.Errorf("failed to get file info,backup dir=%s,err=%s", ls.backupDir, err)
 		}
 	}
 
