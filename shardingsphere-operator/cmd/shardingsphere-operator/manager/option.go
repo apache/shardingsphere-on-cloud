@@ -19,14 +19,20 @@ package manager
 
 import (
 	"flag"
+	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (
@@ -40,12 +46,8 @@ func init() {
 
 type Options struct {
 	ctrl.Options
-	FeatureGateOptions
-	ZapOptions zap.Options
-}
-
-type FeatureGateOptions struct {
-	ComputeNode bool
+	FeatureGates string
+	ZapOptions   zap.Options
 }
 
 func ParseOptionsFromCmdFlags() *Options {
@@ -66,11 +68,47 @@ func ParseOptionsFromCmdFlags() *Options {
 	flag.BoolVar(&opt.LeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&opt.ComputeNode, "feature-gate-compute-node", false, "Enable support for CustomResourceDefinition ComputeNode.")
+	flag.StringVar(&opt.FeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for alpha/experimental features.")
 
 	opt.ZapOptions.BindFlags(flag.CommandLine)
 
 	flag.Parse()
 
 	return opt
+}
+
+func (opts *Options) ParseFeatureGates() []FeatureGateHandler {
+	handlers := []FeatureGateHandler{}
+	if gatesVal := strings.Split(opts.FeatureGates, ","); len(gatesVal) > 0 {
+		for i := range gatesVal {
+			gate, enable := func() (string, bool) {
+				gval := strings.Split(gatesVal[i], "=")
+				return gval[0], gval[1] == "true"
+			}()
+
+			if h, ok := featureGatesHandlers[gate]; ok && enable {
+				handlers = append(handlers, h)
+			}
+		}
+	}
+	return handlers
+}
+
+type FeatureGateHandler func(mgr manager.Manager) error
+
+var featureGatesHandlers = map[string]FeatureGateHandler{
+	"ComputeNode": func(mgr manager.Manager) error {
+		if err := (&controllers.ComputeNodeReconciler{
+			Client:     mgr.GetClient(),
+			Scheme:     mgr.GetScheme(),
+			Log:        mgr.GetLogger(),
+			Deployment: deployment.NewDeployment(mgr.GetClient()),
+			Service:    service.NewService(mgr.GetClient()),
+			ConfigMap:  configmap.NewConfigMap(mgr.GetClient()),
+		}).SetupWithManager(mgr); err != nil {
+			logger.Error(err, "unable to create controller", "controller", "ComputeNode")
+			return err
+		}
+		return nil
+	},
 }
