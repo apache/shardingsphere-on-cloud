@@ -27,14 +27,34 @@ import (
 
 var _ = Describe("ILocalStorage", func() {
 	Context("localStorage", func() {
-		It("Init:Initialize the cli program directory.", func() {
+		It("New:Initialize the cli program directory.", func() {
 			Skip("Manually exec:dependent environment")
-			var (
-				root = fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
-				ls   = &localStorage{}
-			)
+			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
+			ls, err := NewLocalStorage(root)
+			Expect(err).To(BeNil())
+			Expect(ls).NotTo(BeNil())
+		})
 
-			err := ls.Init(root)
+		It("GenFilename and WriteByJSON", func() {
+			Skip("Manually exec:dependent environment")
+			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
+			ls, err := NewLocalStorage(root)
+			Expect(err).To(BeNil())
+			Expect(ls).NotTo(BeNil())
+
+			filename := ls.GenFilename(ExtnJSON)
+			Expect(filename).NotTo(BeEmpty())
+
+			type T struct {
+				Name string
+				Age  uint8
+			}
+
+			contents := T{
+				Name: "Pikachu",
+				Age:  65,
+			}
+			err = ls.WriteByJSON(filename, contents)
 			Expect(err).To(BeNil())
 		})
 	})
