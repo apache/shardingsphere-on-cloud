@@ -21,9 +21,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/metrics"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
@@ -67,16 +64,11 @@ func SetupWithOptions(opts *Options) *Manager {
 		os.Exit(1)
 	}
 
-	if opts.ComputeNode {
-		if err = (&controllers.ComputeNodeReconciler{
-			Client:     mgr.GetClient(),
-			Scheme:     mgr.GetScheme(),
-			Log:        mgr.GetLogger(),
-			Deployment: deployment.NewDeployment(mgr.GetClient()),
-			Service:    service.NewService(mgr.GetClient()),
-			ConfigMap:  configmap.NewConfigMap(mgr.GetClient()),
-		}).SetupWithManager(mgr); err != nil {
-			logger.Error(err, "unable to create controller", "controller", "ComputeNode")
+	// feature gates handling
+	handlers := opts.ParseFeatureGates()
+	for _, h := range handlers {
+		//FIXME: this will cause panic if there is no handler found
+		if err := h(mgr); err != nil {
 			os.Exit(1)
 		}
 	}
