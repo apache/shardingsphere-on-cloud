@@ -16,13 +16,19 @@ Use the following command to uninstall:
 helm unstall [RELEASE_NAME]
 ```
 
+## Try ComputeNode
+Use the following command to install:
+```shell
+helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts --set operator.featureGates.computeNode=true --set proxyCluster.enabled=false
+```
+
 ## Parameters
 ### Common parameters
 | Name              | Description                                                                                               | Value                  |
 |-------------------|-----------------------------------------------------------------------------------------------------------|------------------------|
 | `nameOverride`    | nameOverride String to partially override common.names.fullname template (will maintain the release name) | `shardingsphere-proxy` |
 
-### ShardingSphere-Operator Parameters
+### ShardingSphere Operator Parameters
 | Name                              | Description                                 | Value                                                                   |
 |-----------------------------------| ------------------------------------------- |-------------------------------------------------------------------------|
 | `operator.replicaCount`           | operator replica count                      | `2`                                                                     |
@@ -33,7 +39,7 @@ helm unstall [RELEASE_NAME]
 | `operator.resources`              | operator Resources required by the operator | `{}`                                                                    |
 | `operator.health.healthProbePort` | operator health check port                  | `8081`                                                                  |
 
-### ShardingSphere-Proxy Cluster Parameters
+### ShardingSphere ProxyCluster Parameters
 
 | Name                                             | Description                                                                                                                                                                                        | Value       |
 |--------------------------------------------------| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |-------------|
@@ -52,7 +58,7 @@ helm unstall [RELEASE_NAME]
 | `proxyCluster.mySQLDriver.version`               | ShardingSphere-Proxy The ShardingSphere-Proxy mysql driver version will not be downloaded if it is empty                                                                                           | `5.1.47`    |
 
 
-### Compute-Node ShardingSphere-Proxy ServerConfiguration Authority Parameters
+### ShardingSphere ProxyCluster ServerConfiguration Authority Parameters
 
 | Name                                                    | Description                                                                                                                                    | Value                      |
 |---------------------------------------------------------| ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
@@ -61,7 +67,7 @@ helm unstall [RELEASE_NAME]
 | `proxyCluster.serverConfig.authority.users[0].user`     | Username,authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host | `root@%`                   |
 
 
-### Compute-Node ShardingSphere-Proxy ServerConfiguration Mode Configuration Parameters
+### ShardingSphere ProxyCluster ServerConfiguration Mode Parameters
 
 | Name                                                                           | Description                                                         | Value                                                                  |
 |--------------------------------------------------------------------------------| ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -77,7 +83,7 @@ helm unstall [RELEASE_NAME]
 | `proxyCluster.serverConfig.props.proxy-frontend-database-protocol-type`        | Default startup protocol                                            | `MySQL`                                                                |
 
 
-### ZooKeeper Chart Parameters
+### ZooKeeper Parameters
 
 | Name                                 | Description                                          | Value               |
 | ------------------------------------ | ---------------------------------------------------- | ------------------- |
@@ -87,3 +93,36 @@ helm unstall [RELEASE_NAME]
 | `zookeeper.persistence.storageClass` | Persistent Volume storage class                      | `""`                |
 | `zookeeper.persistence.accessModes`  | Persistent Volume access modes                       | `["ReadWriteOnce"]` |
 | `zookeeper.persistence.size`         | Persistent Volume size                               | `8Gi`               |
+
+
+### ShardingSphere ComputeNode Parameters
+
+| Name                                        | Description                                                                                            | Value               |
+| --------------------------------------------| ------------------------------------------------------------------------------------------------------ | ------------------- |
+| `computeNode.storageNodeConnector.type`     | ShardingSphere-Proxy driver type                                                                       | `mysql`             |
+| `computeNode.storageNodeConnector.version`  | ShardingSphere-Proxy driver version. The MySQL driver need to be downloaded according to this version  | `5.1.47`            |
+| `computeNode.serverVersion`                 | ShardingSphere-Proxy cluster version                                                                   | `5.3.1`             |
+| `computeNode.portBindings[0].name`          | ShardingSphere-Proxy port name                                                                         | `3307`              |
+| `computeNode.portBindings[0].containerPort` | ShardingSphere-Proxy port for container                                                                | `3307`              |
+| `computeNode.portBindings[0].servicePort`   | ShardingSphere-Proxy port for service                                                                  | `3307`              |
+| `computeNode.portBindings[0].procotol`      | ShardingSphere-Proxy port protocol                                                                     | `TCP`               |
+| `computeNode.serviceType`                   | ShardingSphere-Proxy service type                                                                      | `ClusterIP`         |
+
+
+### ShardingSphere ComputeNode Bootstrap Parameters
+
+| Name                                                                           | Description                                                         | Value                                                                  |
+|--------------------------------------------------------------------------------| ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `computeNode.bootstrap.serverConfig.authority.privilege.type`    | authority provider for storage node, the default value is ALL_PERMITTED                                                                        | `ALL_PRIVILEGES_PERMITTED` |
+| `computeNode.bootstrap.serverConfig.authority.users[0].user`     | Username,authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host | `root@%`                   |
+| `computeNode.bootstrap.serverConfig.authority.users[0].password` | Password for compute node.                                                                                                                     | `root`                     |
+| `computeNode.bootstrap.serverConfig.mode.type`                                          | Type of mode configuration. Now only support Cluster mode           | `Cluster`                                                              |
+| `computeNode.bootstrap.serverConfig.mode.repository.type`                               | Type of persist repository. Now only support ZooKeeper              | `ZooKeeper`                                                            |
+| `computeNode.bootstrap.mode.repository.props.timeToLiveSeconds`            | Seconds of ephemeral data live                                      | `600`                                                                  |
+| `computeNode.bootstrap.serverConfig.mode.repository.props.serverlists`                 | Server lists of registry center                                     | `{{ printf "%s-zookeeper.%s:2181" .Release.Name .Release.Namespace }}` |
+| `computeNode.bootstrap.serverConfig.mode.repository.props.retryIntervalMilliseconds`    | Milliseconds of retry interval                                      | `500`                                                                  |
+| `computeNode.bootstrap.serverConfig.mode.repository.props.operationTimeoutMilliseconds` | Milliseconds of operation timeout                                   | `5000`                                                                 |
+| `computeNode.bootstrap.serverConfig.mode.repository.props.namespace`                    | Namespace of registry center                                        | `governance_ds`                                                        |
+| `computeNode.bootstrap.serverConfig.mode.repository.props.maxRetries`                   | Max retries of client connection                                    | `3`                                                                    |
+| `computeNode.bootstrap.serverConfig.mode.overwrite`                                     | Whether overwrite persistent configuration with local configuration | `true`                                                                 |
+| `computeNode.bootstrap.serverConfig.props.proxy-frontend-database-protocol-type`        | Default startup protocol                                            | `MySQL`                                                                |

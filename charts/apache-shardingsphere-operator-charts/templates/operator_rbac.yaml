@@ -138,6 +138,24 @@ rules:
   - apiGroups:
       - shardingsphere.apache.org
     resources:
+      - computenodes
+    verbs:
+      - "*"
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
+      - computenodes/finalizers
+    verbs:
+      - "*"
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
+      - computenodes/status
+    verbs:
+      - "*"
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
       - shardingsphereproxies/status
     verbs:
       - get

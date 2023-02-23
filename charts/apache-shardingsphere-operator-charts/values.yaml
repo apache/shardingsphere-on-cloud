@@ -24,7 +24,7 @@ nameOverride: shardingsphere-proxy
 operator:
 ## @param replicaCount operator replica count
 ##
-  replicaCount: 2
+  replicaCount: 1
   image:
     ## @param image.repository operator image name
     ##
@@ -54,6 +54,10 @@ operator:
   ##
   health:
     healthProbePort: 8081
+  ## @param featureGates.computeNode operator health check port
+  ##
+  featureGates:
+    computeNode: false 
 
 
 ## @section ShardingSphere-Proxy cluster parameters
@@ -163,7 +167,7 @@ zookeeper:
   enabled: true
   ## @param zookeeper.replicaCount Number of ZooKeeper nodes
   ##
-  replicaCount: 2
+  replicaCount: 3
   ## ZooKeeper Persistence parameters
   ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
   ## @param zookeeper.persistence.enabled Enable persistence on ZooKeeper using PVC(s)
@@ -177,3 +181,92 @@ zookeeper:
     accessModes:
       - ReadWriteOnce
     size: 8Gi
+
+## @section ComputeNode parameters
+computeNode:
+  ## @param computeNode.storageNodeConnector declare the driver for ShardingSphere Proxy
+  ## @param computeNode.storageNodeConnector.type is the driver type for ShardingSphere Proxy
+  ## @param computeNode.storageNodeConnector.version is the driver version for ShardingSphere Proxy
+  ##
+  storageNodeConnector:
+    type: mysql
+    version: 5.1.47
+  ## @param computeNode.serverVersion the vesrion for ShardingSphere Proxy
+  ##
+  serverVersion: 5.3.1
+  ## @param computeNode.replicas the replicas for ShardingSphere Proxy
+  ##
+  replicas: 1
+  ## @param computeNode.portBindings the port binding
+  ##
+  portBindings:
+  ## @param computeNode.portBindings[0].name the port binding
+  ## @param computeNode.portBindings[0].containerPort the container port
+  ## @param computeNode.portBindings[0].servicePort the service port
+  ## @param computeNode.portBindings[0].protocol the protocol
+  #
+  - name: server
+    containerPort: 3307
+    servicePort: 3307
+    protocol: TCP
+  ## @param computeNode.serviceType the service type 
+  ##
+  serviceType: ClusterIP
+  ## @param computeNode.bootstrap the configuration for bootstrapping
+  ##
+  bootstrap:
+    ## @param computeNode.bootstrap.serverConfig the server.yaml
+    ##
+    serverConfig:
+      ## @param computeNode.bootstrap.serverConfig.authority the authorization
+      ##
+      authority: 
+        ## @param computeNode.bootstrap.serverConfig.authority.privilege authorized privilege 
+        ##
+        privilege:
+          ## @param computeNode.bootstrap.serverConfig.authority.privilege.type authorized privilege type 
+          ##
+          type: ALL_PERMITTED
+        ## @param computeNode.users authorized users
+        ## @param computeNode.users[0].user the username 
+        ## @param computeNode.users[0].password the password 
+        ##
+        users:
+        - user: root%
+          password: root
+      ## @param computeNode.bootstrap.serverConfig.mode the modes for ShardingSphere
+      ##
+      mode: 
+        ## @param computeNode.bootstrap.serverConfig.mode.type the running mode for ShardingSphere
+        ##
+        type: Cluster 
+        ## @param computeNode.bootstrap.serverConfig.mode.repository the config for repository
+        ##
+        repository:
+          ## @param computeNode.bootstrap.serverConfig.mode.repository.type the type for repository 
+          ## e.g. 
+          ## type: ZooKeeper
+          ##
+          type: ZooKeeper
+          ## @param computeNode.bootstrap.serverConfig.mode.repository.props the modes for ShardingSphere
+          ## e.g.
+          ## timeToLiveSeconds: "600"
+          ## server-lists: "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}" 
+          ## retryIntervalMilliseconds: "500"
+          ## operationTimeoutMilliseconds: "5000"
+          ## namespace: governance_ds
+          ## maxRetries: "3"
+          ##
+          props:
+            timeToLiveSeconds: "600"
+            serverlists: zookeeper.default:2181
+            retryIntervalMilliseconds: "500"
+            operationTimeoutMilliseconds: "5000"
+            namespace: governance_ds
+            maxRetries: "3"
+      ## @param computeNode.bootstrap.props the props for ShardingSphere
+      ## e.g.
+      ## proxy-frontend-database-protocol-type: MySQL
+      ##
+      props:
+        proxyFrontendDatabaseProtocolType: MySQL

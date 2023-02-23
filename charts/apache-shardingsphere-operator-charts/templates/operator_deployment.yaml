@@ -36,6 +36,9 @@ spec:
         - args:
             - --health-probe-bind-address=:{{ .Values.operator.health.healthProbePort }}
             - --leader-elect
+              {{- if eq .Values.operator.featureGates.computeNode true }}
+            - --feature-gates=ComputeNode={{ .Values.operator.featureGates.computeNode }}
+              {{- end}}
           command:
             - /operator
           ports:
