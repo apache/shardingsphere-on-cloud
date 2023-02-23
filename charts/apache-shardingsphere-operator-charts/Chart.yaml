@@ -29,5 +29,5 @@ dependencies:
       - bitnami-common
     version: 1.16.1
 type: application
-version: 0.1.2
+version: 0.2.0
 appVersion: "5.3.1"
