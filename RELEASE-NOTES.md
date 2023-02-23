@@ -1,3 +1,25 @@
+## 0.2.0
+
+### New Feature
+
+1. Introduce new CRD ComputeNode，to be activated at `--feature-gates=ComputeNode=true`
+2. Introduce subresource scale for ComputeNode to support kubectl scale command
+
+### Enhancement
+
+1. Add annotation rolling update support for CRD ShardingSphereProxy 
+2. Write NodePort back to ComputeNode
+3. Introducing Ginkgo test for ComputeNode
+
+### Bug fix
+
+1. Fix readyNodes and conditions error for ShardingSphereProxy Status in some cases
+2. Fix NPE in non-MySQL configurations
+
+### Change Log
+
+1. [MILESTONE](https://github.com/apache/shardingsphere-on-cloud/milestone/6)
+
 ## 0.1.2
 
 ### New Feature
