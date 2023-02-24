@@ -59,7 +59,7 @@
             <groupId>io.github.kawamuray.wasmtime</groupId>
             <artifactId>wasmtime-java</artifactId>
             <version>0.14.0</version>
-        </dependency> -->
+        </dependency>-->
         <dependency>
             <groupId>io.github.kawamuray.wasmtime</groupId>
             <artifactId>wasmtime-java</artifactId>
