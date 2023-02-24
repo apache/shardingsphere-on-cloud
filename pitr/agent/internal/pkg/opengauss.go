@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/gsutil"
 	"strings"
 
 	"github.com/dlclark/regexp2"
@@ -216,4 +217,22 @@ func (og *openGauss) getBackupID(msg string) (string, error) {
 	re := regexp2.MustCompile("(?<=backup ID:\\s+)\\w+(?=,)", 0)
 	match, err := re.FindStringMatch(msg)
 	return match.String(), err
+}
+
+func (og *openGauss) Auth(user, password, dbName string) error {
+	if strings.Trim(user, " ") == "" ||
+		strings.Trim(password, " ") == "" ||
+		strings.Trim(dbName, " ") == "" {
+		return fmt.Errorf("invalid inputs[user=%s,password=%s,dbName=%s]", user, password, dbName)
+	}
+
+	_og, err := gsutil.Open(user, password, dbName)
+	if err != nil {
+		return err
+	}
+
+	if err := _og.Ping(); err != nil {
+		return fmt.Errorf("ping openGauss fail[user=%s,pw length=%d,dbName=%s],err=%w", user, len(password), dbName, err)
+	}
+	return nil
 }
