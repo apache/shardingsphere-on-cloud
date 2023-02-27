@@ -49,6 +49,8 @@ const (
 
 	_startOpenGaussFmt = "gs_ctl start --pgdata=%s"
 	_stopOpenGaussFmt  = "gs_ctl stop --pgdata=%s"
+
+	_showListFmt = "gs_probackup show --instance=%s --backup-path=%s --format=json 2>&1"
 )
 
 func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode, pgData string) (string, error) {
@@ -200,6 +202,31 @@ func (og *openGauss) Restore(backupPath, instance, backupID, pgData string) erro
 		}
 	}
 	return nil
+}
+
+func (og *openGauss) ShowBackupList(backupPath, instanceName string) ([]model.Backup, error) {
+	cmd := fmt.Sprintf(_showListFmt, instanceName, backupPath)
+	output, err := cmds.Exec(og.shell, cmd)
+	if err != nil {
+		return nil, fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+
+	var list []model.BackupList
+	if err = json.Unmarshal([]byte(output), &list); err != nil {
+		return nil, fmt.Errorf("json.Unmarshal[output=%s] return err=%s,wrap=%w", output, err, cons.Internal)
+	}
+
+	for _, ins := range list {
+		if ins.Instance == instanceName {
+			if len(ins.List) == 0 {
+				return nil, fmt.Errorf("instance[name=%s],backupList[v=%+v],err=%w", ins.Instance, list, cons.DataNotFound)
+			}
+
+			return ins.List, nil
+		}
+	}
+
+	return nil, fmt.Errorf("backupList[v=%+v],err=%w", list, cons.DataNotFound)
 }
 
 func (og *openGauss) ignore(outputs chan *cmds.Output) {
