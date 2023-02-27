@@ -18,6 +18,7 @@
 package pkg
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -157,6 +158,24 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 
 			err = og.Start(pgData)
 			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("ShowBackupList", func() {
+		It("manual:show all backup ", func() {
+			og := &openGauss{
+				shell: "/bin/sh",
+			}
+
+			var (
+				backupPath = "/home/omm/data"
+				instance   = "ins-default-0"
+			)
+			list, err := og.ShowBackupList(backupPath, instance)
+
+			indent, err := json.MarshalIndent(list, "", "  ")
+			Expect(err).To(BeNil())
+			fmt.Println(string(indent))
 		})
 	})
 })
