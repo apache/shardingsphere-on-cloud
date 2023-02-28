@@ -18,19 +18,20 @@
 package main
 
 import (
-    "flag"
-    "fmt"
-    "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
-    "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/middleware"
-    "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
-    "github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
-    "github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
-    "github.com/gofiber/fiber/v2"
-    "go.uber.org/zap"
-    "go.uber.org/zap/zapcore"
-    "os"
-    "os/signal"
-    "syscall"
+	"flag"
+	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/middleware"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 )
 
 const (
@@ -76,10 +77,10 @@ func main() {
 			panic(fmt.Errorf("PGDATA:no database directory specified and environment variable PGDATA unset"))
 		}
 	}
-	// todo tag-1
-	//	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
-	//		panic(fmt.Errorf("lack of HTTPs certificate"))
-	//	}
+
+	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
+		panic(fmt.Errorf("lack of HTTPs certificate"))
+	}
 
 	var level = zapcore.InfoLevel
 	if logLevel == debugLogLevel {
@@ -150,7 +151,6 @@ func Serve(port string) error {
 		return responder.NotFound(ctx, "API not found")
 	})
 
-	return app.Listen(":18080")
-	// todo tag-1
-	//	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)
+	//	return app.Listen(":18080")
+	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)
 }
