@@ -21,6 +21,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "gitee.com/opengauss/openGauss-connector-go-pq"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 	"strings"
 )
 
@@ -31,7 +32,7 @@ type OpenGauss struct {
 	dbName string
 }
 
-func Open(user, password, dbName string) (*OpenGauss, error) {
+func Open(user, password, dbName string, dbPort uint16) (*OpenGauss, error) {
 	if strings.Trim(user, " ") == "" {
 		return nil, fmt.Errorf("user is empty")
 	}
@@ -42,10 +43,11 @@ func Open(user, password, dbName string) (*OpenGauss, error) {
 		return nil, fmt.Errorf("db name is empty")
 	}
 
-	connStr := "user=%s password=%s dbname=%s sslmode=disable"
-	db, err := sql.Open("opengauss", fmt.Sprintf(connStr, user, password, dbName))
+	connStr := "port=%d user=%s password=%s dbname=%s sslmode=disable"
+	db, err := sql.Open("opengauss", fmt.Sprintf(connStr, dbPort, user, password, dbName))
 	if err != nil {
-		return nil, fmt.Errorf("sql:open fail[user=%s,pwLen=%d,dbName=%s]", user, len(password), dbName)
+		efmt := "sql:open fail[user=%s,pwLen=%d,dbName=%s],err=%s,wrap=%w"
+		return nil, fmt.Errorf(efmt, user, len(password), dbName, err, cons.DbConnectionFailed)
 	}
 
 	return &OpenGauss{
@@ -58,7 +60,8 @@ func Open(user, password, dbName string) (*OpenGauss, error) {
 
 func (og *OpenGauss) Ping() error {
 	if err := og.db.Ping(); err != nil {
-		return fmt.Errorf("db ping fail[user=%s,pwLen=%d,dbName=%s],err=%w", og.user, og.pwLen, og.dbName, err)
+		efmt := "db ping fail[user=%s,pwLen=%d,dbName=%s],err=%s,wrap=%w"
+		return fmt.Errorf(efmt, og.user, og.pwLen, og.dbName, err, cons.DbConnectionFailed)
 	}
 	return nil
 }

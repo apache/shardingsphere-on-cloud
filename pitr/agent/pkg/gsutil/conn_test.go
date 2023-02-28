@@ -25,7 +25,7 @@ import (
 var _ = Describe("OpenGauss", func() {
 	Context("Connection", func() {
 		It("Open and ping", func() {
-			og, err := Open("dba3", "1234567890@ss", "school")
+			og, err := Open("dba3", "1234567890@ss", "school", uint16(5432))
 			Expect(err).To(BeNil())
 			Expect(og).NotTo(BeNil())
 

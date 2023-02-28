@@ -18,23 +18,19 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/middleware"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
-
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
+    "flag"
+    "fmt"
+    "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
+    "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/middleware"
+    "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
+    "github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
+    "github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
+    "github.com/gofiber/fiber/v2"
+    "go.uber.org/zap"
+    "go.uber.org/zap/zapcore"
+    "os"
+    "os/signal"
+    "syscall"
 )
 
 const (
@@ -72,6 +68,7 @@ func main() {
 	if shell == "" {
 		panic(fmt.Errorf("shell does not exist"))
 	}
+	pkg.Init(shell)
 
 	if pgData == "" {
 		pgData = os.Getenv("PGDATA")
@@ -79,10 +76,10 @@ func main() {
 			panic(fmt.Errorf("PGDATA:no database directory specified and environment variable PGDATA unset"))
 		}
 	}
-
-	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
-		panic(fmt.Errorf("lack of HTTPs certificate"))
-	}
+	// todo tag-1
+	//	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
+	//		panic(fmt.Errorf("lack of HTTPs certificate"))
+	//	}
 
 	var level = zapcore.InfoLevel
 	if logLevel == debugLogLevel {
@@ -145,6 +142,7 @@ func Serve(port string) error {
 		r.Post("/backup", handler.Backup)
 		r.Post("/restore", handler.Restore)
 		r.Post("/show", handler.Show)
+		r.Post("/show/list", handler.ShowList)
 	})
 
 	// 404
@@ -152,5 +150,7 @@ func Serve(port string) error {
 		return responder.NotFound(ctx, "API not found")
 	})
 
-	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)
+	return app.Listen(":18080")
+	// todo tag-1
+	//	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)
 }

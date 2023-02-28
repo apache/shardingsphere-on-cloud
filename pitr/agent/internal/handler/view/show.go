@@ -17,7 +17,10 @@
 
 package view
 
-import "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+import (
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg/model"
+)
 
 type (
 	ShowIn struct {
@@ -33,6 +36,7 @@ type (
 	BackupInfo struct {
 		Id        string `json:"dn_backup_id"`
 		Path      string `json:"dn_backup_path"`
+		Mode      string `json:"db_backup_mode"`
 		Instance  string `json:"instance"`
 		StartTime string `json:"start_time"`
 		EndTime   string `json:"end_time"`
@@ -73,4 +77,51 @@ func (in *ShowIn) Validate() error {
 		return cons.MissingInstance
 	}
 	return nil
+}
+
+func NewBackupInfo(data *model.Backup, path, instance string) *BackupInfo {
+	if data == nil {
+		return nil
+	}
+	return &BackupInfo{
+		Id:        data.ID,
+		Path:      path,
+		Mode:      data.BackupMode,
+		Instance:  instance,
+		StartTime: data.StartTime,
+		EndTime:   data.EndTime,
+		Status:    statusTrans(data.Status),
+	}
+}
+
+func NewBackupInfoList(list []model.Backup, path, instance string) []BackupInfo {
+	if len(list) == 0 {
+		return []BackupInfo{}
+	}
+	ret := make([]BackupInfo, 0, len(list))
+	for _, v := range list {
+		ret = append(ret, BackupInfo{
+			Id:        v.ID,
+			Path:      path,
+			Mode:      v.BackupMode,
+			Instance:  instance,
+			StartTime: v.StartTime,
+			EndTime:   v.EndTime,
+			Status:    statusTrans(v.Status),
+		})
+	}
+	return ret
+}
+
+func statusTrans(status string) string {
+	switch status {
+	case "OK":
+		return "Completed"
+	case "ERROR":
+		return "Failed"
+	case "RUNNING":
+		return "Running"
+	default:
+		return "Other"
+	}
 }
