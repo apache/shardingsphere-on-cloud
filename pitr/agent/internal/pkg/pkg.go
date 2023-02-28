@@ -15,22 +15,12 @@
 * limitations under the License.
  */
 
-package gsutil
+package pkg
 
-import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+var (
+	OG IOpenGauss
 )
 
-var _ = Describe("OpenGauss", func() {
-	Context("Connection", func() {
-		It("Open and ping", func() {
-			og, err := Open("dba3", "1234567890@ss", "school", uint16(5432))
-			Expect(err).To(BeNil())
-			Expect(og).NotTo(BeNil())
-
-			err = og.Ping()
-			Expect(err).To(BeNil())
-		})
-	})
-})
+func Init(shell string) {
+	OG = NewOpenGauss(shell)
+}

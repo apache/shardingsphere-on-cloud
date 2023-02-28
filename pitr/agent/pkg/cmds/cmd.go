@@ -116,8 +116,8 @@ func Exec(name string, args ...string) (string, error) {
 	}
 
 	if err = cmd.Wait(); err != nil {
-		if _, ok := err.(*exec.ExitError); ok {
-			return "", cons.CmdOperateFailed
+		if ee, ok := err.(*exec.ExitError); ok {
+			return "", fmt.Errorf("exec failure[ee=%s,stdout=%s],wrap=%w", ee, string(reader), cons.CmdOperateFailed)
 		}
 		return "", cons.Internal
 	}

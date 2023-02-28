@@ -20,21 +20,18 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/middleware"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/middleware"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
-
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 )
 
 const (
@@ -72,6 +69,7 @@ func main() {
 	if shell == "" {
 		panic(fmt.Errorf("shell does not exist"))
 	}
+	pkg.Init(shell)
 
 	if pgData == "" {
 		pgData = os.Getenv("PGDATA")
@@ -145,6 +143,7 @@ func Serve(port string) error {
 		r.Post("/backup", handler.Backup)
 		r.Post("/restore", handler.Restore)
 		r.Post("/show", handler.Show)
+		r.Post("/show/list", handler.ShowList)
 	})
 
 	// 404
@@ -152,5 +151,6 @@ func Serve(port string) error {
 		return responder.NotFound(ctx, "API not found")
 	})
 
+	//	return app.Listen(":18080")
 	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)
 }

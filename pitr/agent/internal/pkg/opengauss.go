@@ -31,8 +31,27 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/cmds"
 )
 
-type openGauss struct {
-	shell string
+type (
+	openGauss struct {
+		shell string
+	}
+
+	IOpenGauss interface {
+		AsyncBackup(backupPath, instanceName, backupMode, pgData string) (string, error)
+		ShowBackup(backupPath, instanceName, backupID string) (*model.Backup, error)
+		Init(backupPath string) error
+		AddInstance(backupPath, instancee, pgData string) error
+		DelInstance(backupPath, instancee string) error
+		Start(pgData string) error
+		Stop(pgData string) error
+		Restore(backupPath, instance, backupID, pgData string) error
+		ShowBackupList(backupPath, instanceName string) ([]model.Backup, error)
+		Auth(user, password, dbName string, dbPort uint16) error
+	}
+)
+
+func NewOpenGauss(shell string) IOpenGauss {
+	return &openGauss{shell: shell}
 }
 
 const (
@@ -77,7 +96,7 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode, pgData st
 	return "", fmt.Errorf("unknow err")
 }
 
-func (og *openGauss) ShowBackupDetail(backupPath, instanceName, backupID string) (*model.Backup, error) {
+func (og *openGauss) ShowBackup(backupPath, instanceName, backupID string) (*model.Backup, error) {
 	cmd := fmt.Sprintf(_showFmt, instanceName, backupPath, backupID)
 	output, err := cmds.Exec(og.shell, cmd)
 	if err != nil {
@@ -246,16 +265,17 @@ func (og *openGauss) getBackupID(msg string) (string, error) {
 	return match.String(), err
 }
 
-func (og *openGauss) Auth(user, password, dbName string) error {
+func (og *openGauss) Auth(user, password, dbName string, dbPort uint16) error {
 	if strings.Trim(user, " ") == "" ||
 		strings.Trim(password, " ") == "" ||
-		strings.Trim(dbName, " ") == "" {
-		return fmt.Errorf("invalid inputs[user=%s,password=%s,dbName=%s]", user, password, dbName)
+		strings.Trim(dbName, " ") == "" ||
+		dbPort == 0 {
+		return fmt.Errorf("invalid inputs[user=%s,password=%s,dbName=%s,dbPort=%d]", user, password, dbName, dbPort)
 	}
 
-	_og, err := gsutil.Open(user, password, dbName)
+	_og, err := gsutil.Open(user, password, dbName, dbPort)
 	if err != nil {
-		return err
+		return fmt.Errorf("gsutil.Open failure,err=%w", err)
 	}
 
 	if err := _og.Ping(); err != nil {
