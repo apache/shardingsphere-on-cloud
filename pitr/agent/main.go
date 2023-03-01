@@ -69,7 +69,6 @@ func main() {
 	if shell == "" {
 		panic(fmt.Errorf("shell does not exist"))
 	}
-	pkg.Init(shell)
 
 	if pgData == "" {
 		pgData = os.Getenv("PGDATA")
@@ -77,6 +76,7 @@ func main() {
 			panic(fmt.Errorf("PGDATA:no database directory specified and environment variable PGDATA unset"))
 		}
 	}
+	pkg.Init(shell, pgData)
 
 	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
 		panic(fmt.Errorf("lack of HTTPs certificate"))

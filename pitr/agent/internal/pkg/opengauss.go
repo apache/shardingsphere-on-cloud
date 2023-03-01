@@ -33,29 +33,33 @@ import (
 
 type (
 	openGauss struct {
-		shell string
+		shell  string
+		pgData string
 	}
 
 	IOpenGauss interface {
-		AsyncBackup(backupPath, instanceName, backupMode, pgData string) (string, error)
+		AsyncBackup(backupPath, instanceName, backupMode string, threadsNum uint8) (string, error)
 		ShowBackup(backupPath, instanceName, backupID string) (*model.Backup, error)
 		Init(backupPath string) error
-		AddInstance(backupPath, instancee, pgData string) error
-		DelInstance(backupPath, instancee string) error
-		Start(pgData string) error
-		Stop(pgData string) error
-		Restore(backupPath, instance, backupID, pgData string) error
+		AddInstance(backupPath, instance string) error
+		DelInstance(backupPath, instance string) error
+		Start() error
+		Stop() error
+		Restore(backupPath, instance, backupID string) error
 		ShowBackupList(backupPath, instanceName string) ([]model.Backup, error)
 		Auth(user, password, dbName string, dbPort uint16) error
 	}
 )
 
-func NewOpenGauss(shell string) IOpenGauss {
-	return &openGauss{shell: shell}
+func NewOpenGauss(shell, pgData string) IOpenGauss {
+	return &openGauss{
+		shell:  shell,
+		pgData: pgData,
+	}
 }
 
 const (
-	_backupFmt    = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s 2>&1"
+	_backupFmt    = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s --threads=%d 2>&1"
 	_showFmt      = "gs_probackup show --instance=%s --backup-path=%s --backup-id=%s --format=json 2>&1"
 	_delBackupFmt = "gs_probackup delete --backup-path=%s --instance=%s --backup-id=%s 2>&1"
 	_restoreFmt   = "gs_probackup restore --backup-path=%s --instance=%s --backup-id=%s --pgdata=%s 2>&1"
@@ -72,8 +76,8 @@ const (
 	_showListFmt = "gs_probackup show --instance=%s --backup-path=%s --format=json 2>&1"
 )
 
-func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode, pgData string) (string, error) {
-	cmd := fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, pgData)
+func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, threadsNum uint8) (string, error) {
+	cmd := fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, og.pgData, threadsNum)
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
 	if err != nil {
 		return "", fmt.Errorf("cmds.AsyncExec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
@@ -155,8 +159,8 @@ func (og *openGauss) deinit(backupPath string) error {
 	return nil
 }
 
-func (og *openGauss) AddInstance(backupPath, instancee, pgData string) error {
-	cmd := fmt.Sprintf(_addInstanceFmt, backupPath, instancee, pgData)
+func (og *openGauss) AddInstance(backupPath, instance string) error {
+	cmd := fmt.Sprintf(_addInstanceFmt, backupPath, instance, og.pgData)
 	_, err := cmds.Exec(og.shell, cmd)
 	// already exist and it's not empty
 	if errors.Is(err, cons.CmdOperateFailed) {
@@ -181,8 +185,8 @@ func (og *openGauss) DelInstance(backupPath, instancee string) error {
 	return nil
 }
 
-func (og *openGauss) Start(pgData string) error {
-	cmd := fmt.Sprintf(_startOpenGaussFmt, pgData)
+func (og *openGauss) Start() error {
+	cmd := fmt.Sprintf(_startOpenGaussFmt, og.pgData)
 	_, err := cmds.Exec(og.shell, cmd)
 	// already exist and it's not empty
 	if errors.Is(err, cons.CmdOperateFailed) {
@@ -194,8 +198,8 @@ func (og *openGauss) Start(pgData string) error {
 	return nil
 }
 
-func (og *openGauss) Stop(pgData string) error {
-	cmd := fmt.Sprintf(_stopOpenGaussFmt, pgData)
+func (og *openGauss) Stop() error {
+	cmd := fmt.Sprintf(_stopOpenGaussFmt, og.pgData)
 	_, err := cmds.Exec(og.shell, cmd)
 	// already exist and it's not empty
 	if errors.Is(err, cons.CmdOperateFailed) {
@@ -208,8 +212,8 @@ func (og *openGauss) Stop(pgData string) error {
 }
 
 // Restore TODO:Dependent environments require integration testing
-func (og *openGauss) Restore(backupPath, instance, backupID, pgData string) error {
-	cmd := fmt.Sprintf(_restoreFmt, backupPath, instance, backupID, pgData)
+func (og *openGauss) Restore(backupPath, instance, backupID string) error {
+	cmd := fmt.Sprintf(_restoreFmt, backupPath, instance, backupID, og.pgData)
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
 
 	for output := range outputs {
@@ -260,8 +264,15 @@ func (og *openGauss) ignore(outputs chan *cmds.Output) {
 }
 
 func (og *openGauss) getBackupID(msg string) (string, error) {
+	fmt.Println(msg)
 	re := regexp2.MustCompile("(?<=backup ID:\\s+)\\w+(?=,)", 0)
 	match, err := re.FindStringMatch(msg)
+	if err != nil {
+		return "", fmt.Errorf("unmatch any backup id[msg=%s],err=%s", msg, err)
+	}
+	if match.Length == 0 {
+		return "", fmt.Errorf("unmatch any backup id,match.lenght is 0,err=%w", cons.UnmatchBackupID)
+	}
 	return match.String(), err
 }
 

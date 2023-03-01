@@ -19,6 +19,8 @@ package handler
 
 import (
 	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
 
@@ -35,8 +37,21 @@ func Backup(ctx *fiber.Ctx) error {
 	}
 
 	if err := in.Validate(); err != nil {
-		return err
+		return fmt.Errorf("invalid parameter,err=%w", err)
 	}
 
-	return ctx.JSON(in)
+	if err := pkg.OG.Auth(in.Username, in.Password, in.DbName, in.DbPort); err != nil {
+		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
+		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DbName, err)
+	}
+
+	backupID, err := pkg.OG.AsyncBackup(in.DnBackupPath, in.Instance, in.DnBackupMode, 1)
+	if err != nil {
+		efmt := "pkg.OG.AsyncBackup[path=%s,instance=%s,mode=%s] failure,err=%w"
+		return fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupMode, err)
+	}
+
+	return responder.Success(ctx, view.BackupOut{
+		ID: backupID,
+	})
 }

@@ -21,6 +21,6 @@ var (
 	OG IOpenGauss
 )
 
-func Init(shell string) {
-	OG = NewOpenGauss(shell)
+func Init(shell, pgData string) {
+	OG = NewOpenGauss(shell, pgData)
 }
