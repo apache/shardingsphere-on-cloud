@@ -19,6 +19,7 @@ package handler
 
 import (
 	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -34,7 +35,25 @@ func Restore(ctx *fiber.Ctx) error {
 	}
 
 	if err := in.Validate(); err != nil {
-		return err
+		return fmt.Errorf("invalid parameter,err=%w", err)
+	}
+
+	if err := pkg.OG.Auth(in.Username, in.Password, in.DbName, in.DbPort); err != nil {
+		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
+		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DbName, err)
+	}
+
+	if err := pkg.OG.Stop(); err != nil {
+		return fmt.Errorf("stop openGauss failure,err=%w", err)
+	}
+
+	if err := pkg.OG.Restore(in.DnBackupPath, in.Instance, in.DnBackupId); err != nil {
+		efmt := "pkg.OG.Restore failure[path=%s,instance=%s,backupID=%s],err=%w"
+		return fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupId, err)
+	}
+
+	if err := pkg.OG.Start(); err != nil {
+		return fmt.Errorf("stop openGauss failure,err=%w", err)
 	}
 
 	return ctx.JSON(in)

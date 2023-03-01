@@ -55,7 +55,7 @@ func Show(ctx *fiber.Ctx) error {
 }
 
 func ShowList(ctx *fiber.Ctx) error {
-	in := &view.ShowIn{}
+	in := &view.ShowListIn{}
 
 	if err := ctx.BodyParser(in); err != nil {
 		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
