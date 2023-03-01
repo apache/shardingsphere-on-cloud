@@ -45,4 +45,5 @@ var (
 	BodyParseFailed        = xerror.New(10020, "Invalid http request body.")
 	MissingDbName          = xerror.New(10021, "Missing db name.")
 	DbConnectionFailed     = xerror.New(10022, "Database connection failed.")
+	UnmatchBackupID        = xerror.New(10023, "Unmatch any backup id.")
 )

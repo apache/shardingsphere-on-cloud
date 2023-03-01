@@ -34,7 +34,8 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 	Context("AsyncBackup & ShowBackupDetail ", func() {
 		It("backup, show and delete", func() {
 			og := &openGauss{
-				shell: "/bin/sh",
+				shell:  "/bin/sh",
+				pgData: "/data/opengauss/3.1.1/data/single_node/",
 			}
 
 			var (
@@ -46,7 +47,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 				data,
 				instance,
 				"full",
-				"/data/opengauss/3.1.1/data/single_node/",
+				1,
 			)
 
 			Expect(err).To(BeNil())
@@ -55,7 +56,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 
 			// timeout 60s
 			for i := 0; i < 60; i++ {
-				backup, err := og.ShowBackupDetail(
+				backup, err := og.ShowBackup(
 					data,
 					instance,
 					backupID,
@@ -121,18 +122,18 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 	Context("AddInstance and DelInstance", func() {
 		It("instance:add and delete", func() {
 			og := &openGauss{
-				shell: "/bin/sh",
+				shell:  "/bin/sh",
+				pgData: "/data/opengauss/3.1.1/data/single_node/",
 			}
 
 			var (
 				backupPath = "/home/omm/data"
 				instance   = "ins-test-1"
-				pgData     = "/data/opengauss/3.1.1/data/single_node/"
 			)
-			err := og.AddInstance(backupPath, instance, pgData)
+			err := og.AddInstance(backupPath, instance)
 			Expect(err).To(BeNil())
 
-			err = og.AddInstance(backupPath, instance, pgData)
+			err = og.AddInstance(backupPath, instance)
 			Expect(errors.Is(err, cons.InstanceAlreadyExist)).To(BeTrue())
 
 			err = og.DelInstance(backupPath, instance)
@@ -146,17 +147,17 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 	Context("Start and Stop", func() {
 		It("start and stop:may fail if no instance exists", func() {
 			og := &openGauss{
-				shell: "/bin/sh",
+				shell:  "/bin/sh",
+				pgData: "/data/opengauss/3.1.1/data/single_node/",
 			}
 
-			var pgData = "/data/opengauss/3.1.1/data/single_node/"
-			err := og.Stop(pgData)
+			err := og.Stop()
 			Expect(err).To(BeNil())
 
-			err = og.Stop(pgData)
+			err = og.Stop()
 			Expect(errors.Is(err, cons.StopOpenGaussFailed)).To(BeTrue())
 
-			err = og.Start(pgData)
+			err = og.Start()
 			Expect(err).To(BeNil())
 		})
 	})

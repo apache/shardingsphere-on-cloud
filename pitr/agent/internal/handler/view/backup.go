@@ -21,10 +21,11 @@ import "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 
 type (
 	BackupIn struct {
-		DbPort       uint16 `json:"db_port"`
-		DbName       string `json:"db_name"`
-		Username     string `json:"username"`
-		Password     string `json:"password"`
+		DbPort   uint16 `json:"db_port"`
+		DbName   string `json:"db_name"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+
 		DnBackupPath string `json:"dn_backup_path"`
 		DnThreadsNum uint8  `json:"dn_threads_num"`
 		DnBackupMode string `json:"dn_backup_mode"`
