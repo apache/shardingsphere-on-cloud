@@ -225,6 +225,7 @@ func (og *openGauss) Restore(backupPath, instance, backupID string) error {
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
 
 	for output := range outputs {
+        // TODO just for dev,rm in next commit
 		fmt.Println(output.Message)
 		if errors.Is(err, cons.CmdOperateFailed) {
 			return fmt.Errorf("outputs get err=%s,wrap=%w", output.Error, cons.RestoreFailed)
