@@ -47,5 +47,5 @@ var (
 	DbConnectionFailed     = xerror.New(10022, "Database connection failed.")
 	UnmatchBackupID        = xerror.New(10023, "Unmatch any backup id.")
 	InvalidPgDataDir       = xerror.New(10024, "Invalid PGDATA dir.")
-	UnknownOgStatus        = xerror.New(10024, "Unknown openGauss status.")
+	UnknownOgStatus        = xerror.New(10025, "Unknown openGauss status.")
 )
