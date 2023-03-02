@@ -151,14 +151,27 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 				pgData: "/data/opengauss/3.1.1/data/single_node/",
 			}
 
-			err := og.Stop()
+			status, err := og.Status()
 			Expect(err).To(BeNil())
+			Expect(status).To(Equal("Running"))
+
+			err = og.Stop()
+			Expect(err).To(BeNil())
+			status, err = og.Status()
+			Expect(err).To(BeNil())
+			Expect(status).To(Equal("Stopped"))
 
 			err = og.Stop()
 			Expect(errors.Is(err, cons.StopOpenGaussFailed)).To(BeTrue())
+			status, err = og.Status()
+			Expect(err).To(BeNil())
+			Expect(status).To(Equal("Stopped"))
 
 			err = og.Start()
 			Expect(err).To(BeNil())
+			status, err = og.Status()
+			Expect(err).To(BeNil())
+			Expect(status).To(Equal("Running"))
 		})
 	})
 
