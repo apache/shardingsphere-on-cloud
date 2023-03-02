@@ -1,22 +1,27 @@
-##
-## Copyright 2022 SphereEx Authors
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 apiVersion: v1
 entries:
   apache-shardingsphere-operator-charts:
+  - apiVersion: v2
+    appVersion: 5.3.1
+    created: "2023-03-02T15:38:47.394269+08:00"
+    dependencies:
+    - condition: proxyCluster.zookeeper.enabled
+      name: zookeeper
+      repository: https://charts.bitnami.com/bitnami
+      version: 9.2.7
+    - name: common
+      repository: https://charts.bitnami.com/bitnami
+      tags:
+      - bitnami-common
+      version: 1.16.1
+    description: The ShardingSphere Kubernetes Operator automates provisioning, management,
+      and operations of ShardingSphere Proxy clusters running on Kubernetes.
+    digest: 2c48cfeb0ba3c71848e46020bd66c05f6760ff642adffcd040fe1279f3778729
+    name: apache-shardingsphere-operator-charts
+    type: application
+    urls:
+    - https://github.com/apache/shardingsphere-on-cloud/releases/download/0.2.0/apache-shardingsphere-operator-charts-0.2.0.tgz
+    version: 0.2.0
   - apiVersion: v2
     appVersion: 5.3.1
     created: "2023-01-10T17:01:40.895448+08:00"
@@ -114,6 +119,27 @@ entries:
   apache-shardingsphere-proxy-charts:
   - apiVersion: v2
     appVersion: 5.3.1
+    created: "2023-03-02T15:38:47.402905+08:00"
+    dependencies:
+    - condition: governance.enabled
+      name: governance
+      repository: file://./charts/governance
+      version: 1.x.x
+    - name: common
+      repository: https://charts.bitnami.com/bitnami
+      tags:
+      - bitnami-common
+      version: 1.x.x
+    description: A Helm chart for ShardingSphere-Proxy-Cluster
+    digest: 2c7710eca044b1a14494baece1ce0dfc12c13a438f99564202baff5dce0afb54
+    maintainers:
+    - name: dev@shardingsphere.apache.org
+    name: apache-shardingsphere-proxy-charts
+    urls:
+    - https://github.com/apache/shardingsphere-on-cloud/releases/download/0.2.0/apache-shardingsphere-proxy-charts-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
+    appVersion: 5.3.1
     created: "2023-01-10T17:01:40.905761+08:00"
     dependencies:
     - condition: governance.enabled
@@ -175,4 +201,4 @@ entries:
     urls:
     - https://github.com/apache/shardingsphere-on-cloud/releases/download/0.1.0/apache-shardingsphere-proxy-charts-0.1.0.tgz
     version: 0.1.0
-generated: "2023-01-10T17:01:40.888339+08:00"
+generated: "2023-03-02T15:38:47.3872+08:00"
