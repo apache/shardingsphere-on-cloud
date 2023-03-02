@@ -33,8 +33,9 @@ import (
 
 type (
 	openGauss struct {
-		shell  string
-		pgData string
+		shell      string
+		pgData     string
+		pgDataTemp string
 	}
 
 	IOpenGauss interface {
@@ -49,13 +50,20 @@ type (
 		Restore(backupPath, instance, backupID string) error
 		ShowBackupList(backupPath, instanceName string) ([]model.Backup, error)
 		Auth(user, password, dbName string, dbPort uint16) error
+		MvTempToPgData() error
+		MvPgDataToTemp() error
+		CleanPgDataTemp() error
 	}
 )
 
 func NewOpenGauss(shell, pgData string) IOpenGauss {
+	dirs := strings.Split(pgData, "/")
+	dirs = append(dirs[0:len(dirs)-1], "temp")
+
 	return &openGauss{
-		shell:  shell,
-		pgData: pgData,
+		shell:      shell,
+		pgData:     pgData,
+		pgDataTemp: strings.Join(dirs, "/"),
 	}
 }
 
@@ -76,6 +84,8 @@ const (
 	_statusGaussFmt    = "gs_ctl status --pgdata=%s"
 
 	_showListFmt = "gs_probackup show --instance=%s --backup-path=%s --format=json 2>&1"
+
+	_mvFmt = "mv %s %s"
 )
 
 func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, threadsNum uint8) (string, error) {
@@ -190,7 +200,7 @@ func (og *openGauss) Start() error {
 	cmd := fmt.Sprintf(_startOpenGaussFmt, og.pgData)
 	_, err := cmds.Exec(og.shell, cmd)
 	if errors.Is(err, cons.CmdOperateFailed) {
-		return fmt.Errorf("starat openGauss failure,err=%s,wrap=%w", err, cons.StartOpenGaussFailed)
+		return fmt.Errorf("start openGauss failure,err=%s,wrap=%w", err, cons.StartOpenGaussFailed)
 	}
 	if err != nil {
 		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
@@ -240,20 +250,10 @@ func (og *openGauss) Status() (string, error) {
 
 // Restore TODO:Dependent environments require integration testing
 func (og *openGauss) Restore(backupPath, instance, backupID string) error {
-	if len(og.pgData) < 2 && strings.HasPrefix(og.pgData, "/") {
-		return fmt.Errorf("invalid pg data dir[path=%s],err=%w", og.pgData, cons.InvalidPgDataDir)
-	}
-
-	if _, err := cmds.Exec(og.shell, fmt.Sprintf(_rmDirFmt, og.pgData)); err != nil {
-		return fmt.Errorf("rm PGDATA dir failure,err=%s,wrap=%w", err, cons.RestoreFailed)
-	}
-
 	cmd := fmt.Sprintf(_restoreFmt, backupPath, instance, backupID, og.pgData)
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
 
 	for output := range outputs {
-		// TODO just for dev,rm in next commit
-		fmt.Println(output.Message)
 		if errors.Is(err, cons.CmdOperateFailed) {
 			return fmt.Errorf("outputs get err=%s,wrap=%w", output.Error, cons.RestoreFailed)
 		}
@@ -301,7 +301,6 @@ func (og *openGauss) ignore(outputs chan *cmds.Output) {
 }
 
 func (og *openGauss) getBackupID(msg string) (string, error) {
-	fmt.Println(msg)
 	re := regexp2.MustCompile("(?<=backup ID:\\s+)\\w+(?=,)", 0)
 	match, err := re.FindStringMatch(msg)
 	if err != nil {
@@ -328,6 +327,43 @@ func (og *openGauss) Auth(user, password, dbName string, dbPort uint16) error {
 
 	if err := _og.Ping(); err != nil {
 		return fmt.Errorf("ping openGauss fail[user=%s,pw length=%d,dbName=%s],err=%w", user, len(password), dbName, err)
+	}
+	return nil
+}
+
+func (og *openGauss) MvPgDataToTemp() error {
+	cmd := fmt.Sprintf(_mvFmt, og.pgData, og.pgDataTemp)
+	_, err := cmds.Exec(og.shell, cmd)
+	if errors.Is(err, cons.CmdOperateFailed) {
+		return fmt.Errorf("mv pgdata to temp dir failure,err=%s,wrap=%w", err, cons.MvPgDataToTempFailed)
+	}
+	if err != nil {
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+
+	return nil
+}
+
+func (og *openGauss) MvTempToPgData() error {
+	cmd := fmt.Sprintf(_mvFmt, og.pgDataTemp, og.pgData)
+	_, err := cmds.Exec(og.shell, cmd)
+	if errors.Is(err, cons.CmdOperateFailed) {
+		return fmt.Errorf("mv temp to pgdata dir failure,err=%s,wrap=%w", err, cons.MvTempToPgDataFailed)
+	}
+	if err != nil {
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+	return nil
+}
+
+func (og *openGauss) CleanPgDataTemp() error {
+	cmd := fmt.Sprintf(_rmDirFmt, og.pgDataTemp)
+	_, err := cmds.Exec(og.shell, cmd)
+	if errors.Is(err, cons.CmdOperateFailed) {
+		return fmt.Errorf("clean pgdata temp dir failure,err=%s,wrap=%w", err, cons.CleanPgDataTempFailed)
+	}
+	if err != nil {
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
 	}
 	return nil
 }
