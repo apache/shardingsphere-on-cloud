@@ -48,4 +48,7 @@ var (
 	UnmatchBackupID        = xerror.New(10023, "Unmatch any backup id.")
 	InvalidPgDataDir       = xerror.New(10024, "Invalid PGDATA dir.")
 	UnknownOgStatus        = xerror.New(10025, "Unknown openGauss status.")
+	MvPgDataToTempFailed   = xerror.New(10026, "Move pgdata dir to temp failed.")
+	MvTempToPgDataFailed   = xerror.New(10027, "Move temp dir to pgdata failed.")
+	CleanPgDataTempFailed  = xerror.New(10028, "Clean pgdata temp dir failed.")
 )

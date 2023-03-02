@@ -76,6 +76,13 @@ func main() {
 			panic(fmt.Errorf("PGDATA:no database directory specified and environment variable PGDATA unset"))
 		}
 	}
+
+	pgData := strings.Trim(pgData, " ")
+	if strings.HasSuffix(pgData, "/") {
+		dirs := strings.Split(pgData, "/")
+		dirs = dirs[0 : len(dirs)-1]
+		pgData = strings.Join(dirs, "/")
+	}
 	pkg.Init(shell, pgData)
 
 	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
