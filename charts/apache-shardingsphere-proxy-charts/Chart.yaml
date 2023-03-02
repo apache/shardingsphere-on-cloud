@@ -19,7 +19,7 @@ apiVersion: v2
 appVersion: 5.3.1
 name: apache-shardingsphere-proxy-charts
 description: A Helm chart for ShardingSphere-Proxy-Cluster
-version: 0.1.2
+version: 0.2.0
 maintainers:
   - name: dev@shardingsphere.apache.org
 dependencies:
