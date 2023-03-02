@@ -33,3 +33,4 @@ charts/apache-shardingsphere-operator-charts/charts/
 test
 certs
 shardingsphere-operator/vendor/
+pitr/agent/agent

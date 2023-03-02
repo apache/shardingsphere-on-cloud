@@ -33,6 +33,15 @@ type (
 		Instance     string `json:"instance"`
 	}
 
+	ShowListIn struct {
+		DbPort       uint16 `json:"db_port"`
+		DbName       string `json:"db_name"`
+		Username     string `json:"username"`
+		Password     string `json:"password"`
+		DnBackupPath string `json:"dn_backup_path"`
+		Instance     string `json:"instance"`
+	}
+
 	BackupInfo struct {
 		Id        string `json:"dn_backup_id"`
 		Path      string `json:"dn_backup_path"`
@@ -124,4 +133,35 @@ func statusTrans(status string) string {
 	default:
 		return "Other"
 	}
+}
+
+func (in *ShowListIn) Validate() error {
+	if in == nil {
+		return cons.Internal
+	}
+
+	if in.DbPort == 0 {
+		return cons.InvalidDbPort
+	}
+
+	if in.DbName == "" {
+		return cons.MissingDbName
+	}
+
+	if in.Username == "" {
+		return cons.MissingUsername
+	}
+
+	if in.Password == "" {
+		return cons.MissingPassword
+	}
+
+	if in.DnBackupPath == "" {
+		return cons.MissingDnBackupPath
+	}
+
+	if in.Instance == "" {
+		return cons.MissingInstance
+	}
+	return nil
 }

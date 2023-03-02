@@ -72,9 +72,9 @@ func AsyncExec(name string, args ...string) (chan *Output, error) {
 			}
 
 			if err = cmd.Wait(); err != nil {
-				if _, ok := err.(*exec.ExitError); ok {
+				if ee, ok := err.(*exec.ExitError); ok {
 					output <- &Output{
-						Error: cons.CmdOperateFailed,
+						Error: fmt.Errorf("exec failure[ee=%s],wrap=%w", ee, cons.CmdOperateFailed),
 					}
 				} else {
 					output <- &Output{

@@ -64,8 +64,8 @@ const (
 	_delBackupFmt = "gs_probackup delete --backup-path=%s --instance=%s --backup-id=%s 2>&1"
 	_restoreFmt   = "gs_probackup restore --backup-path=%s --instance=%s --backup-id=%s --pgdata=%s 2>&1"
 
-	_initFmt   = "gs_probackup init --backup-path=%s 2>&1"
-	_deinitFmt = "rm -r %s"
+	_initFmt  = "gs_probackup init --backup-path=%s 2>&1"
+	_rmDirFmt = "rm -r %s"
 
 	_addInstanceFmt = "gs_probackup add-instance --backup-path=%s --instance=%s --pgdata=%s 2>&1"
 	_delInstanceFmt = "gs_probackup del-instance --backup-path=%s --instance=%s 2>&1"
@@ -152,7 +152,7 @@ func (og *openGauss) deinit(backupPath string) error {
 		return cons.NoPermission
 	}
 
-	cmd := fmt.Sprintf(_deinitFmt, backupPath)
+	cmd := fmt.Sprintf(_rmDirFmt, backupPath)
 	if _, err := cmds.Exec(og.shell, cmd); err != nil {
 		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
 	}
@@ -213,10 +213,20 @@ func (og *openGauss) Stop() error {
 
 // Restore TODO:Dependent environments require integration testing
 func (og *openGauss) Restore(backupPath, instance, backupID string) error {
+	if len(og.pgData) < 2 && strings.HasPrefix(og.pgData, "/") {
+		return fmt.Errorf("invalid pg data dir[path=%s],err=%w", og.pgData, cons.InvalidPgDataDir)
+	}
+
+	if _, err := cmds.Exec(og.shell, fmt.Sprintf(_rmDirFmt, og.pgData)); err != nil {
+		return fmt.Errorf("rm PGDATA dir failure,err=%s,wrap=%s", err, cons.RestoreFailed)
+	}
+
 	cmd := fmt.Sprintf(_restoreFmt, backupPath, instance, backupID, og.pgData)
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
 
 	for output := range outputs {
+        // TODO just for dev,rm in next commit
+		fmt.Println(output.Message)
 		if errors.Is(err, cons.CmdOperateFailed) {
 			return fmt.Errorf("outputs get err=%s,wrap=%w", output.Error, cons.RestoreFailed)
 		}

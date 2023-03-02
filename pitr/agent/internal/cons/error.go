@@ -46,4 +46,5 @@ var (
 	MissingDbName          = xerror.New(10021, "Missing db name.")
 	DbConnectionFailed     = xerror.New(10022, "Database connection failed.")
 	UnmatchBackupID        = xerror.New(10023, "Unmatch any backup id.")
+	InvalidPgDataDir       = xerror.New(10024, "Invalid PGDATA dir.")
 )
