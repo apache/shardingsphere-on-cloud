@@ -212,9 +212,9 @@ func (og *openGauss) Stop() error {
 
 /*
 Status return openGauss server status:
-/
-	`Running`  return "Runnging",nil
-    `Stopped`   return "Stopped",nil
+
+		`Running`  return "Runnging",nil
+	    `Stopped`   return "Stopped",nil
 
 The others are abnormal states,return "" and error.
 */
@@ -223,7 +223,7 @@ func (og *openGauss) Status() (string, error) {
 	output, err := cmds.Exec(og.shell, cmd)
 	if errors.Is(err, cons.CmdOperateFailed) {
 		if strings.Contains(err.Error(), "no server running") {
-            return "Stopped", nil
+			return "Stopped", nil
 		}
 		return "", fmt.Errorf("get openGauss status failure,err=[%s],wrap=%w", err, cons.StopOpenGaussFailed)
 	}
