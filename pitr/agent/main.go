@@ -30,7 +30,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"os"
 	"os/signal"
-	//	"strings"
+	"strings"
 	"syscall"
 )
 
@@ -78,9 +78,9 @@ func main() {
 	}
 	pkg.Init(shell, pgData)
 
-	//	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
-	//		panic(fmt.Errorf("lack of HTTPs certificate"))
-	//	}
+	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
+		panic(fmt.Errorf("lack of HTTPs certificate"))
+	}
 
 	var level = zapcore.InfoLevel
 	if logLevel == debugLogLevel {
@@ -151,6 +151,6 @@ func Serve(port string) error {
 		return responder.NotFound(ctx, "API not found")
 	})
 
-	return app.Listen(":18080")
-	//	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)
+	//	return app.Listen(":18080")
+	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)
 }
