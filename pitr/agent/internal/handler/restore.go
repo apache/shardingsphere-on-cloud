@@ -87,7 +87,7 @@ func Restore(ctx *fiber.Ctx) (err error) {
 	}
 
 	if err = responder.Success(ctx, nil); err != nil {
-		err = fmt.Errorf("responder error,err=%s,wrap=%w", err, cons.Internal)
+		err = fmt.Errorf("responder failure,err=%s,wrap=%w", err, cons.Internal)
 		return nil
 	}
 	return
