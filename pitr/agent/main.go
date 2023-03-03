@@ -83,7 +83,6 @@ func main() {
 		dirs = dirs[0 : len(dirs)-1]
 		pgData = strings.Join(dirs, "/")
 	}
-	pkg.Init(shell, pgData)
 
 	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
 		panic(fmt.Errorf("lack of HTTPs certificate"))
@@ -106,6 +105,7 @@ func main() {
 	}
 
 	log = logging.Init(logger)
+	pkg.Init(shell, pgData, log)
 	app = fiber.New()
 
 	go func() {

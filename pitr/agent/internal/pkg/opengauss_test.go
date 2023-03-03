@@ -36,6 +36,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 			og := &openGauss{
 				shell:  "/bin/sh",
 				pgData: "/data/opengauss/3.1.1/data/single_node/",
+				log:    log,
 			}
 
 			var (
@@ -85,6 +86,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 		It("Init backup and clean up the env", func() {
 			og := &openGauss{
 				shell: "/bin/sh",
+				log:   log,
 			}
 
 			data2 := "/home/omm/data2"
@@ -110,6 +112,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 		It("[/home/omm/]:no permission to operate other dirs", func() {
 			og := &openGauss{
 				shell: "/bin/sh",
+				log:   log,
 			}
 
 			data := "/home/omm2/data"
@@ -124,6 +127,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 			og := &openGauss{
 				shell:  "/bin/sh",
 				pgData: "/data/opengauss/3.1.1/data/single_node/",
+				log:    log,
 			}
 
 			var (
@@ -149,6 +153,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 			og := &openGauss{
 				shell:  "/bin/sh",
 				pgData: "/data/opengauss/3.1.1/data/single_node/",
+				log:    log,
 			}
 
 			status, err := og.Status()
@@ -179,6 +184,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 		It("manual:show all backup ", func() {
 			og := &openGauss{
 				shell: "/bin/sh",
+				log:   log,
 			}
 
 			var (
