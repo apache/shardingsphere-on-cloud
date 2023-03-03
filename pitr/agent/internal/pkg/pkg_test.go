@@ -18,11 +18,32 @@
 package pkg
 
 import (
+	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+var log logging.ILog
+
+func init() {
+	prodConfig := zap.NewProductionConfig()
+	prodConfig.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+	prodConfig.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+	logger, err := prodConfig.Build(
+		zap.AddCallerSkip(1),
+		zap.AddStacktrace(zapcore.FatalLevel),
+	)
+	if err != nil {
+		panic(fmt.Errorf("an unknown error occured in the zap-log"))
+	}
+
+	log = logging.Init(logger)
+}
 
 func TestPkg(t *testing.T) {
 	RegisterFailHandler(Fail)

@@ -17,10 +17,12 @@
 
 package pkg
 
+import "github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
+
 var (
 	OG IOpenGauss
 )
 
-func Init(shell, pgData string) {
-	OG = NewOpenGauss(shell, pgData)
+func Init(shell, pgData string, log logging.ILog) {
+	OG = NewOpenGauss(shell, pgData, log)
 }

@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/gsutil"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 	"strings"
 
 	"github.com/dlclark/regexp2"
@@ -36,6 +37,7 @@ type (
 		shell      string
 		pgData     string
 		pgDataTemp string
+		log        logging.ILog
 	}
 
 	IOpenGauss interface {
@@ -56,7 +58,7 @@ type (
 	}
 )
 
-func NewOpenGauss(shell, pgData string) IOpenGauss {
+func NewOpenGauss(shell, pgData string, log logging.ILog) IOpenGauss {
 	dirs := strings.Split(pgData, "/")
 	dirs = append(dirs[0:len(dirs)-1], "temp")
 
@@ -64,6 +66,7 @@ func NewOpenGauss(shell, pgData string) IOpenGauss {
 		shell:      shell,
 		pgData:     pgData,
 		pgDataTemp: strings.Join(dirs, "/"),
+		log:        log,
 	}
 }
 
@@ -96,6 +99,13 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, th
 	}
 
 	for output := range outputs {
+		og.log.
+			Field("backup_path", backupPath).
+			Field("instance", instanceName).
+			Field("backup_mode", backupMode).
+			Field("pgdata", og.pgData).
+			Debug(fmt.Sprintf("AsyncBackup output[lineNo=%d,msg=%s,err=%v]", output.LineNo, output.Message, output.Error))
+
 		if output.Error != nil {
 			return "", fmt.Errorf("output.Error[%w] is not nil", output.Error)
 		}
@@ -148,8 +158,10 @@ func (og *openGauss) delBackup(backupPath, instanceName, backupID string) error 
 
 func (og *openGauss) Init(backupPath string) error {
 	cmd := fmt.Sprintf(_initFmt, backupPath)
-	_, err := cmds.Exec(og.shell, cmd)
-	// already exist and it's not empty
+
+	output, err := cmds.Exec(og.shell, cmd)
+	og.log.Debug(fmt.Sprintf("Init output[msg=%s,err=%v]", output, err))
+
 	if errors.Is(err, cons.CmdOperateFailed) {
 		return fmt.Errorf("init backup path failure,err=%s,wrap=%w", err, cons.BackupPathAlreadyExist)
 	}
@@ -173,9 +185,12 @@ func (og *openGauss) deinit(backupPath string) error {
 
 func (og *openGauss) AddInstance(backupPath, instance string) error {
 	cmd := fmt.Sprintf(_addInstanceFmt, backupPath, instance, og.pgData)
-	_, err := cmds.Exec(og.shell, cmd)
+
+	output, err := cmds.Exec(og.shell, cmd)
+	og.log.Debug(fmt.Sprintf("AddInstance[output=%s,err=%v]", output, err))
+
 	if errors.Is(err, cons.CmdOperateFailed) {
-		return fmt.Errorf("add instance failure,err=%s,wrap=%w", err, cons.InstanceAlreadyExist)
+		return fmt.Errorf("add instance failure[output=%s],err=%s,wrap=%w", output, err, cons.InstanceAlreadyExist)
 	}
 	if err != nil {
 		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
@@ -185,10 +200,11 @@ func (og *openGauss) AddInstance(backupPath, instance string) error {
 
 func (og *openGauss) DelInstance(backupPath, instancee string) error {
 	cmd := fmt.Sprintf(_delInstanceFmt, backupPath, instancee)
-	_, err := cmds.Exec(og.shell, cmd)
-	// already exist and it's not empty
+	output, err := cmds.Exec(og.shell, cmd)
+	og.log.Debug(fmt.Sprintf("DelInstance[output=%s,err=%v]", output, err))
+
 	if errors.Is(err, cons.CmdOperateFailed) {
-		return fmt.Errorf("delte instance failure,err=%s,wrap=%w", err, cons.InstanceNotExist)
+		return fmt.Errorf("delete instance failure[output=%s],err=%s,wrap=%w", output, err, cons.InstanceNotExist)
 	}
 	if err != nil {
 		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
@@ -198,25 +214,31 @@ func (og *openGauss) DelInstance(backupPath, instancee string) error {
 
 func (og *openGauss) Start() error {
 	cmd := fmt.Sprintf(_startOpenGaussFmt, og.pgData)
-	_, err := cmds.Exec(og.shell, cmd)
+	output, err := cmds.Exec(og.shell, cmd)
+	og.log.Debug(fmt.Sprintf("Start openGauss[output=%s]", output))
+
 	if errors.Is(err, cons.CmdOperateFailed) {
-		return fmt.Errorf("start openGauss failure,err=%s,wrap=%w", err, cons.StartOpenGaussFailed)
+		return fmt.Errorf("start openGauss failure[output=%s],err=%s,wrap=%w", output, err, cons.StartOpenGaussFailed)
 	}
 	if err != nil {
-		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s,output=%s] return err=%w", og.shell, cmd, output, err)
 	}
+
 	return nil
 }
 
 func (og *openGauss) Stop() error {
 	cmd := fmt.Sprintf(_stopOpenGaussFmt, og.pgData)
-	_, err := cmds.Exec(og.shell, cmd)
+	output, err := cmds.Exec(og.shell, cmd)
+	og.log.Debug(fmt.Sprintf("Stop openGauss[output=%s]", output))
+
 	if errors.Is(err, cons.CmdOperateFailed) {
-		return fmt.Errorf("stop openGauss failure,err=%s,wrap=%w", err, cons.StopOpenGaussFailed)
+		return fmt.Errorf("stop openGauss failure[output=%s],err=%s,wrap=%w", output, err, cons.StopOpenGaussFailed)
 	}
 	if err != nil {
-		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s,output=%s] return err=%w", og.shell, cmd, output, err)
 	}
+
 	return nil
 }
 
@@ -231,14 +253,16 @@ The others are abnormal states,return "" and error.
 func (og *openGauss) Status() (string, error) {
 	cmd := fmt.Sprintf(_statusGaussFmt, og.pgData)
 	output, err := cmds.Exec(og.shell, cmd)
+	og.log.Debug(fmt.Sprintf("Status openGauss[output=%s]", output))
+
 	if errors.Is(err, cons.CmdOperateFailed) {
 		if strings.Contains(err.Error(), "no server running") {
 			return "Stopped", nil
 		}
-		return "", fmt.Errorf("get openGauss status failure,err=[%s],wrap=%w", err, cons.StopOpenGaussFailed)
+		return "", fmt.Errorf("get openGauss status failure[output=%s],err=[%s],wrap=%w", output, err, cons.StopOpenGaussFailed)
 	}
 	if err != nil {
-		return "", fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+		return "", fmt.Errorf("cmds.Exec[shell=%s,cmd=%s,output=%s] return err=%w", og.shell, cmd, output, err)
 	}
 
 	if strings.Contains(output, "server is running") {
@@ -252,13 +276,20 @@ func (og *openGauss) Status() (string, error) {
 func (og *openGauss) Restore(backupPath, instance, backupID string) error {
 	cmd := fmt.Sprintf(_restoreFmt, backupPath, instance, backupID, og.pgData)
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
-
 	for output := range outputs {
+		og.log.
+			Fields(map[logging.FieldKey]string{
+				"backup_path": backupPath,
+				"instance":    instance,
+				"backup_id":   backupID,
+			}).
+			Debug(fmt.Sprintf("Restore openGauss[lineNo=%d,msg=%s]", output.LineNo, output.Message))
+
 		if errors.Is(err, cons.CmdOperateFailed) {
-			return fmt.Errorf("outputs get err=%s,wrap=%w", output.Error, cons.RestoreFailed)
+			return fmt.Errorf("cmds.AsyncExec[output=%s] return err=%s,wrap=%w", output.Message, output.Error, cons.RestoreFailed)
 		}
 		if output.Error != nil {
-			return fmt.Errorf("output.Error[%s] is not nil,wrap=%w", output.Error, cons.RestoreFailed)
+			return fmt.Errorf("cmds.AsyncExec outputs:Error[%s] is not nil,wrap=%w", output.Error, cons.RestoreFailed)
 		}
 	}
 	return nil
