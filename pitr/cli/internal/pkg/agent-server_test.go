@@ -43,3 +43,23 @@ func TestAgentServer_Backup(t *testing.T) {
 	}
 	fmt.Println(backupID)
 }
+
+func TestAgentServer_Restore(t *testing.T) {
+	t.SkipNow()
+	//Note:just for test api,you need map you own host.
+	as := NewAgentServer("http://agent-server:18080")
+
+	err := as.Restore(&model.RestoreIn{
+		DbPort:       5432,
+		DbName:       "omm",
+		Username:     "og",
+		Password:     "1234567890@SphereEx",
+		DnBackupPath: "/home/omm/data",
+		Instance:     "ins-default-0",
+		DnBackupId:   "RR3FIC",
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Success")
+}
