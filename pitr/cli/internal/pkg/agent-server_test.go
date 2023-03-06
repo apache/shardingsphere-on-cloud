@@ -89,3 +89,27 @@ func TestAgentServer_ShowDetail(t *testing.T) {
 	}
 	fmt.Println(string(indent))
 }
+
+func TestAgentServer_ShowList(t *testing.T) {
+	t.SkipNow()
+	//Note:just for test api,you need map you own host.
+	as := NewAgentServer("http://agent-server:18080")
+
+	list, err := as.ShowList(&model.ShowListIn{
+		DbPort:       5432,
+		DbName:       "omm",
+		Username:     "og",
+		Password:     "1234567890@SphereEx",
+		DnBackupPath: "/home/omm/data",
+		Instance:     "ins-default-0",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	indent, err := json.MarshalIndent(list, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(indent))
+}

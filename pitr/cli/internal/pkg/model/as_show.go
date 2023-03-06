@@ -52,4 +52,10 @@ type (
 		Msg  string     `json:"msg" validate:"required"`
 		Data BackupInfo `json:"data"`
 	}
+
+	BackupListResp struct {
+		Code int          `json:"code" validate:"required"`
+		Msg  string       `json:"msg" validate:"required"`
+		Data []BackupInfo `json:"data"`
+	}
 )
