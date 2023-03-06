@@ -18,6 +18,7 @@
 package pkg
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"testing"
@@ -42,4 +43,73 @@ func TestAgentServer_Backup(t *testing.T) {
 		panic(err)
 	}
 	fmt.Println(backupID)
+}
+
+func TestAgentServer_Restore(t *testing.T) {
+	t.SkipNow()
+	//Note:just for test api,you need map you own host.
+	as := NewAgentServer("http://agent-server:18080")
+
+	err := as.Restore(&model.RestoreIn{
+		DbPort:       5432,
+		DbName:       "omm",
+		Username:     "og",
+		Password:     "1234567890@SphereEx",
+		DnBackupPath: "/home/omm/data",
+		Instance:     "ins-default-0",
+		DnBackupId:   "RR3FIC",
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Success")
+}
+
+func TestAgentServer_ShowDetail(t *testing.T) {
+	t.SkipNow()
+	//Note:just for test api,you need map you own host.
+	as := NewAgentServer("http://agent-server:18080")
+
+	backupInfo, err := as.ShowDetail(&model.ShowDetailIn{
+		DbPort:       5432,
+		DbName:       "omm",
+		Username:     "og",
+		Password:     "1234567890@SphereEx",
+		DnBackupPath: "/home/omm/data",
+		Instance:     "ins-default-0",
+		DnBackupId:   "RR3FIC",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	indent, err := json.MarshalIndent(backupInfo, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(indent))
+}
+
+func TestAgentServer_ShowList(t *testing.T) {
+	t.SkipNow()
+	//Note:just for test api,you need map you own host.
+	as := NewAgentServer("http://agent-server:18080")
+
+	list, err := as.ShowList(&model.ShowListIn{
+		DbPort:       5432,
+		DbName:       "omm",
+		Username:     "og",
+		Password:     "1234567890@SphereEx",
+		DnBackupPath: "/home/omm/data",
+		Instance:     "ins-default-0",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	indent, err := json.MarshalIndent(list, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(indent))
 }
