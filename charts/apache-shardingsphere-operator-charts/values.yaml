@@ -34,7 +34,7 @@ operator:
     pullPolicy: IfNotPresent
     ## @param image.tag image tag
     ##
-    tag: "0.1.2"
+    tag: "0.2.0"
   ## @param imagePullSecrets image pull secret of private repository
   ## e.g:
   ## imagePullSecrets:
