@@ -157,3 +157,8 @@ compute:
     ##
     props:
       proxy-frontend-database-protocol-type: MySQL
+
+### agent configuration
+agent:
+  metrics:
+    enabled: true

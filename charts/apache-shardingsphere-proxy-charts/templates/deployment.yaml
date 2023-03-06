@@ -49,6 +49,16 @@ spec:
             - name: mysql-connect-jar
               mountPath: /opt/shardingsphere-proxy/ext-lib
       {{- end }}
+        {{- if .Values.agent.metrics.enabled}}
+        - name: download-metrics-jar
+          image: busybox:1.35.0
+          command: ["sh","-c","wget https://dlcdn.apache.org/shardingsphere/{{ .Values.compute.image.tag | default .Chart.AppVersion }}/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz;
+          mkdir /opt/shardingsphere-proxy/agent;
+          tar -zxvf apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz -C opt/shardingsphere-proxy/agent"]
+          volumeMounts:
+            - name: metrics-jar
+              mountPath: busybox:1.35.0
+        {{- end}}
       containers:
         - image: "{{ .Values.compute.image.repository }}:{{ .Values.compute.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.compute.image.pullPolicy }}
@@ -82,6 +92,10 @@ spec:
             - name: mysql-connect-jar
               mountPath: /opt/shardingsphere-proxy/ext-lib
             {{- end }}
+            {{- if .Values.agent.metrics.enabled}}
+            - name: metrics-jar
+              mountPath: /opt/shardingsphere-proxy/agent
+            {{- end }}
       imagePullSecrets:
       {{- toYaml .Values.compute.imagePullSecrets | nindent 8 }}
       volumes:
@@ -90,5 +104,9 @@ spec:
             name: {{ printf "%s-configuration" (include "common.names.fullname" .) }}
       {{- if .Values.compute.mysqlConnector.version}}
         - name: mysql-connect-jar
+          emptyDir: { }
+      {{- end}}
+      {{- if .Values.agent.metrics.enabled}}
+        - name: metrics-jar
           emptyDir: { }
       {{- end}}
