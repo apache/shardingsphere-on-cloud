@@ -78,7 +78,7 @@ func (as *agentServer) Backup(in *model.BackupIn) (string, error) {
 func (as *agentServer) Restore(in *model.RestoreIn) error {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiRestore)
 
-	out := &model.BackupOutResp{}
+	out := &model.RestoreResp{}
 	httpCode, err := httputils.NewRequest(context.Background(), http.MethodPost, url).
 		Header(map[string]string{
 			"x-request-id": uuid.New().String(),
@@ -101,4 +101,32 @@ func (as *agentServer) Restore(in *model.RestoreIn) error {
 	}
 
 	return nil
+}
+
+func (as *agentServer) ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, error) {
+	url := fmt.Sprintf("%s%s", as.addr, as._apiShowDetail)
+
+	out := &model.BackupDetailResp{}
+	httpCode, err := httputils.NewRequest(context.Background(), http.MethodPost, url).
+		Header(map[string]string{
+			"x-request-id": uuid.New().String(),
+			"content-type": "application/json",
+		}).
+		Body(in).
+		Send(out)
+	if err != nil {
+		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
+		return nil, fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
+	}
+
+	if httpCode != http.StatusOK {
+		return nil, fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHttpStatus))
+	}
+
+	if out.Code != 0 {
+		asErr := xerr.NewAgentServerErr(out.Code, out.Msg)
+		return nil, fmt.Errorf("agent server error[code=%d,msg=%s],err=%w", out.Code, out.Msg, asErr)
+	}
+
+	return &out.Data, nil
 }

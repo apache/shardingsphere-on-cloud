@@ -18,18 +18,38 @@
 package model
 
 type (
-	RestoreIn struct {
+	ShowDetailIn struct {
 		DbPort       uint16 `json:"db_port"`
 		DbName       string `json:"db_name"`
 		Username     string `json:"username"`
 		Password     string `json:"password"`
-		Instance     string `json:"instance"`
-		DnBackupPath string `json:"dn_backup_path"`
 		DnBackupId   string `json:"dn_backup_id"`
+		DnBackupPath string `json:"dn_backup_path"`
+		Instance     string `json:"instance"`
 	}
 
-	RestoreResp struct {
-		Code int    `json:"code" validate:"required"`
-		Msg  string `json:"msg" validate:"required"`
+	ShowListIn struct {
+		DbPort       uint16 `json:"db_port"`
+		DbName       string `json:"db_name"`
+		Username     string `json:"username"`
+		Password     string `json:"password"`
+		DnBackupPath string `json:"dn_backup_path"`
+		Instance     string `json:"instance"`
+	}
+
+	BackupInfo struct {
+		Id        string `json:"dn_backup_id"`
+		Path      string `json:"dn_backup_path"`
+		Mode      string `json:"db_backup_mode"`
+		Instance  string `json:"instance"`
+		StartTime string `json:"start_time"`
+		EndTime   string `json:"end_time"`
+		Status    string `json:"status"`
+	}
+
+	BackupDetailResp struct {
+		Code int        `json:"code" validate:"required"`
+		Msg  string     `json:"msg" validate:"required"`
+		Data BackupInfo `json:"data"`
 	}
 )
