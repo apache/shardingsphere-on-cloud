@@ -19,7 +19,10 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"github.com/google/uuid"
 	"os"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,6 +38,47 @@ var _ = Describe("ILocalStorage", func() {
 			Expect(ls).NotTo(BeNil())
 		})
 
+		It("ReadALL", func() {
+			Skip("Manually exec:dependent environment")
+			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
+			ls, err := NewLocalStorage(root)
+			Expect(err).To(BeNil())
+			Expect(ls).NotTo(BeNil())
+
+			list, err := ls.ReadAll()
+			Expect(err).To(BeNil())
+			fmt.Println(fmt.Sprintf("%+v", list))
+			for _, v := range list {
+				fmt.Println(fmt.Sprintf("%+v", v.Info))
+			}
+		})
+
+		It("ReadByCSN", func() {
+			Skip("Manually exec:dependent environment")
+			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
+			ls, err := NewLocalStorage(root)
+			Expect(err).To(BeNil())
+			Expect(ls).NotTo(BeNil())
+
+			backup, err := ls.ReadByCSN("e19b6935-c437-4cf0-b820-3275bd2727a2")
+			Expect(err).To(BeNil())
+			fmt.Println(fmt.Sprintf("%+v", backup))
+			fmt.Println(fmt.Sprintf("%+v", backup.Info))
+		})
+
+		It("ReadByID", func() {
+			Skip("Manually exec:dependent environment")
+			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
+			ls, err := NewLocalStorage(root)
+			Expect(err).To(BeNil())
+			Expect(ls).NotTo(BeNil())
+
+			backup, err := ls.ReadByID("66785e18-b8d3-42f4-9967-a4119be15cea")
+			Expect(err).To(BeNil())
+			fmt.Println(fmt.Sprintf("%+v", backup))
+			fmt.Println(fmt.Sprintf("%+v", backup.Info))
+		})
+
 		It("GenFilename and WriteByJSON", func() {
 			Skip("Manually exec:dependent environment")
 			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
@@ -45,16 +89,48 @@ var _ = Describe("ILocalStorage", func() {
 			filename := ls.GenFilename(ExtnJSON)
 			Expect(filename).NotTo(BeEmpty())
 
-			type T struct {
-				Name string
-				Age  uint8
+			contents := model.LsBackup{
+				Info: &model.BackupMetaInfo{
+					ID:        uuid.New().String(),
+					CSN:       uuid.New().String(),
+					StartTime: time.Now().Unix(),
+					Endtime:   time.Now().Add(time.Minute).Unix(),
+				},
+				DnList: []model.DataNode{
+					{
+						IP:        "1.1.1.1",
+						Port:      "5432",
+						Status:    "Completed",
+						BackupID:  "SK08DAK1",
+						StartTime: time.Now().Unix(),
+						Endtime:   time.Now().Unix(),
+					},
+					{
+						IP:        "1.1.1.2",
+						Port:      "5432",
+						Status:    "Completed",
+						BackupID:  "SK08DAK2",
+						StartTime: time.Now().Unix(),
+						Endtime:   time.Now().Unix(),
+					},
+				},
+				SsBackup: &model.SsBackup{
+					Status: "Completed",
+					ClusterInfo: model.ClusterInfo{
+						MetaData: model.MetaData{
+							Databases: model.Databases{
+								ShardingDb: "ShardingDb",
+								AnotherDb:  "AnotherDb",
+							},
+							Props: "Props",
+							Rules: "Rules",
+						},
+						SnapshotInfo: model.SnapshotInfo{},
+					},
+					StorageNodes: nil,
+				},
 			}
-
-			contents := T{
-				Name: "Pikachu",
-				Age:  65,
-			}
-			err = ls.WriteByJSON(filename, contents)
+			err = ls.WriteByJSON(filename, &contents)
 			Expect(err).To(BeNil())
 		})
 	})

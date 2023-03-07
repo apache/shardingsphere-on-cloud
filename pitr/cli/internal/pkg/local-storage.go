@@ -19,7 +19,10 @@ package pkg
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"os"
 	"strings"
 	"time"
@@ -35,11 +38,12 @@ type (
 
 	ILocalStorage interface {
 		init() error
-		WriteByJSON(name string, contents anyStruct) error
+		WriteByJSON(name string, contents *model.LsBackup) error
 		GenFilename(extn extension) string
+		ReadAll() ([]model.LsBackup, error)
+		ReadByID(id string) (*model.LsBackup, error)
+		ReadByCSN(csn string) (*model.LsBackup, error)
 	}
-
-	anyStruct any
 
 	extension string
 )
@@ -97,7 +101,7 @@ func (ls *localStorage) init() error {
 	return nil
 }
 
-func (ls *localStorage) WriteByJSON(name string, contents anyStruct) error {
+func (ls *localStorage) WriteByJSON(name string, contents *model.LsBackup) error {
 	if !strings.HasSuffix(name, ".json") {
 		return fmt.Errorf("wrong file extension,file name is %s", name)
 	}
@@ -119,6 +123,65 @@ func (ls *localStorage) WriteByJSON(name string, contents anyStruct) error {
 	}
 
 	return nil
+}
+
+func (ls *localStorage) ReadAll() ([]model.LsBackup, error) {
+	entries, err := os.ReadDir(ls.backupDir)
+	if err != nil {
+		return nil, xerr.NewCliErr(fmt.Sprintf("read the dir[path:%s] failed,err=%s", ls.backupDir, err))
+	}
+	backups := make([]model.LsBackup, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		info, err := entry.Info()
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, xerr.NewCliErr("The file does not exist or has changed")
+		} else if err != nil {
+			return nil, xerr.NewCliErr(fmt.Sprintf("Unknown err:get entry info failed,err=%s", err))
+		}
+
+		path := fmt.Sprintf("%s/%s", ls.backupDir, info.Name())
+		file, err := os.ReadFile(path)
+		if err != nil {
+			return nil, xerr.NewCliErr(fmt.Sprintf("read file failed,err=%s", err))
+		}
+
+		b := model.LsBackup{}
+		if err := json.Unmarshal(file, &b); err != nil {
+			return nil, xerr.NewCliErr(fmt.Sprintf("invalid contents[filePath=%s],err=%s", path, err))
+		}
+		backups = append(backups, b)
+	}
+	return backups, nil
+}
+
+func (ls *localStorage) ReadByCSN(csn string) (*model.LsBackup, error) {
+	list, err := ls.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range list {
+		if v.Info.CSN == csn {
+			return &v, nil
+		}
+	}
+	return nil, xerr.NewCliErr(xerr.NotFound)
+}
+
+func (ls *localStorage) ReadByID(id string) (*model.LsBackup, error) {
+	list, err := ls.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range list {
+		if v.Info.ID == id {
+			return &v, nil
+		}
+	}
+	return nil, xerr.NewCliErr(xerr.NotFound)
 }
 
 /*
