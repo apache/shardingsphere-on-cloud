@@ -29,6 +29,7 @@ type (
 const (
 	Unknown           = "Unknown error"
 	InvalidHttpStatus = "Invalid http status"
+	NotFound          = "Not found"
 )
 
 func (e *err) Error() string {
