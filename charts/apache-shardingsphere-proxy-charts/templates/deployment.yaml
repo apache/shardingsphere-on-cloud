@@ -13,8 +13,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-#
 
+# Check Zookeeper settings
+# if enabled zookeeper's persistence, should set correct storageClass for it
+{{- if .Values.governance.zookeeper.persistence.enabled }}
+{{- required "Detected .Values.governance.zookeeper.persistence.enabled is true, please set a correct .Values.governance.zookeeper.persistence.storageClass !" .Values.governance.zookeeper.persistence.storageClass -}}
+{{- end }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
