@@ -49,15 +49,15 @@ spec:
             - name: mysql-connect-jar
               mountPath: /opt/shardingsphere-proxy/ext-lib
       {{- end }}
-        {{- if .Values.agent.metrics.enabled}}
-        - name: download-metrics-jar
+        {{- if .Values.agent.enabled }}
+        - name: agent-metrics-jar
           image: busybox:1.35.0
-          command: ["sh","-c","wget https://dlcdn.apache.org/shardingsphere/{{ .Values.compute.image.tag | default .Chart.AppVersion }}/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz;
+          command: ["sh","-c","wget https://mirrors.aliyun.com/apache/shardingsphere/{{ .Values.compute.image.tag | default .Chart.AppVersion }}/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz;
           mkdir /opt/shardingsphere-proxy/agent;
-          tar -zxvf apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz -C opt/shardingsphere-proxy/agent"]
+          tar -zxvf apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz -C /opt/shardingsphere-proxy/agent"]
           volumeMounts:
             - name: metrics-jar
-              mountPath: busybox:1.35.0
+              mountPath: /opt/shardingsphere-proxy/agent
         {{- end}}
       containers:
         - image: "{{ .Values.compute.image.repository }}:{{ .Values.compute.image.tag | default .Chart.AppVersion }}"
@@ -68,6 +68,7 @@ spec:
               port: {{ .Values.compute.startPort }}
             failureThreshold: 6
             periodSeconds: 10
+
           livenessProbe:
             periodSeconds: 5
             tcpSocket:
@@ -79,6 +80,10 @@ spec:
           env:
             - name: PORT
               value: "{{ .Values.compute.startPort }}"
+              {{- if  .Values.agent.enabled}}
+            - name: "JVM_OPTS"
+              value: "-javaagent:/opt/shardingsphere-proxy/agent/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin/shardingsphere-agent-{{ .Values.compute.image.tag | default .Chart.AppVersion }}.jar"
+              {{- end }}
           ports:
             - name: start-port
               containerPort: {{ .Values.compute.startPort }}
@@ -92,9 +97,11 @@ spec:
             - name: mysql-connect-jar
               mountPath: /opt/shardingsphere-proxy/ext-lib
             {{- end }}
-            {{- if .Values.agent.metrics.enabled}}
+            {{- if .Values.agent.enabled}}
             - name: metrics-jar
               mountPath: /opt/shardingsphere-proxy/agent
+            - name: agent-config
+              mountPath: /opt/shardingsphere-proxy/agent/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin/conf
             {{- end }}
       imagePullSecrets:
       {{- toYaml .Values.compute.imagePullSecrets | nindent 8 }}
@@ -106,7 +113,14 @@ spec:
         - name: mysql-connect-jar
           emptyDir: { }
       {{- end}}
-      {{- if .Values.agent.metrics.enabled}}
+# when enable metrics,replace the start.sh and add agent.jar
+      {{- if .Values.agent.enabled}}
         - name: metrics-jar
           emptyDir: { }
-      {{- end}}
+        - name: agent-config
+          configMap:
+            name: add-metrics
+            items:
+              - key: replace-agent.yaml
+                path: agent.yaml
+       {{- end}}

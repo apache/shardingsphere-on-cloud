@@ -30,3 +30,6 @@ spec:
   selector:
     app: {{ template "common.names.fullname" . }}
   type: {{.Values.compute.service.type}}
+
+
+
