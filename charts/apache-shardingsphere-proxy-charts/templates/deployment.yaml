@@ -49,10 +49,10 @@ spec:
             - name: mysql-connect-jar
               mountPath: /opt/shardingsphere-proxy/ext-lib
       {{- end }}
-        {{- if .Values.agent.enabled }}
+        {{- if .Values.compute.agent.enabled }}
         - name: agent-metrics-jar
           image: busybox:1.35.0
-          command: ["sh","-c","wget https://mirrors.aliyun.com/apache/shardingsphere/{{ .Values.compute.image.tag | default .Chart.AppVersion }}/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz;
+          command: ["sh","-c","wget https://archive.apache.org/dist/shardingsphere/{{ .Values.compute.image.tag | default .Chart.AppVersion }}/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz;
           mkdir /opt/shardingsphere-proxy/agent;
           tar -zxvf apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz -C /opt/shardingsphere-proxy/agent"]
           volumeMounts:
@@ -80,8 +80,8 @@ spec:
           env:
             - name: PORT
               value: "{{ .Values.compute.startPort }}"
-              {{- if  .Values.agent.enabled}}
-            - name: "JVM_OPTS"
+              {{- if  .Values.compute.agent.enabled}}
+            - name: "JAVA_TOOL_OPTIONS"
               value: "-javaagent:/opt/shardingsphere-proxy/agent/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin/shardingsphere-agent-{{ .Values.compute.image.tag | default .Chart.AppVersion }}.jar"
               {{- end }}
           ports:
@@ -97,7 +97,7 @@ spec:
             - name: mysql-connect-jar
               mountPath: /opt/shardingsphere-proxy/ext-lib
             {{- end }}
-            {{- if .Values.agent.enabled}}
+            {{- if .Values.compute.agent.enabled}}
             - name: metrics-jar
               mountPath: /opt/shardingsphere-proxy/agent
             - name: agent-config
@@ -113,14 +113,13 @@ spec:
         - name: mysql-connect-jar
           emptyDir: { }
       {{- end}}
-# when enable metrics,replace the start.sh and add agent.jar
-      {{- if .Values.agent.enabled}}
+      {{- if .Values.compute.agent.enabled}}
         - name: metrics-jar
           emptyDir: { }
         - name: agent-config
           configMap:
             name: add-metrics
             items:
-              - key: replace-agent.yaml
+              - key: agent.yaml
                 path: agent.yaml
        {{- end}}

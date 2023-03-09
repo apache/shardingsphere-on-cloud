@@ -56,13 +56,13 @@ data:
 
 
 
-{{- if .Values.agent.enabled}}
+{{- if .Values.compute.agent.enabled}}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: add-metrics
 data:
-  replace-agent.yaml: |-
-    {{- include "common.tplvalues.render" (dict "value" .Values.agentConfig "context" $) | nindent 4 }}
-  {{- end}}
+  agent.yaml: |-
+    {{- include "common.tplvalues.render" (dict "value" .Values.compute.agent.agentConfig "context" $) | nindent 4 }}
+    {{- end}}
