@@ -158,10 +158,20 @@ compute:
     props:
       proxy-frontend-database-protocol-type: MySQL
 
-  ### agent configuration
+  ## @section Compute-Node ShardingSphere-Proxy agent parameters
+  ## @param compute.agent.enabled Switch to enable or disable the agent metrics
   agent:
     enabled: true
-    agentConfig:
+    ## @section Compute-Node ShardingSphere-Proxy agent Configuration parameters
+    ## ref: https://shardingsphere.apache.org/document/current/cn/user-manual/shardingsphere-proxy/observability/
+    ## @param compute.agent.config.plugins list the agent plugins we can use
+    ## @param compute.agent.config.plugins.logging.File Now only build metadata time-consuming log output, no other log output.
+    ## @param compute.agent.config.plugins.logging.File.props.level output level of logs
+    ## @param compute.agent.config.plugins.metrics.Prometheus Used for exposure monitoring indicators
+    ## @param compute.agent.config.plugins.metrics.Prometheus.host host address, default localhost
+    ## @param compute.agent.config.plugins.metrics.Prometheus.port port,default 9090
+    ## @param compute.agent.config.plugins.metrics.Prometheus.props.jvm-information-collector-enabled Whether to collect JVM indicator information,default true to enable
+    config:
       plugins:
         logging:
           File:

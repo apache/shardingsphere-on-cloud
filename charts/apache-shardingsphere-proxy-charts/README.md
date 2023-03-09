@@ -1,17 +1,22 @@
 # Apache ShardingSphere-Proxy Charts
+
 This Chart is used to quickly install ShardingSphere-Proxy Cluster without ShardingSphere-Operator.
 
 ## Install
+
 Use the following command to install:
-```shell
+
+```
 helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
 helm repo update
 helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-proxy-charts --version 0.1.0
 ```
 
 ## Uninstall
+
 Use the following command to uninstall:
-```shell
+
+```
 helm unstall [RELEASE_NAME]
 ```
 
@@ -19,14 +24,16 @@ helm unstall [RELEASE_NAME]
 
 ### Governance-Node parameters
 
+
 | Name                 | Description                                           | Value  |
-| -------------------- | ----------------------------------------------------- | ------ |
+| ---------------------- | ------------------------------------------------------- | -------- |
 | `governance.enabled` | Switch to enable or disable the governance helm chart | `true` |
 
 ### Governance-Node ZooKeeper parameters
 
+
 | Name                                             | Description                                          | Value               |
-| ------------------------------------------------ | ---------------------------------------------------- | ------------------- |
+| -------------------------------------------------- | ------------------------------------------------------ | --------------------- |
 | `governance.zookeeper.enabled`                   | Switch to enable or disable the ZooKeeper helm chart | `true`              |
 | `governance.zookeeper.replicaCount`              | Number of ZooKeeper nodes                            | `1`                 |
 | `governance.zookeeper.persistence.enabled`       | Enable persistence on ZooKeeper using PVC(s)         | `false`             |
@@ -39,8 +46,9 @@ helm unstall [RELEASE_NAME]
 
 ### Compute-Node ShardingSphere-Proxy parameters
 
+
 | Name                                | Description                                                  | Value                         |
-| ----------------------------------- | ------------------------------------------------------------ |-------------------------------|
+| ------------------------------------- | -------------------------------------------------------------- | ------------------------------- |
 | `compute.image.repository`          | Image name of ShardingSphere-Proxy.                          | `apache/shardingsphere-proxy` |
 | `compute.image.pullPolicy`          | The policy for pulling ShardingSphere-Proxy image            | `IfNotPresent`                |
 | `compute.image.tag`                 | ShardingSphere-Proxy image tag                               | `5.2.0`                       |
@@ -53,4 +61,6 @@ helm unstall [RELEASE_NAME]
 | `compute.service.port`              | ShardingSphere-Proxy expose port                             | `3307`                        |
 | `compute.mysqlConnector.version`    | MySQL connector version                                      | `5.1.49`                      |
 | `compute.startPort`                 | ShardingSphere-Proxy start port                              | `3307`                        |
-| `compute.serverConfig`              | Server Configuration file for ShardingSphere-Proxy            | `""`                          |
+| `compute.serverConfig`              | Server Configuration file for ShardingSphere-Proxy           | `""`                          |
+| `compute.agent.enabled`             | switch to enable or disable the agent metrics                | `true`                        |
+| `compute.agent.config`              | agent Configuration file for ShardingSphere-Proxy agent      | `""`                          |
