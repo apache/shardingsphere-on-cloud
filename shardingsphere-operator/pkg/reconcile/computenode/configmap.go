@@ -31,6 +31,7 @@ import (
 const (
 	ConfigDataKeyForLogback = "logback.xml"
 	ConfigDataKeyForServer  = "server.yaml"
+	ConfigDataKeyForAgent   = "agent.yaml"
 
 	AnnoClusterRepoConfig = "computenode.shardingsphere.org/server-config-mode-cluster"
 	AnnoLogbackConfig     = "computenode.shardingsphere.org/logback"
@@ -64,6 +65,14 @@ func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 		builder.SetServerConfig("# Empty file is needed")
 	}
 
+	// load java agent config to configmap if needed
+	if !reflect.DeepEqual(cn.Spec.Bootstrap.AgentConfig, v1alpha1.AgentConfig{}) {
+		agentConf := cn.Spec.Bootstrap.AgentConfig.DeepCopy()
+		if y, err := yaml.Marshal(agentConf); err == nil {
+			builder.SetAgentConfig(string(y))
+		}
+	}
+
 	return builder.Build()
 }
 
@@ -74,6 +83,7 @@ type ConfigMapBuilder interface {
 	SetAnnotations(annos map[string]string) ConfigMapBuilder
 	SetLogback(logback string) ConfigMapBuilder
 	SetServerConfig(serverConfig string) ConfigMapBuilder
+	SetAgentConfig(agentConfig string) ConfigMapBuilder
 	Build() *v1.ConfigMap
 }
 
@@ -113,6 +123,11 @@ func (c *configmapBuilder) SetLogback(logback string) ConfigMapBuilder {
 
 func (c *configmapBuilder) SetServerConfig(serviceConfig string) ConfigMapBuilder {
 	c.configmap.Data[ConfigDataKeyForServer] = serviceConfig
+	return c
+}
+
+func (c *configmapBuilder) SetAgentConfig(agentConfig string) ConfigMapBuilder {
+	c.configmap.Data[ConfigDataKeyForAgent] = agentConfig
 	return c
 }
 

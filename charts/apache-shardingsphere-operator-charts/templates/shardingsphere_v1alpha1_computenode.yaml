@@ -17,15 +17,15 @@
 
 {{- if .Values.operator.featureGates.computeNode }}
 apiVersion: shardingsphere.apache.org/v1alpha1
-kind: ComputeNode 
+kind: ComputeNode
 metadata:
   name: {{ template "common.names.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    "app": {{ template "common.names.fullname" .}} 
+    "app": {{ template "common.names.fullname" .}}
 spec:
   storageNodeConnector:
-    type: {{ .Values.computeNode.storageNodeConnector.type }} 
+    type: {{ .Values.computeNode.storageNodeConnector.type }}
     version: {{ .Values.computeNode.storageNodeConnector.version| quote}}
   serverVersion: {{ .Values.computeNode.serverVersion | default .Chart.AppVersion }}
   replicas: {{ .Values.computeNode.replicas }}
@@ -34,10 +34,10 @@ spec:
       "app": {{ template "common.names.fullname" . }}
   portBindings:
   {{- range $.Values.computeNode.portBindings }}
-  - name: {{ .name }}
-    containerPort: {{ .containerPort }} 
-    servicePort: {{ .servicePort }}
-    protocol: {{ .protocol }}
+    - name: {{ .name }}
+      containerPort: {{ .containerPort }}
+      servicePort: {{ .servicePort }}
+      protocol: {{ .protocol }}
   {{- end }}{{/* $.Values.computeNode.portBindings */}}
   serviceType: {{ .Values.computeNode.serviceType }}
   {{- if .Values.computeNode.bootstrap }}
@@ -46,11 +46,11 @@ spec:
     serverConfig:
       authority:
         privilege:
-          type: {{ .Values.computeNode.bootstrap.serverConfig.authority.privilege.type }} 
+          type: {{ .Values.computeNode.bootstrap.serverConfig.authority.privilege.type }}
         users:
         {{- range $.Values.computeNode.bootstrap.serverConfig.authority.users }}
-        - user: {{ .user }}
-          password: {{ .password }}
+          - user: {{ .user }}
+            password: {{ .password }}
         {{- end }}{{/* .Values.computeNode.bootstrap.serverConfig.authority.users */}}
       mode:
         type: {{ .Values.computeNode.bootstrap.serverConfig.mode.type }}
@@ -66,5 +66,15 @@ spec:
       props:
         proxy-frontend-database-protocol-type: {{ .Values.computeNode.bootstrap.serverConfig.props.proxyFrontendDatabaseProtocolType }}
     {{- end }}{{/* .Values.computeNode.bootstrap.serverConfig */}}
+    {{- if .Values.computeNode.bootstrap.agentConfig }}
+    agentConfig:
+      plugins:
+        metrics:
+          prometheus:
+            host: {{ .Values.computeNode.bootstrap.agentConfig.plugins.metrics.prometheus.host }}
+            port: {{ .Values.computeNode.bootstrap.agentConfig.plugins.metrics.prometheus.port }}
+            props:
+              jvm-information-collector-enabled: {{.Values.computeNode.bootstrap.agentConfig.plugins.metrics.prometheus.props.jvmInformationCollectorEnabled | quote }}
+    {{- end }}
   {{- end }}{{/* .Values.computeNode.bootstrap */}}
 {{- end }}{{/* .Values.computeNode.enabled */}}

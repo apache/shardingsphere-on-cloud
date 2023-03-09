@@ -143,9 +143,9 @@ func Test_NewDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							InitContainers: []corev1.Container{
 								{
-									Name:    "boostrap",
+									Name:    "download-mysql-jar",
 									Image:   "busybox:1.35.0",
-									Command: []string{"/bin/sh", "-c", download_script},
+									Command: []string{"/bin/sh", "-c", downloadMysqlJarScript},
 									Env: []corev1.EnvVar{
 										{
 											Name:  defaultMySQLDriverEnvName,
@@ -214,6 +214,207 @@ func Test_NewDeployment(t *testing.T) {
 				},
 			},
 			message: "case 1",
+		},
+		{
+			id: 2,
+			cn: &v1alpha1.ComputeNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-java-agent",
+					Namespace: "test-namespace",
+					Labels: map[string]string{
+						"k1": "v1",
+					},
+					Annotations: map[string]string{
+						defaultAnnotationJavaAgentEnabled: "true",
+					},
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					StorageNodeConnector: &v1alpha1.StorageNodeConnector{
+						Type:    v1alpha1.ConnectorTypeMySQL,
+						Version: "5.1.47",
+					},
+					ServerVersion: "5.3.1",
+					Replicas:      2,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"k1": "v1",
+						},
+					},
+					PortBindings: []v1alpha1.PortBinding{
+						{
+							Name:          "server",
+							ContainerPort: 3307,
+							ServicePort:   3307,
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					ServiceType: corev1.ServiceTypeClusterIP,
+					Bootstrap: v1alpha1.BootstrapConfig{
+						AgentConfig: v1alpha1.AgentConfig{
+							Plugins: v1alpha1.AgentPlugin{
+								Metrics: &v1alpha1.PluginMetrics{
+									Prometheus: v1alpha1.Prometheus{
+										Host:  "localhost",
+										Port:  9090,
+										Props: map[string]string{},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			exp: &v1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-java-agent",
+					Namespace: "test-namespace",
+					Labels: map[string]string{
+						"k1": "v1",
+					},
+					Annotations: map[string]string{
+						"anno1": "value1",
+					},
+				},
+				Spec: v1.DeploymentSpec{
+					Replicas: &defaultReplicas,
+					Strategy: v1.DeploymentStrategy{
+						Type: v1.RollingUpdateDeploymentStrategyType,
+						RollingUpdate: &v1.RollingUpdateDeployment{
+							MaxUnavailable: &defaultMaxUnavailable,
+							MaxSurge:       &defaultMaxSurge,
+						},
+					},
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"k1": "v1",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"k1": "v1",
+							},
+						},
+						Spec: corev1.PodSpec{
+							InitContainers: []corev1.Container{
+								{
+									Name:    "download-mysql-jar",
+									Image:   "busybox:1.35.0",
+									Command: []string{"/bin/sh", "-c", downloadMysqlJarScript},
+									Env: []corev1.EnvVar{
+										{
+											Name:  defaultMySQLDriverEnvName,
+											Value: "5.1.47",
+										},
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      defaultMySQLDriverVolumeName,
+											MountPath: defaultExtlibPath,
+										},
+									},
+								},
+								{
+									Name:    "download-agent-bin-jar",
+									Image:   "busybox:1.35.0",
+									Command: []string{"/bin/sh", "-c", downloadAgentJarScript},
+									Env: []corev1.EnvVar{
+										{
+											Name:  defaultAgentBinVersionEnvName,
+											Value: "5.3.1",
+										},
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      defaultJavaAgentVolumeName,
+											MountPath: defaultJavaAgentVolumeMountPath,
+										},
+									},
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  defaultContainerName,
+									Image: fmt.Sprintf("%s:%s", defaultImageName, "5.3.1"),
+									Ports: []corev1.ContainerPort{
+										{
+											Name:          "server",
+											ContainerPort: 3307,
+											Protocol:      corev1.ProtocolTCP,
+										},
+									},
+									Env: []corev1.EnvVar{
+										{
+											Name:  defaultJavaToolOptionsName,
+											Value: fmt.Sprintf(defaultJavaAgentEnvValue, "5.3.1"),
+										},
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      defaultConfigVolumeName,
+											MountPath: defaultConfigVolumeMountPath,
+										},
+										{
+											Name:      defaultMySQLDriverVolumeName,
+											SubPath:   relativeMySQLDriverMountName("5.1.47"),
+											MountPath: absoluteMySQLDriverMountName(defaultExtlibPath, "5.1.47"),
+										},
+										{
+											Name:      defaultJavaAgentVolumeName,
+											MountPath: defaultJavaAgentVolumeMountPath,
+										},
+										{
+											Name:      defaultJavaAgentConfigVolumeName,
+											MountPath: defaultJavaAgentConfigVolumeMountPath,
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: defaultConfigVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										ConfigMap: &corev1.ConfigMapVolumeSource{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "test-java-agent",
+											},
+										},
+									},
+								},
+								{
+									Name: defaultMySQLDriverVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										EmptyDir: &corev1.EmptyDirVolumeSource{},
+									},
+								},
+								{
+									Name: defaultJavaAgentVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										EmptyDir: &corev1.EmptyDirVolumeSource{},
+									},
+								},
+								{
+									Name: defaultJavaAgentConfigVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										ConfigMap: &corev1.ConfigMapVolumeSource{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "test-java-agent",
+											},
+											Items: []corev1.KeyToPath{
+												{
+													Key:  ConfigDataKeyForAgent,
+													Path: ConfigDataKeyForAgent,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			message: "case 2",
 		},
 	}
 

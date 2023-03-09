@@ -101,7 +101,7 @@ spec:
                                   port:
                                     format: int32
                                     type: integer
-                                  properties:
+                                  props:
                                     additionalProperties:
                                       type: string
                                     type: object
@@ -114,56 +114,53 @@ spec:
                           tracing:
                             description: PluginTracing defines the plugin for tracing
                             properties:
-                              tracing:
+                              jaeger:
                                 properties:
-                                  jaeger:
-                                    properties:
-                                      host:
-                                        type: string
-                                      port:
-                                        format: int32
-                                        type: integer
-                                      props:
-                                        additionalProperties:
-                                          type: string
-                                        type: object
-                                        x-kubernetes-preserve-unknown-fields: true
-                                    required:
-                                    - host
-                                    - port
+                                  host:
+                                    type: string
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  props:
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                  openTelemetry:
-                                    properties:
-                                      props:
-                                        additionalProperties:
-                                          type: string
-                                        type: object
-                                        x-kubernetes-preserve-unknown-fields: true
+                                    x-kubernetes-preserve-unknown-fields: true
+                                required:
+                                  - host
+                                  - port
+                                type: object
+                              openTelemetry:
+                                properties:
+                                  props:
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                  skyWalking:
-                                    properties:
-                                      props:
-                                        additionalProperties:
-                                          type: string
-                                        type: object
-                                        x-kubernetes-preserve-unknown-fields: true
+                                    x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                              skyWalking:
+                                properties:
+                                  props:
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                  zipkin:
-                                    properties:
-                                      host:
-                                        type: string
-                                      port:
-                                        format: int32
-                                        type: integer
-                                      props:
-                                        additionalProperties:
-                                          type: string
-                                        type: object
-                                        x-kubernetes-preserve-unknown-fields: true
-                                    required:
-                                    - host
-                                    - port
+                                    x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                              zipkin:
+                                properties:
+                                  host:
+                                    type: string
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  props:
+                                    additionalProperties:
+                                      type: string
                                     type: object
+                                    x-kubernetes-preserve-unknown-fields: true
+                                required:
+                                  - host
+                                  - port
                                 type: object
                             type: object
                         type: object

@@ -135,7 +135,7 @@ type PluginLogging struct {
 type Prometheus struct {
 	Host  string     `json:"host"`
 	Port  int32      `json:"port"`
-	Props Properties `json:"properties,omitempty"`
+	Props Properties `json:"props,omitempty"`
 }
 
 // PluginMetrics defines the plugin for metrics
@@ -163,7 +163,8 @@ type OpenTelemetryTracing struct {
 	Props Properties `json:"props,omitempty"`
 }
 
-type Tracing struct {
+// PluginTracing defines the plugin for tracing
+type PluginTracing struct {
 	// +optional
 	Jaeger JaegerTracing `json:"jaeger,omitempty" yaml:"Jaeger"`
 	// +optional
@@ -174,19 +175,14 @@ type Tracing struct {
 	OpenTelemetry OpenTelemetryTracing `json:"openTelemetry,omitempty" yaml:"OpenTelemetry"`
 }
 
-// PluginTracing defines the plugin for tracing
-type PluginTracing struct {
-	Tracing Tracing `json:"tracing,omitempty"`
-}
-
 // AgentPlugin defines a set of plugins for ShardingSphere Agent
 type AgentPlugin struct {
 	// +optional
-	Logging PluginLogging `json:"logging,omitempty"`
+	Logging *PluginLogging `json:"logging,omitempty"`
 	// +optional
-	Metrics PluginMetrics `json:"metrics,omitempty"`
+	Metrics *PluginMetrics `json:"metrics,omitempty"`
 	// +optional
-	Tracing PluginTracing `json:"tracing,omitempty"`
+	Tracing *PluginTracing `json:"tracing,omitempty"`
 }
 
 // AgentConfig defines the config for ShardingSphere-Agent, renderred as agent.yaml
