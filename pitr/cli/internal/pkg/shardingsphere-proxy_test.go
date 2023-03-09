@@ -18,31 +18,17 @@
 package pkg
 
 import (
-	"database/sql"
-	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/gsutil"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-type (
-	shardingSphere struct {
-		db *sql.DB
-	}
-
-	IShardingSphere interface{}
-)
-
-const (
-	DefaultDbName = "postgres"
-)
-
-func NewShardingSphereProxy(user, password, dbName, host string, port uint16) (IShardingSphere, error) {
-	db, err := gsutil.Open(user, password, dbName, host, port)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Ping(); err != nil {
-		efmt := "db ping fail[host=%s,port=%d,user=%s,pwLen=%d,dbName=%s],err=%s"
-		return nil, fmt.Errorf(efmt, host, port, user, len(password), dbName, err)
-	}
-	return &shardingSphere{db: db}, nil
-}
+var _ = Describe("IShardingSphere", func() {
+	Context("NewShardingSphereProxy", func() {
+		It("Connecting shardingsphere proxy", func() {
+			Skip("Manually exec:dependent environment")
+			ss, err := NewShardingSphereProxy("root", "root", DefaultDbName, "127.0.0.1", 13308)
+			Expect(err).To(BeNil())
+			Expect(ss).NotTo(BeNil())
+		})
+	})
+})

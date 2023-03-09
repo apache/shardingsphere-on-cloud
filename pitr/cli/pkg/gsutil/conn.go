@@ -15,34 +15,32 @@
 * limitations under the License.
  */
 
-package pkg
+package gsutil
 
 import (
 	"database/sql"
 	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/gsutil"
+	_ "gitee.com/opengauss/openGauss-connector-go-pq"
+	"strings"
 )
 
-type (
-	shardingSphere struct {
-		db *sql.DB
+func Open(user, password, dbName, host string, port uint16) (*sql.DB, error) {
+	if strings.Trim(user, " ") == "" {
+		return nil, fmt.Errorf("user is empty")
+	}
+	if strings.Trim(password, " ") == "" {
+		return nil, fmt.Errorf("password is empty")
+	}
+	if strings.Trim(dbName, " ") == "" {
+		return nil, fmt.Errorf("db name is empty")
 	}
 
-	IShardingSphere interface{}
-)
-
-const (
-	DefaultDbName = "postgres"
-)
-
-func NewShardingSphereProxy(user, password, dbName, host string, port uint16) (IShardingSphere, error) {
-	db, err := gsutil.Open(user, password, dbName, host, port)
+	connStr := "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
+	db, err := sql.Open("opengauss", fmt.Sprintf(connStr, host, port, user, password, dbName))
 	if err != nil {
-		return nil, err
-	}
-	if err = db.Ping(); err != nil {
-		efmt := "db ping fail[host=%s,port=%d,user=%s,pwLen=%d,dbName=%s],err=%s"
+		efmt := "sql:open fail[host=%s,port=%d,user=%s,pwLen=%d,dbName=%s],err=%s"
 		return nil, fmt.Errorf(efmt, host, port, user, len(password), dbName, err)
 	}
-	return &shardingSphere{db: db}, nil
+
+	return db, nil
 }

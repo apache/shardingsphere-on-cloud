@@ -15,34 +15,16 @@
 * limitations under the License.
  */
 
-package pkg
+package gsutil
 
 import (
-	"database/sql"
-	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/gsutil"
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-type (
-	shardingSphere struct {
-		db *sql.DB
-	}
-
-	IShardingSphere interface{}
-)
-
-const (
-	DefaultDbName = "postgres"
-)
-
-func NewShardingSphereProxy(user, password, dbName, host string, port uint16) (IShardingSphere, error) {
-	db, err := gsutil.Open(user, password, dbName, host, port)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Ping(); err != nil {
-		efmt := "db ping fail[host=%s,port=%d,user=%s,pwLen=%d,dbName=%s],err=%s"
-		return nil, fmt.Errorf(efmt, host, port, user, len(password), dbName, err)
-	}
-	return &shardingSphere{db: db}, nil
+func TestCmds(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Gs Util suits")
 }
