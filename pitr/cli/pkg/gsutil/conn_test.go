@@ -15,34 +15,22 @@
 * limitations under the License.
  */
 
-package pkg
+package gsutil
 
 import (
-	"database/sql"
-	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/gsutil"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-type (
-	shardingSphere struct {
-		db *sql.DB
-	}
+var _ = Describe("OpenGauss", func() {
+	Context("Connection", func() {
+		It("Open and ping", func() {
+			og, err := Open("root", "root", "postgres", "127.0.0.1", uint16(13308))
+			Expect(err).To(BeNil())
+			Expect(og).NotTo(BeNil())
 
-	IShardingSphere interface{}
-)
-
-const (
-	DefaultDbName = "postgres"
-)
-
-func NewShardingSphereProxy(user, password, dbName, host string, port uint16) (IShardingSphere, error) {
-	db, err := gsutil.Open(user, password, dbName, host, port)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Ping(); err != nil {
-		efmt := "db ping fail[host=%s,port=%d,user=%s,pwLen=%d,dbName=%s],err=%s"
-		return nil, fmt.Errorf(efmt, host, port, user, len(password), dbName, err)
-	}
-	return &shardingSphere{db: db}, nil
-}
+			err = og.Ping()
+			Expect(err).To(BeNil())
+		})
+	})
+})
