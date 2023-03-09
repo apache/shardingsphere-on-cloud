@@ -15,34 +15,28 @@
 * limitations under the License.
  */
 
-package pkg
-
-import (
-	"database/sql"
-	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/gsutil"
-)
+package model
 
 type (
-	shardingSphere struct {
-		db *sql.DB
+	BackupIn struct {
+		DbPort   uint16 `json:"db_port"`
+		DbName   string `json:"db_name"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+
+		DnBackupPath string `json:"dn_backup_path"`
+		DnThreadsNum uint8  `json:"dn_threads_num"`
+		DnBackupMode string `json:"dn_backup_mode"`
+		Instance     string `json:"instance"`
 	}
 
-	IShardingSphere interface{}
+	BackupOut struct {
+		ID string `json:"backup_id"`
+	}
+
+	BackupOutResp struct {
+		Code int       `json:"code" validate:"required"`
+		Msg  string    `json:"msg" validate:"required"`
+		Data BackupOut `json:"data"`
+	}
 )
-
-const (
-	DefaultDbName = "postgres"
-)
-
-func NewShardingSphereProxy(user, password, dbName, host string, port uint16) (IShardingSphere, error) {
-	db, err := gsutil.Open(user, password, dbName, host, port)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Ping(); err != nil {
-		efmt := "db ping fail[host=%s,port=%d,user=%s,pwLen=%d,dbName=%s],err=%s"
-		return nil, fmt.Errorf(efmt, host, port, user, len(password), dbName, err)
-	}
-	return &shardingSphere{db: db}, nil
-}

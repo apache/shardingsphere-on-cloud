@@ -163,7 +163,7 @@ compute:
   agent:
     enabled: true
     ## @section Compute-Node ShardingSphere-Proxy agent Configuration parameters
-    ## ref: https://shardingsphere.apache.org/document/current/cn/user-manual/shardingsphere-proxy/observability/
+    ## ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/observability/
     ## @param compute.agent.config.plugins list the agent plugins we can use
     ## @param compute.agent.config.plugins.logging.File Now only build metadata time-consuming log output, no other log output.
     ## @param compute.agent.config.plugins.logging.File.props.level output level of logs

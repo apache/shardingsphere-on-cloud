@@ -15,34 +15,35 @@
 * limitations under the License.
  */
 
-package pkg
+package xerr
 
-import (
-	"database/sql"
-	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/gsutil"
-)
+import "fmt"
 
 type (
-	shardingSphere struct {
-		db *sql.DB
+	service string
+	err     struct {
+		msg string
 	}
-
-	IShardingSphere interface{}
 )
 
 const (
-	DefaultDbName = "postgres"
+	Unknown           = "Unknown error"
+	InvalidHttpStatus = "Invalid http status"
+	NotFound          = "Not found"
 )
 
-func NewShardingSphereProxy(user, password, dbName, host string, port uint16) (IShardingSphere, error) {
-	db, err := gsutil.Open(user, password, dbName, host, port)
-	if err != nil {
-		return nil, err
+func (e *err) Error() string {
+	return e.msg
+}
+
+func NewCliErr(msg string) error {
+	return &err{
+		msg: msg,
 	}
-	if err = db.Ping(); err != nil {
-		efmt := "db ping fail[host=%s,port=%d,user=%s,pwLen=%d,dbName=%s],err=%s"
-		return nil, fmt.Errorf(efmt, host, port, user, len(password), dbName, err)
+}
+
+func NewAgentServerErr(code int, msg string) error {
+	return &err{
+		msg: fmt.Sprintf("agent server err[code=%d,msg=%s]", code, msg),
 	}
-	return &shardingSphere{db: db}, nil
 }

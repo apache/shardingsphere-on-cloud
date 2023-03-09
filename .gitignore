@@ -19,6 +19,7 @@ testbin/*
 !vendor/**/zz_generated.*
 
 # editor and IDE paraphernalia
+.DS_Store
 .vscode
 .fleet
 .idea
@@ -27,7 +28,8 @@ testbin/*
 *~
 shardingsphere-operator/build/certs/
 shardingsphere-operator/config/
-charts/apache-shardingsphere-operator-cluster-charts/charts/
+charts/apache-shardingsphere-proxy-charts/charts/
+!charts/apache-shardingsphere-proxy-charts/charts/governance/
 charts/apache-shardingsphere-operator-charts/charts/
 **/Chart.lock
 test

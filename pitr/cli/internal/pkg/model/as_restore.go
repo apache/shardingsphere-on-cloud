@@ -15,34 +15,21 @@
 * limitations under the License.
  */
 
-package pkg
-
-import (
-	"database/sql"
-	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/gsutil"
-)
+package model
 
 type (
-	shardingSphere struct {
-		db *sql.DB
+	RestoreIn struct {
+		DbPort       uint16 `json:"db_port"`
+		DbName       string `json:"db_name"`
+		Username     string `json:"username"`
+		Password     string `json:"password"`
+		Instance     string `json:"instance"`
+		DnBackupPath string `json:"dn_backup_path"`
+		DnBackupId   string `json:"dn_backup_id"`
 	}
 
-	IShardingSphere interface{}
+	RestoreResp struct {
+		Code int    `json:"code" validate:"required"`
+		Msg  string `json:"msg" validate:"required"`
+	}
 )
-
-const (
-	DefaultDbName = "postgres"
-)
-
-func NewShardingSphereProxy(user, password, dbName, host string, port uint16) (IShardingSphere, error) {
-	db, err := gsutil.Open(user, password, dbName, host, port)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Ping(); err != nil {
-		efmt := "db ping fail[host=%s,port=%d,user=%s,pwLen=%d,dbName=%s],err=%s"
-		return nil, fmt.Errorf(efmt, host, port, user, len(password), dbName, err)
-	}
-	return &shardingSphere{db: db}, nil
-}
