@@ -22,7 +22,7 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": 9,
-  "iteration": 1678329006926,
+  "iteration": 1678340029746,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -234,7 +234,7 @@
             "uid": "qeYuQ1s7k"
           },
           "exemplar": true,
-          "expr": "sum by (pod_name)(rate(container_cpu_usage_seconds_total{image!=\"\", pod_name=~\"$shardingsphere.*\",namespace=\"$namespace\"}[1m]))",
+          "expr": "sum by (pod_name)(rate(container_cpu_usage_seconds_total{image!=\"\", pod_name=~\"$shardingsphere.*\",namespace=\"$namespace\"}[$interval]))",
           "interval": "",
           "legendFormat": "{{pod_name}}",
           "refId": "A"
@@ -409,7 +409,7 @@
           "expr": "sort_desc(sum by (pod_name) (rate (container_network_receive_bytes_total{kubernetes_namespace=\"$namespace\",pod_name=~\"$shardingsphere.*\"}[$interval]) ))",
           "hide": false,
           "interval": "",
-          "legendFormat": "接收",
+          "legendFormat": "接收-{{pod_name}}",
           "refId": "A"
         },
         {
@@ -421,7 +421,7 @@
           "expr": "sort_desc(sum by (pod_name) (rate (container_network_transmit_bytes_total{kubernetes_namespace=\"$namespace\",pod_name=~\"$shardingsphere.*\"}[$interval]) ))",
           "hide": false,
           "interval": "",
-          "legendFormat": "发送",
+          "legendFormat": "发送-{{pod_name}}",
           "refId": "B"
         }
       ],
@@ -519,7 +519,7 @@
           "exemplar": true,
           "expr": "jvm_memory_bytes_used{kubernetes_namespace=\"$namespace\",area=\"heap\"}",
           "interval": "",
-          "legendFormat": "已用堆内存-{{kubernetes_pod_name}}}",
+          "legendFormat": "已用堆内存-{{kubernetes_pod_name}}",
           "refId": "A"
         },
         {
@@ -583,13 +583,14 @@
       "hiddenSeries": false,
       "id": 62,
       "legend": {
+        "alignAsTable": true,
         "avg": false,
-        "current": false,
-        "max": false,
+        "current": true,
+        "max": true,
         "min": false,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": true,
       "linewidth": 1,
@@ -613,7 +614,7 @@
             "uid": "qeYuQ1s7k"
           },
           "exemplar": true,
-          "expr": "increase(jvm_gc_collection_seconds_sum{kubernetes_namespace=\"$namespace\"}[1m])",
+          "expr": "increase(jvm_gc_collection_seconds_sum{kubernetes_namespace=\"$namespace\"}[$interval])",
           "interval": "",
           "legendFormat": "{{kubernetes_pod_name}}",
           "refId": "A"
@@ -995,29 +996,80 @@
       "type": "timeseries"
     },
     {
-      "cards": {},
-      "color": {
-        "cardColor": "#b4ff00",
-        "colorScale": "sqrt",
-        "colorScheme": "interpolateReds",
-        "exponent": 0.5,
-        "mode": "spectrum"
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
       },
-      "dataFormat": "tsbuckets",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 62
       },
-      "heatmap": {},
-      "hideZeroBuckets": true,
-      "highlightCards": true,
       "id": 74,
-      "legend": {
-        "show": true
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
-      "reverseYBuckets": false,
       "targets": [
         {
           "datasource": {
@@ -1025,27 +1077,26 @@
             "uid": "qeYuQ1s7k"
           },
           "exemplar": true,
-          "expr": "ceil(increase(proxy_execute_latency_millis_bucket{kubernetes_namespace=\"$namespace\", le!=\"+Inf\"}[$interval]))",
+          "expr": "histogram_quantile(0.9, rate(proxy_execute_latency_millis_bucket{kubernetes_namespace=\"$namespace\"}[$interval]))",
           "interval": "",
-          "legendFormat": "{{le}}",
+          "legendFormat": "P90",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qeYuQ1s7k"
+          },
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, rate(proxy_execute_latency_millis_bucket{kubernetes_namespace=\"$namespace\"}[$interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "P95",
+          "refId": "B"
         }
       ],
-      "title": "执行耗时热力图",
-      "tooltip": {
-        "show": true,
-        "showHistogram": true
-      },
-      "type": "heatmap",
-      "xAxis": {
-        "show": true
-      },
-      "yAxis": {
-        "format": "ms",
-        "logBase": 1,
-        "show": true
-      },
-      "yBucketBound": "auto"
+      "title": "执行耗时统计",
+      "type": "timeseries"
     },
     {
       "fieldConfig": {
@@ -1107,8 +1158,13 @@
       "id": 73,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "min",
+            "max",
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
           "placement": "bottom"
         },
         "tooltip": {
@@ -1192,8 +1248,13 @@
       "id": 76,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "min",
+            "max",
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
           "placement": "bottom"
         },
         "tooltip": {
@@ -1462,6 +1523,7 @@
           }
         ],
         "query": "1m, 2m, 5m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
       }
@@ -1475,6 +1537,6 @@
   "timezone": "",
   "title": "ShardingSphere Proxy Dashboard",
   "uid": "sFVsfgaVz",
-  "version": 37,
+  "version": 39,
   "weekStart": ""
 }
