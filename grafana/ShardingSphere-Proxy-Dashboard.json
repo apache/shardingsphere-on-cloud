@@ -22,7 +22,7 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": 9,
-  "iteration": 1678265791304,
+  "iteration": 1678329006926,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -147,7 +147,7 @@
             "uid": "qeYuQ1s7k"
           },
           "exemplar": true,
-          "expr": "kube_pod_status_phase{phase=\"Running\",kubernetes_namespace=\"$namespace\"}",
+          "expr": "kube_pod_status_phase{phase=\"Running\",kubernetes_namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "{{pod}}",
@@ -519,7 +519,7 @@
           "exemplar": true,
           "expr": "jvm_memory_bytes_used{kubernetes_namespace=\"$namespace\",area=\"heap\"}",
           "interval": "",
-          "legendFormat": "已用堆内存",
+          "legendFormat": "已用堆内存-{{kubernetes_pod_name}}}",
           "refId": "A"
         },
         {
@@ -531,7 +531,7 @@
           "expr": "jvm_memory_bytes_used{kubernetes_namespace=\"$namespace\",area=\"nonheap\"}",
           "hide": false,
           "interval": "",
-          "legendFormat": "已用非堆内存",
+          "legendFormat": "已用非堆内存-{{kubernetes_pod_name}}",
           "refId": "B"
         }
       ],
@@ -698,9 +698,9 @@
             "uid": "qeYuQ1s7k"
           },
           "exemplar": true,
-          "expr": "jvm_memory_pool_bytes_used{kubernetes_namespace=\"$namespace\"}",
+          "expr": "jvm_memory_pool_bytes_used{kubernetes_namespace=\"$namespace\",kubernetes_pod_name=~\"$shardingsphere.*\"}",
           "interval": "",
-          "legendFormat": "{{pool}}",
+          "legendFormat": "{{pool}}-{{kubernetes_pod_name}}",
           "refId": "A"
         }
       ],
@@ -783,9 +783,9 @@
             "uid": "qeYuQ1s7k"
           },
           "exemplar": true,
-          "expr": "jvm_classes_loaded{kubernetes_namespace=\"$namespace\"}",
+          "expr": "jvm_classes_loaded{kubernetes_namespace=\"$namespace\",kubernetes_pod_name=~\"$shardingsphere.*\"}",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{kubernetes_pod_name}}",
           "refId": "A"
         }
       ],
@@ -984,11 +984,11 @@
             "uid": "qeYuQ1s7k"
           },
           "exemplar": true,
-          "expr": "sum(rate(proxy_request_total{kubernetes_namespace=\"$namespace\"}[$interval]))",
+          "expr": "sum(rate(proxy_request_total{kubernetes_namespace=\"$namespace\",kubernetes_pod_name=~\"$shardingsphere.*\"}[$interval]))",
           "hide": false,
           "interval": "",
           "legendFormat": "QPS",
-          "refId": "B"
+          "refId": "A"
         }
       ],
       "title": "QPS",
@@ -1125,7 +1125,7 @@
           "exemplar": true,
           "expr": "sum(rate(proxy_execute_error_total{kubernetes_namespace=\"$namespace\"}[$interval]))",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "Proxy_Execute_Error_Total",
           "refId": "A"
         }
       ],
@@ -1468,13 +1468,13 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "ShardingSphere Proxy Dashboard",
   "uid": "sFVsfgaVz",
-  "version": 28,
+  "version": 37,
   "weekStart": ""
 }
