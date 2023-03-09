@@ -151,9 +151,25 @@ compute:
           namespace: governance_ds
           operationTimeoutMilliseconds: 5000
           retryIntervalMilliseconds: 500
-          server-lists: "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}"
+          server-lists:  "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}"
           timeToLiveSeconds: 60
     ## @param compute.serverConfig.props.proxy-frontend-database-protocol-type proxy frontend database protocol type. Only support: PostgreSQL,openGauss,MariaDB,MySQL
     ##
     props:
       proxy-frontend-database-protocol-type: MySQL
+
+  ### agent configuration
+  agent:
+    enabled: true
+    agentConfig:
+      plugins:
+        logging:
+          File:
+            props:
+              level: "INFO"
+        metrics:
+          Prometheus:
+            host: "localhost"
+            port: 9090
+            props:
+              jvm-information-collector-enabled: "true"
