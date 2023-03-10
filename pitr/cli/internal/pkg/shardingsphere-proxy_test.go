@@ -18,17 +18,68 @@
 package pkg
 
 import (
+	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("IShardingSphere", func() {
+var _ = Describe("IShardingSphereProxy", func() {
 	Context("NewShardingSphereProxy", func() {
+		var (
+			host     = "local"
+			port     = uint16(13308)
+			username = "root"
+			password = "root"
+			dbName   = "postgres"
+		)
+
 		It("Connecting shardingsphere proxy", func() {
 			Skip("Manually exec:dependent environment")
-			ss, err := NewShardingSphereProxy("root", "root", DefaultDbName, "127.0.0.1", 13308)
+			ss, err := NewShardingSphereProxy(username, password, dbName, host, port)
 			Expect(err).To(BeNil())
 			Expect(ss).NotTo(BeNil())
 		})
+
+		It("Export meta data", func() {
+			Skip("Manually exec:dependent environment")
+			ss, err := NewShardingSphereProxy(username, password, dbName, host, port)
+			Expect(err).To(BeNil())
+			Expect(ss).NotTo(BeNil())
+
+			fmt.Println(ss.ExportMetaData())
+		})
+
+		It("Export storage node", func() {
+			Skip("Manually exec:dependent environment")
+			ss, err := NewShardingSphereProxy(username, password, dbName, host, port)
+			Expect(err).To(BeNil())
+			Expect(ss).NotTo(BeNil())
+
+			fmt.Println(ss.ExportStorageNodes())
+
+			ss, err = NewShardingSphereProxy(username, password, dbName, host, port)
+			Expect(err).To(BeNil())
+			Expect(ss).NotTo(BeNil())
+
+			fmt.Println(ss.ExportStorageNodes())
+		})
+
+		It("Lock and unlock", func() {
+			Skip("Manually exec:dependent environment")
+			ss, err := NewShardingSphereProxy(username, password, dbName, host, port)
+			Expect(err).To(BeNil())
+			Expect(ss).NotTo(BeNil())
+
+			fmt.Println(ss.LockForRestore())
+			time.Sleep(time.Second * 5)
+			fmt.Println(ss.Unlock())
+
+			fmt.Println(ss.LockForBackup())
+			time.Sleep(time.Second * 5)
+			fmt.Println(ss.Unlock())
+		})
+
 	})
 })

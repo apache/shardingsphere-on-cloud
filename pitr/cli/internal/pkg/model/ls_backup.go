@@ -29,7 +29,7 @@ type (
 		ID        string `json:"id"`
 		CSN       string `json:"csn"`
 		StartTime int64  `json:"start_time"` // Unix time
-		Endtime   int64  `json:"end_time"`   // Unix time
+		EndTime   int64  `json:"end_time"`   // Unix time
 	}
 
 	DataNode struct {
@@ -38,23 +38,18 @@ type (
 		Status    string `json:"status"`
 		BackupID  string `json:"backup_id"`
 		StartTime int64  `json:"start_time"` // Unix time
-		Endtime   int64  `json:"end_time"`   // Unix time
+		EndTime   int64  `json:"end_time"`   // Unix time
 	}
 )
 
 type (
 	SsBackup struct {
-		Status       string         `json:"status"`
-		ClusterInfo  ClusterInfo    `json:"cluster_info"`
-		StorageNodes []StorageNodes `json:"storage_nodes"`
+		Status       string        `json:"status"`
+		ClusterInfo  ClusterInfo   `json:"cluster_info"`
+		StorageNodes []StorageNode `json:"storage_nodes"`
 	}
 
-	ClusterInfo struct {
-		MetaData     MetaData     `json:"meta_data"`
-		SnapshotInfo SnapshotInfo `json:"snapshot_info"`
-	}
-
-	StorageNodes struct {
+	StorageNode struct {
 		IP       string `json:"ip"`
 		Port     string `json:"port"`
 		Username string `json:"username"`
@@ -63,19 +58,7 @@ type (
 		Remark   string `json:"remark"`
 	}
 
-	MetaData struct {
-		Databases Databases `json:"databases"`
-		Props     string    `json:"props"`
-		Rules     string    `json:"rules"`
-	}
-
-	Databases struct {
-		ShardingDb string `json:"sharding_db"`
-		AnotherDb  string `json:"another_db"`
-	}
-
-	SnapshotInfo struct {
-		Csn        string `json:"csn"`
-		CreateTime string `json:"create_time"`
+	StorageNodes struct {
+		List []StorageNode `json:"storage_nodes"`
 	}
 )
