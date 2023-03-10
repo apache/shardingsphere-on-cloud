@@ -19,10 +19,12 @@ package pkg
 
 import (
 	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
-	"github.com/google/uuid"
 	"os"
 	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -94,7 +96,7 @@ var _ = Describe("ILocalStorage", func() {
 					ID:        uuid.New().String(),
 					CSN:       uuid.New().String(),
 					StartTime: time.Now().Unix(),
-					Endtime:   time.Now().Add(time.Minute).Unix(),
+					EndTime:   time.Now().Add(time.Minute).Unix(),
 				},
 				DnList: []model.DataNode{
 					{
@@ -103,7 +105,7 @@ var _ = Describe("ILocalStorage", func() {
 						Status:    "Completed",
 						BackupID:  "SK08DAK1",
 						StartTime: time.Now().Unix(),
-						Endtime:   time.Now().Unix(),
+						EndTime:   time.Now().Unix(),
 					},
 					{
 						IP:        "1.1.1.2",
@@ -111,7 +113,7 @@ var _ = Describe("ILocalStorage", func() {
 						Status:    "Completed",
 						BackupID:  "SK08DAK2",
 						StartTime: time.Now().Unix(),
-						Endtime:   time.Now().Unix(),
+						EndTime:   time.Now().Unix(),
 					},
 				},
 				SsBackup: &model.SsBackup{
