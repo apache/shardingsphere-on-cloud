@@ -123,13 +123,13 @@ type LogbackConfig string
 // +kubebuilder:pruning:PreserveUnknownFields
 type Properties map[string]string
 
-type BaseLogging struct {
+type LoggingFile struct {
 	Props Properties `json:"props,omitempty"`
 }
 
 // PluginLogging defines the plugin for logging
 type PluginLogging struct {
-	BaseLogging BaseLogging `json:"baseLogging,omitempty" yaml:"BaseLogging"`
+	File LoggingFile `json:"file,omitempty" yaml:"File"`
 }
 
 type Prometheus struct {
@@ -143,36 +143,20 @@ type PluginMetrics struct {
 	Prometheus Prometheus `json:"prometheus,omitempty" yaml:"Prometheus"`
 }
 
-type JaegerTracing struct {
-	Host  string     `json:"host"`
-	Port  int32      `json:"port"`
+type OpenTelemetry struct {
 	Props Properties `json:"props,omitempty"`
 }
 
-type ZipkinTracing struct {
-	Host  string     `json:"host"`
-	Port  int32      `json:"port"`
-	Props Properties `json:"props,omitempty"`
-}
-
-type SkyWalkingTracing struct {
-	Props Properties `json:"props,omitempty"`
-}
-
-type OpenTelemetryTracing struct {
+type OpenTracing struct {
 	Props Properties `json:"props,omitempty"`
 }
 
 // PluginTracing defines the plugin for tracing
 type PluginTracing struct {
 	// +optional
-	Jaeger JaegerTracing `json:"jaeger,omitempty" yaml:"Jaeger"`
+	OpenTracing OpenTracing `json:"openTracing,omitempty" yaml:"OpenTracing"`
 	// +optional
-	Zipkin ZipkinTracing `json:"zipkin,omitempty" yaml:"Zipkin"`
-	// +optional
-	SkyWalking SkyWalkingTracing `json:"skyWalking,omitempty" yaml:"SkyWalking"`
-	// +optional
-	OpenTelemetry OpenTelemetryTracing `json:"openTelemetry,omitempty" yaml:"OpenTelemetry"`
+	OpenTelemetry OpenTelemetry `json:"openTelemetry,omitempty" yaml:"OpenTelemetry"`
 }
 
 // AgentPlugin defines a set of plugins for ShardingSphere Agent
