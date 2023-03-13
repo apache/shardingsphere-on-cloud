@@ -69,7 +69,6 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	cn := &v1alpha1.ComputeNode{}
 	if err := r.Get(ctx, req.NamespacedName, cn); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Error(err, "computenode not found")
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 		} else {
 			logger.Error(err, "get computenode")
@@ -90,13 +89,13 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		logger.Error(err, "reconcile configmap")
 		errors = append(errors, err)
 	}
-	if err := r.reconcileStatus(ctx, cn); err != nil {
-		logger.Error(err, "reconcile pod list")
-		errors = append(errors, err)
-	}
 
 	if len(errors) != 0 {
 		return ctrl.Result{Requeue: true}, errors[0]
+	}
+
+	if err := r.reconcileStatus(ctx, cn); err != nil {
+		logger.Error(err, "reconcile pod list")
 	}
 
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
@@ -124,6 +123,9 @@ func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1a
 func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	deploy := reconcile.NewDeployment(cn)
 	if err := r.Create(ctx, deploy); err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -173,6 +175,9 @@ func (r *ComputeNodeReconciler) reconcileService(ctx context.Context, cn *v1alph
 func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	svc := reconcile.NewService(cn)
 	if err := r.Create(ctx, svc); err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -231,6 +236,9 @@ func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, 
 func (r *ComputeNodeReconciler) createConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	cm := reconcile.NewConfigMap(cn)
 	if err := r.Create(ctx, cm); err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -278,8 +286,8 @@ func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1al
 }
 
 func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	podList := &v1.PodList{}
-	if err := r.List(ctx, podList, client.InNamespace(cn.Namespace), client.MatchingLabels(cn.Spec.Selector.MatchLabels)); err != nil {
+	podlist := &v1.PodList{}
+	if err := r.List(ctx, podlist, client.InNamespace(cn.Namespace), client.MatchingLabels(cn.Spec.Selector.MatchLabels)); err != nil {
 		return err
 	}
 
@@ -299,9 +307,8 @@ func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha
 		return err
 	}
 
-	rt.Status = reconcileComputeNodeStatus(*podList, *service, *rt)
-
-	rt.Status.Replicas = int32(len(podList.Items))
+	status := reconcileComputeNodeStatus(*podlist, *service)
+	rt.Status = *status
 
 	// TODO: Compare Status with or without modification
 	if err := r.Status().Update(ctx, rt); err != nil {
@@ -414,35 +421,38 @@ func clusterCondition(podlist v1.PodList) v1alpha1.ComputeNodeCondition {
 	return cond
 }
 
-func reconcileComputeNodeStatus(podlist v1.PodList, svc v1.Service, rt v1alpha1.ComputeNode) v1alpha1.ComputeNodeStatus {
-	readyInstances := getReadyInstances(podlist)
+func reconcileComputeNodeStatus(podlist v1.PodList, svc v1.Service) *v1alpha1.ComputeNodeStatus {
+	s := &v1alpha1.ComputeNodeStatus{}
 
-	rt.Status.ReadyInstances = readyInstances
-	if rt.Spec.Replicas == 0 {
-		rt.Status.Phase = v1alpha1.ComputeNodeStatusNotReady
+	s.Replicas = int32(len(podlist.Items))
+
+	readyInstances := getReadyInstances(podlist)
+	s.ReadyInstances = readyInstances
+	if s.Replicas == 0 {
+		s.Phase = v1alpha1.ComputeNodeStatusNotReady
 	} else {
 		if readyInstances < miniReadyCount {
-			rt.Status.Phase = v1alpha1.ComputeNodeStatusNotReady
+			s.Phase = v1alpha1.ComputeNodeStatusNotReady
 		} else {
-			rt.Status.Phase = v1alpha1.ComputeNodeStatusReady
+			s.Phase = v1alpha1.ComputeNodeStatusReady
 		}
 	}
 
-	if rt.Status.Phase == v1alpha1.ComputeNodeStatusReady {
-		rt.Status.Conditions = updateReadyConditions(rt.Status.Conditions, v1alpha1.ComputeNodeCondition{
+	if s.Phase == v1alpha1.ComputeNodeStatusReady {
+		s.Conditions = updateReadyConditions(s.Conditions, v1alpha1.ComputeNodeCondition{
 			Type:           v1alpha1.ComputeNodeConditionReady,
 			Status:         v1alpha1.ConditionStatusTrue,
 			LastUpdateTime: metav1.Now(),
 		})
 	} else {
 		cond := clusterCondition(podlist)
-		rt.Status.Conditions = updateNotReadyConditions(rt.Status.Conditions, cond)
+		s.Conditions = updateNotReadyConditions(s.Conditions, cond)
 	}
 
-	rt.Status.LoadBalancer.ClusterIP = svc.Spec.ClusterIP
-	rt.Status.LoadBalancer.Ingress = svc.Status.LoadBalancer.Ingress
+	s.LoadBalancer.ClusterIP = svc.Spec.ClusterIP
+	s.LoadBalancer.Ingress = svc.Status.LoadBalancer.Ingress
 
-	return rt.Status
+	return s
 }
 
 func (r *ComputeNodeReconciler) getRuntimeComputeNode(ctx context.Context, namespacedName types.NamespacedName) (*v1alpha1.ComputeNode, error) {
