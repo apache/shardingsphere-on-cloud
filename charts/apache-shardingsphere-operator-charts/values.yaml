@@ -22,8 +22,8 @@ nameOverride: shardingsphere-proxy
 
 ## @section ShardingSphere operator parameters
 operator:
-## @param replicaCount operator replica count
-##
+  ## @param replicaCount operator replica count
+  ##
   replicaCount: 1
   image:
     ## @param image.repository operator image name
@@ -40,7 +40,7 @@ operator:
   ## imagePullSecrets:
   ##   - name: mysecret
   ##
-  imagePullSecrets: {}
+  imagePullSecrets: { }
   ## @param resources operator Resources required by the operator
   ## e.g:
   ## resources:
@@ -49,7 +49,7 @@ operator:
   ##   limits:
   ##     cpu: 2
   ##
-  resources: {}
+  resources: { }
   ## @param health.healthProbePort operator health check port
   ##
   health:
@@ -57,7 +57,7 @@ operator:
   ## @param featureGates.computeNode operator health check port
   ##
   featureGates:
-    computeNode: false 
+    computeNode: false
 
 
 ## @section ShardingSphere-Proxy cluster parameters
@@ -92,7 +92,7 @@ proxyCluster:
   ##     cpu: 2
   ##     memory: 2Gi
   ##
-  resources: {}
+  resources: { }
   ## @param service.type ShardingSphere-Proxy external exposure mode
   ## @param service.port ShardingSphere-Proxy exposes  port
   ##
@@ -111,7 +111,7 @@ proxyCluster:
   ## imagePullSecrets:
   ##   - name: mysecret
   ##
-  imagePullSecrets: []
+  imagePullSecrets: [ ]
   ## @section  ShardingSphere-Proxy ServerConfiguration parameters
   ## NOTE: If you use the sub-charts to deploy Zookeeper, the server-lists field must be "{{ printf \"%s-zookeeper.%s:2181\" .Release.Name .Release.Namespace }}",
   ## otherwise please fill in the correct zookeeper address
@@ -200,15 +200,15 @@ computeNode:
   ## @param computeNode.portBindings the port binding
   ##
   portBindings:
-  ## @param computeNode.portBindings[0].name the port binding
-  ## @param computeNode.portBindings[0].containerPort the container port
-  ## @param computeNode.portBindings[0].servicePort the service port
-  ## @param computeNode.portBindings[0].protocol the protocol
-  #
-  - name: server
-    containerPort: 3307
-    servicePort: 3307
-    protocol: TCP
+    ## @param computeNode.portBindings[0].name the port binding
+    ## @param computeNode.portBindings[0].containerPort the container port
+    ## @param computeNode.portBindings[0].servicePort the service port
+    ## @param computeNode.portBindings[0].protocol the protocol
+    #
+    - name: server
+      containerPort: 3307
+      servicePort: 3307
+      protocol: TCP
   ## @param computeNode.serviceType the service type 
   ##
   serviceType: ClusterIP
@@ -220,7 +220,7 @@ computeNode:
     serverConfig:
       ## @param computeNode.bootstrap.serverConfig.authority the authorization
       ##
-      authority: 
+      authority:
         ## @param computeNode.bootstrap.serverConfig.authority.privilege authorized privilege 
         ##
         privilege:
@@ -232,14 +232,14 @@ computeNode:
         ## @param computeNode.users[0].password the password 
         ##
         users:
-        - user: root%
-          password: root
+          - user: root%
+            password: root
       ## @param computeNode.bootstrap.serverConfig.mode the modes for ShardingSphere
       ##
-      mode: 
+      mode:
         ## @param computeNode.bootstrap.serverConfig.mode.type the running mode for ShardingSphere
         ##
-        type: Cluster 
+        type: Cluster
         ## @param computeNode.bootstrap.serverConfig.mode.repository the config for repository
         ##
         repository:
@@ -270,3 +270,24 @@ computeNode:
       ##
       props:
         proxyFrontendDatabaseProtocolType: MySQL
+
+    ## @param computeNode.bootstrap.agentConfig the agent.yaml
+    ##
+    agentConfig:
+      ## @param computeNode.bootstrap.agentConfig.plugins the plugins for agent
+      ##
+      plugins:
+        ## metric plugin
+        metrics:
+          ## prometheus settings
+          prometheus:
+            ## host for prometheus
+            ## e.g.
+            ## host: "localhost"
+            host: "localhost"
+            ## port for prometheus
+            ## e.g.
+            ## port: 9090
+            port: 9090
+            props:
+              jvmInformationCollectorEnabled: "true"

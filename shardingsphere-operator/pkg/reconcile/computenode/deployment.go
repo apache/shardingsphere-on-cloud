@@ -39,11 +39,22 @@ const (
 	defaultMySQLDriverEnvName    = "MYSQL_CONNECTOR_VERSION"
 	defaultMySQLDriverVolumeName = "mysql-connector-java"
 
-	download_script = `wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar;
+	defaultAnnotationJavaAgentEnabled     = "shardingsphere.apache.org/java-agent-enabled"
+	defaultJavaAgentVolumeName            = "java-agent-bin"
+	defaultJavaAgentVolumeMountPath       = "/opt/shardingsphere-proxy/agent"
+	defaultJavaAgentConfigVolumeName      = "java-agent-config"
+	defaultJavaAgentConfigVolumeMountPath = "/opt/shardingsphere-proxy/agent/conf"
+	defaultJavaToolOptionsName            = "JAVA_TOOL_OPTIONS"
+	defaultJavaAgentEnvValue              = "-javaagent:/opt/shardingsphere-proxy/agent/shardingsphere-agent-%s.jar"
+	defaultAgentBinVersionEnvName         = "AGENT_BIN_VERSION"
+
+	downloadMysqlJarScript = `wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar;
 wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5;
 if [ $(md5sum /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5) ];
 then echo success;
 else echo failed;exit 1;fi;mv /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar /opt/shardingsphere-proxy/ext-lib`
+	downloadAgentJarScript = `wget https://archive.apache.org/dist/shardingsphere/${AGENT_BIN_VERSION}/apache-shardingsphere-${AGENT_BIN_VERSION}-shardingsphere-agent-bin.tar.gz;
+tar -zxvf apache-shardingsphere-${AGENT_BIN_VERSION}-shardingsphere-agent-bin.tar.gz -C /opt/shardingsphere-proxy/agent --strip-component 1;`
 )
 
 func relativeMySQLDriverMountName(v string) string {
@@ -87,12 +98,21 @@ type bootstrapContainerBuilder struct {
 	ContainerBuilder
 }
 
-func NewBootstrapContainerBuilder() BootstrapContainerBuilder {
+func NewBootstrapContainerBuilderForMysqlJar() BootstrapContainerBuilder {
 	return &bootstrapContainerBuilder{
 		ContainerBuilder: NewContainerBuilder().
-			SetName("boostrap").
+			SetName("download-mysql-jar").
 			SetImage("busybox:1.35.0").
-			SetCommand([]string{"/bin/sh", "-c", download_script}),
+			SetCommand([]string{"/bin/sh", "-c", downloadMysqlJarScript}),
+	}
+}
+
+func NewBootstrapContainerBuilderForAgentBin() BootstrapContainerBuilder {
+	return &bootstrapContainerBuilder{
+		ContainerBuilder: NewContainerBuilder().
+			SetName("download-agent-bin-jar").
+			SetImage("busybox:1.35.0").
+			SetCommand([]string{"/bin/sh", "-c", downloadAgentJarScript}),
 	}
 }
 
@@ -235,6 +255,8 @@ type DeploymentBuilder interface {
 	SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder
 	SetAnnotations(annos map[string]string) DeploymentBuilder
 	SetShardingSphereProxyContainer(con *corev1.Container) DeploymentBuilder
+	SetMySQLConnector(scb ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder
+	SetAgentBin(scb ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder
 	SetInitContainer(con *corev1.Container) DeploymentBuilder
 	SetVolume(volume *corev1.Volume) DeploymentBuilder
 	SetReplicas(r *int32) DeploymentBuilder
@@ -325,9 +347,10 @@ type SharedVolumeAndMountBuilder interface {
 	SetSubPath(idx int, subpath string) SharedVolumeAndMountBuilder
 	SetVolumeMountSize(size int) SharedVolumeAndMountBuilder
 	SetVolumeSourceEmptyDir() SharedVolumeAndMountBuilder
-	SetVolumeSourceConfigMap(name string) SharedVolumeAndMountBuilder
+	SetVolumeSourceConfigMap(name string, kps ...corev1.KeyToPath) SharedVolumeAndMountBuilder
 	Build() (*corev1.Volume, []*corev1.VolumeMount)
 }
+
 type sharedVolumeAndMountBuilder struct {
 	volume       *corev1.Volume
 	volumeMounts []*corev1.VolumeMount
@@ -388,11 +411,15 @@ func (b *sharedVolumeAndMountBuilder) SetVolumeSourceEmptyDir() SharedVolumeAndM
 	return b
 }
 
-func (b *sharedVolumeAndMountBuilder) SetVolumeSourceConfigMap(name string) SharedVolumeAndMountBuilder {
+func (b *sharedVolumeAndMountBuilder) SetVolumeSourceConfigMap(name string, kps ...corev1.KeyToPath) SharedVolumeAndMountBuilder {
 	if b.volume.ConfigMap == nil {
 		b.volume.ConfigMap = &corev1.ConfigMapVolumeSource{}
 	}
 	b.volume.ConfigMap.LocalObjectReference.Name = name
+
+	if len(kps) > 0 {
+		b.volume.ConfigMap.Items = kps
+	}
 	return b
 }
 
@@ -509,36 +536,12 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 
 	if cn.Spec.StorageNodeConnector != nil {
 		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypeMySQL {
-			scb.SetEnv([]corev1.EnvVar{
-				{
-					Name:  defaultMySQLDriverEnvName,
-					Value: cn.Spec.StorageNodeConnector.Version,
-				},
-			})
+			builder.SetMySQLConnector(scb, cn)
+		}
 
-			vb := NewSharedVolumeAndMountBuilder().
-				SetVolumeMountSize(2).
-				SetName(defaultMySQLDriverVolumeName).
-				SetVolumeSourceEmptyDir().
-				SetMountPath(0, defaultExtlibPath).
-				SetMountPath(1, absoluteMySQLDriverMountName(defaultExtlibPath, cn.Spec.StorageNodeConnector.Version)).
-				SetSubPath(1, relativeMySQLDriverMountName(cn.Spec.StorageNodeConnector.Version))
-
-			v, vms := vb.Build()
-			builder.SetVolume(v)
-			scb.SetVolumeMount(vms[1])
-
-			cb := NewBootstrapContainerBuilder().SetVolumeMount(vms[0]).SetEnv([]corev1.EnvVar{
-				{
-					Name:  defaultMySQLDriverEnvName,
-					Value: cn.Spec.StorageNodeConnector.Version,
-				},
-			})
-			con := cb.Build()
-			builder.SetInitContainer(con)
-
-			sc := scb.Build()
-			builder.SetShardingSphereProxyContainer(sc)
+		// set agent for proxy
+		if enabled, ok := cn.Annotations[defaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
+			builder.SetAgentBin(scb, cn)
 		}
 
 		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypePostgreSQL {
@@ -548,6 +551,88 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 	}
 
 	return builder.Build()
+}
+
+// SetMySQLConnector will set an init container to download mysql jar and mount files for proxy container.
+func (d *deploymentBuilder) SetMySQLConnector(scb ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder {
+	scb.SetEnv([]corev1.EnvVar{
+		{
+			Name:  defaultMySQLDriverEnvName,
+			Value: cn.Spec.StorageNodeConnector.Version,
+		},
+	})
+
+	vb := NewSharedVolumeAndMountBuilder().
+		SetVolumeMountSize(2).
+		SetName(defaultMySQLDriverVolumeName).
+		SetVolumeSourceEmptyDir().
+		SetMountPath(0, defaultExtlibPath).
+		SetMountPath(1, absoluteMySQLDriverMountName(defaultExtlibPath, cn.Spec.StorageNodeConnector.Version)).
+		SetSubPath(1, relativeMySQLDriverMountName(cn.Spec.StorageNodeConnector.Version))
+
+	v, vms := vb.Build()
+	d.SetVolume(v)
+	scb.SetVolumeMount(vms[1])
+
+	cb := NewBootstrapContainerBuilderForMysqlJar().SetVolumeMount(vms[0]).SetEnv([]corev1.EnvVar{
+		{
+			Name:  defaultMySQLDriverEnvName,
+			Value: cn.Spec.StorageNodeConnector.Version,
+		},
+	})
+	con := cb.Build()
+	d.SetInitContainer(con)
+
+	sc := scb.Build()
+	d.SetShardingSphereProxyContainer(sc)
+
+	return d
+}
+
+// SetAgentBin set `agent bin` for ShardingSphereProxy with [observability](https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/observability/)
+func (d *deploymentBuilder) SetAgentBin(scb ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder {
+	// set env JAVA_TOOL_OPTIONS to proxy container, make sure proxy will apply agent-bin.jar
+	// agent-bin's version is always equals to shardingsphere proxy image's version
+	scb.SetEnv([]corev1.EnvVar{
+		{
+			Name:  defaultJavaToolOptionsName,
+			Value: fmt.Sprintf(defaultJavaAgentEnvValue, cn.Spec.ServerVersion),
+		},
+	})
+
+	// mount agent-bin dir
+	vbAgent := NewSharedVolumeAndMountBuilder().
+		SetVolumeMountSize(1).
+		SetName(defaultJavaAgentVolumeName).
+		SetVolumeSourceEmptyDir().
+		SetMountPath(0, defaultJavaAgentVolumeMountPath)
+	va, vma := vbAgent.Build()
+	d.SetVolume(va)
+	scb.SetVolumeMount(vma[0])
+
+	// mount agent config to overwrite agent-bin's config
+	vbAgentConf := NewSharedVolumeAndMountBuilder().
+		SetVolumeMountSize(1).
+		SetName(defaultJavaAgentConfigVolumeName).
+		SetVolumeSourceConfigMap(cn.Name, corev1.KeyToPath{Key: ConfigDataKeyForAgent, Path: ConfigDataKeyForAgent}).
+		SetMountPath(0, defaultJavaAgentConfigVolumeMountPath)
+	vc, vmc := vbAgentConf.Build()
+	d.SetVolume(vc)
+	scb.SetVolumeMount(vmc[0])
+
+	cb := NewBootstrapContainerBuilderForAgentBin().SetVolumeMount(vma[0]).SetEnv([]corev1.EnvVar{
+		{
+			Name:  defaultAgentBinVersionEnvName,
+			Value: cn.Spec.ServerVersion,
+		},
+	})
+	con := cb.Build()
+	d.SetInitContainer(con)
+
+	sc := scb.Build()
+	d.SetShardingSphereProxyContainer(sc)
+
+	return d
 }
 
 func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Deployment {

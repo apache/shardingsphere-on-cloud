@@ -38,7 +38,7 @@ spec:
             - --leader-elect
               {{- if eq .Values.operator.featureGates.computeNode true }}
             - --feature-gates=ComputeNode={{ .Values.operator.featureGates.computeNode }}
-              {{- end}}
+              {{- end }}
           command:
             - /operator
           ports:
