@@ -38,6 +38,9 @@ Currently, the terms involved in this project are from common cloud service prov
 - One click deployment and automatic DevOps of ShardingSphere Proxy based on Operator in a Kubernetes environment.
 - Rapid deployment of ShardingSphere Proxy based on AWS CloudFormation.
 - Rapid deployment of ShardingSphere Proxy based on Terraform in an AWS environment.
+- Point-in-Time-Recovery demo For ShardingSphere.
+- Grafana template For ShardingSphere.
+- WebAssembly extension demo For ShardingSphere.
 
 ## Application Scenarios
 

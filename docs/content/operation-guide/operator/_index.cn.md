@@ -28,6 +28,14 @@ cd ../
 helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n shardingsphere-operator
 ```
 
+### 试用 ComputeNode
+
+需要按照如下命令安装 ShardingSphere Operator:
+
+```shell
+helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts --set operator.featureGates.computeNode=true --set proxyCluster.enabled=false
+```
+
 ## 参数
 
 ### 通用参数
@@ -97,6 +105,40 @@ helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n sha
 | `zookeeper.persistence.storageClass` | Persistent Volume storage class                      | `""`                |
 | `zookeeper.persistence.accessModes`  | Persistent Volume access modes                       | `["ReadWriteOnce"]` |
 | `zookeeper.persistence.size`         | Persistent Volume size                               | `8Gi`               |
+
+
+### ShardingSphere ComputeNode 参数
+
+| Name                                        | Description                                                                                            | Value               |
+| --------------------------------------------| ------------------------------------------------------------------------------------------------------ | ------------------- |
+| `computeNode.storageNodeConnector.type`     | ShardingSphere-Proxy driver type                                                                       | `mysql`             |
+| `computeNode.storageNodeConnector.version`  | ShardingSphere-Proxy driver version. The MySQL driver need to be downloaded according to this version  | `5.1.47`            |
+| `computeNode.serverVersion`                 | ShardingSphere-Proxy cluster version                                                                   | `5.3.1`             |
+| `computeNode.portBindings[0].name`          | ShardingSphere-Proxy port name                                                                         | `3307`              |
+| `computeNode.portBindings[0].containerPort` | ShardingSphere-Proxy port for container                                                                | `3307`              |
+| `computeNode.portBindings[0].servicePort`   | ShardingSphere-Proxy port for service                                                                  | `3307`              |
+| `computeNode.portBindings[0].procotol`      | ShardingSphere-Proxy port protocol                                                                     | `TCP`               |
+| `computeNode.serviceType`                   | ShardingSphere-Proxy service type                                                                      | `ClusterIP`         |
+
+
+### ShardingSphere ComputeNode Bootstrap 参数 
+
+| Name                                                                           | Description                                                         | Value                                                                  |
+|--------------------------------------------------------------------------------| ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `computeNode.bootstrap.serverConfig.authority.privilege.type`    | authority provider for storage node, the default value is ALL_PERMITTED                                                                        | `ALL_PRIVILEGES_PERMITTED` |
+| `computeNode.bootstrap.serverConfig.authority.users[0].user`     | Username,authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host | `root@%`                   |
+| `computeNode.bootstrap.serverConfig.authority.users[0].password` | Password for compute node.                                                                                                                     | `root`                     |
+| `computeNode.bootstrap.serverConfig.mode.type`                                          | Type of mode configuration. Now only support Cluster mode           | `Cluster`                                                              |
+| `computeNode.bootstrap.serverConfig.mode.repository.type`                               | Type of persist repository. Now only support ZooKeeper              | `ZooKeeper`                                                            |
+| `computeNode.bootstrap.mode.repository.props.timeToLiveSeconds`            | Seconds of ephemeral data live                                      | `600`                                                                  |
+| `computeNode.bootstrap.serverConfig.mode.repository.props.serverlists`                 | Server lists of registry center                                     | `{{ printf "%s-zookeeper.%s:2181" .Release.Name .Release.Namespace }}` |
+| `computeNode.bootstrap.serverConfig.mode.repository.props.retryIntervalMilliseconds`    | Milliseconds of retry interval                                      | `500`                                                                  |
+| `computeNode.bootstrap.serverConfig.mode.repository.props.operationTimeoutMilliseconds` | Milliseconds of operation timeout                                   | `5000`                                                                 |
+| `computeNode.bootstrap.serverConfig.mode.repository.props.namespace`                    | Namespace of registry center                                        | `governance_ds`                                                        |
+| `computeNode.bootstrap.serverConfig.mode.repository.props.maxRetries`                   | Max retries of client connection                                    | `3`                                                                    |
+| `computeNode.bootstrap.serverConfig.mode.overwrite`                                     | Whether overwrite persistent configuration with local configuration | `true`                                                                 |
+| `computeNode.bootstrap.serverConfig.props.proxy-frontend-database-protocol-type`        | Default startup protocol                                            | `MySQL`                                                                |
+
 
 ## 配置示例
 
