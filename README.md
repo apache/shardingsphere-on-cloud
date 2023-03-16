@@ -1,8 +1,5 @@
 # ShardingSphere on Cloud
 
-**Apache ShardingSphere Official Website:** [https://shardingsphere.apache.org/](https://shardingsphere.apache.org/)
-**Apache ShardingSphere-on-Cloud Official Website:** [https://shardingsphere.apache.org/oncloud/](https://shardingsphere.apache.org/oncloud/)
-
 [![GitHub release](https://img.shields.io/github/release/apache/shardingsphere-on-cloud.svg)](https://github.com/apache/shardingsphere-on-cloud/releases)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/ShardingSphere.svg?style=social&label=Follow%20%40ShardingSphere)](https://twitter.com/ShardingSphere)
@@ -21,13 +18,23 @@ The solutions currently included in this project are:
 * [Terraform Configuration For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform)
 * [Point-in-Time-Recovery demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/pitr)
 * [Grafana template For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/grafana)
-* [Webassembly extension demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/wasm)
+* [WebAssembly extension demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/wasm)
+
+## Get Started
+
+**Apache ShardingSphere Official Website:** [https://shardingsphere.apache.org/](https://shardingsphere.apache.org/)
+
+**Apache ShardingSphere-on-Cloud Official Website:** [https://shardingsphere.apache.org/oncloud/](https://shardingsphere.apache.org/oncloud/)
 
 ## Contributing
 
 To contribute to this project, refer to [Contributing](CONTRIBUTING.md).
 
 ## Community & Support
+
+Thank you for contributing to the ShardingSphere on Cloud project!
+
+![Contributors](https://contrib.rocks/image?repo=apache/shardingsphere-on-cloud)
 
 <hr>
 
