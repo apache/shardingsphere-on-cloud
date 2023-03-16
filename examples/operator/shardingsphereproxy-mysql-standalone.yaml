@@ -1,0 +1,21 @@
+apiVersion: shardingsphere.apache.org/v1alpha1
+kind: ComputeNode 
+metadata:
+  labels:
+    app: foo 
+  name: foo 
+spec:
+  storageNodeConnector: 
+    type: mysql
+    version: 5.1.47
+  serverVersion: 5.3.1
+  replicas: 1
+  selector:
+    matchLabels:
+      app: foo 
+  portBindings:
+  - name: server
+    containerPort: 3307
+    servicePort: 3307
+    protocol: TCP
+  serviceType: ClusterIP 

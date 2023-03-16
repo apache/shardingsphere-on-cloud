@@ -1,0 +1,42 @@
+apiVersion: shardingsphere.apache.org/v1alpha1
+kind: ComputeNode 
+metadata:
+  labels:
+    app: foo 
+  name: foo 
+spec:
+  storageNodeConnector: 
+    type: mysql
+    version: 5.1.47
+  serverVersion: 5.3.1
+  replicas: 1
+  selector:
+    matchLabels:
+      app: foo 
+  portBindings:
+  - name: server
+    containerPort: 3307
+    servicePort: 3307
+    protocol: TCP
+  serviceType: ClusterIP 
+  bootstrap:
+    serverConfig:
+      authority: 
+        privilege:
+          type: ALL_PERMITTED
+        users:
+        - user: root%
+          password: root
+      mode: 
+        type: Cluster 
+        repository:
+          type: ZooKeeper
+          props:
+            timeToLiveSeconds: "600"
+            server-lists: ${PLEASE_REPLACE_THIS_WITH_YOUR_ZOOKEEPER_SERVICE} 
+            retryIntervalMilliseconds: "500"
+            operationTimeoutMilliseconds: "5000"
+            namespace: governance_ds
+            maxRetries: "3"
+      props:
+        proxy-frontend-database-protocol-type: MySQL
