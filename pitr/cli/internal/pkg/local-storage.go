@@ -37,19 +37,18 @@ type (
 	}
 
 	ILocalStorage interface {
-		init() error
 		WriteByJSON(name string, contents *model.LsBackup) error
-		GenFilename(extn extension) string
+		GenFilename(extn Extension) string
 		ReadAll() ([]model.LsBackup, error)
 		ReadByID(id string) (*model.LsBackup, error)
 		ReadByCSN(csn string) (*model.LsBackup, error)
 	}
 
-	extension string
+	Extension string
 )
 
 const (
-	ExtnJSON extension = "JOSN"
+	ExtnJSON Extension = "JSON"
 )
 
 func NewLocalStorage(root string) (ILocalStorage, error) {
@@ -190,7 +189,7 @@ GenFilename gen a filename based on the file extension
 	if extn is empty,return a postfix-free filename
 	if extn=JSON,return the JSON filename like **.json
 */
-func (ls *localStorage) GenFilename(extn extension) string {
+func (ls *localStorage) GenFilename(extn Extension) string {
 	prefix := time.Now().UTC().Format("20060102150405")
 	suffix := strutil.Random(8)
 

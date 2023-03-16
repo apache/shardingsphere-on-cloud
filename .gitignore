@@ -36,3 +36,5 @@ test
 certs
 shardingsphere-operator/vendor/
 pitr/agent/agent
+pitr/agent/vendor/
+pitr/cli/vendor/

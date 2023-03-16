@@ -19,6 +19,8 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -83,3 +85,89 @@ var _ = Describe("IShardingSphereProxy", func() {
 
 	})
 })
+
+var (
+	// implement with your own env
+	u  string
+	p  string
+	h  string
+	pt uint16
+	db string
+)
+
+func Test_shardingSphereProxy_Unlock(t *testing.T) {
+	tests := []struct {
+		name string
+
+		wantErr bool
+	}{
+		{
+			name:    "test unlock after lock",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ss, _ := NewShardingSphereProxy(u, p, db, h, pt)
+			if err := ss.LockForBackup(); (err != nil) != tt.wantErr {
+				t.Errorf("Lock() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err := ss.Unlock(); (err != nil) != tt.wantErr {
+				t.Errorf("Unlock() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_shardingSphereProxy_ExportMetaData(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    *model.ClusterInfo
+		wantErr bool
+	}{
+		{
+			name:    "test export metadata",
+			wantErr: false,
+			want:    &model.ClusterInfo{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ss, _ := NewShardingSphereProxy(u, p, db, h, pt)
+			_, err := ss.ExportMetaData()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExportMetaData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			//if !reflect.DeepEqual(got, tt.want) {
+			//	t.Errorf("ExportMetaData() got = %v, want %v", got, tt.want)
+			//}
+		})
+	}
+}
+
+func Test_shardingSphereProxy_ExportStorageNodes(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    []*model.StorageNode
+		wantErr bool
+	}{
+		{
+			name:    "test export storage nodes",
+			want:    []*model.StorageNode{},
+			wantErr: false,
+		}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ss, _ := NewShardingSphereProxy(u, p, db, h, pt)
+			_, err := ss.ExportStorageNodes()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExportStorageNodes() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			//if !reflect.DeepEqual(got, tt.want) {
+			//	t.Errorf("ExportStorageNodes() got = %v, want %v", got, tt.want)
+			//}
+		})
+	}
+}

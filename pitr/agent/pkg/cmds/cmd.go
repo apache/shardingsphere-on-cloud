@@ -20,6 +20,7 @@ package cmds
 import (
 	"bufio"
 	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 	"io"
 	"os/exec"
 
@@ -39,7 +40,7 @@ func AsyncExec(name string, args ...string) (chan *Output, error) {
 	args = append([]string{c}, args...)
 
 	cmd := exec.Command(name, args...)
-
+	logging.Debug(cmd.String())
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, fmt.Errorf("can not obtain stdout pipe for command[args=%+v]:%s", args, err)
@@ -101,6 +102,7 @@ func Exec(name string, args ...string) (string, error) {
 	args = append([]string{c}, args...)
 
 	cmd := exec.Command(name, args...)
+	logging.Debug(cmd.String())
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

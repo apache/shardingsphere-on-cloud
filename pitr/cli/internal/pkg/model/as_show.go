@@ -38,13 +38,13 @@ type (
 	}
 
 	BackupInfo struct {
-		Id        string `json:"dn_backup_id"`
-		Path      string `json:"dn_backup_path"`
-		Mode      string `json:"db_backup_mode"`
-		Instance  string `json:"instance"`
-		StartTime string `json:"start_time"`
-		EndTime   string `json:"end_time"`
-		Status    string `json:"status"`
+		Id        string       `json:"dn_backup_id"`
+		Path      string       `json:"dn_backup_path"`
+		Mode      string       `json:"db_backup_mode"`
+		Instance  string       `json:"instance"`
+		StartTime string       `json:"start_time"`
+		EndTime   string       `json:"end_time"`
+		Status    BackupStatus `json:"status"`
 	}
 
 	BackupDetailResp struct {

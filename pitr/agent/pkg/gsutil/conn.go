@@ -25,6 +25,8 @@ import (
 	"strings"
 )
 
+const defaultOGHost = "127.0.0.1"
+
 type OpenGauss struct {
 	db     *sql.DB
 	user   string
@@ -43,8 +45,8 @@ func Open(user, password, dbName string, dbPort uint16) (*OpenGauss, error) {
 		return nil, fmt.Errorf("db name is empty")
 	}
 
-	connStr := "port=%d user=%s password=%s dbname=%s sslmode=disable"
-	db, err := sql.Open("opengauss", fmt.Sprintf(connStr, dbPort, user, password, dbName))
+	connStr := "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
+	db, err := sql.Open("opengauss", fmt.Sprintf(connStr, defaultOGHost, dbPort, user, password, dbName))
 	if err != nil {
 		efmt := "sql:open fail[user=%s,pwLen=%d,dbName=%s],err=%s,wrap=%w"
 		return nil, fmt.Errorf(efmt, user, len(password), dbName, err, cons.DbConnectionFailed)
