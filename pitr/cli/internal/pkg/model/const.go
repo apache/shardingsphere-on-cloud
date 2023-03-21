@@ -17,26 +17,16 @@
 
 package model
 
-type (
-	BackupIn struct {
-		DbPort   uint16 `json:"db_port"`
-		DbName   string `json:"db_name"`
-		Username string `json:"username"`
-		Password string `json:"password"`
+type BackupStatus string
+type DBBackupMode string
 
-		DnBackupPath string       `json:"dn_backup_path"`
-		DnThreadsNum uint8        `json:"dn_threads_num"`
-		DnBackupMode DBBackupMode `json:"dn_backup_mode"`
-		Instance     string       `json:"instance"`
-	}
+const (
+	SsBackupStatusWaiting    BackupStatus = "Waiting"
+	SsBackupStatusRunning    BackupStatus = "Running"
+	SsBackupStatusCompleted  BackupStatus = "Completed"
+	SsBackupStatusFailed     BackupStatus = "Failed"
+	SsBackupStatusCheckError BackupStatus = "CheckError"
 
-	BackupOut struct {
-		ID string `json:"backup_id"`
-	}
-
-	BackupOutResp struct {
-		Code int       `json:"code" validate:"required"`
-		Msg  string    `json:"msg" validate:"required"`
-		Data BackupOut `json:"data"`
-	}
+	BDBackModeFull   DBBackupMode = "FULL"
+	DBBackModePTrack DBBackupMode = "PTRACK"
 )

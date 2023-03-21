@@ -124,14 +124,14 @@ func NewBackupInfoList(list []model.Backup, path, instance string) []BackupInfo 
 
 func statusTrans(status string) string {
 	switch status {
-	case "OK":
-		return "Completed"
-	case "ERROR":
-		return "Failed"
-	case "RUNNING":
-		return "Running"
+	case cons.OGBackupStatusOk:
+		return cons.DBBackupStatusCompleted
+	case cons.OGBackupStatusError:
+		return cons.DBBackupStatusFailed
+	case cons.OGBackupStatusRunning:
+		return cons.DBBackupStatusRunning
 	default:
-		return "Other"
+		return cons.DBBackupStatusOther
 	}
 }
 

@@ -27,7 +27,7 @@ import (
 	"net/http"
 )
 
-type agentServer struct {
+type AgentServer struct {
 	addr string
 
 	_apiBackup     string
@@ -36,8 +36,15 @@ type agentServer struct {
 	_apiShowList   string
 }
 
-func NewAgentServer(addr string) *agentServer {
-	return &agentServer{
+type IAgentServer interface {
+	Backup(in *model.BackupIn) (string, error)
+	Restore(in *model.RestoreIn) error
+	ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, error)
+	ShowList(in *model.ShowListIn) ([]model.BackupInfo, error)
+}
+
+func NewAgentServer(addr string) IAgentServer {
+	return &AgentServer{
 		addr: addr,
 
 		_apiBackup:     "/api/backup",
@@ -47,7 +54,7 @@ func NewAgentServer(addr string) *agentServer {
 	}
 }
 
-func (as *agentServer) Backup(in *model.BackupIn) (string, error) {
+func (as *AgentServer) Backup(in *model.BackupIn) (string, error) {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiBackup)
 
 	out := &model.BackupOutResp{}
@@ -75,7 +82,7 @@ func (as *agentServer) Backup(in *model.BackupIn) (string, error) {
 	return out.Data.ID, nil
 }
 
-func (as *agentServer) Restore(in *model.RestoreIn) error {
+func (as *AgentServer) Restore(in *model.RestoreIn) error {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiRestore)
 
 	out := &model.RestoreResp{}
@@ -103,7 +110,7 @@ func (as *agentServer) Restore(in *model.RestoreIn) error {
 	return nil
 }
 
-func (as *agentServer) ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, error) {
+func (as *AgentServer) ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, error) {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiShowDetail)
 
 	out := &model.BackupDetailResp{}
@@ -131,7 +138,7 @@ func (as *agentServer) ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, er
 	return &out.Data, nil
 }
 
-func (as *agentServer) ShowList(in *model.ShowListIn) ([]model.BackupInfo, error) {
+func (as *AgentServer) ShowList(in *model.ShowListIn) ([]model.BackupInfo, error) {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiShowList)
 
 	out := &model.BackupListResp{}

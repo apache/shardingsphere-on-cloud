@@ -70,7 +70,7 @@ func (in *BackupIn) Validate() error {
 		return cons.MissingDnBackupMode
 	}
 
-	if in.DnBackupMode != "FULL" && in.DnBackupMode != "PTRACK" {
+	if in.DnBackupMode != cons.DBBackModeFull && in.DnBackupMode != cons.DBBackModePTrack {
 		return cons.InvalidDnBackupMode
 	}
 

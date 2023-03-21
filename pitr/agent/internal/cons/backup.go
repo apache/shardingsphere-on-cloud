@@ -15,28 +15,24 @@
 * limitations under the License.
  */
 
-package model
+package cons
 
-type (
-	BackupIn struct {
-		DbPort   uint16 `json:"db_port"`
-		DbName   string `json:"db_name"`
-		Username string `json:"username"`
-		Password string `json:"password"`
+const (
+	// DBBackModeFull is full backup mode
+	DBBackModeFull = "FULL"
+	// DBBackModePTrack is ptrack backup mode
+	DBBackModePTrack = "PTRACK"
 
-		DnBackupPath string       `json:"dn_backup_path"`
-		DnThreadsNum uint8        `json:"dn_threads_num"`
-		DnBackupMode DBBackupMode `json:"dn_backup_mode"`
-		Instance     string       `json:"instance"`
-	}
+	// opengauss backup status
+	OGBackupStatusRunning = "RUNNING"
+	OGBackupStatusOk      = "OK"
+	OGBackupStatusError   = "ERROR"
 
-	BackupOut struct {
-		ID string `json:"backup_id"`
-	}
-
-	BackupOutResp struct {
-		Code int       `json:"code" validate:"required"`
-		Msg  string    `json:"msg" validate:"required"`
-		Data BackupOut `json:"data"`
-	}
+	// agent backup status
+	DBBackupStatusRunning   = "Running"
+	DBBackupStatusCompleted = "Completed"
+	DBBackupStatusFailed    = "Failed"
+	// DBBackupStatusOther is used to indicate that the backup status is not in the above three states. and we will not handle it.
+	// the `Other` status may be some intermediate status, such as `Waiting`, `CheckError`, `Ok` etc.
+	DBBackupStatusOther = "Other"
 )

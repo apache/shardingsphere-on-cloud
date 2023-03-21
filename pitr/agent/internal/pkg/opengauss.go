@@ -41,7 +41,7 @@ type (
 	}
 
 	IOpenGauss interface {
-		AsyncBackup(backupPath, instanceName, backupMode string, threadsNum uint8) (string, error)
+		AsyncBackup(backupPath, instanceName, backupMode string, threadsNum uint8, dbPort uint16) (string, error)
 		ShowBackup(backupPath, instanceName, backupID string) (*model.Backup, error)
 		Init(backupPath string) error
 		AddInstance(backupPath, instance string) error
@@ -71,7 +71,7 @@ func NewOpenGauss(shell, pgData string, log logging.ILog) IOpenGauss {
 }
 
 const (
-	_backupFmt    = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s --threads=%d 2>&1"
+	_backupFmt    = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s --threads=%d --pgport %d 2>&1"
 	_showFmt      = "gs_probackup show --instance=%s --backup-path=%s --backup-id=%s --format=json 2>&1"
 	_delBackupFmt = "gs_probackup delete --backup-path=%s --instance=%s --backup-id=%s 2>&1"
 	_restoreFmt   = "gs_probackup restore --backup-path=%s --instance=%s --backup-id=%s --pgdata=%s 2>&1"
@@ -91,8 +91,8 @@ const (
 	_mvFmt = "mv %s %s"
 )
 
-func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, threadsNum uint8) (string, error) {
-	cmd := fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, og.pgData, threadsNum)
+func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, threadsNum uint8, dbPort uint16) (string, error) {
+	cmd := fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, og.pgData, threadsNum, dbPort)
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
 	if err != nil {
 		return "", fmt.Errorf("cmds.AsyncExec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
@@ -198,8 +198,8 @@ func (og *openGauss) AddInstance(backupPath, instance string) error {
 	return nil
 }
 
-func (og *openGauss) DelInstance(backupPath, instancee string) error {
-	cmd := fmt.Sprintf(_delInstanceFmt, backupPath, instancee)
+func (og *openGauss) DelInstance(backupPath, instance string) error {
+	cmd := fmt.Sprintf(_delInstanceFmt, backupPath, instance)
 	output, err := cmds.Exec(og.shell, cmd)
 	og.log.Debug(fmt.Sprintf("DelInstance[output=%s,err=%v]", output, err))
 
