@@ -34,11 +34,11 @@ The solutions currently included in this project are:
 
 * Database Reliability Engineering inspired Operator:
     * [The ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator): Deploy a ShardingSphere Operator on any Kubernetes distro, which provides advanced operation features.
-    * [Grafana template For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/grafana)
 
 * Other Ecosystem Experiments:
-    * [WebAssembly extension demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/wasm)
-    * [Point-in-Time-Recovery demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/pitr)
+    * [Grafana template For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/grafana): A configured Grafana template for ShardingSphere Proxy
+    * [WebAssembly extension demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/wasm): Write ShardingSphere extensions using any languages with help of WebAssembly
+    * [Point-in-Time-Recovery demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/pitr): Point-in-Time recovery with openGauss
 
 ## Get Started
 
