@@ -38,6 +38,12 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        {{- if .Values.compute.agent.enabled }}
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9090"
+        prometheus.io/scrape: "true"
+        {{- end}}
       labels:
         app: {{ template "common.names.fullname" . }}
     spec:
