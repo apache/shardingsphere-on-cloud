@@ -26,6 +26,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 	reconcile "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
+
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -42,6 +43,7 @@ const (
 	defaultRequeueTime        = 10 * time.Second
 )
 
+// ComputeNodeController is a controller for the compute node
 type ComputeNodeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -52,7 +54,7 @@ type ComputeNodeReconciler struct {
 	ConfigMap  configmap.ConfigMap
 }
 
-// SetupWithManager sets up the controller with the Manager.
+// SetupWithManager sets up the controller with the Manager
 func (r *ComputeNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ComputeNode{}).
@@ -63,6 +65,7 @@ func (r *ComputeNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// Reconcile handles main function of this controller
 func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := r.Log.WithValues(computeNodeControllerName, req.NamespacedName)
 
