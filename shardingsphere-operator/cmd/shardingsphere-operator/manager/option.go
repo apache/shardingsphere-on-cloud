@@ -82,18 +82,16 @@ func (opts *Options) ParseFeatureGates() []FeatureGateHandler {
 	if len(opts.FeatureGates) == 0 {
 		return handlers
 	}
-	if gatesVal := strings.Split(opts.FeatureGates, ","); len(gatesVal) > 0 {
-		for i := range gatesVal {
-			gate, enable := func() (string, bool) {
-				if gval := strings.Split(gatesVal[i], "="); len(gval) == 2 {
-					return gval[0], gval[1] == "true"
-				}
-				return "", false
-			}()
-
-			if h, ok := featureGatesHandlers[gate]; ok && enable {
-				handlers = append(handlers, h)
+	for _, gateVal := range strings.Split(opts.FeatureGates, ",") {
+		gate, enable := func() (string, bool) {
+			gval := strings.Split(gateVal, "=")
+			if len(gval) == 2 {
+				return gval[0], gval[1] == "true"
 			}
+			return "", false
+		}()
+		if h, ok := featureGatesHandlers[gate]; ok && enable {
+			handlers = append(handlers, h)
 		}
 	}
 	return handlers
