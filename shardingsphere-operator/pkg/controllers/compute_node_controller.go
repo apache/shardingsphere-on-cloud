@@ -290,7 +290,7 @@ func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha
 	return nil
 }
 
-func getReadyInstances(podlist v1.PodList) int32 {
+func getReadyProxyInstances(podlist v1.PodList) int32 {
 	var cnt int32
 	for _, p := range podlist.Items {
 		if p.Status.Phase == v1.PodRunning {
@@ -398,7 +398,7 @@ func reconcileComputeNodeStatus(podlist v1.PodList, svc v1.Service) *v1alpha1.Co
 
 	s.Replicas = int32(len(podlist.Items))
 
-	readyInstances := getReadyInstances(podlist)
+	readyInstances := getReadyProxyInstances(podlist)
 	s.ReadyInstances = readyInstances
 	if s.Replicas == 0 {
 		s.Phase = v1alpha1.ComputeNodeStatusNotReady
