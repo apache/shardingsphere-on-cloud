@@ -8,9 +8,11 @@
 
 This repository collects scripts, tools, manifests and documentations, and provides a home for [Apache ShardingSphere](https://shardingsphere.apache.org/) on cloud solutions.
 
-## Community Call
+## 📢📢 Community Call
 
-ShardingSphere on Cloud is under active development and is evolving rapidly. Although the core functionalities have been implemented, we are continuously working on improving the stability, performance, and feature set of the project. The community encourage users to try out ShardingSphere on Cloud and provide feedback on their experience. Your input is valuable for the ongoing development and enhancement of the project. Please feel free to report any issues, suggestions, or feature requests on our [GitHub Issue Tracker](https://github.com/apache/shardingsphere-on-cloud/issues).
+ShardingSphere on Cloud is under active development and is evolving rapidly. Although the core functionalities have been implemented, we are continuously working on improving the stability, performance, and feature set of the project. 
+
+The community encourage users to try out ShardingSphere on Cloud and provide feedback on their experience. Your input is valuable for the ongoing development and enhancement of the project. Please feel free to report any issues, suggestions, or feature requests on our [GitHub Issue Tracker](https://github.com/apache/shardingsphere-on-cloud/issues).
 
 ## 🚀🚀  Spinning up a ShardingSphere cluster on Kubernetes in one minutes !
 
@@ -26,7 +28,7 @@ ShardingSphere on Cloud is under active development and is evolving rapidly. Alt
     <a href="https://asciinema.org/a/569049" target="_blank"><img src="https://asciinema.org/a/569049.svg" /></a>
  <p>
 
-## Current Status
+## 🔥🔥 Current Status
 
 The solutions currently included in this project are:
 
