@@ -41,7 +41,8 @@ type Manager struct {
 
 // SetupWithOptions initializes the manager options
 func SetupWithOptions(opts *Options) *Manager {
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts.ZapOptions)))
+	logger := zap.New(zap.UseFlagOptions(&opts.ZapOptions))
+	ctrl.SetLogger(logger)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts.Options)
 	if err != nil {
@@ -66,11 +67,10 @@ func SetupWithOptions(opts *Options) *Manager {
 		os.Exit(1)
 	}
 
-	// feature gates handling
 	handlers := opts.ParseFeatureGates()
 	for _, h := range handlers {
-		//FIXME: this will cause panic if there is no handler found
 		if err := h(mgr); err != nil {
+			logger.Error(err, "unable to handle feature gates")
 			os.Exit(1)
 		}
 	}
