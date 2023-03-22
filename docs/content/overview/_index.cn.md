@@ -36,6 +36,9 @@ ShardingSphere-on-Cloud 项目是面向 Apache ShardingSphere 的云上解决方
 - 基于 Operator 的 ShardingSphere Proxy 在 kubernetes 环境下一键部署和自动运维
 - 基于 AWS CloudFormation 的 ShardingSphere Proxy 快速部署
 - 基于 Terraform 的 AWS 环境下 ShardingSphere Proxy 快速部署
+- Point-in-Time Recovery 时间点还原 Demo
+- Grafana Dashboard 模板
+- 基于 WebAssembly 的 ShardingSphere 插件拓展 demo
 
 ## 应用场景
 

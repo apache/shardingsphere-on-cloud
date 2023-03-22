@@ -20,10 +20,12 @@ package httputils
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type req struct {
@@ -36,6 +38,9 @@ type req struct {
 }
 
 func NewRequest(ctx context.Context, method, url string) *req {
+	if !strings.HasPrefix(url, "http") {
+		url = fmt.Sprintf("http://%s", url)
+	}
 	r := &req{
 		ctx:    ctx,
 		method: method,
@@ -87,7 +92,10 @@ func (r *req) Send(body any) (int, error) {
 		_req.URL.RawQuery = values.Encode()
 	}
 
-	c := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	c := &http.Client{Transport: tr}
 	resp, err := c.Do(_req)
 	if err != nil {
 		return -1, fmt.Errorf("http request err=%w", err)

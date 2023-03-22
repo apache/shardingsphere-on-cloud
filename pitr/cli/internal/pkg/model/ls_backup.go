@@ -21,7 +21,7 @@ type (
 	// LsBackup LocalStorageBackup
 	LsBackup struct {
 		Info     *BackupMetaInfo `json:"info"`
-		DnList   []DataNode      `json:"dn_list"`
+		DnList   []*DataNode     `json:"dn_list"`
 		SsBackup *SsBackup       `json:"ss_backup"`
 	}
 
@@ -33,32 +33,36 @@ type (
 	}
 
 	DataNode struct {
-		IP        string `json:"ip"`
-		Port      string `json:"port"`
-		Status    string `json:"status"`
-		BackupID  string `json:"backup_id"`
-		StartTime int64  `json:"start_time"` // Unix time
-		EndTime   int64  `json:"end_time"`   // Unix time
+		IP        string       `json:"ip"`
+		Port      uint16       `json:"port"`
+		Status    BackupStatus `json:"status"`
+		BackupID  string       `json:"backup_id"`
+		StartTime int64        `json:"start_time"` // Unix time
+		EndTime   int64        `json:"end_time"`   // Unix time
 	}
 )
 
 type (
 	SsBackup struct {
-		Status       string        `json:"status"`
-		ClusterInfo  ClusterInfo   `json:"cluster_info"`
-		StorageNodes []StorageNode `json:"storage_nodes"`
+		Status       BackupStatus   `json:"status"`
+		ClusterInfo  *ClusterInfo   `json:"cluster_info"`
+		StorageNodes []*StorageNode `json:"storage_nodes"`
 	}
 
 	StorageNode struct {
 		IP       string `json:"ip"`
-		Port     string `json:"port"`
+		Port     uint16 `json:"port,string"`
 		Username string `json:"username"`
 		Password string `json:"password"`
 		Database string `json:"database"`
-		Remark   string `json:"remark"`
+		Remark   string `json:"remark,omitempty"`
+	}
+
+	StorageNodesInfo struct {
+		StorageNodes *StorageNodes `json:"storage_nodes"`
 	}
 
 	StorageNodes struct {
-		List []StorageNode `json:"storage_nodes"`
+		List []*StorageNode `json:"sharding_db"`
 	}
 )

@@ -34,7 +34,7 @@ type (
 
 	IShardingSphereProxy interface {
 		ExportMetaData() (*model.ClusterInfo, error)
-		ExportStorageNodes() ([]model.StorageNode, error)
+		ExportStorageNodes() ([]*model.StorageNode, error)
 		LockForRestore() error
 		LockForBackup() error
 		Unlock() error
@@ -111,17 +111,15 @@ func (ss *shardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
 		if err = query.Scan(&id, &createTime, &data); err != nil {
 			return nil, xerr.NewCliErr(fmt.Sprintf("query scan failure,err=%s", err))
 		}
-
 		if err = query.Close(); err != nil {
 			return nil, xerr.NewCliErr(fmt.Sprintf("query close failure,err=%s", err))
 		}
 	}
-
-	out := model.SsBackupInfo{}
+	out := model.ClusterInfo{}
 	if err = json.Unmarshal([]byte(data), &out); err != nil {
 		return nil, fmt.Errorf("json unmarshal return err=%s", err)
 	}
-	return nil, nil
+	return &out, nil
 }
 
 /*
@@ -130,10 +128,10 @@ ExportStorageNodes 导出存储节点数据
 +-----------------------------+-------------------------+----------------------------------------+
 | id                          | create_time             | data                                   |
 +-------------------------------------------------------+----------------------------------------+
-| 734bb036-b15d-4af0-be87-237 | 2023-01-01 12:00:00 897 | {"storage_nodes":[]}                   |
+| 734bb036-b15d-4af0-be87-237 | 2023-01-01 12:00:00 897 | {"storage_nodes":{"sharding_db":[]}}   |
 +-------------------------------------------------------+----------------------------------------+
 */
-func (ss *shardingSphereProxy) ExportStorageNodes() ([]model.StorageNode, error) {
+func (ss *shardingSphereProxy) ExportStorageNodes() ([]*model.StorageNode, error) {
 	query, err := ss.db.Query(`EXPORT STORAGE NODES;`)
 	if err != nil {
 		return nil, xerr.NewCliErr(fmt.Sprintf("export storage nodes failure,err=%s", err))
@@ -152,12 +150,11 @@ func (ss *shardingSphereProxy) ExportStorageNodes() ([]model.StorageNode, error)
 			return nil, xerr.NewCliErr(fmt.Sprintf("query close failure,err=%s", err))
 		}
 	}
-
-	out := model.StorageNodes{}
+	out := &model.StorageNodesInfo{}
 	if err = json.Unmarshal([]byte(data), &out); err != nil {
 		return nil, fmt.Errorf("json unmarshal return err=%s", err)
 	}
-	return out.List, nil
+	return out.StorageNodes.List, nil
 }
 
 // ImportMetaData 备份数据恢复

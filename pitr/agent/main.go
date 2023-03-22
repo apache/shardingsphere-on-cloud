@@ -77,6 +77,10 @@ func main() {
 		}
 	}
 
+	if _, err := os.Stat(pgData); os.IsNotExist(err) {
+		panic(fmt.Errorf("PGDATA:%s the database directory does not exist", pgData))
+	}
+
 	pgData := strings.Trim(pgData, " ")
 	if strings.HasSuffix(pgData, "/") {
 		dirs := strings.Split(pgData, "/")
@@ -86,6 +90,13 @@ func main() {
 
 	if strings.Trim(tlsCrt, " ") == "" || strings.Trim(tlsKey, " ") == "" {
 		panic(fmt.Errorf("lack of HTTPs certificate"))
+	}
+
+	if _, err := os.Stat(tlsCrt); os.IsNotExist(err) {
+		panic(fmt.Errorf("TLS certificate file does not exist"))
+	}
+	if _, err := os.Stat(tlsKey); os.IsNotExist(err) {
+		panic(fmt.Errorf("TLS key file does not exist"))
 	}
 
 	var level = zapcore.InfoLevel

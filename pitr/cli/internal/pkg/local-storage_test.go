@@ -98,10 +98,10 @@ var _ = Describe("ILocalStorage", func() {
 					StartTime: time.Now().Unix(),
 					EndTime:   time.Now().Add(time.Minute).Unix(),
 				},
-				DnList: []model.DataNode{
+				DnList: []*model.DataNode{
 					{
 						IP:        "1.1.1.1",
-						Port:      "5432",
+						Port:      5432,
 						Status:    "Completed",
 						BackupID:  "SK08DAK1",
 						StartTime: time.Now().Unix(),
@@ -109,7 +109,7 @@ var _ = Describe("ILocalStorage", func() {
 					},
 					{
 						IP:        "1.1.1.2",
-						Port:      "5432",
+						Port:      5432,
 						Status:    "Completed",
 						BackupID:  "SK08DAK2",
 						StartTime: time.Now().Unix(),
@@ -118,7 +118,7 @@ var _ = Describe("ILocalStorage", func() {
 				},
 				SsBackup: &model.SsBackup{
 					Status: "Completed",
-					ClusterInfo: model.ClusterInfo{
+					ClusterInfo: &model.ClusterInfo{
 						MetaData: model.MetaData{
 							Databases: model.Databases{
 								ShardingDb: "ShardingDb",

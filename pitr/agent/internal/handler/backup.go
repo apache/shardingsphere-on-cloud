@@ -18,6 +18,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
@@ -45,7 +46,12 @@ func Backup(ctx *fiber.Ctx) error {
 		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DbName, err)
 	}
 
-	backupID, err := pkg.OG.AsyncBackup(in.DnBackupPath, in.Instance, in.DnBackupMode, 1)
+	// try to add backup instance
+	if err := pkg.OG.AddInstance(in.DnBackupPath, in.Instance); err != nil && !errors.Is(err, cons.InstanceAlreadyExist) {
+		return fmt.Errorf("add instance failed, err=%w", err)
+	}
+
+	backupID, err := pkg.OG.AsyncBackup(in.DnBackupPath, in.Instance, in.DnBackupMode, 1, in.DbPort)
 	if err != nil {
 		efmt := "pkg.OG.AsyncBackup[path=%s,instance=%s,mode=%s] failure,err=%w"
 		return fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupMode, err)
