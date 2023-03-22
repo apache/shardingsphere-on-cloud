@@ -8,17 +8,37 @@
 
 This repository collects scripts, tools, manifests and documentations, and provides a home for [Apache ShardingSphere](https://shardingsphere.apache.org/) on cloud solutions.
 
+
+## 🚀🚀  Spinning up a ShardingSphere cluster on Kubernetes in one minutes !
+
+### A Demo of Starting `ShardingSphere Proxy` Using Helm Charts
+
+ <p align="center">
+    <a href="https://asciinema.org/a/569048" target="_blank"><img src="https://asciinema.org/a/569048.svg" /></a>
+ <p>
+
+### A Demo of Starting `ShardingSphere Operator` Using Helm Charts
+
+ <p align="center">
+    <a href="https://asciinema.org/a/569049" target="_blank"><img src="https://asciinema.org/a/569049.svg" /></a>
+ <p>
+
 ## Current Status
 
 The solutions currently included in this project are:
 
-* [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts)
-* [The ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator)
-* [AWS CloudFormation Stack Template for ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/cloudformation)
-* [Terraform Configuration For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform)
-* [Point-in-Time-Recovery demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/pitr)
-* [Grafana template For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/grafana)
-* [WebAssembly extension demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/wasm)
+* Out-of-Box Deployment: 
+    * [The ShardingSphere Helm Charts](https://github.com/apache/shardingsphere-on-cloud/tree/main/charts/apache-shardingsphere-proxy-charts): Deploy a ShardingSphere cluster on any Kubernetes distro.
+    * [AWS CloudFormation Stack Template for ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/cloudformation): Deploy a ShardingSphere cluster on AWS resources with predefined CloudFormation.
+    * [Terraform Configuration For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/terraform): Using Terraform to implement IaC of ShardingSphere on any clouds.
+
+* Database Reliability Engineering inspired Operator:
+    * [The ShardingSphere Operator](https://github.com/apache/shardingsphere-on-cloud/tree/main/shardingsphere-operator): Deploy a ShardingSphere Operator on any Kubernetes distro, which provides advanced operation features.
+    * [Grafana template For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/grafana)
+
+* Other Ecosystem Experiments:
+    * [WebAssembly extension demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/wasm)
+    * [Point-in-Time-Recovery demo For ShardingSphere](https://github.com/apache/shardingsphere-on-cloud/tree/main/pitr)
 
 ## Get Started
 
