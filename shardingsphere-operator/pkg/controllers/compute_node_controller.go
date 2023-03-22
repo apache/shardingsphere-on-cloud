@@ -118,21 +118,16 @@ func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1a
 
 func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	deploy := reconcile.NewDeployment(cn)
-	if err := r.Create(ctx, deploy); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			return nil
-		}
-		return err
+	err := r.Create(ctx, deploy)
+	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
+		return nil
 	}
-	return nil
-}
 
+	return err
+}
 func (r *ComputeNodeReconciler) updateDeployment(ctx context.Context, cn *v1alpha1.ComputeNode, deploy *appsv1.Deployment) error {
 	exp := reconcile.UpdateDeployment(cn, deploy)
-	if err := r.Update(ctx, exp); err != nil {
-		return err
-	}
-	return nil
+	return r.Update(ctx, exp)
 }
 
 func (r *ComputeNodeReconciler) getDeploymentByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*appsv1.Deployment, bool, error) {
@@ -160,13 +155,11 @@ func (r *ComputeNodeReconciler) reconcileService(ctx context.Context, cn *v1alph
 
 func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	svc := reconcile.NewService(cn)
-	if err := r.Create(ctx, svc); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			return nil
-		}
-		return err
+	err := r.Create(ctx, svc)
+	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
+		return nil
 	}
-	return nil
+	return err
 }
 
 func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, cur *v1.Service) error {
@@ -198,10 +191,7 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 	}
 
 	exp := reconcile.UpdateService(cn, cur)
-	if err := r.Update(ctx, exp); err != nil {
-		return err
-	}
-	return nil
+	return r.Update(ctx, exp)
 }
 
 func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.Service, bool, error) {
@@ -217,21 +207,16 @@ func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, 
 
 func (r *ComputeNodeReconciler) createConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	cm := reconcile.NewConfigMap(cn)
-	if err := r.Create(ctx, cm); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			return nil
-		}
-		return err
+	err := r.Create(ctx, cm)
+	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
+		return nil
 	}
-	return nil
+	return err
 }
 
 func (r *ComputeNodeReconciler) updateConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode, cm *v1.ConfigMap) error {
 	exp := reconcile.UpdateConfigMap(cn, cm)
-	if err := r.Update(ctx, exp); err != nil {
-		return err
-	}
-	return nil
+	return r.Update(ctx, exp)
 }
 
 func (r *ComputeNodeReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.ConfigMap, bool, error) {
@@ -283,11 +268,7 @@ func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha
 	rt.Status = *status
 
 	// TODO: Compare Status with or without modification
-	if err := r.Status().Update(ctx, rt); err != nil {
-		return err
-	}
-
-	return nil
+	return r.Status().Update(ctx, rt)
 }
 
 func getReadyProxyInstances(podlist v1.PodList) int32 {
