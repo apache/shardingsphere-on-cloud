@@ -106,21 +106,14 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	deploy, found, err := r.getDeploymentByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
-	if found {
-		if err := r.updateDeployment(ctx, cn, deploy); err != nil {
-			return err
-		}
-	} else {
-		if err != nil {
-			return err
-		} else {
-			if err := r.createDeployment(ctx, cn); err != nil {
-				return err
-			}
-		}
+	if err != nil {
+		return err
 	}
+	if found {
+		return r.updateDeployment(ctx, cn, deploy)
 
-	return nil
+	}
+	return r.createDeployment(ctx, cn)
 }
 
 func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
@@ -155,20 +148,14 @@ func (r *ComputeNodeReconciler) getDeploymentByNamespacedName(ctx context.Contex
 
 func (r *ComputeNodeReconciler) reconcileService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	svc, found, err := r.getServiceByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
-	if found {
-		if err := r.updateService(ctx, cn, svc); err != nil {
-			return err
-		}
-	} else {
-		if err != nil {
-			return err
-		} else {
-			if err := r.createService(ctx, cn); err != nil {
-				return err
-			}
-		}
+	if err != nil {
+		return err
 	}
-	return nil
+	if found {
+		return r.updateService(ctx, cn, svc)
+
+	}
+	return r.createService(ctx, cn)
 }
 
 func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
@@ -260,20 +247,14 @@ func (r *ComputeNodeReconciler) getConfigMapByNamespacedName(ctx context.Context
 
 func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	cm, found, err := r.getConfigMapByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
-	if found {
-		if err := r.updateConfigMap(ctx, cn, cm); err != nil {
-			return err
-		}
-	} else {
-		if err != nil {
-			return err
-		} else {
-			if err := r.createConfigMap(ctx, cn); err != nil {
-				return err
-			}
-		}
+	if err != nil {
+		return err
 	}
-	return nil
+	if found {
+		return r.updateConfigMap(ctx, cn, cm)
+
+	}
+	return r.createConfigMap(ctx, cn)
 }
 
 func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha1.ComputeNode) error {
