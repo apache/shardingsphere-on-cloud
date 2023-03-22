@@ -73,23 +73,23 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if err := r.Get(ctx, req.NamespacedName, cn); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
-		} else {
-			logger.Error(err, "get computenode")
-			return ctrl.Result{Requeue: true}, err
 		}
+
+		logger.Error(err, "Failed to get the compute node")
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	errors := []error{}
 	if err := r.reconcileDeployment(ctx, cn); err != nil {
-		logger.Error(err, "reconcile deployment")
+		logger.Error(err, "Failed to reconcile deployement")
 		errors = append(errors, err)
 	}
 	if err := r.reconcileService(ctx, cn); err != nil {
-		logger.Error(err, "reconcile service")
+		logger.Error(err, "Failed to reconcile service")
 		errors = append(errors, err)
 	}
 	if err := r.reconcileConfigMap(ctx, cn); err != nil {
-		logger.Error(err, "reconcile configmap")
+		logger.Error(err, "Failed to reconcile configmap")
 		errors = append(errors, err)
 	}
 
@@ -98,7 +98,7 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	if err := r.reconcileStatus(ctx, cn); err != nil {
-		logger.Error(err, "reconcile pod list")
+		logger.Error(err, "Failed to reconcile pod list")
 	}
 
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
@@ -144,17 +144,13 @@ func (r *ComputeNodeReconciler) updateDeployment(ctx context.Context, cn *v1alph
 
 func (r *ComputeNodeReconciler) getDeploymentByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*appsv1.Deployment, bool, error) {
 	dp, err := r.Deployment.GetByNamespacedName(ctx, namespacedName)
-	// found
-	if dp != nil {
-		return dp, true, nil
-	}
-	// error
 	if err != nil {
 		return nil, false, err
-	} else {
-		// not found
+	}
+	if dp == nil {
 		return nil, false, nil
 	}
+	return dp, true, nil
 }
 
 func (r *ComputeNodeReconciler) reconcileService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
@@ -223,17 +219,13 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 
 func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.Service, bool, error) {
 	svc, err := r.Service.GetByNamespacedName(ctx, namespacedName)
-	// found
-	if svc != nil {
-		return svc, true, nil
-	}
-	// error
 	if err != nil {
 		return nil, false, err
-	} else {
-		// not found
+	}
+	if svc == nil {
 		return nil, false, nil
 	}
+	return svc, true, nil
 }
 
 func (r *ComputeNodeReconciler) createConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
@@ -257,17 +249,13 @@ func (r *ComputeNodeReconciler) updateConfigMap(ctx context.Context, cn *v1alpha
 
 func (r *ComputeNodeReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.ConfigMap, bool, error) {
 	cm, err := r.ConfigMap.GetByNamespacedName(ctx, namespacedName)
-	// found
-	if cm != nil {
-		return cm, true, nil
-	}
-	// error
 	if err != nil {
 		return nil, false, err
-	} else {
-		// not found
+	}
+	if cm == nil {
 		return nil, false, nil
 	}
+	return cm, true, nil
 }
 
 func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
