@@ -44,12 +44,14 @@ func init() {
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 }
 
+// Options represents common options for the controller
 type Options struct {
 	ctrl.Options
 	FeatureGates string
 	ZapOptions   zap.Options
 }
 
+// ParseOptionsFromFlags parses options from flags
 func ParseOptionsFromCmdFlags() *Options {
 	opt := &Options{
 		Options: ctrl.Options{
@@ -77,6 +79,7 @@ func ParseOptionsFromCmdFlags() *Options {
 	return opt
 }
 
+// ParseFeatureGates parse options from command line to build features
 func (opts *Options) ParseFeatureGates() []FeatureGateHandler {
 	handlers := []FeatureGateHandler{}
 	if len(opts.FeatureGates) == 0 {
@@ -97,6 +100,7 @@ func (opts *Options) ParseFeatureGates() []FeatureGateHandler {
 	return handlers
 }
 
+// FeatureGateHandler returns a Manager for the given crd
 type FeatureGateHandler func(mgr manager.Manager) error
 
 var featureGatesHandlers = map[string]FeatureGateHandler{
