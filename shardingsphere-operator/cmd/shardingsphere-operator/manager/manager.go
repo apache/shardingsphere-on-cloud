@@ -34,10 +34,12 @@ var (
 	logger = ctrl.Log.WithName("setup")
 )
 
+// Manager is a controller
 type Manager struct {
 	manager.Manager
 }
 
+// SetupWithOptions initializes the manager options
 func SetupWithOptions(opts *Options) *Manager {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts.ZapOptions)))
 
@@ -78,6 +80,7 @@ func SetupWithOptions(opts *Options) *Manager {
 	}
 }
 
+// SetHealthzChecker sets the health checker
 func (mgr *Manager) SetHealthzCheck(path string, check healthz.Checker) *Manager {
 	if err := mgr.Manager.AddHealthzCheck(path, check); err != nil {
 		logger.Error(err, "unable to set up health check")
@@ -86,6 +89,7 @@ func (mgr *Manager) SetHealthzCheck(path string, check healthz.Checker) *Manager
 	return mgr
 }
 
+// SetReadyzCheck sets the readyz checker
 func (mgr *Manager) SetReadyzCheck(path string, check healthz.Checker) *Manager {
 	if err := mgr.Manager.AddReadyzCheck(path, check); err != nil {
 		logger.Error(err, "unable to set up ready check")
@@ -94,15 +98,16 @@ func (mgr *Manager) SetReadyzCheck(path string, check healthz.Checker) *Manager 
 	return mgr
 }
 
+// SetMetrics sets the metrics exposer
 func (mgr *Manager) SetMetrics() *Manager {
 	if err := mgr.Add(metrics.NewLeaderElectionMetric(mgr.Elected())); err != nil {
 		logger.Error(err, "unable to add LeaderElection Metric")
 		os.Exit(1)
 	}
-
 	return mgr
 }
 
+// Start the manager
 func (mgr *Manager) Start(ctx context.Context) error {
 	logger.Info("starting operator")
 	return mgr.Manager.Start(ctx)
