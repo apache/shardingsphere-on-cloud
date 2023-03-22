@@ -53,6 +53,7 @@ type Options struct {
 
 // ParseOptionsFromFlags parses options from flags
 func ParseOptionsFromCmdFlags() *Options {
+	// Declare and initialize the options struct
 	opt := &Options{
 		Options: ctrl.Options{
 			Scheme:           scheme,
@@ -65,6 +66,7 @@ func ParseOptionsFromCmdFlags() *Options {
 		},
 	}
 
+	// Declaring flags for command-line arguments
 	flag.StringVar(&opt.MetricsBindAddress, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&opt.HealthProbeBindAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&opt.LeaderElection, "leader-elect", false,
@@ -73,9 +75,7 @@ func ParseOptionsFromCmdFlags() *Options {
 	flag.StringVar(&opt.FeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for alpha/experimental features.")
 
 	opt.ZapOptions.BindFlags(flag.CommandLine)
-
 	flag.Parse()
-
 	return opt
 }
 
