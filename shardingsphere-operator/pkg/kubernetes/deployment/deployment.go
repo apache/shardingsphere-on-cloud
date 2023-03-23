@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// NewDeployment creates a new Deployment
 func NewDeployment(c client.Client) Deployment {
 	return deploymentClient{
 		deploymentGetter: deploymentGetter{
@@ -37,6 +38,7 @@ func NewDeployment(c client.Client) Deployment {
 	}
 }
 
+// Deployment interface contains setter and getter
 type Deployment interface {
 	DeploymentGetter
 	DeploymentSetter
@@ -47,6 +49,7 @@ type deploymentClient struct {
 	deploymentSetter
 }
 
+// DeploymentGetter get Deployment from different parameters
 type DeploymentGetter interface {
 	GetByNamespacedName(context.Context, types.NamespacedName) (*appsv1.Deployment, error)
 }
@@ -55,6 +58,7 @@ type deploymentGetter struct {
 	client.Client
 }
 
+// GetByNamespacedName returns Deployment from given namespaced name
 func (dg deploymentGetter) GetByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*appsv1.Deployment, error) {
 	dp := &appsv1.Deployment{}
 	if err := dg.Get(ctx, namespacedName, dp); err != nil {
@@ -67,6 +71,7 @@ func (dg deploymentGetter) GetByNamespacedName(ctx context.Context, namespacedNa
 	}
 }
 
+// DeploymentMapGetter get Deployment from different parameters
 type DeploymentSetter interface {
 }
 
