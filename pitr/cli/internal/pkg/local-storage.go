@@ -21,11 +21,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 
 	strutil "github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/stringutil"
 )
@@ -62,6 +63,10 @@ func NewLocalStorage(root string) (ILocalStorage, error) {
 	}
 
 	return ls, nil
+}
+
+func DefaultRootDir() string {
+	return fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".pitr")
 }
 
 func (ls *localStorage) init() error {
@@ -140,6 +145,10 @@ func (ls *localStorage) ReadAll() ([]model.LsBackup, error) {
 			return nil, xerr.NewCliErr("The file does not exist or has changed")
 		} else if err != nil {
 			return nil, xerr.NewCliErr(fmt.Sprintf("Unknown err:get entry info failed,err=%s", err))
+		}
+
+		if !strings.HasSuffix(info.Name(), ".json") {
+			continue
 		}
 
 		path := fmt.Sprintf("%s/%s", ls.backupDir, info.Name())

@@ -5,4 +5,4 @@ GOOS := $(shell go env GOOS)
 build:
 	GOOS=$(GOOS) go build -o gs_pitr main.go
 test:
-	go test ./... -coverprofile cover.out
+	go test -v ./... -ginkgo.v -ginkgo.trace -coverprofile cover.out

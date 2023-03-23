@@ -39,7 +39,7 @@ type req struct {
 
 func NewRequest(ctx context.Context, method, url string) *req {
 	if !strings.HasPrefix(url, "http") {
-		url = fmt.Sprintf("http://%s", url)
+		url = fmt.Sprintf("https://%s", url)
 	}
 	r := &req{
 		ctx:    ctx,

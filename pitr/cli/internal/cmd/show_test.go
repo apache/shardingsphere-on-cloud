@@ -19,10 +19,11 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"time"
 )
 
 var _ = Describe("Show", func() {
@@ -57,14 +58,13 @@ var _ = Describe("Show", func() {
 					Status: "Running",
 					ClusterInfo: &model.ClusterInfo{
 						MetaData: model.MetaData{
-							Databases: model.Databases{
-								ShardingDb: "sharding_db",
-								AnotherDb:  "",
+							Databases: map[string]string{
+								"db1": "db1",
 							},
 							Props: "props",
 							Rules: "rules",
 						},
-						SnapshotInfo: model.SnapshotInfo{},
+						SnapshotInfo: &model.SnapshotInfo{},
 					},
 					StorageNodes: []*model.StorageNode{
 						{

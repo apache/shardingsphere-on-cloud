@@ -38,3 +38,4 @@ shardingsphere-operator/vendor/
 pitr/agent/agent
 pitr/agent/vendor/
 pitr/cli/vendor/
+pitr/cli/gs_pitr

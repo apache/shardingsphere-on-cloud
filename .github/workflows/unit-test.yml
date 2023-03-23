@@ -22,6 +22,7 @@ on:
     branches: [ main ]
     paths:
       - 'shardingsphere-operator/**'
+      - 'pitr/**'
       - '.github/workflows/unit-test.yml'
 jobs:
   operator:
@@ -41,3 +42,20 @@ jobs:
         uses: codecov/codecov-action@v2
         with:
           files: ./shardingsphere-operator/coverage.txt
+  pitr-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "checkout codes"
+        uses: actions/checkout@v2
+      - name: "setup go"
+        uses: actions/setup-go@v3
+        with:
+          go-version: '^1.18.1'
+      - name: "unit test"
+        run: |
+          cd pitr/cli
+          make test
+      - name: "Code coverage"
+        uses: codecov/codecov-action@v2
+        with:
+          files: ./pitr/cli/cover.out

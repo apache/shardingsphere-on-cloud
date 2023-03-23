@@ -25,6 +25,7 @@ import (
 var _ = Describe("OpenGauss", func() {
 	Context("Connection", func() {
 		It("Open and ping", func() {
+			Skip("Manually exec:dependent environment")
 			og, err := Open("root", "root", "postgres", "127.0.0.1", uint16(13308))
 			Expect(err).To(BeNil())
 			Expect(og).NotTo(BeNil())

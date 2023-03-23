@@ -20,66 +20,22 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 	"github.com/spf13/cobra"
-	"os"
 )
 
-var (
-	CSN      string
-	RecordID string
-)
-
-var Show = &cobra.Command{
+var ShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Show backup history",
 	Run: func(cmd *cobra.Command, args []string) {
-		host, err := cmd.Flags().GetString(host)
-		if err != nil {
-			logging.Error(err.Error())
+		if CSN != "" && RecordID != "" {
+			logging.Error("Please specify only one of csn and record id")
+			return
 		}
-		logging.Info(fmt.Sprintf("flags:host:%s", host))
-
-		port, err := cmd.Flags().GetUint16(port)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:port:%d", port))
-
-		un, err := cmd.Flags().GetString(username)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:username:%s", un))
-
-		pw, err := cmd.Flags().GetString(password)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:password:%s", pw))
-
-		agentPort, err := cmd.Flags().GetUint16(agentPort)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:agentPort:%d", agentPort))
-
-		CSN, err = cmd.Flags().GetString(csn)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:csn:%s", CSN))
-
-		RecordID, err = cmd.Flags().GetString(backupRecordID)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:id:%s", RecordID))
-
-		logging.Info("Show backup history ...")
 
 		if err := show(); err != nil {
 			logging.Error(err.Error())
@@ -87,17 +43,20 @@ var Show = &cobra.Command{
 	},
 }
 
-func show() error {
-	root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
-	logging.Info(fmt.Sprintf("Default backup path: %s\n", root))
+func init() {
+	RootCmd.AddCommand(ShowCmd)
+	ShowCmd.Flags().StringVarP(&CSN, "csn", "", "", "commit sequence number")
+	ShowCmd.Flags().StringVarP(&RecordID, "id", "", "", "backup record id")
+}
 
-	ls, err := pkg.NewLocalStorage(root)
+func show() error {
+	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("connect to local storage failed, err:%s", err.Error()))
 	}
 	// show backup record by csn
 	if CSN != "" {
-		bak, err := ls.ReadByCSN(csn)
+		bak, err := ls.ReadByCSN(CSN)
 		if bak == nil {
 			fmt.Println("Didn't find backup record by csn: ", CSN)
 			return nil
@@ -173,9 +132,4 @@ func formatRecordJson(backups []model.LsBackup) error {
 	}
 	fmt.Println(ds)
 	return nil
-}
-
-func init() {
-	Show.PersistentFlags().StringVarP(&CSN, "csn", "", "", "commit sequence number")
-	Show.PersistentFlags().StringVarP(&RecordID, "id", "", "", "backup record id")
 }

@@ -23,19 +23,14 @@ type (
 	}
 
 	ClusterInfo struct {
-		MetaData     MetaData     `json:"meta_data"`
-		SnapshotInfo SnapshotInfo `json:"snapshot_info"`
+		MetaData     MetaData      `json:"meta_data"`
+		SnapshotInfo *SnapshotInfo `json:"snapshot_info,omitempty"`
 	}
 
 	MetaData struct {
-		Databases Databases `json:"databases"`
-		Props     string    `json:"props"`
-		Rules     string    `json:"rules"`
-	}
-
-	Databases struct {
-		ShardingDb string `json:"sharding_db"`
-		AnotherDb  string `json:"another_db"`
+		Databases map[string]string `json:"databases"`
+		Props     string            `json:"props"`
+		Rules     string            `json:"rules"`
 	}
 
 	SnapshotInfo struct {
