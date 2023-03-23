@@ -29,14 +29,20 @@ import (
 )
 
 const (
+	// ConfigDataKeyForLogback refers to the configuration file name of logback
 	ConfigDataKeyForLogback = "logback.xml"
-	ConfigDataKeyForServer  = "server.yaml"
-	ConfigDataKeyForAgent   = "agent.yaml"
+	// ConfigDataKeyForServer refers to the configuration file name of server
+	ConfigDataKeyForServer = "server.yaml"
+	// ConfigDataKeyForAgent refers to the configuration file name of agent
+	ConfigDataKeyForAgent = "agent.yaml"
 
+	// AnnoClusterRepoConfig refers to the content of cluster repo config in server config
 	AnnoClusterRepoConfig = "computenode.shardingsphere.org/server-config-mode-cluster"
-	AnnoLogbackConfig     = "computenode.shardingsphere.org/logback"
+	// AnnoClusterRepoConfig refers to the content of logback.xml
+	AnnoLogbackConfig = "computenode.shardingsphere.org/logback"
 )
 
+// NewConfigMap returns a new ConfigMap
 func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	builder := NewConfigMapBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
 	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabels(cn.Labels).SetAnnotations(cn.Annotations)
@@ -76,6 +82,7 @@ func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	return builder.Build()
 }
 
+// ConfigMapBuilder is a builder for ConfigMap by ComputeNode
 type ConfigMapBuilder interface {
 	SetName(name string) ConfigMapBuilder
 	SetNamespace(namespace string) ConfigMapBuilder
@@ -91,50 +98,61 @@ type configmapBuilder struct {
 	configmap *v1.ConfigMap
 }
 
+// NewConfigMapBuilder returns a ConfigMapBuilder
 func NewConfigMapBuilder(meta metav1.Object, gvk schema.GroupVersionKind) ConfigMapBuilder {
 	return &configmapBuilder{
 		configmap: DefaultConfigMap(meta, gvk),
 	}
 }
 
+// SetName set the ConfigMap name
 func (c *configmapBuilder) SetName(name string) ConfigMapBuilder {
 	c.configmap.Name = name
 	return c
 }
 
+// SetNamespace set the ConfigMap namespace
 func (c *configmapBuilder) SetNamespace(namespace string) ConfigMapBuilder {
 	c.configmap.Namespace = namespace
 	return c
 }
 
+// SetLabels set the ConfigMap labels
 func (c *configmapBuilder) SetLabels(labels map[string]string) ConfigMapBuilder {
 	c.configmap.Labels = labels
 	return c
 }
 
+// SetAnnotations set the ConfigMap annotations
 func (c *configmapBuilder) SetAnnotations(annos map[string]string) ConfigMapBuilder {
 	c.configmap.Annotations = annos
 	return c
 }
+
+// SetLogback set the ConfigMap data logback
 func (c *configmapBuilder) SetLogback(logback string) ConfigMapBuilder {
 	c.configmap.Data[ConfigDataKeyForLogback] = logback
 	return c
 }
 
+// SetServerConfig set the ConfigMap data server config
 func (c *configmapBuilder) SetServerConfig(serviceConfig string) ConfigMapBuilder {
 	c.configmap.Data[ConfigDataKeyForServer] = serviceConfig
 	return c
 }
 
+// SetAgentConfig set the ConfigMap data agent config
 func (c *configmapBuilder) SetAgentConfig(agentConfig string) ConfigMapBuilder {
 	c.configmap.Data[ConfigDataKeyForAgent] = agentConfig
 	return c
 }
 
+// Build returns a ConfigMap
 func (c *configmapBuilder) Build() *v1.ConfigMap {
 	return c.configmap
 }
 
+// DefaultConfigMap returns a ConfigMap filling with default expected values
 func DefaultConfigMap(meta metav1.Object, gvk schema.GroupVersionKind) *v1.ConfigMap {
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -160,6 +178,7 @@ func UpdateConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1.ConfigMap 
 	return exp
 }
 
+// DefaultLogback contains the default logback config
 const DefaultLogback = `<?xml version="1.0"?>
 <configuration>
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
