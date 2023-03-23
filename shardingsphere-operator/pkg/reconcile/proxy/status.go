@@ -21,24 +21,27 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+// IsRunning returns true if one of the Pods is running
 func IsRunning(podList *v1.PodList) bool {
 	status := false
 	for _, pod := range podList.Items {
-		if pod.Status.Phase == v1.PodRunning && pod.ObjectMeta.DeletionTimestamp == nil {
+		if isNonTerminatingPod(pod) && isRunningPod(pod.Status) {
 			status = true
+			break
 		}
 	}
-
 	return status
 }
 
+// CountingReadyPods returns the current count of ready pods
 func CountingReadyPods(podList *v1.PodList) int32 {
 	var readyPods int32 = 0
 	for _, pod := range podList.Items {
 		if len(pod.Status.ContainerStatuses) == 0 {
 			continue
 		}
-		if pod.Status.ContainerStatuses[0].Ready && pod.ObjectMeta.DeletionTimestamp == nil {
+
+		if isNonTerminatingPod(pod) && isReadyPod(pod.Status) {
 			readyPods++
 		}
 	}

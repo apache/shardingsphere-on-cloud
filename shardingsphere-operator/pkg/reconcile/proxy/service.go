@@ -25,10 +25,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// NewService returns a new Service
 func NewService(ssproxy *v1alpha1.ShardingSphereProxy) *v1.Service {
 	return ConstructCascadingService(ssproxy)
 }
 
+// ConstructCascadingService contructs a Service from ShardingSphereProxy
 func ConstructCascadingService(proxy *v1alpha1.ShardingSphereProxy) *v1.Service {
 	if proxy == nil || reflect.DeepEqual(proxy, &v1alpha1.ShardingSphereProxy{}) {
 		return &v1.Service{}
@@ -62,6 +64,7 @@ func ConstructCascadingService(proxy *v1alpha1.ShardingSphereProxy) *v1.Service 
 	return &svc
 }
 
+// UpdateService updates the specified service with ShardingSphereProxy
 func UpdateService(proxy *v1alpha1.ShardingSphereProxy, runtimeService *v1.Service) *v1.Service {
 	exp := &v1.Service{}
 	runtimeService.Spec.Type = proxy.Spec.ServiceType.Type

@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// NewHPA returns a new HorizontalPodAutoscaler
 func NewHPA(ssproxy *v1alpha1.ShardingSphereProxy) *autoscalingv2beta2.HorizontalPodAutoscaler {
 	return ConstructHPA(ssproxy)
 }
@@ -70,8 +71,9 @@ func ConstructHPA(proxy *v1alpha1.ShardingSphereProxy) *autoscalingv2beta2.Horiz
 			},
 		},
 	}
-
 }
+
+// ConstructDefaultHPAMetric using CPU as default HPA metrics
 func ConstructDefaultHPAMetric(target *int32) []autoscalingv2beta2.MetricSpec {
 	return []autoscalingv2beta2.MetricSpec{
 		{
@@ -87,6 +89,7 @@ func ConstructDefaultHPAMetric(target *int32) []autoscalingv2beta2.MetricSpec {
 	}
 }
 
+// UpdateHPA update HorizontalPodAutoscaler with ShardingSphereProxy
 func UpdateHPA(proxy *v1alpha1.ShardingSphereProxy, act *autoscalingv2beta2.HorizontalPodAutoscaler) *autoscalingv2beta2.HorizontalPodAutoscaler {
 	act.Spec.Behavior.ScaleDown.StabilizationWindowSeconds = &proxy.Spec.AutomaticScaling.ScaleDownWindows
 	act.Spec.Behavior.ScaleUp.StabilizationWindowSeconds = &proxy.Spec.AutomaticScaling.ScaleUpWindows
