@@ -51,6 +51,20 @@ func (m *MockIShardingSphereProxy) EXPECT() *MockIShardingSphereProxyMockRecorde
 	return m.recorder
 }
 
+// DropDatabase mocks base method.
+func (m *MockIShardingSphereProxy) DropDatabase(shardingDBName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DropDatabase", shardingDBName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DropDatabase indicates an expected call of DropDatabase.
+func (mr *MockIShardingSphereProxyMockRecorder) DropDatabase(shardingDBName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DropDatabase", reflect.TypeOf((*MockIShardingSphereProxy)(nil).DropDatabase), shardingDBName)
+}
+
 // ExportMetaData mocks base method.
 func (m *MockIShardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
 	m.ctrl.T.Helper()

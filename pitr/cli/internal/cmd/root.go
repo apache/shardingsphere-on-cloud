@@ -18,67 +18,38 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 )
 
-const (
-	host      = "host"
-	port      = "port"
-	username  = "username"
-	password  = "password"
-	agentPort = "agent-port"
+var (
+	// Host ss-proxy host
+	Host string
+	// Port ss-proxy port
+	Port uint16
+	// Username ss-proxy username
+	Username string
+	// Password ss-proxy password
+	Password string
+	// AgentPort agent-server port
+	AgentPort uint16
+	// BackupPath openGauss data backup path
+	BackupPath string
+	// BackupMode openGauss data backup mode (FULL or PTRACK)
+	BackupMode string
+	// ThreadsNum openGauss data backup task thread num
+	ThreadsNum uint8
+	// CSN openGauss data backup commit sequence number
+	CSN string
+	// RecordID openGauss data backup record id
+	RecordID string
 )
 
-var Root = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "gs_pitr",
 	Short: "PITR tools for openGauss",
-	Run: func(cmd *cobra.Command, args []string) {
-		host, err := cmd.Flags().GetString(host)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:host:%s", host))
 
-		port, err := cmd.Flags().GetUint16(port)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:port:%d", port))
-
-		un, err := cmd.Flags().GetString(username)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:username:%s", un))
-
-		pw, err := cmd.Flags().GetString(password)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:password:%s", pw))
-
-		agentPort, err := cmd.Flags().GetUint16(agentPort)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:agentPort:%d", agentPort))
-	},
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
 		HiddenDefaultCmd:  true,
 	},
-}
-
-func init() {
-	Root.PersistentFlags().StringP(host, "H", "", "shardingsphere proxy server host")
-	Root.PersistentFlags().Uint16P(port, "P", 1, "shardingsphere proxy service port")
-	Root.PersistentFlags().StringP(username, "u", "", "shardingsphere proxy username")
-	Root.PersistentFlags().StringP(password, "p", "", "shardingsphere proxy password")
-	Root.PersistentFlags().Uint16P(agentPort, "", 443, "agent server port")
-
-	Root.AddCommand(Backup, Restore, Show)
 }

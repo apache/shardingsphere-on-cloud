@@ -19,12 +19,12 @@ package main
 
 import (
 	"fmt"
-
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"os"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/cmd"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func main() {
@@ -46,7 +46,7 @@ func main() {
 	}
 	logging.Init(logger)
 
-	if err := cmd.Root.Execute(); err != nil {
-		logging.Error(fmt.Sprintf("Err: %s", err))
+	if err := cmd.RootCmd.Execute(); err != nil {
+		os.Exit(1)
 	}
 }

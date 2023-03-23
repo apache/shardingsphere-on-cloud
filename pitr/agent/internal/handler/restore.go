@@ -19,6 +19,7 @@ package handler
 
 import (
 	"fmt"
+
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 
@@ -47,6 +48,7 @@ func Restore(ctx *fiber.Ctx) (err error) {
 		return
 	}
 
+	// stop openGauss
 	if err = pkg.OG.Stop(); err != nil {
 		err = fmt.Errorf("stop openGauss failure,err=%w", err)
 		return

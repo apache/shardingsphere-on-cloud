@@ -120,14 +120,13 @@ var _ = Describe("ILocalStorage", func() {
 					Status: "Completed",
 					ClusterInfo: &model.ClusterInfo{
 						MetaData: model.MetaData{
-							Databases: model.Databases{
-								ShardingDb: "ShardingDb",
-								AnotherDb:  "AnotherDb",
+							Databases: map[string]string{
+								"db1": "db1",
 							},
 							Props: "Props",
 							Rules: "Rules",
 						},
-						SnapshotInfo: model.SnapshotInfo{},
+						SnapshotInfo: &model.SnapshotInfo{},
 					},
 					StorageNodes: nil,
 				},

@@ -19,13 +19,14 @@ package cmd
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/google/uuid"
-	"os"
-	"sync"
-	"time"
+	"github.com/spf13/pflag"
 
 	"github.com/spf13/cobra"
 
@@ -33,88 +34,50 @@ import (
 )
 
 const (
-	dnBackupPath = "dn-backup-path"
-	dnThreadsNum = "dn-threads-num"
 	// defaultInstance is used to set backup instance name in openGauss, we can modify it in the future.
 	defaultInstance = "ins-default-ss"
 	// defaultShowDetailRetryTimes retry times of check backup detail from agent server
 	defaultShowDetailRetryTimes = 3
 )
 
-var (
-	// Host ss-proxy host
-	Host string
-	// Port ss-proxy port
-	Port uint16
-	// Username ss-proxy username
-	Username string
-	// Password ss-proxy password
-	Password string
-	// AgentPort agent-server port
-	AgentPort uint16
-	// BackupPath openGauss data backup path
-	BackupPath string
-	// ThreadsNum openGauss data backup task thread num
-	ThreadsNum uint8
+var filename string
 
-	filename string
-)
-
-var Backup = &cobra.Command{
+var BackupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backup a database cluster",
 	Run: func(cmd *cobra.Command, args []string) {
-		var err error
+		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+			fmt.Printf("Flag: %s Value: %s\n", flag.Name, flag.Value)
+		})
 
-		Host, err = cmd.Flags().GetString(host)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:host:%s", Host))
-
-		Port, err = cmd.Flags().GetUint16(port)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:port:%d", Port))
-
-		Username, err = cmd.Flags().GetString(username)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:username:%s", Username))
-
-		Password, err = cmd.Flags().GetString(password)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:password:%s", Password))
-
-		AgentPort, err = cmd.Flags().GetUint16(agentPort)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:agentPort:%d", AgentPort))
-
-		BackupPath, err = cmd.Flags().GetString(dnBackupPath)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:backupPath:%s", BackupPath))
-
-		ThreadsNum, err = cmd.Flags().GetUint8(dnThreadsNum)
-		if err != nil {
-			logging.Error(err.Error())
-		}
-		logging.Info(fmt.Sprintf("flags:threadsNum:%d", ThreadsNum))
-
-		logging.Info(fmt.Sprintf("Default backup path: %s/%s\n", os.Getenv("HOME"), ".gs_pitr/backup/"))
+		logging.Info(fmt.Sprintf("Default backup path: %s", pkg.DefaultRootDir()))
 
 		// Start backup
 		if err := backup(); err != nil {
 			logging.Error(err.Error())
 		}
 	},
+}
+
+func init() {
+	RootCmd.AddCommand(BackupCmd)
+
+	BackupCmd.Flags().StringVarP(&Host, "host", "H", "", "ss-proxy hostname or ip")
+	_ = BackupCmd.MarkFlagRequired("host")
+	BackupCmd.Flags().Uint16VarP(&Port, "port", "P", 0, "ss-proxy port")
+	_ = BackupCmd.MarkFlagRequired("port")
+	BackupCmd.Flags().StringVarP(&Username, "username", "u", "", "ss-proxy username")
+	_ = BackupCmd.MarkFlagRequired("username")
+	BackupCmd.Flags().StringVarP(&Password, "password", "p", "", "ss-proxy password")
+	_ = BackupCmd.MarkFlagRequired("password")
+	BackupCmd.Flags().StringVarP(&BackupPath, "dn-backup-path", "B", "", "openGauss data backup path")
+	_ = BackupCmd.MarkFlagRequired("dn-backup-path")
+	BackupCmd.Flags().StringVarP(&BackupMode, "dn-backup-mode", "b", "", "openGauss data backup mode (FULL|PTRACK)")
+	_ = BackupCmd.MarkFlagRequired("dn-backup-mode")
+	BackupCmd.Flags().Uint8VarP(&ThreadsNum, "dn-threads-num", "j", 1, "openGauss data backup threads nums")
+	BackupCmd.Flags().Uint16VarP(&AgentPort, "agent-port", "a", 443, "agent server port")
+	_ = BackupCmd.MarkFlagRequired("agent-port")
+
 }
 
 // Steps of backup:
@@ -131,8 +94,7 @@ func backup() error {
 		return xerr.NewCliErr("create ss-proxy connect failed")
 	}
 
-	root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
-	ls, err := pkg.NewLocalStorage(root)
+	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())
 	if err != nil {
 		return xerr.NewCliErr("create local storage failed")
 	}
@@ -147,6 +109,8 @@ func backup() error {
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("export backup data failed, err:%s", err.Error()))
 	}
+
+	logging.Info(fmt.Sprintf("export backup data success, backup filename: %s", filename))
 
 	// Step3. send backup command to agent-server.
 	if err := execBackup(lsBackup); err != nil {
@@ -196,10 +160,15 @@ func exportData(proxy pkg.IShardingSphereProxy, ls pkg.ILocalStorage) (lsBackup 
 
 	// Step3. combine the backup contents
 	filename = ls.GenFilename(pkg.ExtnJSON)
+	csn := ""
+	if cluster.SnapshotInfo != nil {
+		csn = cluster.SnapshotInfo.Csn
+	}
+
 	contents := &model.LsBackup{
 		Info: &model.BackupMetaInfo{
 			ID:        uuid.New().String(), // generate uuid for this backup
-			CSN:       cluster.SnapshotInfo.Csn,
+			CSN:       csn,
 			StartTime: time.Now().Unix(),
 			EndTime:   0,
 		},
@@ -232,8 +201,12 @@ func execBackup(lsBackup *model.LsBackup) error {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup, node *model.StorageNode) {
 			defer wg.Done()
-			as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", node.IP, AgentPort))
-			_execBackup(as, node, failSnCh, dnCh)
+			agentHost := node.IP
+			if agentHost == "127.0.0.1" {
+				agentHost = Host
+			}
+			as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", agentHost, AgentPort))
+			_execBackup(as, node, dnCh, failSnCh)
 		}(&wg, node)
 	}
 
@@ -244,7 +217,7 @@ func execBackup(lsBackup *model.LsBackup) error {
 	// TODO format print data like a table
 	for errN := range failSnCh {
 		success = false
-		fmt.Printf("failed node detail: [IP:%s, PORT:%d]\n", errN.IP, errN.Port)
+		logging.Error(fmt.Sprintf("failed node detail: [IP:%s, PORT:%d]", errN.IP, errN.Port))
 	}
 
 	if !success {
@@ -261,7 +234,7 @@ func execBackup(lsBackup *model.LsBackup) error {
 	return nil
 }
 
-func _execBackup(as pkg.IAgentServer, node *model.StorageNode, failSnCh chan *model.StorageNode, dnCh chan *model.DataNode) {
+func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.DataNode, failSnCh chan *model.StorageNode) {
 	in := &model.BackupIn{
 		DbPort:       node.Port,
 		DbName:       node.Database,
@@ -274,7 +247,7 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, failSnCh chan *mo
 	}
 	backupID, err := as.Backup(in)
 	if err != nil {
-		logging.Error(fmt.Sprintf("backup failed, %s\n", err.Error()))
+		logging.Error(fmt.Sprintf("backup failed, %s", err.Error()))
 		failSnCh <- node
 		return
 	}
@@ -308,7 +281,11 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup, sn *model.StorageNode) {
 			defer wg.Done()
-			as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", sn.IP, AgentPort))
+			agentHost := sn.IP
+			if agentHost == "127.0.0.1" {
+				agentHost = Host
+			}
+			as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", agentHost, AgentPort))
 			dn := dataNodeMap[sn.IP]
 
 			// check backup status
@@ -325,11 +302,11 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 	close(statusCh)
 
 	for dn := range statusCh {
-		fmt.Printf("data node backup final status: [IP:%s] ==> %s", dn.IP, dn.Status)
+		logging.Info(fmt.Sprintf("data node backup final status: [IP:%s, backupID:%s] ==> %s", dn.IP, dn.BackupID, dn.Status))
 	}
 
 	for _, dn := range lsBackup.DnList {
-		if dn.Status == model.SsBackupStatusFailed {
+		if dn.Status != model.SsBackupStatusCompleted {
 			backupFinalStatus = model.SsBackupStatusFailed
 		}
 	}
@@ -360,13 +337,8 @@ func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, backupId string, st
 	}
 	backupInfo, err := as.ShowDetail(in)
 	if err != nil {
-		logging.Error(fmt.Sprintf("get storage node [IP:%s] backup detail from agent server failed, will retry %d times.", sn.IP, retryTimes))
+		logging.Error(fmt.Sprintf("get storage node [IP:%s] backup detail from agent server failed, will retry %d times.\n%s", sn.IP, retryTimes, err.Error()))
 		return checkStatus(as, sn, backupId, model.SsBackupStatusCheckError, retryTimes-1)
 	}
 	return checkStatus(as, sn, backupId, backupInfo.Status, retryTimes)
-}
-
-func init() {
-	Backup.PersistentFlags().StringP(dnBackupPath, "B", "", "DataNode backup path")
-	Backup.PersistentFlags().Uint8P(dnThreadsNum, "j", 1, "DataNode backup threads nums")
 }

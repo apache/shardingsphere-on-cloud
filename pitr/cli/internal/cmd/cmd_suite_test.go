@@ -19,9 +19,10 @@ package cmd_test
 
 import (
 	"fmt"
+	"testing"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"testing"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 	. "github.com/onsi/ginkgo/v2"

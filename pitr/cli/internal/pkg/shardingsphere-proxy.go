@@ -39,6 +39,7 @@ type (
 		LockForBackup() error
 		Unlock() error
 		ImportMetaData(in *model.ClusterInfo) error
+		DropDatabase(shardingDBName string) error
 	}
 )
 
@@ -98,7 +99,7 @@ ExportMetaData 导出 SS 元数据
 +-------------------------------------------------------+----------------------------------------+
 */
 func (ss *shardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
-	query, err := ss.db.Query(`EXPORT METADATA`)
+	query, err := ss.db.Query(`EXPORT METADATA;`)
 	if err != nil {
 		return nil, xerr.NewCliErr(fmt.Sprintf("export meta data failure,err=%s", err))
 	}
@@ -115,10 +116,11 @@ func (ss *shardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
 			return nil, xerr.NewCliErr(fmt.Sprintf("query close failure,err=%s", err))
 		}
 	}
-	out := model.ClusterInfo{}
+	var out model.ClusterInfo
 	if err = json.Unmarshal([]byte(data), &out); err != nil {
 		return nil, fmt.Errorf("json unmarshal return err=%s", err)
 	}
+	out.SnapshotInfo = nil
 	return &out, nil
 }
 
@@ -166,11 +168,19 @@ func (ss *shardingSphereProxy) ImportMetaData(in *model.ClusterInfo) error {
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("json marshal,invalid data[in=%+v]", in))
 	}
-
-	_, err = ss.db.Exec(fmt.Sprintf(`IMPORT METADATA "%s";`, marshal))
+	_, err = ss.db.Exec(fmt.Sprintf(`IMPORT METADATA '%s';`, marshal))
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("import metadata failure,err=%s", err))
 	}
 
+	return nil
+}
+
+// DropDatabase 删除数据库
+func (ss *shardingSphereProxy) DropDatabase(databaseName string) error {
+	_, err := ss.db.Exec(fmt.Sprintf(`DROP DATABASE %s;`, databaseName))
+	if err != nil {
+		return xerr.NewCliErr(fmt.Sprintf("drop database failure, err:%s", err.Error()))
+	}
 	return nil
 }
