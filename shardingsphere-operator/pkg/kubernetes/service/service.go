@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// NewService creates a new Service
 func NewService(c client.Client) Service {
 	return serviceClient{
 		serviceGetter: serviceGetter{
@@ -37,15 +38,18 @@ func NewService(c client.Client) Service {
 	}
 }
 
+// Service interface contains setter and getter
 type Service interface {
 	ServiceGetter
 	ServiceSetter
 }
 
+// ServiceGetter get Service from different parameters
 type ServiceGetter interface {
 	GetByNamespacedName(context.Context, types.NamespacedName) (*corev1.Service, error)
 }
 
+// ServiceGetter get Service from different parameters
 type ServiceSetter interface{}
 
 type serviceClient struct {
@@ -61,6 +65,7 @@ type serviceSetter struct {
 	client.Client
 }
 
+// GetByNamespacedName returns a service by its namespaced name
 func (sg serviceGetter) GetByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.Service, error) {
 	svc := &corev1.Service{}
 	if err := sg.Get(ctx, namespacedName, svc); err != nil {

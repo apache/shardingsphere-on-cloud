@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// NewConfigMap creates a new ConfigMap
 func NewConfigMap(c client.Client) ConfigMap {
 	return configmapClient{
 		configmapGetter: configmapGetter{
@@ -37,15 +38,18 @@ func NewConfigMap(c client.Client) ConfigMap {
 	}
 }
 
+// ConfigMap interface contains setter and getter
 type ConfigMap interface {
 	ConfigMapGetter
 	ConfigMapSetter
 }
 
+// ConfigMapGetter get ConfigMap from different parameters
 type ConfigMapGetter interface {
 	GetByNamespacedName(context.Context, types.NamespacedName) (*corev1.ConfigMap, error)
 }
 
+// ConfigMapSetter set ConfigMap from different parameters
 type ConfigMapSetter interface {
 }
 
@@ -58,6 +62,7 @@ type configmapGetter struct {
 	client.Client
 }
 
+// GetByNamespacedName returns ConfigMap from given namespaced name
 func (cg configmapGetter) GetByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.ConfigMap, error) {
 	cm := &corev1.ConfigMap{}
 	if err := cg.Get(ctx, namespacedName, cm); err != nil {

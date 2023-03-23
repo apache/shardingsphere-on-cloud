@@ -31,18 +31,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// NewDeployment creates a new Deployment
 func NewDeployment(ssproxy *v1alpha1.ShardingSphereProxy) *v1.Deployment {
 	return ConstructCascadingDeployment(ssproxy)
 }
 
 const (
-	AnnoRollingUpdateMaxSurge       = "shardingsphereproxy.shardingsphere.org/rolling-update-max-surge"
+	// AnnoRollingUpdateMaxSurge refers to Deployment RollingUpdate Strategy
+	AnnoRollingUpdateMaxSurge = "shardingsphereproxy.shardingsphere.org/rolling-update-max-surge"
+	// AnnoRollingUpdateMaxUnavailable refers to Deployment RollingUpdate Strategy
 	AnnoRollingUpdateMaxUnavailable = "shardingsphereproxy.shardingsphere.org/rolling-update-max-unavailable"
 
 	//miniReadyCount Minimum number of replicas that can be served
 	miniReadyCount = 1
 )
 
+// ConstructCascadingDeployment construct a Deployment from crd ShardingSphereProxy
 func ConstructCascadingDeployment(proxy *v1alpha1.ShardingSphereProxy) *v1.Deployment {
 	if proxy == nil || reflect.DeepEqual(proxy, &v1alpha1.ShardingSphereProxy{}) {
 		return &v1.Deployment{}
@@ -361,6 +365,7 @@ func getReadyNodes(podlist corev1.PodList) int32 {
 	return cnt
 }
 
+// ReconcileStatus returns the status of ShardingSphereProxy
 func ReconcileStatus(podlist corev1.PodList, rt v1alpha1.ShardingSphereProxy) v1alpha1.ProxyStatus {
 	readyNodes := getReadyNodes(podlist)
 

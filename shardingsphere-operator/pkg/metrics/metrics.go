@@ -19,14 +19,15 @@ package metrics
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
-	"strconv"
 )
 
 const (
-	metricsNamespace = "shardingsphere_proxy_operator"
+	metricsNamespace = "shardingsphere_operator"
 	leaderLabel      = "is_leader"
 )
 
@@ -34,6 +35,7 @@ var (
 	isLeader = false
 )
 
+// LeaderElectionMetrics represents metrics about leader election
 type LeaderElectionMetric struct {
 	elected <-chan struct{}
 	status  *prometheus.GaugeVec
@@ -41,6 +43,7 @@ type LeaderElectionMetric struct {
 
 var _ manager.LeaderElectionRunnable = &LeaderElectionMetric{}
 
+// Start this metrics
 func (l *LeaderElectionMetric) Start(ctx context.Context) error {
 	// Set default label
 	l.status.WithLabelValues(strconv.FormatBool(isLeader)).Set(1)
@@ -70,6 +73,7 @@ func (l *LeaderElectionMetric) NeedLeaderElection() bool {
 	return false
 }
 
+// NewLeaderElectionMetric creates a new leader election metric
 func NewLeaderElectionMetric(elected <-chan struct{}) manager.Runnable {
 	isLeaderGauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,

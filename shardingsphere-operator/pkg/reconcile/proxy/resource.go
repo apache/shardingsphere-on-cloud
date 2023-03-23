@@ -18,6 +18,7 @@
 package proxy
 
 import (
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -25,4 +26,18 @@ const imageName = "apache/shardingsphere-proxy"
 
 func fromInt32(val int32) intstr.IntOrString {
 	return intstr.IntOrString{Type: intstr.Int, IntVal: val}
+}
+func isRunningPod(s v1.PodStatus) bool {
+	return s.Phase == v1.PodRunning
+}
+
+func isReadyPod(s v1.PodStatus) bool {
+	if s.ContainerStatuses != nil && len(s.ContainerStatuses) > 0 {
+		return s.ContainerStatuses[0].Ready
+	}
+	return false
+}
+
+func isNonTerminatingPod(pod v1.Pod) bool {
+	return pod.ObjectMeta.DeletionTimestamp == nil
 }

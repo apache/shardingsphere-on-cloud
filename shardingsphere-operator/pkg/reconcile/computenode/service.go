@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// NewService returns a new Service
 func NewService(cn *v1alpha1.ComputeNode) *v1.Service {
 	builder := NewServiceBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
 	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetType(cn.Spec.ServiceType)
@@ -43,6 +44,7 @@ func NewService(cn *v1alpha1.ComputeNode) *v1.Service {
 	return builder.Build()
 }
 
+// ServiceBuilder returns a ServiceBuilder
 type ServiceBuilder interface {
 	SetName(name string) ServiceBuilder
 	SetNamespace(namespace string) ServiceBuilder
@@ -53,6 +55,7 @@ type ServiceBuilder interface {
 	Build() *corev1.Service
 }
 
+// NewServiceBuilder returns a ServiceBuilder
 func NewServiceBuilder(meta metav1.Object, gvk schema.GroupVersionKind) ServiceBuilder {
 	return &serviceBuilder{
 		service: DefaultService(meta, gvk),
@@ -63,32 +66,38 @@ type serviceBuilder struct {
 	service *corev1.Service
 }
 
+// SetName sets the name of Service
 func (s *serviceBuilder) SetName(name string) ServiceBuilder {
 	s.service.Name = name
 	return s
 }
 
+// SetNamespace sets the namespace of Service
 func (s *serviceBuilder) SetNamespace(namespace string) ServiceBuilder {
 	s.service.Namespace = namespace
 	return s
 }
 
+// SetLabelsAndSelectors sets the labels and selectors of Service
 func (s *serviceBuilder) SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) ServiceBuilder {
 	s.service.Labels = labels
 	s.service.Spec.Selector = selectors.MatchLabels
 	return s
 }
 
+// SetAnnotations sets the annotations of Service
 func (s *serviceBuilder) SetAnnotations(annos map[string]string) ServiceBuilder {
 	s.service.Annotations = annos
 	return s
 }
 
+// SetType sets the ServiceType of Service
 func (s *serviceBuilder) SetType(t corev1.ServiceType) ServiceBuilder {
 	s.service.Spec.Type = t
 	return s
 }
 
+// SetPorts sets ports of Service
 func (s *serviceBuilder) SetPorts(ports []corev1.ServicePort) ServiceBuilder {
 	if s.service.Spec.Ports == nil {
 		s.service.Spec.Ports = []v1.ServicePort{}
@@ -97,10 +106,12 @@ func (s *serviceBuilder) SetPorts(ports []corev1.ServicePort) ServiceBuilder {
 	return s
 }
 
+// Build builds the Service
 func (s *serviceBuilder) Build() *corev1.Service {
 	return s.service
 }
 
+// DefaultService returns the default Service
 func DefaultService(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -118,6 +129,7 @@ func DefaultService(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Service
 	}
 }
 
+// UpdateService update Service
 func UpdateService(cn *v1alpha1.ComputeNode, cur *v1.Service) *v1.Service {
 	exp := &v1.Service{}
 	exp.ObjectMeta = cur.ObjectMeta
