@@ -23,6 +23,7 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -452,4 +453,97 @@ func assertPodSpec(t *testing.T, exp, act corev1.PodSpec) bool {
 	return assert.ElementsMatch(t, exp.InitContainers, act.InitContainers, "init containers should be equal") &&
 		assert.ElementsMatch(t, exp.Containers, act.Containers, "containers should be equal") &&
 		assert.ElementsMatch(t, exp.Volumes, act.Volumes, "volumes should be equal")
+}
+
+func TestContainerBuilder_SetVolumeMount(t *testing.T) {
+	var found bool
+
+	// create a new container builder
+	c := &containerBuilder{
+		container: &corev1.Container{
+			VolumeMounts: []corev1.VolumeMount{},
+		},
+	}
+
+	// add a new volume mount
+	mount := &corev1.VolumeMount{
+		Name:      "test-mount",
+		MountPath: "/test",
+	}
+	c.SetVolumeMount(mount)
+
+	// check if the volume mount has been added
+	for _, v := range c.container.VolumeMounts {
+		if v.Name == mount.Name {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("SetVolumeMount() failed to add the VolumeMount")
+	}
+
+	// update an existing volume mount
+	updatedMount := &corev1.VolumeMount{
+		Name:      "test-mount",
+		MountPath: "/new-test",
+	}
+	c.SetVolumeMount(updatedMount)
+
+	// check if the volume mount has been updated
+	for _, v := range c.container.VolumeMounts {
+		if v.MountPath == updatedMount.MountPath {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("SetVolumeMount() failed to update the VolumeMount")
+	}
+}
+
+func TestDeploymentBuilder_SetShardingSphereProxyContainer(t *testing.T) {
+	// 1. create a new deploymentBuilder object
+	builder := &deploymentBuilder{
+		deployment: &appsv1.Deployment{
+			Spec: appsv1.DeploymentSpec{
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  "container1",
+								Image: "image1",
+							},
+							{
+								Name:  "shardingsphere-proxy",
+								Image: "image2",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// 2. define a container to be set as a proxy container
+	proxy := &corev1.Container{
+		Name:  "shardingsphere-proxy",
+		Image: "image3",
+	}
+
+	// 3. call the SetShardingSphereProxyContainer function
+	builder.SetShardingSphereProxyContainer(proxy)
+
+	// 4. check whether the proxy container was added or replaced in the Containers slice
+	if len(builder.deployment.Spec.Template.Spec.Containers) != 2 {
+		t.Errorf("Expected containers length to be %d but got %d", 2, len(builder.deployment.Spec.Template.Spec.Containers))
+	}
+
+	if builder.deployment.Spec.Template.Spec.Containers[1].Name != "shardingsphere-proxy" {
+		t.Errorf("Expected container name to be %q but got %q", "shardingsphere-proxy", builder.deployment.Spec.Template.Spec.Containers[1].Name)
+	}
+
+	if builder.deployment.Spec.Template.Spec.Containers[1].Image != "image3" {
+		t.Errorf("Expected container image to be %q but got %q", "image3", builder.deployment.Spec.Template.Spec.Containers[1].Image)
+	}
 }
