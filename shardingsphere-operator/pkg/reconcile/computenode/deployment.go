@@ -337,7 +337,6 @@ func (d *deploymentBuilder) SetReplicas(r *int32) DeploymentBuilder {
 func (d *deploymentBuilder) SetShardingSphereProxyContainer(proxy *corev1.Container) DeploymentBuilder {
 	if d.deployment.Spec.Template.Spec.Containers == nil {
 		d.deployment.Spec.Template.Spec.Containers = []corev1.Container{*proxy}
-		return d
 	}
 
 	for idx, container := range d.deployment.Spec.Template.Spec.Containers {
@@ -355,7 +354,6 @@ func (d *deploymentBuilder) SetShardingSphereProxyContainer(proxy *corev1.Contai
 func (d *deploymentBuilder) SetInitContainer(init *corev1.Container) DeploymentBuilder {
 	if d.deployment.Spec.Template.Spec.InitContainers == nil {
 		d.deployment.Spec.Template.Spec.InitContainers = []corev1.Container{}
-		return d
 	}
 
 	for idx, container := range d.deployment.Spec.Template.Spec.InitContainers {
@@ -366,6 +364,7 @@ func (d *deploymentBuilder) SetInitContainer(init *corev1.Container) DeploymentB
 	}
 
 	d.deployment.Spec.Template.Spec.InitContainers = append(d.deployment.Spec.Template.Spec.InitContainers, *init)
+
 	return d
 }
 
@@ -523,7 +522,6 @@ func (b *volumeAndMountBuilder) Build() (*corev1.Volume, *corev1.VolumeMount) {
 func (d *deploymentBuilder) SetVolume(v *corev1.Volume) DeploymentBuilder {
 	if d.deployment.Spec.Template.Spec.Volumes == nil {
 		d.deployment.Spec.Template.Spec.Volumes = []corev1.Volume{*v}
-		return d
 	}
 
 	for idx, vol := range d.deployment.Spec.Template.Spec.Volumes {
