@@ -15,17 +15,30 @@
 # limitations under the License.
 #
 
-# Build the manager binary
-FROM golang:1.17 as builder
 
+# Stage1: Build Go binary for AMD64 
+FROM --platform=linux/amd64 golang:1.17-alpine AS builder-amd64
 WORKDIR /workspace
-
-# Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-# ENV GOPROXY=https://goproxy.cn
+#ENV GOPROXY=https://goproxy.cn
+RUN go mod download
+
+# Copy Go source files
+COPY cmd/shardingsphere-operator/manager cmd/shardingsphere-operator/manager/
+COPY cmd/shardingsphere-operator/main.go cmd/shardingsphere-operator/main.go
+COPY api api/
+COPY pkg pkg/
+
+# Build
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -ldflags "-w -s" -gcflags "-N -l" -a -o operator-bin-amd64 cmd/shardingsphere-operator/main.go
+
+# Step2: Build Go binary for ARM64
+FROM --platform=linux/arm64 golang:1.17-alpine AS builder-arm64
+WORKDIR /workspace
+COPY go.mod go.mod
+COPY go.sum go.sum
+#ENV GOPROXY=https://goproxy.cn
 RUN go mod download
 
 # Copy the go source
@@ -33,16 +46,16 @@ COPY cmd/shardingsphere-operator/manager cmd/shardingsphere-operator/manager/
 COPY cmd/shardingsphere-operator/main.go cmd/shardingsphere-operator/main.go
 COPY api api/
 COPY pkg pkg/
-RUN mkdir -p certs && cd certs && openssl req -new -SHA256 -newkey rsa:2048 -nodes -keyout tls.key -out tls.csr -subj "/C=CN/ST=beijing/L=beijing/O=/OU=/" && openssl x509 -req -sha256 -days 365 -in tls.csr -signkey tls.key -out tls.crt
+
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -ldflags "-w -s" -gcflags "-N -l" -a -o operator cmd/shardingsphere-operator/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build  -ldflags "-w -s" -gcflags "-N -l" -a -o operator-bin-arm64 cmd/shardingsphere-operator/main.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
+# Step3: Build a multi-platform image
 FROM alpine:3.15.4
-WORKDIR /
-COPY --from=builder /workspace/operator .
-USER root
-COPY --from=builder /workspace/certs /etc/operator/certs
+COPY --from=builder-amd64 /workspace/operator-bin-amd64 . 
+COPY --from=builder-arm64 /workspace/operator-bin-arm64 . 
 
-ENTRYPOINT ["/operator"]
+# Add a scripts for start 
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+ENTRYPOINT ["/start.sh"]
