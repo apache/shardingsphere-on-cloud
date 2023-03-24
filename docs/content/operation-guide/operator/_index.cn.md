@@ -47,9 +47,9 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 | Name                              | Description                                                                                                | Value                                                                   |
 |-----------------------------------|------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
 | `operator.replicaCount`           | operator replica count                                                                                     | `2`                                                                     |
-| `operator.image.repository`       | operator image name                                                                                        | `ghcr.io/apache/shardingsphere-on-cloud/apache-shardingsphere-operator` |
+| `operator.image.repository`       | operator image name                                                                                        | `apache/shardingsphere-operator` |
 | `operator.image.pullPolicy`       | image pull policy                                                                                          | `IfNotPresent`                                                          |
-| `operator.image.tag`              | image tag                                                                                                  | `0.1.2`                                                                 |
+| `operator.image.tag`              | image tag                                                                                                  | `0.2.0`                                                                 |
 | `operator.imagePullSecrets`       | image pull secret of private repository                                                                    | `[]`                                                                    |
 | `operator.resources`              | operator Resources required by the operator                                                                | `{}`                                                                    |
 | `operator.health.healthProbePort` | operator health check port                                                                                 | `8081`                                                                  |
@@ -158,13 +158,13 @@ operator:
   image:
     ## @param image.repository operator image name
     ##
-    repository: "ghcr.io/apache/shardingsphere-on-cloud/apache-shardingsphere-operator"
+    repository: "apache/shardingsphere-operator"
     ## @param image.pullPolicy image pull policy
     ##
     pullPolicy: IfNotPresent
     ## @param image.tag image tag
     ##
-    tag: "0.1.2"
+    tag: "0.2.0"
   ## @param imagePullSecrets image pull secret of private repository
   ## e.g:
   ## imagePullSecrets:
