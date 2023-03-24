@@ -28,7 +28,7 @@ operator:
   image:
     ## @param image.repository operator image name
     ##
-    repository: "ghcr.io/apache/shardingsphere-on-cloud/apache-shardingsphere-operator"
+    repository: "apache/shardingsphere-operator"
     ## @param image.pullPolicy image pull policy
     ##
     pullPolicy: IfNotPresent
