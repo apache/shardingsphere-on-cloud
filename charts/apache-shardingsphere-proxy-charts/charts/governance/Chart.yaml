@@ -45,4 +45,4 @@ dependencies:
   - condition: zookeeper.enabled
     name: zookeeper
     repository: https://charts.bitnami.com/bitnami
-    version: 9.x.x
+    version: 11.x.x
