@@ -54,31 +54,35 @@ func show() error {
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("connect to local storage failed, err:%s", err.Error()))
 	}
+
 	// show backup record by csn
 	if CSN != "" {
 		bak, err := ls.ReadByCSN(CSN)
+		if err != nil {
+			return xerr.NewCliErr(fmt.Sprintf("read backup record failed, err:%s", err.Error()))
+		}
 		if bak == nil {
 			fmt.Println("Didn't find backup record by csn: ", CSN)
 			return nil
 		}
-		if err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("read backup record failed, err:%s", err.Error()))
-		}
+
 		if err := formatRecord([]model.LsBackup{*bak}); err != nil {
 			return err
 		}
 		return nil
 	}
+
 	// show backup record by id
 	if RecordID != "" {
 		bak, err := ls.ReadByID(RecordID)
+		if err != nil {
+			return xerr.NewCliErr(fmt.Sprintf("read backup record failed, err:%s", err.Error()))
+		}
 		if bak == nil {
 			fmt.Println("Didn't find backup record by record id: ", RecordID)
 			return nil
 		}
-		if err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("read backup record failed, err:%s", err.Error()))
-		}
+
 		if err := formatRecord([]model.LsBackup{*bak}); err != nil {
 			return err
 		}
@@ -87,12 +91,13 @@ func show() error {
 
 	// show all backup record
 	backupList, err := ls.ReadAll()
+	if err != nil {
+		return xerr.NewCliErr(fmt.Sprintf("read backup record failed, err:%s", err.Error()))
+	}
+
 	if len(backupList) == 0 {
 		fmt.Println("Didn't find any backup record.")
 		return nil
-	}
-	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("read backup record failed, err:%s", err.Error()))
 	}
 
 	if err := formatRecord(backupList); err != nil {

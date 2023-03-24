@@ -31,9 +31,12 @@ import (
 )
 
 var _ = Describe("ILocalStorage", func() {
+	AfterEach(func() {
+		root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
+		_ = os.RemoveAll(root)
+	})
 	Context("localStorage", func() {
 		It("New:Initialize the cli program directory.", func() {
-			Skip("Manually exec:dependent environment")
 			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
 			ls, err := NewLocalStorage(root)
 			Expect(err).To(BeNil())
@@ -41,7 +44,6 @@ var _ = Describe("ILocalStorage", func() {
 		})
 
 		It("ReadALL", func() {
-			Skip("Manually exec:dependent environment")
 			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
 			ls, err := NewLocalStorage(root)
 			Expect(err).To(BeNil())
@@ -56,33 +58,26 @@ var _ = Describe("ILocalStorage", func() {
 		})
 
 		It("ReadByCSN", func() {
-			Skip("Manually exec:dependent environment")
 			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
 			ls, err := NewLocalStorage(root)
 			Expect(err).To(BeNil())
 			Expect(ls).NotTo(BeNil())
 
-			backup, err := ls.ReadByCSN("e19b6935-c437-4cf0-b820-3275bd2727a2")
-			Expect(err).To(BeNil())
-			fmt.Println(fmt.Sprintf("%+v", backup))
-			fmt.Println(fmt.Sprintf("%+v", backup.Info))
+			_, err = ls.ReadByCSN("e19b6935-c437-4cf0-b820-3275bd2727a2")
+			Expect(err.Error()).To(Equal("Not found"))
 		})
 
 		It("ReadByID", func() {
-			Skip("Manually exec:dependent environment")
 			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
 			ls, err := NewLocalStorage(root)
 			Expect(err).To(BeNil())
 			Expect(ls).NotTo(BeNil())
 
-			backup, err := ls.ReadByID("66785e18-b8d3-42f4-9967-a4119be15cea")
-			Expect(err).To(BeNil())
-			fmt.Println(fmt.Sprintf("%+v", backup))
-			fmt.Println(fmt.Sprintf("%+v", backup.Info))
+			_, err = ls.ReadByID("66785e18-b8d3-42f4-9967-a4119be15cea")
+			Expect(err.Error()).To(Equal("Not found"))
 		})
 
 		It("GenFilename and WriteByJSON", func() {
-			Skip("Manually exec:dependent environment")
 			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
 			ls, err := NewLocalStorage(root)
 			Expect(err).To(BeNil())
@@ -90,10 +85,11 @@ var _ = Describe("ILocalStorage", func() {
 
 			filename := ls.GenFilename(ExtnJSON)
 			Expect(filename).NotTo(BeEmpty())
+			backupID := uuid.New().String()
 
 			contents := model.LsBackup{
 				Info: &model.BackupMetaInfo{
-					ID:        uuid.New().String(),
+					ID:        backupID,
 					CSN:       uuid.New().String(),
 					StartTime: time.Now().Unix(),
 					EndTime:   time.Now().Add(time.Minute).Unix(),
@@ -133,6 +129,9 @@ var _ = Describe("ILocalStorage", func() {
 			}
 			err = ls.WriteByJSON(filename, &contents)
 			Expect(err).To(BeNil())
+			bak, err := ls.ReadByID(backupID)
+			Expect(err).To(BeNil())
+			Expect(bak).NotTo(BeNil())
 		})
 	})
 })

@@ -37,7 +37,14 @@ type req struct {
 	query  map[string]string
 }
 
-func NewRequest(ctx context.Context, method, url string) *req {
+type Ireq interface {
+	Header(h map[string]string)
+	Body(b any)
+	Query(m map[string]string)
+	Send(body any) (int, error)
+}
+
+func NewRequest(ctx context.Context, method, url string) Ireq {
 	if !strings.HasPrefix(url, "http") {
 		url = fmt.Sprintf("https://%s", url)
 	}
@@ -49,19 +56,16 @@ func NewRequest(ctx context.Context, method, url string) *req {
 	return r
 }
 
-func (r *req) Header(h map[string]string) *req {
+func (r *req) Header(h map[string]string) {
 	r.header = h
-	return r
 }
 
-func (r *req) Body(b any) *req {
+func (r *req) Body(b any) {
 	r.body = b
-	return r
 }
 
-func (r *req) Query(m map[string]string) *req {
+func (r *req) Query(m map[string]string) {
 	r.query = m
-	return r
 }
 
 func (r *req) Send(body any) (int, error) {

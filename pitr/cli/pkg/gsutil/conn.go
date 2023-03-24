@@ -20,8 +20,9 @@ package gsutil
 import (
 	"database/sql"
 	"fmt"
-	_ "gitee.com/opengauss/openGauss-connector-go-pq"
 	"strings"
+
+	_ "gitee.com/opengauss/openGauss-connector-go-pq"
 )
 
 func Open(user, password, dbName, host string, port uint16) (*sql.DB, error) {

@@ -145,18 +145,21 @@ func checkDatabaseExist(proxy pkg.IShardingSphereProxy, bak *model.LsBackup) err
 			databaseNamesExist = append(databaseNamesExist, k)
 		}
 	}
+	// get user input to confirm
+	return getUserApproveInTerminal()
+}
 
+func getUserApproveInTerminal() error {
 	fmt.Printf("Detected that the database [%s] already exists in shardingsphere-proxy metadata.\nThe logic database will be DROPPED and then insert backup's metadata into shardingsphere-proxy after restoring the backup data.\nPLEASE MAKE SURE OF THIS ACTION, CONTINUE? (Y|N)\n", strings.Join(databaseNamesExist, ","))
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
-	err = scanner.Err()
+	err := scanner.Err()
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("read user input failed:%s", err.Error()))
 	}
 	if scanner.Text() != "Y" && scanner.Text() != "y" && scanner.Text() != "yes" && scanner.Text() != "YES" && scanner.Text() != "Yes" {
 		return xerr.NewCliErr("User abort")
 	}
-
 	return nil
 }
 
@@ -174,6 +177,7 @@ func execRestore(lsBackup *model.LsBackup) error {
 
 	for _, storageNode := range storageNodes {
 		wg.Add(1)
+		storageNode := storageNode
 		agentHost := storageNode.IP
 		if agentHost == "127.0.0.1" {
 			agentHost = Host
@@ -183,7 +187,10 @@ func execRestore(lsBackup *model.LsBackup) error {
 		if !ok {
 			return xerr.NewCliErr(fmt.Sprintf("data node not found:%s", storageNode.IP))
 		}
-		go _execRestore(as, storageNode, dataNode.BackupID, &wg, failedCh)
+		go func() {
+			defer wg.Done()
+			_execRestore(as, storageNode, dataNode.BackupID, failedCh)
+		}()
 	}
 	wg.Wait()
 	close(failedCh)
@@ -197,8 +204,7 @@ func execRestore(lsBackup *model.LsBackup) error {
 	return nil
 }
 
-func _execRestore(as pkg.IAgentServer, node *model.StorageNode, backupID string, wg *sync.WaitGroup, failedCh chan error) {
-	defer wg.Done()
+func _execRestore(as pkg.IAgentServer, node *model.StorageNode, backupID string, failedCh chan error) {
 	in := &model.RestoreIn{
 		DbPort:       node.Port,
 		DbName:       node.Database,
