@@ -19,9 +19,14 @@
 package cmd
 
 import (
+	"errors"
 	"time"
 
+	"bou.ke/monkey"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
+	mock_pkg "github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/mocks"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -90,8 +95,66 @@ var _ = Describe("Show", func() {
 			Expect(err).To(BeNil())
 		})
 	})
+
 	Context("search backup history", func() {
+		var (
+			ls *mock_pkg.MockILocalStorage
+		)
+
+		BeforeEach(func() {
+			ctrl = gomock.NewController(GinkgoT())
+			ls = mock_pkg.NewMockILocalStorage(ctrl)
+
+			monkey.Patch(pkg.NewLocalStorage, func(root string) (pkg.ILocalStorage, error) {
+				return ls, nil
+			})
+		})
+
+		AfterEach(func() {
+			ctrl.Finish()
+			monkey.UnpatchAll()
+		})
+
 		It("no record", func() {
+			ls.EXPECT().ReadAll().Return([]model.LsBackup{}, nil)
+			Expect(show()).To(BeNil())
+		})
+
+		It("get by csn", func() {
+			CSN = "csn"
+			RecordID = ""
+			ls.EXPECT().ReadByCSN(gomock.Any()).Return(&model.LsBackup{}, nil)
+			Expect(show()).To(BeNil())
+		})
+		It("get by csn failed", func() {
+			CSN = "csn"
+			RecordID = ""
+			ls.EXPECT().ReadByCSN(gomock.Any()).Return(nil, errors.New("error"))
+			Expect(show()).NotTo(BeNil())
+		})
+		It("get by csn empty", func() {
+			CSN = "csn"
+			RecordID = ""
+			ls.EXPECT().ReadByCSN(gomock.Any()).Return(nil, nil)
+			Expect(show()).To(BeNil())
+		})
+
+		It("get by id", func() {
+			CSN = ""
+			RecordID = "record-id"
+			ls.EXPECT().ReadByID(gomock.Any()).Return(&model.LsBackup{}, nil)
+			Expect(show()).To(BeNil())
+		})
+		It("get by id failed", func() {
+			CSN = ""
+			RecordID = "record-id"
+			ls.EXPECT().ReadByID(gomock.Any()).Return(nil, errors.New("error"))
+			Expect(show()).NotTo(BeNil())
+		})
+		It("get by id empty", func() {
+			CSN = ""
+			RecordID = "record-id"
+			ls.EXPECT().ReadByID(gomock.Any()).Return(nil, nil)
 			Expect(show()).To(BeNil())
 		})
 	})

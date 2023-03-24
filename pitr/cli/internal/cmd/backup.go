@@ -25,12 +25,11 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
-	"github.com/google/uuid"
-	"github.com/spf13/pflag"
-
-	"github.com/spf13/cobra"
-
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
+	"github.com/google/uuid"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -188,41 +187,31 @@ func exportData(proxy pkg.IShardingSphereProxy, ls pkg.ILocalStorage) (lsBackup 
 }
 
 func execBackup(lsBackup *model.LsBackup) error {
-	var (
-		wg       sync.WaitGroup
-		sNodes   = lsBackup.SsBackup.StorageNodes
-		dnCh     = make(chan *model.DataNode, len(sNodes))
-		failSnCh = make(chan *model.StorageNode, len(sNodes))
-		success  = true
-	)
+	sNodes := lsBackup.SsBackup.StorageNodes
+	dnCh := make(chan *model.DataNode, len(sNodes))
+	g := new(errgroup.Group)
+
 	logging.Info("Starting send backup command to agent server...")
 
 	for _, node := range sNodes {
-		wg.Add(1)
-		go func(wg *sync.WaitGroup, node *model.StorageNode) {
-			defer wg.Done()
-			agentHost := node.IP
-			if agentHost == "127.0.0.1" {
-				agentHost = Host
-			}
-			as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", agentHost, AgentPort))
-			_execBackup(as, node, dnCh, failSnCh)
-		}(&wg, node)
+		node := node
+		agentHost := node.IP
+		if agentHost == "127.0.0.1" {
+			agentHost = Host
+		}
+		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", agentHost, AgentPort))
+		g.Go(func() error {
+			return _execBackup(as, node, dnCh)
+		})
 	}
 
-	wg.Wait()
+	err := g.Wait()
 	close(dnCh)
-	close(failSnCh)
 
-	// TODO format print data like a table
-	for errN := range failSnCh {
-		success = false
-		logging.Error(fmt.Sprintf("failed node detail: [IP:%s, PORT:%d]", errN.IP, errN.Port))
-	}
-
-	if !success {
+	// if backup failed, return error
+	if err != nil {
 		lsBackup.SsBackup.Status = model.SsBackupStatusFailed
-		return xerr.NewCliErr("backup failed")
+		return xerr.NewCliErr(fmt.Sprintf("node backup failed, err:%s", err.Error()))
 	}
 
 	// save data node list to lsBackup
@@ -234,7 +223,7 @@ func execBackup(lsBackup *model.LsBackup) error {
 	return nil
 }
 
-func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.DataNode, failSnCh chan *model.StorageNode) {
+func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.DataNode) error {
 	in := &model.BackupIn{
 		DbPort:       node.Port,
 		DbName:       node.Database,
@@ -247,9 +236,7 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 	}
 	backupID, err := as.Backup(in)
 	if err != nil {
-		logging.Error(fmt.Sprintf("backup failed, %s", err.Error()))
-		failSnCh <- node
-		return
+		return xerr.NewCliErr(fmt.Sprintf("backup failed, err:%s", err.Error()))
 	}
 
 	// update DnList of lsBackup
@@ -262,6 +249,7 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 		EndTime:   0,
 	}
 	dnCh <- dn
+	return nil
 }
 
 func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
@@ -303,9 +291,6 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 
 	for dn := range statusCh {
 		logging.Info(fmt.Sprintf("data node backup final status: [IP:%s, backupID:%s] ==> %s", dn.IP, dn.BackupID, dn.Status))
-	}
-
-	for _, dn := range lsBackup.DnList {
 		if dn.Status != model.SsBackupStatusCompleted {
 			backupFinalStatus = model.SsBackupStatusFailed
 		}

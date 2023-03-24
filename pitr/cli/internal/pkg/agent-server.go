@@ -20,14 +20,15 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils"
 	"github.com/google/uuid"
-	"net/http"
 )
 
-type AgentServer struct {
+type agentServer struct {
 	addr string
 
 	_apiBackup     string
@@ -44,7 +45,7 @@ type IAgentServer interface {
 }
 
 func NewAgentServer(addr string) IAgentServer {
-	return &AgentServer{
+	return &agentServer{
 		addr: addr,
 
 		_apiBackup:     "/api/backup",
@@ -54,17 +55,17 @@ func NewAgentServer(addr string) IAgentServer {
 	}
 }
 
-func (as *AgentServer) Backup(in *model.BackupIn) (string, error) {
+func (as *agentServer) Backup(in *model.BackupIn) (string, error) {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiBackup)
 
 	out := &model.BackupOutResp{}
-	httpCode, err := httputils.NewRequest(context.Background(), http.MethodPost, url).
-		Header(map[string]string{
-			"x-request-id": uuid.New().String(),
-			"content-type": "application/json",
-		}).
-		Body(in).
-		Send(out)
+	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
+	r.Header(map[string]string{
+		"x-request-id": uuid.New().String(),
+		"content-type": "application/json",
+	})
+	r.Body(in)
+	httpCode, err := r.Send(out)
 	if err != nil {
 		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
 		return "", fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
@@ -82,17 +83,17 @@ func (as *AgentServer) Backup(in *model.BackupIn) (string, error) {
 	return out.Data.ID, nil
 }
 
-func (as *AgentServer) Restore(in *model.RestoreIn) error {
+func (as *agentServer) Restore(in *model.RestoreIn) error {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiRestore)
 
 	out := &model.RestoreResp{}
-	httpCode, err := httputils.NewRequest(context.Background(), http.MethodPost, url).
-		Header(map[string]string{
-			"x-request-id": uuid.New().String(),
-			"content-type": "application/json",
-		}).
-		Body(in).
-		Send(out)
+	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
+	r.Header(map[string]string{
+		"x-request-id": uuid.New().String(),
+		"content-type": "application/json",
+	})
+	r.Body(in)
+	httpCode, err := r.Send(out)
 	if err != nil {
 		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
 		return fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
@@ -110,17 +111,17 @@ func (as *AgentServer) Restore(in *model.RestoreIn) error {
 	return nil
 }
 
-func (as *AgentServer) ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, error) {
+func (as *agentServer) ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, error) {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiShowDetail)
 
 	out := &model.BackupDetailResp{}
-	httpCode, err := httputils.NewRequest(context.Background(), http.MethodPost, url).
-		Header(map[string]string{
-			"x-request-id": uuid.New().String(),
-			"content-type": "application/json",
-		}).
-		Body(in).
-		Send(out)
+	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
+	r.Header(map[string]string{
+		"x-request-id": uuid.New().String(),
+		"content-type": "application/json",
+	})
+	r.Body(in)
+	httpCode, err := r.Send(out)
 	if err != nil {
 		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
 		return nil, fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
@@ -138,17 +139,17 @@ func (as *AgentServer) ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, er
 	return &out.Data, nil
 }
 
-func (as *AgentServer) ShowList(in *model.ShowListIn) ([]model.BackupInfo, error) {
+func (as *agentServer) ShowList(in *model.ShowListIn) ([]model.BackupInfo, error) {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiShowList)
 
 	out := &model.BackupListResp{}
-	httpCode, err := httputils.NewRequest(context.Background(), http.MethodPost, url).
-		Header(map[string]string{
-			"x-request-id": uuid.New().String(),
-			"content-type": "application/json",
-		}).
-		Body(in).
-		Send(out)
+	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
+	r.Header(map[string]string{
+		"x-request-id": uuid.New().String(),
+		"content-type": "application/json",
+	})
+	r.Body(in)
+	httpCode, err := r.Send(out)
 	if err != nil {
 		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
 		return nil, fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))

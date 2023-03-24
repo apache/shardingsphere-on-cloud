@@ -18,10 +18,18 @@
 package pkg
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"testing"
+
+	"bou.ke/monkey"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils"
+	mock_httputils "github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils/mocks"
+	"github.com/golang/mock/gomock"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 func TestAgentServer_Backup(t *testing.T) {
@@ -113,3 +121,92 @@ func TestAgentServer_ShowList(t *testing.T) {
 	}
 	fmt.Println(string(indent))
 }
+
+var _ = Describe("AgentServer", func() {
+	var (
+		ctrl *gomock.Controller
+		req  *mock_httputils.MockIreq
+		as   IAgentServer
+	)
+	BeforeEach(func() {
+		as = NewAgentServer("http://agent-server:18080")
+		ctrl = gomock.NewController(GinkgoT())
+		req = mock_httputils.NewMockIreq(ctrl)
+		req.EXPECT().Header(gomock.Any())
+		req.EXPECT().Body(gomock.Any())
+		monkey.Patch(httputils.NewRequest, func(c context.Context, method, url string) httputils.Ireq {
+			return req
+		})
+	})
+	AfterEach(func() {
+		ctrl.Finish()
+		monkey.UnpatchAll()
+	})
+
+	Context("backup", func() {
+		It("backup failed", func() {
+			req.EXPECT().Send(gomock.Any()).Return(-1, fmt.Errorf("error"))
+			_, err := as.Backup(&model.BackupIn{})
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("backup success", func() {
+			req.EXPECT().Send(gomock.Any()).Do(func(i *model.BackupOutResp) {
+				i.Data.ID = "backup-id"
+			}).Return(200, nil)
+			as := NewAgentServer("http://agent-server:18080")
+			resp, err := as.Backup(&model.BackupIn{})
+			Expect(err).Should(BeNil())
+			Expect(resp).Should(Equal("backup-id"))
+		})
+	})
+
+	Context("restore", func() {
+		It("restore failed", func() {
+			req.EXPECT().Send(gomock.Any()).Return(-1, fmt.Errorf("error"))
+			err := as.Restore(&model.RestoreIn{})
+			Expect(err).ShouldNot(BeNil())
+		})
+		// restore success
+		It("restore success", func() {
+			req.EXPECT().Send(gomock.Any()).Return(200, nil)
+			err := as.Restore(&model.RestoreIn{})
+			Expect(err).Should(BeNil())
+		})
+
+	})
+
+	Context("show detail", func() {
+		It("show detail failed", func() {
+			req.EXPECT().Send(gomock.Any()).Return(-1, fmt.Errorf("error"))
+			_, err := as.ShowDetail(&model.ShowDetailIn{})
+			Expect(err).ShouldNot(BeNil())
+		})
+		// show detail success
+		It("show detail success", func() {
+			req.EXPECT().Send(gomock.Any()).Do(func(i *model.BackupDetailResp) {
+				i.Data = model.BackupInfo{}
+			}).Return(200, nil)
+			resp, err := as.ShowDetail(&model.ShowDetailIn{})
+			Expect(err).Should(BeNil())
+			Expect(resp).Should(Equal(&model.BackupInfo{}))
+		})
+	})
+
+	Context("show list", func() {
+		It("show list failed", func() {
+			req.EXPECT().Send(gomock.Any()).Return(-1, fmt.Errorf("error"))
+			_, err := as.ShowList(&model.ShowListIn{})
+			Expect(err).ShouldNot(BeNil())
+		})
+		// show list success
+		It("show list success", func() {
+			req.EXPECT().Send(gomock.Any()).Do(func(i *model.BackupListResp) {
+				i.Data = []model.BackupInfo{}
+			}).Return(200, nil)
+			resp, err := as.ShowList(&model.ShowListIn{})
+			Expect(err).Should(BeNil())
+			Expect(resp).Should(Equal([]model.BackupInfo{}))
+		})
+	})
+})

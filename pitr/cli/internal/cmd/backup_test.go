@@ -20,6 +20,7 @@ package cmd
 import (
 	"errors"
 
+	"bou.ke/monkey"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
 	mock_pkg "github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/mocks"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
@@ -100,8 +101,8 @@ var _ = Describe("Backup", func() {
 			Expect(bk.Info.CSN).To(Equal(""))
 		})
 	})
-
 	Context("exec backup", func() {
+
 		var as *mock_pkg.MockIAgentServer
 		bak := &model.LsBackup{
 			DnList: nil,
@@ -141,16 +142,13 @@ var _ = Describe("Backup", func() {
 			}
 			as.EXPECT().Backup(gomock.Any()).Return("", nil)
 			dnCh := make(chan *model.DataNode, 10)
-			failSnCh := make(chan *model.StorageNode, 10)
-			_execBackup(as, bak.SsBackup.StorageNodes[0], dnCh, failSnCh)
+			Expect(_execBackup(as, bak.SsBackup.StorageNodes[0], dnCh)).To(BeNil())
 			Expect(len(dnCh)).To(Equal(1))
-			Expect(len(failSnCh)).To(Equal(0))
 			as.EXPECT().Backup(gomock.Any()).Return("", xerr.NewCliErr("backup failed"))
-			_execBackup(as, bak.SsBackup.StorageNodes[0], dnCh, failSnCh)
+			Expect(_execBackup(as, bak.SsBackup.StorageNodes[0], dnCh)).ToNot(BeNil())
 			close(dnCh)
-			close(failSnCh)
 			Expect(len(dnCh)).To(Equal(1))
-			Expect(len(failSnCh)).To(Equal(1))
+
 		})
 	})
 
@@ -164,11 +162,10 @@ var _ = Describe("Backup", func() {
 			)
 			as = mock_pkg.NewMockIAgentServer(ctrl)
 
-			defer close(failSnCh)
 			defer close(dnCh)
 			defer ctrl.Finish()
 			as.EXPECT().Backup(gomock.Any()).Return("backup-id", nil)
-			_execBackup(as, node, dnCh, failSnCh)
+			Expect(_execBackup(as, node, dnCh)).To(BeNil())
 			Expect(len(failSnCh)).To(Equal(0))
 			Expect(len(dnCh)).To(Equal(1))
 		})
@@ -185,7 +182,6 @@ var _ = Describe("test backup manually", func() {
 		pt uint16
 	)
 	Context("test manually", func() {
-
 		It("unlock after lock", func() {
 			if u == "" || p == "" || db == "" || h == "" || pt == 0 {
 				Skip("need to set u, p, db, h, pt first")
@@ -240,5 +236,44 @@ var _ = Describe("test backup manually", func() {
 			Expect(err).To(BeNil())
 		})
 	})
+})
 
+var _ = Describe("test backup mock", func() {
+	Context("test by mock", func() {
+		var (
+			proxy *mock_pkg.MockIShardingSphereProxy
+			ls    *mock_pkg.MockILocalStorage
+			as    *mock_pkg.MockIAgentServer
+		)
+		BeforeEach(func() {
+			ctrl = gomock.NewController(GinkgoT())
+			proxy = mock_pkg.NewMockIShardingSphereProxy(ctrl)
+			ls = mock_pkg.NewMockILocalStorage(ctrl)
+			as = mock_pkg.NewMockIAgentServer(ctrl)
+
+			monkey.Patch(pkg.NewShardingSphereProxy, func(u, p, db, h string, pt uint16) (pkg.IShardingSphereProxy, error) {
+				return proxy, nil
+			})
+			monkey.Patch(pkg.NewLocalStorage, func(rootDir string) (pkg.ILocalStorage, error) {
+				return ls, nil
+			})
+			monkey.Patch(pkg.NewAgentServer, func(addr string) pkg.IAgentServer {
+				return as
+			})
+		})
+		AfterEach(func() {
+			monkey.UnpatchAll()
+			ctrl.Finish()
+		})
+
+		It("test backup empty", func() {
+			proxy.EXPECT().LockForBackup().Return(nil)
+			proxy.EXPECT().ExportMetaData().Return(&model.ClusterInfo{}, nil)
+			proxy.EXPECT().ExportStorageNodes().Return([]*model.StorageNode{}, nil)
+			proxy.EXPECT().Unlock().Return(nil)
+			ls.EXPECT().GenFilename(gomock.Any()).Return("filename")
+			ls.EXPECT().WriteByJSON(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			Expect(backup()).To(BeNil())
+		})
+	})
 })
