@@ -118,4 +118,26 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 		}
 		return nil
 	},
+	"StorageNode": func(mgr manager.Manager) error {
+		if err := (&controllers.StorageNodeReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+			Log:    mgr.GetLogger(),
+		}).SetupWithManager(mgr); err != nil {
+			logger.Error(err, "unable to create controller", "controller", "StorageNode")
+			return err
+		}
+		return nil
+	},
+	"ShardingSphereChaos": func(mgr manager.Manager) error {
+		if err := (&controllers.ShardingSphereChaosReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+			Log:    mgr.GetLogger(),
+		}).SetupWithManager(mgr); err != nil {
+			logger.Error(err, "unable to create controller", "controller", "ShardingSphereChaos")
+			return err
+		}
+		return nil
+	},
 }
