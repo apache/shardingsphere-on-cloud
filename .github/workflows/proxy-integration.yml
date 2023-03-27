@@ -31,17 +31,27 @@ jobs:
     steps:
       - name: "Checkout codes" 
         uses: actions/checkout@v3
-      - name: "Setup kind"
-        uses: helm/kind-action@v1.2.0
-      - name: "Setup helm"
-        uses: azure/setup-helm@v2.1
-      - name: "Setup kubectl" 
-        uses: azure/setup-kubectl@v2.0
+      - name: Prepare Kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv kind /usr/local/bin 
+      - name: Prepare Helm 
+        run: |
+          curl -Lo ./helm.tar.gz https://get.helm.sh/helm-v3.10.1-linux-amd64.tar.gz
+          tar zxvf helm.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin
+      - name: Create K8s cluster
+        shell: bash
+        run: |
+          #  make kind-up
+          kind create cluster
+          kubectl wait --for=condition=Ready nodes --all
       - name: "Test Helm Charts for ShardingSphere Proxy"
         run: |
           set -x 
-          export TEST_NAMESPACE="shardingsphere-system"
-          kubectl create namespace ${TEST_NAMESPACE}
+          export TEST_NAMESPACE="default"
+          #kubectl create namespace ${TEST_NAMESPACE}
           cd charts/apache-shardingsphere-proxy-charts/charts/governance
           helm dependency build 
           cd ../..
@@ -60,16 +70,29 @@ jobs:
           kubectl port-forward svc/mysql-1 3316:3306 -n default &
           kubectl port-forward svc/mysql-2 3326:3306 -n default &
           sleep 3
+          kubectl get pod,svc -n default
       - name: "Install MySQL"
         run: "sudo apt-get install -y mysql-client"
       - name: "Create schema from MySQL-1" 
         run: mysql -h127.0.0.1 -P3316 -uroot -proot -e 'CREATE DATABASE ds_1;'
+      - name: "Query schema from MySQL-1" 
+        run: mysql -h127.0.0.1 -P3316 -uroot -proot -e 'SHOW DATABASES;'
       - name: "Create schema from MySQL-2" 
         run: mysql -h127.0.0.1 -P3326 -uroot -proot -e 'CREATE DATABASE ds_2;'
+      - name: "Query schema from MySQL-2" 
+        run: mysql -h127.0.0.1 -P3326 -uroot -proot -e 'SHOW DATABASES;'
       - name: "Create sharding db" 
-        run: mysql -h127.0.0.1 -P3307 -uroot -proot -e 'CREATE DATABASE sharding_db; USE sharding_db;ADD RESOURCE ds_0 (HOST="mysql-1.default",PORT=3306,DB="ds_1",USER="root",PASSWORD="root"),ds_1 (HOST="mysql-2.default",PORT=3306,DB="ds_2",USER="root",PASSWORD="root");CREATE SHARDING TABLE RULE t_order(RESOURCES(ds_0,ds_1),SHARDING_COLUMN=order_id,TYPE(NAME="hash_mod",PROPERTIES("sharding-count"="2")),KEY_GENERATE_STRATEGY(COLUMN=order_id,TYPE(NAME="snowflake")));CREATE TABLE `t_order` (`order_id` int NOT NULL,`user_id` int NOT NULL,`status` varchar(45) DEFAULT NULL,PRIMARY KEY (`order_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;INSERT INTO `t_order` VALUES(1, 1, "code1"),(2, 2, "code2");'
+        run: | 
+          mysql -h127.0.0.1 -P3307 -uroot -proot -e 'CREATE DATABASE sharding_db; USE sharding_db; REGISTER STORAGE UNIT ds_1 (HOST="mysql-1.default", PORT=3306, DB="ds_1", USER="root", PASSWORD="root"),ds_2 (HOST="mysql-2.default", PORT=3306, DB="ds_2", USER="root", PASSWORD="root"); CREATE SHARDING TABLE RULE t_order(STORAGE_UNITS(ds_1,ds_2),SHARDING_COLUMN=order_id,TYPE(NAME="hash_mod",PROPERTIES("sharding-count"="2")),KEY_GENERATE_STRATEGY(COLUMN=order_id,TYPE(NAME="snowflake")));'
+      - name: "Create sharding table" 
+        run: | 
+          mysql -h127.0.0.1 -P3307 -uroot -proot -e 'USE sharding_db; CREATE TABLE `t_order` (`order_id` int NOT NULL,`user_id` int NOT NULL,`status` varchar(45) DEFAULT NULL,PRIMARY KEY (`order_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;'
+      - name: "Insert data into sharding db" 
+        run: | 
+          sleep 3;
+          mysql -h127.0.0.1 -P3307 -uroot -proot -e 'USE sharding_db; INSERT INTO `t_order` VALUES(1, 1, "code1"),(2, 2, "code2"), (3, 3, "code3"), (4, 4, "code4");'
       - name: "Query data from sharding_db" 
-        run: mysql -h127.0.0.1 -P3307 -uroot -proot -e 'USE sharding_db;SELECT * FROM t_order;'
+        run: mysql -h127.0.0.1 -P3307 -uroot -proot -e 'USE sharding_db; SELECT * FROM t_order;'
       - name: "Query data from MySQL-1" 
         run: mysql -h127.0.0.1 -P3316 -uroot -proot -e 'USE ds_1;SELECT * FROM `t_order_0`;'
       - name: "Query data from MySQL-2 " 
