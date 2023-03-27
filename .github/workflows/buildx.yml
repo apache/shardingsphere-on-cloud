@@ -17,7 +17,6 @@
 
 name: Create and publish a multi-platform Docker image
 on:
-  push:
   release:
     types:
       - published
