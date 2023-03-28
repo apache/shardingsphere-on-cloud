@@ -26,6 +26,7 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	batchV1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,8 +73,6 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 	if err := constructAndCreateChao(ctx, &ssChaos, req); err != nil && !apierrors.IsAlreadyExists(err) {
 		return ctrl.Result{}, err
 	}
-
-	//todo:update sschaos status to judge inject or verify 
 
 	return ctrl.Result{}, nil
 }
@@ -320,11 +319,11 @@ func deepCopyPodSelector(selector *v1alpha1.PodSelector) *chaosv1alpha1.PodSelec
 // SetupWithManager sets up the controller with the Manager.
 func (r *ShardingSphereChaosReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
-	//todo: and inject and verify crd(job) here
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ShardingSphereChaos{}).
 		Owns(&chaosv1alpha1.PodChaos{}).
 		Owns(&chaosv1alpha1.NetworkChaos{}).
 		Owns(&chaosv1alpha1.Workflow{}).
+		Owns(&batchV1.Job{}).
 		Complete(r)
 }

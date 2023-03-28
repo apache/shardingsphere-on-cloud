@@ -18,6 +18,7 @@
 package v1alpha1
 
 import (
+	batchV1Beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,9 +46,13 @@ type ShardingSphereChaos struct {
 
 // ShardingSphereChaosSpec defines the desired state of ShardingSphereChaos
 type ShardingSphereChaosSpec struct {
+	InjectReqs batchV1Beta1.JobTemplateSpec `json:"injectReqs,omitempty"`
+
 	ChaosKind ChaosKind `json:"chaosKind,omitempty"`
 
 	EmbedChaos `json:".inline"`
+
+	Verify batchV1Beta1.JobTemplateSpec `json:"Verify,omitempty"`
 }
 
 type ChaosKind string
@@ -58,8 +63,6 @@ const (
 	NetworkChaosKind ChaosKind = "networkChaos"
 
 	PodChaosKind ChaosKind = "podChaos"
-
-	DelayKillKind = "DelayKillChaos"
 )
 
 type EmbedChaos struct {
@@ -71,8 +74,27 @@ type EmbedChaos struct {
 	Workflow *WorkflowSpec `json:"workflow,omitempty"`
 }
 
+type DeploymentCondition string
+
+const (
+	Creating     DeploymentCondition = "Creating"
+	AllRecovered DeploymentCondition = "AllRecovered"
+	Paused       DeploymentCondition = "Paused"
+	AllInjected  DeploymentCondition = "AllInjected"
+)
+
+type Jobschedule string
+
+const (
+	JobCreating Jobschedule = "JobCreating"
+	JobFinish   Jobschedule = "JobFinish"
+)
+
 // ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
 type ShardingSphereChaosStatus struct {
+	ChaosCondition DeploymentCondition `json:"deploymentCondition"`
+	InjectStatus   Jobschedule         `json:"InjectStatus"`
+	VerifyStatus   Jobschedule         `json:"VerifyStatus"`
 }
 
 // pod chaos
