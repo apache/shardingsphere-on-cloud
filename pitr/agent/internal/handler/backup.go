@@ -20,14 +20,12 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
-
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
+	"github.com/gofiber/fiber/v2"
 )
 
 func Backup(ctx *fiber.Ctx) error {

@@ -66,7 +66,7 @@ func NewLocalStorage(root string) (ILocalStorage, error) {
 }
 
 func DefaultRootDir() string {
-	return fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".pitr")
+	return fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
 }
 
 func (ls *localStorage) init() error {

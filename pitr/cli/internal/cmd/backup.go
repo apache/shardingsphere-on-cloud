@@ -49,6 +49,17 @@ var BackupCmd = &cobra.Command{
 			fmt.Printf("Flag: %s Value: %s\n", flag.Name, flag.Value)
 		})
 
+		// convert BackupModeStr to BackupMode
+		switch BackupModeStr {
+		case "FULL", "full":
+			BackupMode = model.BDBackModeFull
+		case "PTRACK", "ptrack":
+			BackupMode = model.DBBackModePTrack
+		}
+		if BackupMode == model.DBBackModePTrack {
+			logging.Warn("Please make sure all openGauss nodes have been set correct configuration about ptrack. You can refer to https://support.huaweicloud.com/intl/zh-cn/devg-opengauss/opengauss_devg_1362.html for more details.")
+		}
+
 		logging.Info(fmt.Sprintf("Default backup path: %s", pkg.DefaultRootDir()))
 
 		// Start backup
@@ -71,7 +82,7 @@ func init() {
 	_ = BackupCmd.MarkFlagRequired("password")
 	BackupCmd.Flags().StringVarP(&BackupPath, "dn-backup-path", "B", "", "openGauss data backup path")
 	_ = BackupCmd.MarkFlagRequired("dn-backup-path")
-	BackupCmd.Flags().StringVarP(&BackupMode, "dn-backup-mode", "b", "", "openGauss data backup mode (FULL|PTRACK)")
+	BackupCmd.Flags().StringVarP(&BackupModeStr, "dn-backup-mode", "b", "", "openGauss data backup mode (FULL|PTRACK)")
 	_ = BackupCmd.MarkFlagRequired("dn-backup-mode")
 	BackupCmd.Flags().Uint8VarP(&ThreadsNum, "dn-threads-num", "j", 1, "openGauss data backup threads nums")
 	BackupCmd.Flags().Uint16VarP(&AgentPort, "agent-port", "a", 443, "agent server port")
@@ -88,6 +99,7 @@ func init() {
 // 6. Update local backup info
 // 7. Double check backups all finished
 func backup() error {
+	var err error
 	proxy, err := pkg.NewShardingSphereProxy(Username, Password, pkg.DefaultDbName, Host, Port)
 	if err != nil {
 		return xerr.NewCliErr("create ss-proxy connect failed")
@@ -98,48 +110,65 @@ func backup() error {
 		return xerr.NewCliErr("create local storage failed")
 	}
 
+	defer func() {
+		if err != nil {
+			logging.Info("try to unlock cluster ...")
+			if err := proxy.Unlock(); err != nil {
+				logging.Error(fmt.Sprintf("coz backup failed, try to unlock cluster, but still failed, err:%s", err.Error()))
+			}
+		}
+	}()
+
 	// Step1. lock cluster
-	if err := proxy.LockForBackup(); err != nil {
+	logging.Info("Starting lock cluster ...")
+	err = proxy.LockForBackup()
+	if err != nil {
 		return xerr.NewCliErr("lock for backup failed")
 	}
 
 	// Step2. Get cluster info and save local backup info
+	logging.Info("Starting export metadata ...")
 	lsBackup, err := exportData(proxy, ls)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("export backup data failed, err:%s", err.Error()))
 	}
 
-	logging.Info(fmt.Sprintf("export backup data success, backup filename: %s", filename))
+	logging.Info(fmt.Sprintf("Export backup data success, backup filename: %s", filename))
 
 	// Step3. send backup command to agent-server.
-	if err := execBackup(lsBackup); err != nil {
-		// if backup failed, still need to unlock cluster.
-		if err := proxy.Unlock(); err != nil {
-			logging.Error(fmt.Sprintf("coz exec backup failed, try to unlock cluster, but still failed, err:%s", err.Error()))
-		}
+	logging.Info("Starting backup ...")
+	err = execBackup(lsBackup)
+	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("exec backup failed, err:%s", err.Error()))
 	}
 
 	// Step4. unlock cluster
-	if err := proxy.Unlock(); err != nil {
+	logging.Info("Starting unlock cluster ...")
+	err = proxy.Unlock()
+	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("unlock cluster failed, err:%s", err.Error()))
 	}
 
 	// Step5. update backup file
-	if err := ls.WriteByJSON(filename, lsBackup); err != nil {
+	logging.Info("Starting update backup file ...")
+	err = ls.WriteByJSON(filename, lsBackup)
+	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("update backup file failed, err:%s", err.Error()))
 	}
 
-	// Step6. check agent server backup status
+	// Step6. check agent server backup
+	logging.Info("Starting check backup status ...")
 	status := checkBackupStatus(lsBackup)
-	logging.Info(fmt.Sprintf("backup result:%s", status))
+	logging.Info(fmt.Sprintf("Backup result: %s", status))
 
 	// Step7. finished backup and update backup file
-	if err := ls.WriteByJSON(filename, lsBackup); err != nil {
+	logging.Info("Starting update backup file ...")
+	err = ls.WriteByJSON(filename, lsBackup)
+	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("update backup file failed, err: %s", err.Error()))
 	}
 
-	logging.Info("backup finished")
+	logging.Info("Backup finished!")
 	return nil
 
 }
@@ -166,10 +195,11 @@ func exportData(proxy pkg.IShardingSphereProxy, ls pkg.ILocalStorage) (lsBackup 
 
 	contents := &model.LsBackup{
 		Info: &model.BackupMetaInfo{
-			ID:        uuid.New().String(), // generate uuid for this backup
-			CSN:       csn,
-			StartTime: time.Now().Unix(),
-			EndTime:   0,
+			ID:         uuid.New().String(), // generate uuid for this backup
+			CSN:        csn,
+			StartTime:  time.Now().Unix(),
+			EndTime:    0,
+			BackupMode: BackupMode,
 		},
 		SsBackup: &model.SsBackup{
 			Status:       model.SsBackupStatusWaiting, // default status of backup is model.SsBackupStatusWaiting
@@ -231,7 +261,7 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 		Password:     node.Password,
 		DnBackupPath: BackupPath,
 		DnThreadsNum: ThreadsNum,
-		DnBackupMode: model.BDBackModeFull,
+		DnBackupMode: BackupMode,
 		Instance:     defaultInstance,
 	}
 	backupID, err := as.Backup(in)
@@ -297,6 +327,7 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 	}
 
 	lsBackup.SsBackup.Status = backupFinalStatus
+	lsBackup.Info.EndTime = time.Now().Unix()
 	return backupFinalStatus
 }
 
