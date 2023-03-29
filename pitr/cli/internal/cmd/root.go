@@ -18,6 +18,7 @@
 package cmd
 
 import (
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/spf13/cobra"
 )
 
@@ -34,8 +35,10 @@ var (
 	AgentPort uint16
 	// BackupPath openGauss data backup path
 	BackupPath string
+	// BackupModeStr openGauss data backup mode string (FULL or PTRACK)
+	BackupModeStr string
 	// BackupMode openGauss data backup mode (FULL or PTRACK)
-	BackupMode string
+	BackupMode model.DBBackupMode
 	// ThreadsNum openGauss data backup task thread num
 	ThreadsNum uint8
 	// CSN openGauss data backup commit sequence number

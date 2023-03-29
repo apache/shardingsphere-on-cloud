@@ -127,11 +127,11 @@ func (ss *shardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
 /*
 ExportStorageNodes 导出存储节点数据
 
-+-----------------------------+-------------------------+----------------------------------------+
-| id                          | create_time             | data                                   |
-+-------------------------------------------------------+----------------------------------------+
-| 734bb036-b15d-4af0-be87-237 | 2023-01-01 12:00:00 897 | {"storage_nodes":{"sharding_db":[]}}   |
-+-------------------------------------------------------+----------------------------------------+
++-----------------------------+-------------------------+--------------------------------------------+
+| id                          | create_time             | data                                       |
++-------------------------------------------------------+--------------------------------------------+
+| 734bb036-b15d-4af0-be87-237 | 2023-01-01 12:00:00 897 | {"storage_nodes":{"xx_db":[],"xx2_db":[]}} |
++-------------------------------------------------------+--------------------------------------------+
 */
 func (ss *shardingSphereProxy) ExportStorageNodes() ([]*model.StorageNode, error) {
 	query, err := ss.db.Query(`EXPORT STORAGE NODES;`)
@@ -156,7 +156,22 @@ func (ss *shardingSphereProxy) ExportStorageNodes() ([]*model.StorageNode, error
 	if err = json.Unmarshal([]byte(data), &out); err != nil {
 		return nil, fmt.Errorf("json unmarshal return err=%s", err)
 	}
-	return out.StorageNodes.List, nil
+
+	// get all storage nodes and filter duplicate nodes
+	var storageNodes []*model.StorageNode
+	var tmpNodesMap = make(map[string]struct{})
+	for _, v := range out.StorageNodes {
+		for _, vv := range v {
+			// filter duplicate nodes
+			if _, ok := tmpNodesMap[fmt.Sprintf("%s:%d", vv.IP, vv.Port)]; ok {
+				continue
+			}
+			tmpNodesMap[fmt.Sprintf("%s:%d", vv.IP, vv.Port)] = struct{}{}
+			storageNodes = append(storageNodes, vv)
+		}
+	}
+
+	return storageNodes, nil
 }
 
 // ImportMetaData 备份数据恢复

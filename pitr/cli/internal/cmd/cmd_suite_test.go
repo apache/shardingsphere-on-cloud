@@ -48,6 +48,7 @@ func initLog() {
 	}
 	logging.Init(logger)
 }
+
 func TestCmd(t *testing.T) {
 	initLog()
 	RegisterFailHandler(Fail)

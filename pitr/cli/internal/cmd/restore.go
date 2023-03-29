@@ -145,6 +145,11 @@ func checkDatabaseExist(proxy pkg.IShardingSphereProxy, bak *model.LsBackup) err
 			databaseNamesExist = append(databaseNamesExist, k)
 		}
 	}
+
+	if len(databaseNamesExist) == 0 {
+		return nil
+	}
+
 	// get user input to confirm
 	return getUserApproveInTerminal()
 }
