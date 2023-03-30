@@ -20,6 +20,7 @@ import (
 	"context"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
+	chaos_mesh "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos-mesh"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"path/filepath"
@@ -80,6 +81,7 @@ var _ = BeforeSuite(func() {
 	err = (&controllers.ShardingSphereChaosReconciler{
 		Client: k8sClient,
 		Scheme: scheme.Scheme,
+		Chaos:  chaos_mesh.NewChaos(k8sClient),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

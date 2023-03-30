@@ -315,6 +315,4 @@ var _ = Describe("ShardingSphereChaos", func() {
 		})
 	})
 
-	//todo: add workflow spec check test
-
 })

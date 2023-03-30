@@ -87,6 +87,7 @@ type Jobschedule string
 
 const (
 	JobCreating Jobschedule = "JobCreating"
+	JobFailed   Jobschedule = "JobFailed"
 	JobFinish   Jobschedule = "JobFinish"
 )
 

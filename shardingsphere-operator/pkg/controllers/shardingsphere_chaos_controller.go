@@ -19,7 +19,9 @@ package controllers
 
 import (
 	"context"
+	chaos_mesh "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos-mesh"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -35,6 +37,8 @@ import (
 type ShardingSphereChaosReconciler struct { //
 	client.Client
 	Scheme *runtime.Scheme
+
+	chaos_mesh.Chaos
 	//todo: add job definition
 	//Job    job.Job
 }
@@ -66,25 +70,39 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileChaosMesh(ctx context.Context, ssChao *v1alpha1.ShardingSphereChaos) error {
-	constructAndCreateChao := func(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos) error {
-
-		var CreateErr error
-		switch ssChaos.Spec.ChaosKind {
-		case v1alpha1.NetworkChaosKind:
-			CreateErr = r.CreateNetworkChaos(ctx, ssChaos)
-		case v1alpha1.PodChaosKind:
-			CreateErr = r.CreatePodChaos(ctx, ssChaos)
-		case v1alpha1.WorkFlowKind:
-			CreateErr = r.CreateWorkFlow(ctx, ssChaos)
+	namespaceName := types.NamespacedName{Namespace: ssChao.Namespace, Name: ssChao.Name}
+	switch ssChao.Spec.ChaosKind {
+	case v1alpha1.PodChaosKind:
+		chaos, isExist, err := r.getPodChaosByNamespacedName(ctx, namespaceName)
+		if err != nil {
+			return err
+		}
+		if isExist {
+			return r.updatePodChaos(ctx, ssChao, chaos)
 		}
 
-		return CreateErr
-	}
+		return r.CreatePodChaos(ctx, ssChao)
+	case v1alpha1.NetworkChaosKind:
+		chaos, isExist, err := r.getNetworkChaosByNamespacedName(ctx, namespaceName)
+		if err != nil {
+			return err
+		}
+		if isExist {
+			return r.updateNetWorkChaos(ctx, ssChao, chaos)
+		}
 
-	if err := constructAndCreateChao(ctx, ssChao); err != nil {
-		return err
-	}
+		return r.CreateNetworkChaos(ctx, ssChao)
+	case v1alpha1.WorkFlowKind:
+		chaos, isExist, err := r.getWorkflowByNamespacedName(ctx, namespaceName)
+		if err != nil {
+			return err
+		}
+		if isExist {
+			return r.updateWorkflow(ctx, ssChao, chaos)
+		}
 
+		return r.CreateWorkFlow(ctx, ssChao)
+	}
 	return nil
 }
 
@@ -95,6 +113,54 @@ func (r *ShardingSphereChaosReconciler) CreateWorkFlow(ctx context.Context, chao
 	}
 
 	return nil
+}
+
+func (r *ShardingSphereChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*chaosv1alpha1.NetworkChaos, bool, error) {
+	nc, err := r.Chaos.GetNetworkChaosByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return nil, false, err
+	}
+	if nc == nil {
+		return nil, false, nil
+	}
+	return nc, true, nil
+}
+
+func (r *ShardingSphereChaosReconciler) getPodChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*chaosv1alpha1.PodChaos, bool, error) {
+	pc, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return nil, false, err
+	}
+	if pc == nil {
+		return nil, false, nil
+	}
+	return pc, true, nil
+}
+
+func (r *ShardingSphereChaosReconciler) getWorkflowByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*chaosv1alpha1.Workflow, bool, error) {
+	wf, err := r.Chaos.GetWorkflowByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return nil, false, err
+	}
+	if wf == nil {
+		return nil, false, nil
+	}
+	return wf, true, nil
+}
+
+func (r *ShardingSphereChaosReconciler) updateWorkflow(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, workflow *chaosv1alpha1.Workflow) error {
+	exp := reconcile.UpdateWorkflow(chao, workflow)
+	return r.Update(ctx, exp)
+}
+
+func (r *ShardingSphereChaosReconciler) updatePodChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, podChaos *chaosv1alpha1.PodChaos) error {
+	exp := reconcile.UpdatePodChaos(chao, podChaos)
+	return r.Update(ctx, exp)
+}
+
+func (r *ShardingSphereChaosReconciler) updateNetWorkChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, netWorkChaos *chaosv1alpha1.NetworkChaos) error {
+	exp := reconcile.UpdateNetworkChaos(chao, netWorkChaos)
+	return r.Update(ctx, exp)
 }
 
 func (r *ShardingSphereChaosReconciler) CreateNetworkChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos) error {

@@ -69,6 +69,36 @@ func NewWorkflow(chao *v1alpha1.ShardingSphereChaos) *chaosv1alpha1.Workflow {
 	return meshWorkflow
 }
 
+func UpdateNetworkChaos(ssChaos *v1alpha1.ShardingSphereChaos, cur *chaosv1alpha1.NetworkChaos) *chaosv1alpha1.NetworkChaos {
+	exp := &chaosv1alpha1.NetworkChaos{}
+	exp.ObjectMeta = cur.ObjectMeta
+	exp.ObjectMeta.ResourceVersion = ""
+	exp.Labels = cur.Labels
+	exp.Annotations = cur.Annotations
+	exp.Spec = NewNetworkPodChaos(ssChaos).Spec
+	return exp
+}
+
+func UpdatePodChaos(ssChaos *v1alpha1.ShardingSphereChaos, cur *chaosv1alpha1.PodChaos) *chaosv1alpha1.PodChaos {
+	exp := &chaosv1alpha1.PodChaos{}
+	exp.ObjectMeta = cur.ObjectMeta
+	exp.ObjectMeta.ResourceVersion = ""
+	exp.Labels = cur.Labels
+	exp.Annotations = cur.Annotations
+	exp.Spec = NewPodChaos(ssChaos).Spec
+	return exp
+}
+
+func UpdateWorkflow(ssChaos *v1alpha1.ShardingSphereChaos, cur *chaosv1alpha1.Workflow) *chaosv1alpha1.Workflow {
+	exp := &chaosv1alpha1.Workflow{}
+	exp.ObjectMeta = cur.ObjectMeta
+	exp.ObjectMeta.ResourceVersion = ""
+	exp.Labels = cur.Labels
+	exp.Annotations = cur.Annotations
+	exp.Spec = NewWorkflow(ssChaos).Spec
+	return exp
+}
+
 func DeepCopyWorkTemplates(templates []v1alpha1.WorkFlowTemplate) (meshTemplates []chaosv1alpha1.Template) {
 
 	for _, v := range templates {
