@@ -106,7 +106,7 @@ type PodChaos struct {
 }
 
 type PodChaosSpec struct {
-	ContainerSelector `json:",inline"`
+	PodSelector `json:",inline"`
 
 	// Action defines the specific pod chaos action.
 	// Supported action: pod-kill / pod-failure / container-kill
