@@ -58,7 +58,7 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	if err := r.reconcileChaosMesh(ctx, &ssChaos); err != nil {
+	if err := r.reconcileChaos(ctx, &ssChaos); err != nil {
 		logger.Error(err, " unable to reconcile chaos")
 		return ctrl.Result{}, err
 	}
@@ -68,7 +68,7 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 	return ctrl.Result{}, nil
 }
 
-func (r *ShardingSphereChaosReconciler) reconcileChaosMesh(ctx context.Context, ssChao *v1alpha1.ShardingSphereChaos) error {
+func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssChao *v1alpha1.ShardingSphereChaos) error {
 	namespaceName := types.NamespacedName{Namespace: ssChao.Namespace, Name: ssChao.Name}
 	switch ssChao.Spec.ChaosKind {
 	case v1alpha1.PodChaosKind:
