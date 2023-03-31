@@ -118,21 +118,21 @@ func (r *ShardingSphereChaosReconciler) getPodChaosByNamespacedName(ctx context.
 }
 
 func (r *ShardingSphereChaosReconciler) updatePodChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, podChaos chaos.PodChaos) error {
-	return reconcile.ChaosHandle.UpdatePodChaos(ctx, chao, r, podChaos)
+	return reconcile.ChaosHandle.UpdatePodChaos(ctx, chao, r.Client, podChaos)
 }
 
 func (r *ShardingSphereChaosReconciler) CreatePodChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos) error {
 	podChaos := reconcile.ChaosHandle.NewPodChaos(chao)
-	return reconcile.ChaosHandle.CreatePodChaos(ctx, r, podChaos)
+	return reconcile.ChaosHandle.CreatePodChaos(ctx, r.Client, podChaos)
 }
 
 func (r *ShardingSphereChaosReconciler) updateNetWorkChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, netWorkChaos chaos.NetworkChaos) error {
-	return reconcile.ChaosHandle.UpdateNetworkChaos(ctx, chao, r, netWorkChaos)
+	return reconcile.ChaosHandle.UpdateNetworkChaos(ctx, chao, r.Client, netWorkChaos)
 }
 
 func (r *ShardingSphereChaosReconciler) CreateNetworkChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos) error {
 	networkChaos := reconcile.ChaosHandle.NewNetworkPodChaos(chao)
-	return reconcile.ChaosHandle.CreateNetworkChaos(ctx, r, networkChaos)
+	return reconcile.ChaosHandle.CreateNetworkChaos(ctx, r.Client, networkChaos)
 }
 
 // SetupWithManager sets up the controller with the Manager.

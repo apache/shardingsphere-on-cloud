@@ -65,7 +65,9 @@ var _ = Describe("ShardingSphereChaos", func() {
 			Expect(k8sClient.Create(ctx, ssChaos)).To(BeNil())
 		})
 
-		AfterEach(Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil()))
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil())
+		})
 
 		if ssChaos.Spec.ChaosKind == v1alpha1.PodChaosKind {
 			It("should create podChaos", func() {
@@ -127,7 +129,9 @@ var _ = Describe("ShardingSphereChaos", func() {
 			Expect(k8sClient.Create(ctx, ssChaos)).To(BeNil())
 		})
 
-		AfterEach(Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil()))
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil())
+		})
 
 		if ssChaos.Spec.ChaosKind == v1alpha1.PodChaosKind {
 			It("verify podChaos metadata", func() {
@@ -198,7 +202,9 @@ var _ = Describe("ShardingSphereChaos", func() {
 			Expect(k8sClient.Create(ctx, ssChaos)).To(BeNil())
 		})
 
-		AfterEach(Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil()))
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil())
+		})
 
 		It("verify podChaos Spec", func() {
 			var podChaos *chaosV1AlphaV1.PodChaos
@@ -257,7 +263,9 @@ var _ = Describe("ShardingSphereChaos", func() {
 			Expect(k8sClient.Create(ctx, ssChaos)).To(BeNil())
 		})
 
-		AfterEach(Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil()))
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil())
+		})
 
 		It("verify netWorkChaos Spec", func() {
 			var netWorkChaos *chaosV1AlphaV1.NetworkChaos
@@ -274,6 +282,8 @@ var _ = Describe("ShardingSphereChaos", func() {
 			Expect(netWorkChaos.Spec.PodSelector.Selector.LabelSelectors).To(Equal(ssChaos.Spec.NetworkChaos.Source.LabelSelectors))
 			Expect(netWorkChaos.Spec.Target.Selector.LabelSelectors).To(Equal(ssChaos.Spec.NetworkChaos.Target.LabelSelectors))
 			Expect(netWorkChaos.Spec.Action).To(Equal(chaosV1AlphaV1.NetworkChaosAction(ssChaos.Spec.NetworkChaos.Action)))
+			Expect(netWorkChaos.Spec.PodSelector.Value).To(Equal(ssChaos.Annotations["spec/value"]))
+			Expect(netWorkChaos.Spec.Target.Value).To(Equal(ssChaos.Annotations["spec/target/value"]))
 			Expect(*netWorkChaos.Spec.Duration).To(Equal(*ssChaos.Spec.NetworkChaos.Duration))
 		})
 	})
