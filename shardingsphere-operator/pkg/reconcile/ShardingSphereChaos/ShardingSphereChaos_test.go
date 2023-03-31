@@ -315,4 +315,63 @@ var _ = Describe("ShardingSphereChaos", func() {
 		})
 	})
 
+	//
+	//var (
+	//	ssChaos *v1alpha1.ShardingSphereChaos
+	//	entryDeadline string = "10m"
+	//	zkKillDeadline string = "5m"
+	//)
+	//BeforeEach(func() {
+	//	ssChaos = &v1alpha1.ShardingSphereChaos{
+	//		ObjectMeta: metav1.ObjectMeta{
+	//			Name:      "test-ssChaos",
+	//			Namespace: "default",
+	//			Labels: map[string]string{
+	//				"app": "shardingsphere-proxy",
+	//			},
+	//		},
+	//		Spec: v1alpha1.ShardingSphereChaosSpec{
+	//			ChaosKind: v1alpha1.NetworkChaosKind,
+	//			EmbedChaos: v1alpha1.EmbedChaos{
+	//				Workflow: &v1alpha1.WorkflowSpec{
+	//					Entry: "entry",
+	//					Templates: []v1alpha1.WorkFlowTemplate{
+	//						{
+	//							Name:     "entry",
+	//							Type:     v1alpha1.TypeSerial,
+	//							Deadline: &entryDeadline,
+	//							Children: []string{
+	//								"test-case4",
+	//							},
+	//						},
+	//						{
+	//							Name:                "zkl-kill",
+	//							Type:                v1alpha1.TypePodChaos,
+	//							Deadline:            &zkKillDeadline,
+	//							EmbedChaos:          &v1alpha1.EmbedChaos{
+	//								PodChaos: &v1alpha1.PodChaosSpec{
+	//									PodSelector: v1alpha1.PodSelector{
+	//										Selector: v1alpha1.PodSelectorSpec{
+	//											GenericSelectorSpec: v1alpha1.GenericSelectorSpec{
+	//												Namespaces: []string{"mesh-test"},
+	//												LabelSelectors: map[string]string{
+	//													"app": "shardingsphere-proxy-apache-shardingsphere-proxy",
+	//												},
+	//											},
+	//										},
+	//										Mode: v1alpha1.AllMode,
+	//									},
+	//									Action: v1alpha1.ContainerKillAction,
+	//								}
+	//							}
+	//						},
+	//					},
+	//				},
+	//			},
+	//		},
+	//	}
+	//	Expect(k8sClient.Create(ctx, ssChaos)).To(BeNil())
+	//})
+	//
+	//AfterEach(Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil()))
 })

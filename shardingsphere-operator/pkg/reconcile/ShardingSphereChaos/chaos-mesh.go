@@ -17,258 +17,452 @@ package ShardingSphereChaos
  * limitations under the License.
  */
 import (
+	"context"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewPodChaos(chao *v1alpha1.ShardingSphereChaos) *chaosv1alpha1.PodChaos {
-	podChao := chao.Spec.PodChaos
-	meshPodChao := &chaosv1alpha1.PodChaos{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:      make(map[string]string),
-			Annotations: make(map[string]string),
-			Name:        chao.Name,
-			Namespace:   chao.Namespace,
-		},
-	}
-	meshPodChao.Spec = *deepCopyPodChaoSpec(podChao)
-	return meshPodChao
-}
+const (
+	podSelectorMode      = "spec/mode"
+	podSelectorValue     = "spec/value"
+	device               = "spec/device"
+	targetDevice         = "spec/targetDevice"
+	targetPodSelectMode  = "spec/target/mode"
+	targetPodSelectValue = "spec/target/value"
+)
 
-func NewNetworkPodChaos(chao *v1alpha1.ShardingSphereChaos) *chaosv1alpha1.NetworkChaos {
-	networkChao := chao.Spec.NetworkChaos
-	meshNetworkChao := &chaosv1alpha1.NetworkChaos{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:      make(map[string]string),
-			Annotations: make(map[string]string),
-			Name:        chao.Name,
-			Namespace:   chao.Namespace,
-		},
-	}
-	meshNetworkChao.Spec = *deepCopyNetworkSpec(networkChao)
+type chaosMeshHandler struct{}
 
-	return meshNetworkChao
-}
-
-func NewWorkflow(chao *v1alpha1.ShardingSphereChaos) *chaosv1alpha1.Workflow {
-	workflow := chao.Spec.Workflow
-	meshWorkflow := &chaosv1alpha1.Workflow{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:      make(map[string]string),
-			Annotations: make(map[string]string),
-			Name:        chao.Name,
-			Namespace:   chao.Namespace,
-		},
-		Spec: chaosv1alpha1.WorkflowSpec{
-			Entry:     workflow.Entry,
-			Templates: DeepCopyWorkTemplates(workflow.Templates),
-		},
+func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, r client.Client, chao chaos.PodChaos) error {
+	podChao := chao.(*chaosv1alpha1.PodChaos)
+	if err := r.Create(ctx, podChao); err != nil && !apierrors.IsAlreadyExists(err) {
+		return err
 	}
 
-	return meshWorkflow
+	return nil
 }
 
-func UpdateNetworkChaos(ssChaos *v1alpha1.ShardingSphereChaos, cur *chaosv1alpha1.NetworkChaos) *chaosv1alpha1.NetworkChaos {
+func (c *chaosMeshHandler) CreateNetworkChaos(ctx context.Context, r client.Client, chao chaos.NetworkChaos) error {
+	networkChao := chao.(*chaosv1alpha1.NetworkChaos)
+	if err := r.Create(ctx, networkChao); err != nil && !apierrors.IsAlreadyExists(err) {
+		return err
+	}
+
+	return nil
+}
+
+func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) chaos.PodChaos {
+	pcb := NewPodChaosBuilder(ssChao.GetObjectMeta(), ssChao.GetObjectKind().GroupVersionKind())
+	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
+
+	chao := ssChao.Spec.PodChaos
+	pcb.SetAction(string(chao.Action))
+
+	psb := NewPodSelectorBuilder()
+
+	psb.SetNamespaces(chao.Namespaces).
+		SetExpressionSelectors(chao.ExpressionSelectors).
+		SetNodes(chao.Nodes).
+		SetNodeSelector(chao.NodeSelectors).
+		SetAnnotationSelectors(chao.AnnotationSelectors).
+		SetLabelSelector(chao.LabelSelectors).
+		SetPods(chao.Pods)
+
+	psb.SetSelectMode(ssChao.Annotations[podSelectorMode]).
+		SetValue(ssChao.Annotations[podSelectorValue])
+	containerSelector := &chaosv1alpha1.ContainerSelector{
+		PodSelector: *psb.Build(),
+	}
+
+	if chao.Action == v1alpha1.PodFailureAction {
+		pcb.SetDuration(chao.PodActionParam.PodFailure.Duration)
+	}
+
+	if chao.Action == v1alpha1.ContainerKillAction {
+		containerSelector.ContainerNames = chao.PodActionParam.ContainerKill.ContainerNames
+	}
+
+	pcb.SetContainerSelector(*containerSelector)
+
+	return pcb.Build()
+}
+
+func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereChaos) chaos.NetworkChaos {
+	ncb := NewNetworkChaosBuilder(ssChao.GetObjectMeta(), ssChao.GetObjectKind().GroupVersionKind())
+
+	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
+	chao := ssChao.Spec.NetworkChaos
+	ncb.SetAction(string(chao.Action)).SetDuration(*chao.Duration).SetDirection(string(chao.Direction))
+
+	psb := NewPodSelectorBuilder()
+
+	psb.SetNamespaces(chao.Source.Namespaces).
+		SetExpressionSelectors(chao.Source.ExpressionSelectors).
+		SetNodes(chao.Source.Nodes).
+		SetNodeSelector(chao.Source.NodeSelectors).
+		SetAnnotationSelectors(chao.Source.AnnotationSelectors).
+		SetLabelSelector(chao.Source.LabelSelectors).
+		SetPods(chao.Source.Pods)
+
+	psb.SetSelectMode(ssChao.Annotations[podSelectorMode]).
+		SetValue(ssChao.Annotations[podSelectorValue])
+
+	ncb.SetPodSelector(psb.Build())
+
+	tpsb := NewPodSelectorBuilder()
+
+	tpsb.SetNamespaces(chao.Target.Namespaces).
+		SetExpressionSelectors(chao.Target.ExpressionSelectors).
+		SetNodes(chao.Target.Nodes).
+		SetNodeSelector(chao.Target.NodeSelectors).
+		SetAnnotationSelectors(chao.Target.AnnotationSelectors).
+		SetLabelSelector(chao.Target.LabelSelectors).
+		SetPods(chao.Target.Pods)
+
+	tpsb.SetSelectMode(ssChao.Annotations[targetPodSelectMode]).
+		SetValue(ssChao.Annotations[targetPodSelectValue])
+
+	ncb.SetTarget(tpsb.Build())
+
+	ncb.SetDevice(ssChao.Annotations[device]).
+		SetTargetDevice(ssChao.Annotations[targetDevice])
+
+	tcParams := &chaosv1alpha1.TcParameter{}
+
+	if chao.Action == v1alpha1.DelayAction {
+		tcParams.Delay = &chaosv1alpha1.DelaySpec{
+			Latency:     chao.NetWorkParams.Delay.Latency,
+			Correlation: chao.NetWorkParams.Delay.Correlation,
+			Jitter:      chao.NetWorkParams.Delay.Jitter,
+		}
+	}
+
+	if chao.Action == v1alpha1.CorruptAction {
+		tcParams.Corrupt = &chaosv1alpha1.CorruptSpec{
+			Corrupt:     chao.NetWorkParams.Corrupt.Corrupt,
+			Correlation: chao.NetWorkParams.Corrupt.Correlation,
+		}
+	}
+
+	if chao.Action == v1alpha1.DuplicateAction {
+		tcParams.Duplicate = &chaosv1alpha1.DuplicateSpec{
+			Duplicate:   chao.NetWorkParams.Duplicate.Duplicate,
+			Correlation: chao.NetWorkParams.Duplicate.Correlation,
+		}
+	}
+
+	if chao.Action == v1alpha1.LossAction {
+		tcParams.Loss = &chaosv1alpha1.LossSpec{
+			Loss:        chao.NetWorkParams.Loss.Loss,
+			Correlation: chao.NetWorkParams.Loss.Correlation,
+		}
+	}
+
+	ncb.SetTcParameter(*tcParams)
+
+	return ncb.Build()
+}
+
+func (c *chaosMeshHandler) UpdateNetworkChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, r client.Client, cur chaos.NetworkChaos) error {
+	Recur := cur.(*chaosv1alpha1.NetworkChaos)
 	exp := &chaosv1alpha1.NetworkChaos{}
-	exp.ObjectMeta = cur.ObjectMeta
+	exp.ObjectMeta = Recur.ObjectMeta
 	exp.ObjectMeta.ResourceVersion = ""
-	exp.Labels = cur.Labels
-	exp.Annotations = cur.Annotations
-	exp.Spec = NewNetworkPodChaos(ssChaos).Spec
-	return exp
+	exp.Labels = Recur.Labels
+	exp.Annotations = Recur.Annotations
+	ReExp := (c.NewNetworkPodChaos(ssChaos)).(chaosv1alpha1.NetworkChaos)
+	exp.Spec = ReExp.Spec
+
+	return r.Update(ctx, exp)
 }
 
-func UpdatePodChaos(ssChaos *v1alpha1.ShardingSphereChaos, cur *chaosv1alpha1.PodChaos) *chaosv1alpha1.PodChaos {
+func (c *chaosMeshHandler) UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, r client.Client, cur chaos.PodChaos) error {
+	Recur := cur.(*chaosv1alpha1.PodChaos)
 	exp := &chaosv1alpha1.PodChaos{}
-	exp.ObjectMeta = cur.ObjectMeta
+	exp.ObjectMeta = Recur.ObjectMeta
 	exp.ObjectMeta.ResourceVersion = ""
-	exp.Labels = cur.Labels
-	exp.Annotations = cur.Annotations
-	exp.Spec = NewPodChaos(ssChaos).Spec
-	return exp
+	exp.Labels = Recur.Labels
+	exp.Annotations = Recur.Annotations
+	ReExp := (c.NewPodChaos(ssChaos)).(chaosv1alpha1.PodChaos)
+	exp.Spec = ReExp.Spec
+	return r.Update(ctx, exp)
 }
 
-func UpdateWorkflow(ssChaos *v1alpha1.ShardingSphereChaos, cur *chaosv1alpha1.Workflow) *chaosv1alpha1.Workflow {
-	exp := &chaosv1alpha1.Workflow{}
-	exp.ObjectMeta = cur.ObjectMeta
-	exp.ObjectMeta.ResourceVersion = ""
-	exp.Labels = cur.Labels
-	exp.Annotations = cur.Annotations
-	exp.Spec = NewWorkflow(ssChaos).Spec
-	return exp
+type PodChaosBuilder interface {
+	SetNamespace(string) PodChaosBuilder
+	SetName(string) PodChaosBuilder
+	SetLabels(map[string]string) PodChaosBuilder
+	SetAnnotations(map[string]string) PodChaosBuilder
+	SetContainerSelector(chaosv1alpha1.ContainerSelector) PodChaosBuilder
+	SetAction(string) PodChaosBuilder
+	SetDuration(string) PodChaosBuilder
+	SetGracePeriod(int64) PodChaosBuilder
+	Build() *chaosv1alpha1.PodChaos
 }
 
-func DeepCopyWorkTemplates(templates []v1alpha1.WorkFlowTemplate) (meshTemplates []chaosv1alpha1.Template) {
-
-	for _, v := range templates {
-		meshTemplate := &chaosv1alpha1.Template{
-			Name:                v.Name,
-			Type:                chaosv1alpha1.TemplateType(v.Type),
-			Deadline:            v.Deadline,
-			Task:                deepCopyWorkFlowTask(v.Task),
-			Children:            v.Children,
-			ConditionalBranches: deepCopyConditionalBranches(v.ConditionalBranches),
-			EmbedChaos:          deepCopyEmbedChaos(v.EmbedChaos),
-			Schedule:            deepCopyScheduleSpec(v.Schedule),
-		}
-		meshTemplates = append(meshTemplates, *meshTemplate)
-	}
-
-	return
-}
-
-func deepCopyWorkFlowTask(task *v1alpha1.Task) *chaosv1alpha1.Task {
-	meshTask := &chaosv1alpha1.Task{
-		Container: task.Container,
-		Volumes:   task.Volumes,
-	}
-
-	return meshTask
-}
-
-func deepCopyScheduleSpec(schedule *v1alpha1.ChaosOnlyScheduleSpec) *chaosv1alpha1.ChaosOnlyScheduleSpec {
-	meshSchedule := &chaosv1alpha1.ChaosOnlyScheduleSpec{
-		Schedule:                schedule.Schedule,
-		StartingDeadlineSeconds: schedule.StartingDeadlineSeconds,
-		ConcurrencyPolicy:       chaosv1alpha1.ConcurrencyPolicy(schedule.ConcurrencyPolicy),
-		HistoryLimit:            schedule.HistoryLimit,
-		Type:                    chaosv1alpha1.ScheduleTemplateType(schedule.Type),
-		EmbedChaos:              *deepCopyEmbedChaos(&schedule.EmbedChaos),
-	}
-
-	return meshSchedule
-}
-
-func deepCopyConditionalBranches(branches []v1alpha1.ConditionalBranch) (meshBranches []chaosv1alpha1.ConditionalBranch) {
-	for i := range branches {
-		meshBranch := chaosv1alpha1.ConditionalBranch{
-			Target:     branches[i].Target,
-			Expression: branches[i].Expression,
-		}
-		meshBranches = append(meshBranches, meshBranch)
-	}
-
-	return
-}
-
-func deepCopyEmbedChaos(chaos *v1alpha1.EmbedChaos) *chaosv1alpha1.EmbedChaos {
-	var meshEmbedChaos *chaosv1alpha1.EmbedChaos
-
-	if chaos.NetworkChaos != nil {
-		meshEmbedChaos.NetworkChaos = deepCopyNetworkSpec(chaos.NetworkChaos)
-	}
-
-	if chaos.PodChaos != nil {
-		meshEmbedChaos.PodChaos = deepCopyPodChaoSpec(chaos.PodChaos)
-	}
-
-	return meshEmbedChaos
-}
-
-func deepCopyPodChaoSpec(podChao *v1alpha1.PodChaosSpec) *chaosv1alpha1.PodChaosSpec {
-	spec := chaosv1alpha1.PodChaosSpec{
-		ContainerSelector: *deepCopyContainerSelector(&podChao.PodSelector),
-		Action:            chaosv1alpha1.PodChaosAction(podChao.Action),
-		Duration:          podChao.Duration,
-		GracePeriod:       podChao.GracePeriod,
-	}
-
-	return &spec
-}
-
-func deepCopyNetworkSpec(networkChao *v1alpha1.NetworkChaosSpec) *chaosv1alpha1.NetworkChaosSpec {
-	spec := chaosv1alpha1.NetworkChaosSpec{
-		PodSelector:     *DeepCopyPodSelector(&networkChao.PodSelector),
-		Action:          chaosv1alpha1.NetworkChaosAction(networkChao.Action),
-		Device:          networkChao.Device,
-		Duration:        networkChao.Duration,
-		TcParameter:     *deepCopyTcParameter(&networkChao.TcParameter),
-		Direction:       chaosv1alpha1.Direction(networkChao.Direction),
-		Target:          DeepCopyPodSelector(networkChao.Target),
-		TargetDevice:    networkChao.TargetDevice,
-		ExternalTargets: networkChao.ExternalTargets,
-	}
-
-	return &spec
-}
-
-func deepCopyTcParameter(tcParam *v1alpha1.TcParameter) *chaosv1alpha1.TcParameter {
-	chaoTcParam := &chaosv1alpha1.TcParameter{}
-	if tcParam.Delay != nil {
-		chaoTcParam.Delay = &chaosv1alpha1.DelaySpec{
-			Latency:     tcParam.Delay.Latency,
-			Correlation: tcParam.Delay.Correlation,
-			Jitter:      tcParam.Delay.Jitter,
-			Reorder:     deepCopyRecorderSpec(tcParam.Delay.Reorder),
-		}
-	}
-
-	if tcParam.Corrupt != nil {
-		chaoTcParam.Corrupt = &chaosv1alpha1.CorruptSpec{
-			Corrupt:     tcParam.Corrupt.Corrupt,
-			Correlation: tcParam.Corrupt.Correlation,
-		}
-	}
-
-	if tcParam.Bandwidth != nil {
-		chaoTcParam.Bandwidth = &chaosv1alpha1.BandwidthSpec{
-			Rate:     tcParam.Bandwidth.Rate,
-			Limit:    tcParam.Bandwidth.Limit,
-			Buffer:   tcParam.Bandwidth.Buffer,
-			Peakrate: tcParam.Bandwidth.Peakrate,
-			Minburst: tcParam.Bandwidth.Minburst,
-		}
-	}
-
-	if tcParam.Loss != nil {
-		chaoTcParam.Loss = &chaosv1alpha1.LossSpec{
-			Loss:        tcParam.Loss.Loss,
-			Correlation: tcParam.Loss.Correlation,
-		}
-	}
-
-	if tcParam.Duplicate != nil {
-		chaoTcParam.Duplicate = &chaosv1alpha1.DuplicateSpec{
-			Duplicate:   tcParam.Duplicate.Duplicate,
-			Correlation: tcParam.Duplicate.Correlation,
-		}
-	}
-
-	return chaoTcParam
-}
-
-func deepCopyRecorderSpec(recorder *v1alpha1.ReorderSpec) *chaosv1alpha1.ReorderSpec {
-	return &chaosv1alpha1.ReorderSpec{
-		Reorder:     recorder.Reorder,
-		Correlation: recorder.Correlation,
-		Gap:         recorder.Gap,
+func NewPodChaosBuilder(meta metav1.Object, gvk schema.GroupVersionKind) PodChaosBuilder {
+	return &podChaosBuilder{
+		podChaos: DefaultPodChaos(meta, gvk),
 	}
 }
 
-func deepCopyContainerSelector(selector *v1alpha1.PodSelector) *chaosv1alpha1.ContainerSelector {
-	return &chaosv1alpha1.ContainerSelector{
-		PodSelector:    *DeepCopyPodSelector(selector),
-		ContainerNames: []string{},
+type podChaosBuilder struct {
+	podChaos *chaosv1alpha1.PodChaos
+}
+
+func (p *podChaosBuilder) SetNamespace(namespace string) PodChaosBuilder {
+	p.podChaos.Namespace = namespace
+	return p
+}
+
+func (p *podChaosBuilder) SetName(name string) PodChaosBuilder {
+	p.podChaos.Name = name
+	return p
+}
+
+func (p *podChaosBuilder) SetLabels(labels map[string]string) PodChaosBuilder {
+	p.podChaos.Labels = labels
+	return p
+}
+
+func (p *podChaosBuilder) SetAnnotations(annotations map[string]string) PodChaosBuilder {
+	p.podChaos.Annotations = annotations
+	return p
+}
+
+func (p *podChaosBuilder) SetContainerSelector(selector chaosv1alpha1.ContainerSelector) PodChaosBuilder {
+	p.podChaos.Spec.ContainerSelector = selector
+	return p
+}
+
+func (p *podChaosBuilder) SetAction(action string) PodChaosBuilder {
+	p.podChaos.Spec.Action = chaosv1alpha1.PodChaosAction(action)
+	return p
+}
+
+func (p *podChaosBuilder) SetDuration(duration string) PodChaosBuilder {
+	p.podChaos.Spec.Duration = &duration
+	return p
+}
+
+func (p *podChaosBuilder) SetGracePeriod(gracePeriod int64) PodChaosBuilder {
+	p.podChaos.Spec.GracePeriod = gracePeriod
+	return p
+}
+
+func (p *podChaosBuilder) Build() *chaosv1alpha1.PodChaos {
+	return p.podChaos
+}
+
+type NetworkChaosBuilder interface {
+	SetNamespace(string) NetworkChaosBuilder
+	SetName(string) NetworkChaosBuilder
+	SetLabels(map[string]string) NetworkChaosBuilder
+	SetAnnotations(map[string]string) NetworkChaosBuilder
+	SetPodSelector(*chaosv1alpha1.PodSelector) NetworkChaosBuilder
+	SetAction(string) NetworkChaosBuilder
+	SetDevice(string) NetworkChaosBuilder
+	SetDuration(string) NetworkChaosBuilder
+	SetDirection(string) NetworkChaosBuilder
+	SetTarget(*chaosv1alpha1.PodSelector) NetworkChaosBuilder
+	SetTargetDevice(string) NetworkChaosBuilder
+	SetTcParameter(chaosv1alpha1.TcParameter) NetworkChaosBuilder
+	Build() *chaosv1alpha1.NetworkChaos
+}
+
+type netWorkChaosBuilder struct {
+	netWorkChaos *chaosv1alpha1.NetworkChaos
+}
+
+func (n *netWorkChaosBuilder) SetNamespace(namespace string) NetworkChaosBuilder {
+	n.netWorkChaos.Namespace = namespace
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetName(name string) NetworkChaosBuilder {
+	n.netWorkChaos.Name = name
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetLabels(labels map[string]string) NetworkChaosBuilder {
+	n.netWorkChaos.Labels = labels
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetAnnotations(annotations map[string]string) NetworkChaosBuilder {
+	n.netWorkChaos.Annotations = annotations
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetPodSelector(selector *chaosv1alpha1.PodSelector) NetworkChaosBuilder {
+	n.netWorkChaos.Spec.PodSelector = *selector
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetAction(action string) NetworkChaosBuilder {
+	n.netWorkChaos.Spec.Action = chaosv1alpha1.NetworkChaosAction(action)
+
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetDevice(device string) NetworkChaosBuilder {
+	n.netWorkChaos.Spec.Device = device
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetDuration(duration string) NetworkChaosBuilder {
+	n.netWorkChaos.Spec.Duration = &duration
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetDirection(direction string) NetworkChaosBuilder {
+	n.netWorkChaos.Spec.Direction = chaosv1alpha1.Direction(direction)
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetTarget(selector *chaosv1alpha1.PodSelector) NetworkChaosBuilder {
+	n.netWorkChaos.Spec.Target = selector
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetTargetDevice(targetDevice string) NetworkChaosBuilder {
+	n.netWorkChaos.Spec.TargetDevice = targetDevice
+	return n
+}
+
+func (n *netWorkChaosBuilder) SetTcParameter(parameter chaosv1alpha1.TcParameter) NetworkChaosBuilder {
+	n.netWorkChaos.Spec.TcParameter = parameter
+	return n
+}
+
+func (n *netWorkChaosBuilder) Build() *chaosv1alpha1.NetworkChaos {
+	return n.netWorkChaos
+}
+
+func NewNetworkChaosBuilder(meta metav1.Object, gvk schema.GroupVersionKind) NetworkChaosBuilder {
+	return &netWorkChaosBuilder{
+		netWorkChaos: DefaultNetworkChaos(meta, gvk),
 	}
 }
 
-func DeepCopyPodSelector(selector *v1alpha1.PodSelector) *chaosv1alpha1.PodSelector {
-	return &chaosv1alpha1.PodSelector{
-		Selector: chaosv1alpha1.PodSelectorSpec{
-			GenericSelectorSpec: chaosv1alpha1.GenericSelectorSpec{
-				Namespaces:          selector.Selector.GenericSelectorSpec.Namespaces,
-				FieldSelectors:      selector.Selector.GenericSelectorSpec.FieldSelectors,
-				LabelSelectors:      selector.Selector.GenericSelectorSpec.LabelSelectors,
-				ExpressionSelectors: chaosv1alpha1.LabelSelectorRequirements(selector.Selector.GenericSelectorSpec.ExpressionSelectors),
-				AnnotationSelectors: selector.Selector.GenericSelectorSpec.AnnotationSelectors,
+type PodSelectorBuilder interface {
+	SetNamespaces([]string) PodSelectorBuilder
+	SetSelectMode(string) PodSelectorBuilder
+	SetValue(string) PodSelectorBuilder
+	SetNodes([]string) PodSelectorBuilder
+	SetPods(map[string][]string) PodSelectorBuilder
+	SetNodeSelector(map[string]string) PodSelectorBuilder
+	SetPodPhaseSelectors([]string) PodSelectorBuilder
+	SetFieldSelectors(map[string]string) PodSelectorBuilder
+	SetLabelSelector(map[string]string) PodSelectorBuilder
+	SetExpressionSelectors([]metav1.LabelSelectorRequirement) PodSelectorBuilder
+	SetAnnotationSelectors(map[string]string) PodSelectorBuilder
+	Build() *chaosv1alpha1.PodSelector
+}
+
+func NewPodSelectorBuilder() PodSelectorBuilder {
+	return &podSelectorBuilder{
+		podSelector: &chaosv1alpha1.PodSelector{},
+	}
+}
+
+type podSelectorBuilder struct {
+	podSelector *chaosv1alpha1.PodSelector
+}
+
+func (p *podSelectorBuilder) SetNamespaces(namespaces []string) PodSelectorBuilder {
+	p.podSelector.Selector.Namespaces = namespaces
+	return p
+}
+
+func (p *podSelectorBuilder) SetSelectMode(mode string) PodSelectorBuilder {
+	p.podSelector.Mode = chaosv1alpha1.SelectorMode(mode)
+	return p
+}
+
+func (p *podSelectorBuilder) SetValue(value string) PodSelectorBuilder {
+	p.podSelector.Value = value
+	return p
+}
+
+func (p *podSelectorBuilder) SetNodes(nodes []string) PodSelectorBuilder {
+	p.podSelector.Selector.Nodes = nodes
+	return p
+}
+
+func (p *podSelectorBuilder) SetPods(pods map[string][]string) PodSelectorBuilder {
+	p.podSelector.Selector.Pods = pods
+	return p
+}
+
+func (p *podSelectorBuilder) SetNodeSelector(nodeSelector map[string]string) PodSelectorBuilder {
+	p.podSelector.Selector.NodeSelectors = nodeSelector
+	return p
+}
+
+func (p *podSelectorBuilder) SetPodPhaseSelectors(podPhaseSelectors []string) PodSelectorBuilder {
+	p.podSelector.Selector.PodPhaseSelectors = podPhaseSelectors
+	return p
+}
+
+func (p *podSelectorBuilder) SetFieldSelectors(fieldSelectors map[string]string) PodSelectorBuilder {
+	p.podSelector.Selector.FieldSelectors = fieldSelectors
+	return p
+}
+
+func (p *podSelectorBuilder) SetLabelSelector(labelSelectors map[string]string) PodSelectorBuilder {
+	p.podSelector.Selector.LabelSelectors = labelSelectors
+	return p
+}
+
+func (p *podSelectorBuilder) SetExpressionSelectors(requirements []metav1.LabelSelectorRequirement) PodSelectorBuilder {
+	p.podSelector.Selector.ExpressionSelectors = requirements
+	return p
+}
+
+func (p *podSelectorBuilder) SetAnnotationSelectors(annotationSelectors map[string]string) PodSelectorBuilder {
+	p.podSelector.Selector.AnnotationSelectors = annotationSelectors
+	return p
+}
+
+func (p *podSelectorBuilder) Build() *chaosv1alpha1.PodSelector {
+	return p.podSelector
+}
+
+func DefaultPodChaos(meta metav1.Object, gvk schema.GroupVersionKind) *chaosv1alpha1.PodChaos {
+	return &chaosv1alpha1.PodChaos{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "shardingsphere-proxy",
+			Namespace: "default",
+			Labels:    map[string]string{},
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(meta, gvk),
 			},
-			Nodes:             selector.Selector.Nodes,
-			Pods:              selector.Selector.Pods,
-			NodeSelectors:     selector.Selector.NodeSelectors,
-			PodPhaseSelectors: selector.Selector.PodPhaseSelectors,
 		},
-		Mode:  chaosv1alpha1.SelectorMode(selector.Mode),
-		Value: selector.Value,
+		Spec: chaosv1alpha1.PodChaosSpec{
+			Action: chaosv1alpha1.ContainerKillAction,
+		},
+	}
+}
+
+func DefaultNetworkChaos(meta metav1.Object, gvk schema.GroupVersionKind) *chaosv1alpha1.NetworkChaos {
+	return &chaosv1alpha1.NetworkChaos{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "shardingsphere-proxy",
+			Namespace: "default",
+			Labels:    map[string]string{},
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(meta, gvk),
+			},
+		},
+		Spec: chaosv1alpha1.NetworkChaosSpec{
+			Action:    chaosv1alpha1.PartitionAction,
+			Direction: "to",
+		},
 	}
 }

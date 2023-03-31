@@ -19,8 +19,7 @@ package controllers
 
 import (
 	"context"
-	chaos_mesh "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos-mesh"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -38,7 +37,7 @@ type ShardingSphereChaosReconciler struct { //
 	client.Client
 	Scheme *runtime.Scheme
 
-	chaos_mesh.Chaos
+	Chaos chaos.Chaos
 	//todo: add job definition
 	//Job    job.Job
 }
@@ -92,30 +91,11 @@ func (r *ShardingSphereChaosReconciler) reconcileChaosMesh(ctx context.Context, 
 		}
 
 		return r.CreateNetworkChaos(ctx, ssChao)
-	case v1alpha1.WorkFlowKind:
-		chaos, isExist, err := r.getWorkflowByNamespacedName(ctx, namespaceName)
-		if err != nil {
-			return err
-		}
-		if isExist {
-			return r.updateWorkflow(ctx, ssChao, chaos)
-		}
-
-		return r.CreateWorkFlow(ctx, ssChao)
 	}
 	return nil
 }
 
-func (r *ShardingSphereChaosReconciler) CreateWorkFlow(ctx context.Context, chao *v1alpha1.ShardingSphereChaos) error {
-	workflow := reconcile.NewWorkflow(chao)
-	if err := r.Create(ctx, workflow); err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
-	}
-
-	return nil
-}
-
-func (r *ShardingSphereChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*chaosv1alpha1.NetworkChaos, bool, error) {
+func (r *ShardingSphereChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (chaos.NetworkChaos, bool, error) {
 	nc, err := r.Chaos.GetNetworkChaosByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return nil, false, err
@@ -126,7 +106,7 @@ func (r *ShardingSphereChaosReconciler) getNetworkChaosByNamespacedName(ctx cont
 	return nc, true, nil
 }
 
-func (r *ShardingSphereChaosReconciler) getPodChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*chaosv1alpha1.PodChaos, bool, error) {
+func (r *ShardingSphereChaosReconciler) getPodChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (chaos.PodChaos, bool, error) {
 	pc, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return nil, false, err
@@ -137,53 +117,26 @@ func (r *ShardingSphereChaosReconciler) getPodChaosByNamespacedName(ctx context.
 	return pc, true, nil
 }
 
-func (r *ShardingSphereChaosReconciler) getWorkflowByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*chaosv1alpha1.Workflow, bool, error) {
-	wf, err := r.Chaos.GetWorkflowByNamespacedName(ctx, namespacedName)
-	if err != nil {
-		return nil, false, err
-	}
-	if wf == nil {
-		return nil, false, nil
-	}
-	return wf, true, nil
-}
-
-func (r *ShardingSphereChaosReconciler) updateWorkflow(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, workflow *chaosv1alpha1.Workflow) error {
-	exp := reconcile.UpdateWorkflow(chao, workflow)
-	return r.Update(ctx, exp)
-}
-
-func (r *ShardingSphereChaosReconciler) updatePodChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, podChaos *chaosv1alpha1.PodChaos) error {
-	exp := reconcile.UpdatePodChaos(chao, podChaos)
-	return r.Update(ctx, exp)
-}
-
-func (r *ShardingSphereChaosReconciler) updateNetWorkChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, netWorkChaos *chaosv1alpha1.NetworkChaos) error {
-	exp := reconcile.UpdateNetworkChaos(chao, netWorkChaos)
-	return r.Update(ctx, exp)
-}
-
-func (r *ShardingSphereChaosReconciler) CreateNetworkChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos) error {
-	networkChaos := reconcile.NewNetworkPodChaos(chao)
-	if err := r.Create(ctx, networkChaos); err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
-	}
-
-	return nil
+func (r *ShardingSphereChaosReconciler) updatePodChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, podChaos chaos.PodChaos) error {
+	return reconcile.ChaosHandle.UpdatePodChaos(ctx, chao, r, podChaos)
 }
 
 func (r *ShardingSphereChaosReconciler) CreatePodChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos) error {
-	podChao := reconcile.NewPodChaos(chao)
-	if err := r.Create(ctx, podChao); err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
-	}
+	podChaos := reconcile.ChaosHandle.NewPodChaos(chao)
+	return reconcile.ChaosHandle.CreatePodChaos(ctx, r, podChaos)
+}
 
-	return nil
+func (r *ShardingSphereChaosReconciler) updateNetWorkChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, netWorkChaos chaos.NetworkChaos) error {
+	return reconcile.ChaosHandle.UpdateNetworkChaos(ctx, chao, r, netWorkChaos)
+}
+
+func (r *ShardingSphereChaosReconciler) CreateNetworkChaos(ctx context.Context, chao *v1alpha1.ShardingSphereChaos) error {
+	networkChaos := reconcile.ChaosHandle.NewNetworkPodChaos(chao)
+	return reconcile.ChaosHandle.CreateNetworkChaos(ctx, r, networkChaos)
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ShardingSphereChaosReconciler) SetupWithManager(mgr ctrl.Manager) error {
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ShardingSphereChaos{}).
 		Owns(&chaosv1alpha1.PodChaos{}).
