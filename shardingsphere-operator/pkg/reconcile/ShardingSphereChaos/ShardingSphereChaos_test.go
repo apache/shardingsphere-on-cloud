@@ -18,7 +18,6 @@ package ShardingSphereChaos_test
 
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	ss "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/ShardingSphereChaos"
 	chaosV1AlphaV1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -38,29 +37,26 @@ var _ = Describe("ShardingSphereChaos", func() {
 					Labels: map[string]string{
 						"app": "shardingsphere-proxy",
 					},
+					Annotations: map[string]string{
+						"spec/mode": "all",
+					},
 				},
 				Spec: v1alpha1.ShardingSphereChaosSpec{
 					ChaosKind: v1alpha1.PodChaosKind,
 					EmbedChaos: v1alpha1.EmbedChaos{
 						PodChaos: &v1alpha1.PodChaosSpec{
 							PodSelector: v1alpha1.PodSelector{
-								Mode: v1alpha1.FixedMode,
-								Selector: v1alpha1.PodSelectorSpec{
-									GenericSelectorSpec: v1alpha1.GenericSelectorSpec{
-										Namespaces: []string{"mesh-test"},
-										LabelSelectors: map[string]string{
-											"app.kubernetes.io/component": "zookeeper-new",
-										},
-									},
-									Nodes: nil,
-									Pods: map[string][]string{
-										"mesh-test": {"zookeeper-new-2"},
-									},
-									NodeSelectors:     nil,
-									PodPhaseSelectors: nil,
+								Namespaces: []string{"mesh-test"},
+								LabelSelectors: map[string]string{
+									"app.kubernetes.io/component": "zookeeper-new",
 								},
 							},
-							Action: v1alpha1.PodKillAction,
+							Action: v1alpha1.PodFailureAction,
+							PodActionParam: &v1alpha1.PodActionParam{
+								PodFailure: &v1alpha1.PodFailureActionParams{
+									Duration: "5m",
+								},
+							},
 						},
 					},
 				},
@@ -90,16 +86,6 @@ var _ = Describe("ShardingSphereChaos", func() {
 				}, time.Second*10, time.Millisecond*250).Should(BeTrue())
 			})
 		}
-
-		if ssChaos.Spec.ChaosKind == v1alpha1.WorkFlowKind {
-			It("should create workflow", func() {
-				var workflow *chaosV1AlphaV1.Workflow
-				nameSpacedName := types.NamespacedName{Namespace: ssChaos.Namespace, Name: ssChaos.Name}
-				Eventually(func() bool {
-					return k8sClient.Get(ctx, nameSpacedName, workflow) == nil
-				}, time.Second*10, time.Millisecond*250).Should(BeTrue())
-			})
-		}
 		//todo: add injectReq test here
 	})
 
@@ -113,29 +99,26 @@ var _ = Describe("ShardingSphereChaos", func() {
 					Labels: map[string]string{
 						"app": "shardingsphere-proxy",
 					},
+					Annotations: map[string]string{
+						"spec/mode": "all",
+					},
 				},
 				Spec: v1alpha1.ShardingSphereChaosSpec{
 					ChaosKind: v1alpha1.PodChaosKind,
 					EmbedChaos: v1alpha1.EmbedChaos{
 						PodChaos: &v1alpha1.PodChaosSpec{
 							PodSelector: v1alpha1.PodSelector{
-								Mode: v1alpha1.FixedMode,
-								Selector: v1alpha1.PodSelectorSpec{
-									GenericSelectorSpec: v1alpha1.GenericSelectorSpec{
-										Namespaces: []string{"mesh-test"},
-										LabelSelectors: map[string]string{
-											"app.kubernetes.io/component": "zookeeper-new",
-										},
-									},
-									Nodes: nil,
-									Pods: map[string][]string{
-										"mesh-test": {"zookeeper-new-2"},
-									},
-									NodeSelectors:     nil,
-									PodPhaseSelectors: nil,
+								Namespaces: []string{"mesh-test"},
+								LabelSelectors: map[string]string{
+									"app.kubernetes.io/component": "zookeeper-new",
 								},
 							},
-							Action: v1alpha1.PodKillAction,
+							Action: v1alpha1.PodFailureAction,
+							PodActionParam: &v1alpha1.PodActionParam{
+								PodFailure: &v1alpha1.PodFailureActionParams{
+									Duration: "5m",
+								},
+							},
 						},
 					},
 				},
@@ -172,19 +155,6 @@ var _ = Describe("ShardingSphereChaos", func() {
 			})
 		}
 
-		if ssChaos.Spec.ChaosKind == v1alpha1.WorkFlowKind {
-			It("verify workflow metadata", func() {
-				var workflow *chaosV1AlphaV1.Workflow
-				nameSpacedName := types.NamespacedName{Namespace: ssChaos.Namespace, Name: ssChaos.Name}
-				Eventually(func() bool {
-					return k8sClient.Get(ctx, nameSpacedName, workflow) == nil
-				}, time.Second*10, time.Millisecond*250).Should(BeTrue())
-				Expect(workflow.Name).To(Equal(ssChaos.Name))
-				Expect(workflow.Namespace).To(Equal(ssChaos.Namespace))
-				Expect(workflow.Labels).To(Equal(ssChaos.Labels))
-			})
-		}
-
 		//todo: add injectReq test here
 	})
 
@@ -201,29 +171,26 @@ var _ = Describe("ShardingSphereChaos", func() {
 					Labels: map[string]string{
 						"app": "shardingsphere-proxy",
 					},
+					Annotations: map[string]string{
+						"spec/mode": "all",
+					},
 				},
 				Spec: v1alpha1.ShardingSphereChaosSpec{
 					ChaosKind: v1alpha1.PodChaosKind,
 					EmbedChaos: v1alpha1.EmbedChaos{
 						PodChaos: &v1alpha1.PodChaosSpec{
 							PodSelector: v1alpha1.PodSelector{
-								Mode: v1alpha1.FixedMode,
-								Selector: v1alpha1.PodSelectorSpec{
-									GenericSelectorSpec: v1alpha1.GenericSelectorSpec{
-										Namespaces: []string{"mesh-test"},
-										LabelSelectors: map[string]string{
-											"app.kubernetes.io/component": "zookeeper-new",
-										},
-									},
-									Nodes: nil,
-									Pods: map[string][]string{
-										"mesh-test": {"zookeeper-new-2"},
-									},
-									NodeSelectors:     nil,
-									PodPhaseSelectors: nil,
+								Namespaces: []string{"mesh-test"},
+								LabelSelectors: map[string]string{
+									"app.kubernetes.io/component": "zookeeper-new",
 								},
 							},
-							Action: v1alpha1.PodKillAction,
+							Action: v1alpha1.PodFailureAction,
+							PodActionParam: &v1alpha1.PodActionParam{
+								PodFailure: &v1alpha1.PodFailureActionParams{
+									Duration: "5m",
+								},
+							},
 						},
 					},
 				},
@@ -241,9 +208,10 @@ var _ = Describe("ShardingSphereChaos", func() {
 				return k8sClient.Get(ctx, nameSpacedName, podChaos) == nil
 			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
 			ssChaosPodSelector = &ssChaos.Spec.PodChaos.PodSelector
-			Expect(podChaos.Spec.PodSelector.Mode).To(Equal(chaosV1AlphaV1.SelectorMode(ssChaos.Spec.PodChaos.Mode)))
-			Expect(podChaos.Spec.PodSelector).To(Equal(ss.DeepCopyPodSelector(ssChaosPodSelector)))
-			Expect(podChaos.Spec.GracePeriod).To(Equal(ssChaos.Spec.PodChaos.GracePeriod))
+			Expect(podChaos.Spec.PodSelector.Mode).To(Equal(chaosV1AlphaV1.SelectorMode(ssChaos.Annotations["spec/mode"])))
+			Expect(podChaos.Spec.PodSelector.Selector.Pods).To(Equal(ssChaosPodSelector.Pods))
+			Expect(podChaos.Spec.PodSelector.Selector.LabelSelectors).To(Equal(ssChaosPodSelector.LabelSelectors))
+			Expect(podChaos.Spec.Action).To(Equal(ssChaos.Spec.PodChaos.Action))
 		})
 	})
 
@@ -258,37 +226,29 @@ var _ = Describe("ShardingSphereChaos", func() {
 					Labels: map[string]string{
 						"app": "shardingsphere-proxy",
 					},
+					Annotations: map[string]string{
+						"spec/mode":        "all",
+						"spec/target/mode": "all",
+					},
 				},
 				Spec: v1alpha1.ShardingSphereChaosSpec{
 					ChaosKind: v1alpha1.NetworkChaosKind,
 					EmbedChaos: v1alpha1.EmbedChaos{
 						NetworkChaos: &v1alpha1.NetworkChaosSpec{
-							PodSelector: v1alpha1.PodSelector{
-								Selector: v1alpha1.PodSelectorSpec{
-									GenericSelectorSpec: v1alpha1.GenericSelectorSpec{
-										Namespaces: []string{"mesh-test"},
-										LabelSelectors: map[string]string{
-											"app": "shardingsphere-proxy-apache-shardingsphere-proxy",
-										},
-									},
+							Source: v1alpha1.PodSelector{
+								Namespaces: []string{"mesh-test"},
+								LabelSelectors: map[string]string{
+									"app": "shardingsphere-proxy-apache-shardingsphere-proxy",
 								},
-								Mode: v1alpha1.AllMode,
 							},
-							Action:      v1alpha1.PartitionAction,
-							Device:      "",
-							Duration:    &duration,
-							TcParameter: v1alpha1.TcParameter{},
-							Direction:   v1alpha1.To,
+							Action:    v1alpha1.PartitionAction,
+							Duration:  &duration,
+							Direction: v1alpha1.To,
 							Target: &v1alpha1.PodSelector{
-								Selector: v1alpha1.PodSelectorSpec{
-									GenericSelectorSpec: v1alpha1.GenericSelectorSpec{
-										Namespaces: []string{"mesh-test"},
-										LabelSelectors: map[string]string{
-											"app.kubernetes.io/name": "zookeeper",
-										},
-									},
+								Namespaces: []string{"mesh-test"},
+								LabelSelectors: map[string]string{
+									"app.kubernetes.io/name": "zookeeper",
 								},
-								Mode: v1alpha1.AllMode,
 							},
 						},
 					},
@@ -307,71 +267,14 @@ var _ = Describe("ShardingSphereChaos", func() {
 				return k8sClient.Get(ctx, nameSpacedName, netWorkChaos) == nil
 			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
 			ssChaosPodSelector = &ssChaos.Spec.PodChaos.PodSelector
-			Expect(netWorkChaos.Spec.PodSelector.Mode).To(Equal(chaosV1AlphaV1.SelectorMode(ssChaos.Spec.PodChaos.Mode)))
-			Expect(netWorkChaos.Spec.PodSelector).To(Equal(ss.DeepCopyPodSelector(ssChaosPodSelector)))
+			Expect(netWorkChaos.Spec.PodSelector.Mode).To(Equal(chaosV1AlphaV1.SelectorMode(ssChaos.Annotations["spec/mode"])))
+			Expect(netWorkChaos.Spec.Target.Mode).To(Equal(chaosV1AlphaV1.SelectorMode(ssChaos.Annotations["spec/target/mode"])))
+			Expect(netWorkChaos.Spec.PodSelector.Selector.Namespaces).To(Equal(ssChaosPodSelector.Namespaces))
+			Expect(netWorkChaos.Spec.Target.Selector.Namespaces).To(Equal(ssChaos.Spec.NetworkChaos.Target.Namespaces))
+			Expect(netWorkChaos.Spec.PodSelector.Selector.LabelSelectors).To(Equal(ssChaos.Spec.NetworkChaos.Source.LabelSelectors))
+			Expect(netWorkChaos.Spec.Target.Selector.LabelSelectors).To(Equal(ssChaos.Spec.NetworkChaos.Target.LabelSelectors))
 			Expect(netWorkChaos.Spec.Action).To(Equal(chaosV1AlphaV1.NetworkChaosAction(ssChaos.Spec.NetworkChaos.Action)))
 			Expect(*netWorkChaos.Spec.Duration).To(Equal(*ssChaos.Spec.NetworkChaos.Duration))
-			Expect(netWorkChaos.Spec.Direction).To(Equal(ssChaos.Spec.NetworkChaos.Direction))
 		})
 	})
-
-	//
-	//var (
-	//	ssChaos *v1alpha1.ShardingSphereChaos
-	//	entryDeadline string = "10m"
-	//	zkKillDeadline string = "5m"
-	//)
-	//BeforeEach(func() {
-	//	ssChaos = &v1alpha1.ShardingSphereChaos{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Name:      "test-ssChaos",
-	//			Namespace: "default",
-	//			Labels: map[string]string{
-	//				"app": "shardingsphere-proxy",
-	//			},
-	//		},
-	//		Spec: v1alpha1.ShardingSphereChaosSpec{
-	//			ChaosKind: v1alpha1.NetworkChaosKind,
-	//			EmbedChaos: v1alpha1.EmbedChaos{
-	//				Workflow: &v1alpha1.WorkflowSpec{
-	//					Entry: "entry",
-	//					Templates: []v1alpha1.WorkFlowTemplate{
-	//						{
-	//							Name:     "entry",
-	//							Type:     v1alpha1.TypeSerial,
-	//							Deadline: &entryDeadline,
-	//							Children: []string{
-	//								"test-case4",
-	//							},
-	//						},
-	//						{
-	//							Name:                "zkl-kill",
-	//							Type:                v1alpha1.TypePodChaos,
-	//							Deadline:            &zkKillDeadline,
-	//							EmbedChaos:          &v1alpha1.EmbedChaos{
-	//								PodChaos: &v1alpha1.PodChaosSpec{
-	//									PodSelector: v1alpha1.PodSelector{
-	//										Selector: v1alpha1.PodSelectorSpec{
-	//											GenericSelectorSpec: v1alpha1.GenericSelectorSpec{
-	//												Namespaces: []string{"mesh-test"},
-	//												LabelSelectors: map[string]string{
-	//													"app": "shardingsphere-proxy-apache-shardingsphere-proxy",
-	//												},
-	//											},
-	//										},
-	//										Mode: v1alpha1.AllMode,
-	//									},
-	//									Action: v1alpha1.ContainerKillAction,
-	//								}
-	//							}
-	//						},
-	//					},
-	//				},
-	//			},
-	//		},
-	//	}
-	//	Expect(k8sClient.Create(ctx, ssChaos)).To(BeNil())
-	//})
-	//
-	//AfterEach(Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil()))
 })

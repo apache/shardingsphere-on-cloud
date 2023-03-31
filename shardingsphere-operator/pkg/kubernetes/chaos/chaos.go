@@ -20,12 +20,13 @@ package chaos
 import (
 	"context"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewChaos(getter ChaosGetter, setter ChaosSetter) Chaos {
+func NewChaos(client client.Client) Chaos {
 	return ChaosClient{
-		ChaosGetter: getter,
-		ChaosSetter: setter,
+		ChaosGetter: chaosMeshGetter{client},
+		ChaosSetter: chaosMeshSetter{client},
 	}
 }
 
