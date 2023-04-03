@@ -1,5 +1,3 @@
-package ShardingSphereChaos
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,9 @@ package ShardingSphereChaos
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package ShardingSphereChaos
+
 import (
 	"context"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -61,7 +62,7 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) cha
 	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 
 	chao := ssChao.Spec.PodChaos
-	pcb.SetAction(string(chao.Action))
+	pcb.SetAction(chao.Action)
 
 	psb := NewPodSelectorBuilder()
 
@@ -97,7 +98,7 @@ func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereCha
 
 	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 	chao := ssChao.Spec.NetworkChaos
-	ncb.SetAction(string(chao.Action)).SetDuration(*chao.Duration).SetDirection(string(chao.Direction))
+	ncb.SetAction(chao.Action).SetDuration(*chao.Duration).SetDirection(string(chao.Direction))
 
 	psb := NewPodSelectorBuilder()
 
@@ -199,7 +200,7 @@ type PodChaosBuilder interface {
 	SetLabels(map[string]string) PodChaosBuilder
 	SetAnnotations(map[string]string) PodChaosBuilder
 	SetContainerSelector(chaosv1alpha1.ContainerSelector) PodChaosBuilder
-	SetAction(string) PodChaosBuilder
+	SetAction(v1alpha1.PodChaosAction) PodChaosBuilder
 	SetDuration(string) PodChaosBuilder
 	SetGracePeriod(int64) PodChaosBuilder
 	Build() *chaosv1alpha1.PodChaos
@@ -240,13 +241,25 @@ func (p *podChaosBuilder) SetContainerSelector(selector chaosv1alpha1.ContainerS
 	return p
 }
 
-func (p *podChaosBuilder) SetAction(action string) PodChaosBuilder {
-	p.podChaos.Spec.Action = chaosv1alpha1.PodChaosAction(action)
+func (p *podChaosBuilder) SetAction(action v1alpha1.PodChaosAction) PodChaosBuilder {
+	if action == v1alpha1.PodFailureAction {
+		p.podChaos.Spec.Action = chaosv1alpha1.PodFailureAction
+	}
+
+	if action == v1alpha1.ContainerKillAction {
+		p.podChaos.Spec.Action = chaosv1alpha1.ContainerKillAction
+	}
 	return p
 }
 
 func (p *podChaosBuilder) SetDuration(duration string) PodChaosBuilder {
-	p.podChaos.Spec.Duration = &duration
+	if duration == "" {
+		//todo: change to default
+		ret := "1m"
+		p.podChaos.Spec.Duration = &ret
+	} else {
+		p.podChaos.Spec.Duration = &duration
+	}
 	return p
 }
 
@@ -265,7 +278,7 @@ type NetworkChaosBuilder interface {
 	SetLabels(map[string]string) NetworkChaosBuilder
 	SetAnnotations(map[string]string) NetworkChaosBuilder
 	SetPodSelector(*chaosv1alpha1.PodSelector) NetworkChaosBuilder
-	SetAction(string) NetworkChaosBuilder
+	SetAction(v1alpha1.NetworkChaosAction) NetworkChaosBuilder
 	SetDevice(string) NetworkChaosBuilder
 	SetDuration(string) NetworkChaosBuilder
 	SetDirection(string) NetworkChaosBuilder
@@ -304,8 +317,22 @@ func (n *netWorkChaosBuilder) SetPodSelector(selector *chaosv1alpha1.PodSelector
 	return n
 }
 
-func (n *netWorkChaosBuilder) SetAction(action string) NetworkChaosBuilder {
-	n.netWorkChaos.Spec.Action = chaosv1alpha1.NetworkChaosAction(action)
+func (n *netWorkChaosBuilder) SetAction(action v1alpha1.NetworkChaosAction) NetworkChaosBuilder {
+	if action == v1alpha1.CorruptAction {
+		n.netWorkChaos.Spec.Action = chaosv1alpha1.CorruptAction
+	}
+
+	if action == v1alpha1.PartitionAction {
+		n.netWorkChaos.Spec.Action = chaosv1alpha1.PartitionAction
+	}
+
+	if action == v1alpha1.LossAction {
+		n.netWorkChaos.Spec.Action = chaosv1alpha1.LossAction
+	}
+
+	if action == v1alpha1.DuplicateAction {
+		n.netWorkChaos.Spec.Action = chaosv1alpha1.DuplicateAction
+	}
 
 	return n
 }

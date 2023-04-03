@@ -19,6 +19,7 @@ package manager
 
 import (
 	"flag"
+	batchV1 "k8s.io/api/batch/v1"
 	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -26,6 +27,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
+	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -41,7 +43,9 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(chaosv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
+	utilruntime.Must(batchV1.AddToScheme(scheme))
 }
 
 // Options represents common options for the controller
@@ -134,6 +138,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 			Log:    mgr.GetLogger(),
+			//todo: set chaos type
 		}).SetupWithManager(mgr); err != nil {
 			logger.Error(err, "unable to create controller", "controller", "ShardingSphereChaos")
 			return err

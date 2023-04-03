@@ -18,7 +18,6 @@
 package v1alpha1
 
 import (
-	batchV1Beta1 "k8s.io/api/batch/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -45,13 +44,13 @@ type ShardingSphereChaos struct {
 
 // ShardingSphereChaosSpec defines the desired state of ShardingSphereChaos
 type ShardingSphereChaosSpec struct {
-	InjectJob batchV1Beta1.JobTemplateSpec `json:"InjectJob,omitempty"`
+	//InjectJob batchV1Beta1.JobTemplateSpec `json:"InjectJob,omitempty"`
 
 	ChaosKind ChaosKind `json:"chaosKind,omitempty"`
 
-	EmbedChaos `json:".inline"`
+	EmbedChaos `json:",inline"`
 
-	Verify batchV1Beta1.JobTemplateSpec `json:"Verify,omitempty"`
+	//Verify batchV1Beta1.JobTemplateSpec `json:"Verify,omitempty"`
 }
 
 type ChaosKind string
@@ -233,4 +232,8 @@ type PodSelector struct {
 	NodeSelectors map[string]string `json:"nodeSelectors,omitempty"`
 
 	ExpressionSelectors []metav1.LabelSelectorRequirement `json:"expressionSelectors,omitempty"`
+}
+
+func init() {
+	SchemeBuilder.Register(&ShardingSphereChaos{}, &ShardingSphereChaosList{})
 }
