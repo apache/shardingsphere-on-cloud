@@ -68,11 +68,13 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssChao *sschaosv1alpha1.ShardingSphereChaos) error {
+	logger := r.Log.WithValues("reconcile chaos", ssChao.Name)
 	namespaceName := types.NamespacedName{Namespace: ssChao.Namespace, Name: ssChao.Name}
 	switch ssChao.Spec.ChaosKind {
 	case sschaosv1alpha1.PodChaosKind:
 		chaos, isExist, err := r.getPodChaosByNamespacedName(ctx, namespaceName)
 		if err != nil {
+			logger.Error(err, "pod chaos err")
 			return err
 		}
 		if isExist {
@@ -83,12 +85,12 @@ func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssCh
 	case sschaosv1alpha1.NetworkChaosKind:
 		chaos, isExist, err := r.getNetworkChaosByNamespacedName(ctx, namespaceName)
 		if err != nil {
+			logger.Error(err, "network chao err")
 			return err
 		}
 		if isExist {
 			return r.updateNetWorkChaos(ctx, ssChao, chaos)
 		}
-
 		return r.CreateNetworkChaos(ctx, ssChao)
 	}
 	return nil

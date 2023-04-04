@@ -23,7 +23,6 @@ import (
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -64,7 +63,7 @@ func (c *chaosMeshHandler) CreateNetworkChaos(ctx context.Context, chao NetworkC
 }
 
 func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
-	pcb := NewPodChaosBuilder(ssChao.GetObjectMeta(), ssChao.GetObjectKind().GroupVersionKind())
+	pcb := NewPodChaosBuilder()
 	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 
 	chao := ssChao.Spec.PodChaos
@@ -228,9 +227,9 @@ type PodChaosBuilder interface {
 	Build() *chaosv1alpha1.PodChaos
 }
 
-func NewPodChaosBuilder(meta metav1.Object, gvk schema.GroupVersionKind) PodChaosBuilder {
+func NewPodChaosBuilder() PodChaosBuilder {
 	return &podChaosBuilder{
-		podChaos: DefaultPodChaos(meta, gvk),
+		podChaos: DefaultPodChaos(),
 	}
 }
 
@@ -483,15 +482,12 @@ func (p *podSelectorBuilder) Build() *chaosv1alpha1.PodSelector {
 	return p.podSelector
 }
 
-func DefaultPodChaos(meta metav1.Object, gvk schema.GroupVersionKind) *chaosv1alpha1.PodChaos {
+func DefaultPodChaos() *chaosv1alpha1.PodChaos {
 	return &chaosv1alpha1.PodChaos{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "shardingsphere-proxy",
 			Namespace: "default",
 			Labels:    map[string]string{},
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(meta, gvk),
-			},
 		},
 		Spec: chaosv1alpha1.PodChaosSpec{
 			Action: chaosv1alpha1.ContainerKillAction,
