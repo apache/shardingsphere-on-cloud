@@ -206,7 +206,7 @@ func (blder *WebhookBuilder) isAlreadyHandled(path string) bool {
 }
 
 func (blder *WebhookBuilder) registerApiservice() {
-	blder.mgr.GetWebhookServer().Register(apiPath, getApiService())
+	blder.mgr.GetWebhookServer().Register(apiPath, getAPIService())
 }
 
 func getAPIService() http.HandlerFunc {
