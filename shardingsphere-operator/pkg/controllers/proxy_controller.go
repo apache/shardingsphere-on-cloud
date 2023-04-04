@@ -66,7 +66,7 @@ type ProxyReconciler struct {
 // move the current state of the cluster closer to the desired state.
 
 func (r *ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := r.Log.WithValues(computeNodeControllerName, req.NamespacedName)
+	logger := r.Log.WithValues(proxyControllerName, req.NamespacedName)
 
 	rt, err := r.getRuntimeShardingSphereProxy(ctx, req.NamespacedName)
 	if apierrors.IsNotFound(err) {

@@ -19,7 +19,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type PhaseStatus string
@@ -67,7 +66,7 @@ type Conditions []Condition
 // | NotReady      | Failed     | ShardingSphere-Proxy failed to start correctly due to some problems|
 
 type Condition struct {
-	Type           ConditionType      `json:"type"`
-	Status         v1.ConditionStatus `json:"status"`
-	LastUpdateTime metav1.Time        `json:"lastUpdateTime,omitempty"`
+	Type           ConditionType          `json:"type"`
+	Status         metav1.ConditionStatus `json:"status"`
+	LastUpdateTime metav1.Time            `json:"lastUpdateTime,omitempty"`
 }

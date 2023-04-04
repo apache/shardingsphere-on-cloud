@@ -298,7 +298,7 @@ func newConditions(conditions []v1alpha1.ComputeNodeCondition, cond v1alpha1.Com
 	}
 
 	found := false
-	for idx, _ := range conditions {
+	for idx := range conditions {
 		if conditions[idx].Type == cond.Type {
 			conditions[idx].LastUpdateTime = cond.LastUpdateTime
 			conditions[idx].Status = cond.Status
@@ -321,7 +321,7 @@ func updateReadyConditions(conditions []v1alpha1.ComputeNodeCondition, cond v1al
 func updateNotReadyConditions(conditions []v1alpha1.ComputeNodeCondition, cond v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
 	cur := newConditions(conditions, cond)
 
-	for idx, _ := range cur {
+	for idx := range cur {
 		if cur[idx].Type == v1alpha1.ComputeNodeConditionReady {
 			cur[idx].LastUpdateTime = metav1.Now()
 			cur[idx].Status = v1alpha1.ConditionStatusFalse

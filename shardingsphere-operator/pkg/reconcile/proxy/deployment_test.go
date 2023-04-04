@@ -760,7 +760,7 @@ func assertConditions(t *testing.T, exp, act []v1alpha1.Condition, message strin
 	if !assert.Equal(t, len(exp), len(act), message) {
 		return false
 	}
-	for idx, _ := range exp {
+	for idx := range exp {
 		if !assert.Equal(t, exp[idx].Type, act[idx].Type, message) {
 			return false
 		}

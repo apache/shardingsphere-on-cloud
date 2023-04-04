@@ -19,17 +19,18 @@ package webhook
 
 import (
 	"errors"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
-	"net/http"
-	"net/url"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/conversion"
-	"strings"
 )
 
 var log = logf.Log.WithName("builder")
@@ -208,7 +209,7 @@ func (blder *WebhookBuilder) registerApiservice() {
 	blder.mgr.GetWebhookServer().Register(apiPath, getApiService())
 }
 
-func getApiService() http.HandlerFunc {
+func getAPIService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte("{}"))
