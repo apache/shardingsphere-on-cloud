@@ -19,6 +19,7 @@ package ShardingSphereChaos
 
 import (
 	"context"
+	"fmt"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
@@ -81,6 +82,7 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) cha
 	}
 
 	if chao.Action == v1alpha1.PodFailureAction {
+		fmt.Println(chao.PodActionParam.PodFailure.Duration)
 		pcb.SetDuration(chao.PodActionParam.PodFailure.Duration)
 	}
 
@@ -137,30 +139,30 @@ func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereCha
 
 	if chao.Action == v1alpha1.DelayAction {
 		tcParams.Delay = &chaosv1alpha1.DelaySpec{
-			Latency:     chao.NetWorkParams.Delay.Latency,
-			Correlation: chao.NetWorkParams.Delay.Correlation,
-			Jitter:      chao.NetWorkParams.Delay.Jitter,
+			Latency:     chao.Network.Delay.Latency,
+			Correlation: chao.Network.Delay.Correlation,
+			Jitter:      chao.Network.Delay.Jitter,
 		}
 	}
 
 	if chao.Action == v1alpha1.CorruptAction {
 		tcParams.Corrupt = &chaosv1alpha1.CorruptSpec{
-			Corrupt:     chao.NetWorkParams.Corrupt.Corrupt,
-			Correlation: chao.NetWorkParams.Corrupt.Correlation,
+			Corrupt:     chao.Network.Corrupt.Corrupt,
+			Correlation: chao.Network.Corrupt.Correlation,
 		}
 	}
 
 	if chao.Action == v1alpha1.DuplicateAction {
 		tcParams.Duplicate = &chaosv1alpha1.DuplicateSpec{
-			Duplicate:   chao.NetWorkParams.Duplicate.Duplicate,
-			Correlation: chao.NetWorkParams.Duplicate.Correlation,
+			Duplicate:   chao.Network.Duplicate.Duplicate,
+			Correlation: chao.Network.Duplicate.Correlation,
 		}
 	}
 
 	if chao.Action == v1alpha1.LossAction {
 		tcParams.Loss = &chaosv1alpha1.LossSpec{
-			Loss:        chao.NetWorkParams.Loss.Loss,
-			Correlation: chao.NetWorkParams.Loss.Correlation,
+			Loss:        chao.Network.Loss.Loss,
+			Correlation: chao.Network.Loss.Correlation,
 		}
 	}
 
@@ -176,7 +178,7 @@ func (c *chaosMeshHandler) UpdateNetworkChaos(ctx context.Context, ssChaos *v1al
 	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = Recur.Labels
 	exp.Annotations = Recur.Annotations
-	ReExp := (c.NewNetworkPodChaos(ssChaos)).(chaosv1alpha1.NetworkChaos)
+	ReExp := (c.NewNetworkPodChaos(ssChaos)).(*chaosv1alpha1.NetworkChaos)
 	exp.Spec = ReExp.Spec
 
 	return r.Update(ctx, exp)
@@ -189,7 +191,7 @@ func (c *chaosMeshHandler) UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1
 	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = Recur.Labels
 	exp.Annotations = Recur.Annotations
-	ReExp := (c.NewPodChaos(ssChaos)).(chaosv1alpha1.PodChaos)
+	ReExp := (c.NewPodChaos(ssChaos)).(*chaosv1alpha1.PodChaos)
 	exp.Spec = ReExp.Spec
 	return r.Update(ctx, exp)
 }

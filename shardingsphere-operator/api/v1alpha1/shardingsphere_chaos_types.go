@@ -45,11 +45,8 @@ type ShardingSphereChaos struct {
 // ShardingSphereChaosSpec defines the desired state of ShardingSphereChaos
 type ShardingSphereChaosSpec struct {
 	//InjectJob batchV1Beta1.JobTemplateSpec `json:"InjectJob,omitempty"`
-
-	ChaosKind ChaosKind `json:"chaosKind,omitempty"`
-
+	ChaosKind  ChaosKind `json:"chaosKind,omitempty"`
 	EmbedChaos `json:",inline"`
-
 	//Verify batchV1Beta1.JobTemplateSpec `json:"Verify,omitempty"`
 }
 
@@ -57,8 +54,7 @@ type ChaosKind string
 
 const (
 	NetworkChaosKind ChaosKind = "networkChaos"
-
-	PodChaosKind ChaosKind = "podChaos"
+	PodChaosKind     ChaosKind = "podChaos"
 )
 
 type EmbedChaos struct {
@@ -98,21 +94,21 @@ type PodChaosAction string
 
 var (
 	PodFailureAction    PodChaosAction = "podFailure"
-	ContainerKillAction PodChaosAction = "ContainerKill"
+	ContainerKillAction PodChaosAction = "containerKill"
 )
 
 type PodChaosSpec struct {
-	PodSelector `json:",inline"`
+	PodSelector `json:"selector,omitempty"`
 	Action      PodChaosAction `json:"action"`
 	// +optional
-	PodActionParam *PodActionParam `json:",inline"`
+	PodActionParam PodActionParam `json:",inline"`
 }
 
 type PodActionParam struct {
 	//+optional
-	PodFailure *PodFailureActionParams `json:"podFailure,omitempty"`
+	PodFailure PodFailureActionParams `json:"podFailure,omitempty"`
 	//+optional
-	ContainerKill *ContainerKillActionParams `json:"containerKill,omitempty"`
+	ContainerKill ContainerKillActionParams `json:"containerKill,omitempty"`
 }
 
 type PodFailureActionParams struct {
@@ -129,20 +125,15 @@ type ContainerKillActionParams struct {
 
 type NetworkChaosSpec struct {
 	Source PodSelector `json:",inline"`
-
 	// +optional
 	Duration *string `json:"duration,omitempty"`
-
 	//+optional
 	Direction Direction `json:"direction,omitempty"`
-
 	// +optional
-	Target *PodSelector `json:"target,omitempty"`
-
+	Target *PodSelector       `json:"target,omitempty"`
 	Action NetworkChaosAction `json:"action"`
-
 	// +optional
-	NetWorkParams *NetWorkParams `json:",inline"`
+	Network *NetWorkParams `json:",inline"`
 }
 
 type NetWorkParams struct {
@@ -189,48 +180,36 @@ type CorruptActionParams struct {
 type NetworkChaosAction string
 
 const (
-	DelayAction NetworkChaosAction = "delay"
-
-	LossAction NetworkChaosAction = "loss"
-
+	DelayAction     NetworkChaosAction = "delay"
+	LossAction      NetworkChaosAction = "loss"
 	DuplicateAction NetworkChaosAction = "duplicate"
-
-	CorruptAction NetworkChaosAction = "corrupt"
-
+	CorruptAction   NetworkChaosAction = "corrupt"
 	PartitionAction NetworkChaosAction = "partition"
 )
 
 type Direction string
 
 const (
-	To Direction = "to"
-
+	To   Direction = "to"
 	From Direction = "from"
-
 	Both Direction = "both"
 )
 
-//selector
+//pod selector
 
 type PodSelector struct {
 	// +optional
 	Namespaces []string `json:"namespaces,omitempty"`
-
 	// +optional
 	LabelSelectors map[string]string `json:"labelSelectors,omitempty"`
-
 	// +optional
 	AnnotationSelectors map[string]string `json:"annotationSelectors,omitempty"`
-
 	// +optional
 	Nodes []string `json:"nodes,omitempty"`
-
 	// +optional
 	Pods map[string][]string `json:"pods,omitempty"`
-
 	// +optional
-	NodeSelectors map[string]string `json:"nodeSelectors,omitempty"`
-
+	NodeSelectors       map[string]string                 `json:"nodeSelectors,omitempty"`
 	ExpressionSelectors []metav1.LabelSelectorRequirement `json:"expressionSelectors,omitempty"`
 }
 

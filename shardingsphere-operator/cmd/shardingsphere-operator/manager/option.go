@@ -19,6 +19,7 @@ package manager
 
 import (
 	"flag"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
 	batchV1 "k8s.io/api/batch/v1"
 	"strings"
 
@@ -76,7 +77,7 @@ func ParseOptionsFromCmdFlags() *Options {
 	flag.BoolVar(&opt.LeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&opt.FeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for alpha/experimental features.")
+	flag.StringVar(&opt.FeatureGates, "feature-gates", "ShardingSphereChaos=true", "A set of key=value pairs that describe feature gates for alpha/experimental features.")
 
 	opt.ZapOptions.BindFlags(flag.CommandLine)
 	flag.Parse()
@@ -138,7 +139,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 			Log:    mgr.GetLogger(),
-			//todo: set chaos type
+			Chaos:  chaos.NewChaos(mgr.GetClient()),
 		}).SetupWithManager(mgr); err != nil {
 			logger.Error(err, "unable to create controller", "controller", "ShardingSphereChaos")
 			return err
