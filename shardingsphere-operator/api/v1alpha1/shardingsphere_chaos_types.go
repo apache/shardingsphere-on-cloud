@@ -100,8 +100,8 @@ var (
 type PodChaosSpec struct {
 	PodSelector `json:"selector,omitempty"`
 	Action      PodChaosAction `json:"action"`
-	// +optional
-	PodActionParam PodActionParam `json:",inline"`
+	//+optional
+	PodActionParam PodActionParam `json:"params,omitempty"`
 }
 
 type PodActionParam struct {
@@ -133,7 +133,7 @@ type NetworkChaosSpec struct {
 	Target *PodSelector       `json:"target,omitempty"`
 	Action NetworkChaosAction `json:"action"`
 	// +optional
-	Network *NetWorkParams `json:",inline"`
+	Network *NetWorkParams `json:"params,omitempty"`
 }
 
 type NetWorkParams struct {

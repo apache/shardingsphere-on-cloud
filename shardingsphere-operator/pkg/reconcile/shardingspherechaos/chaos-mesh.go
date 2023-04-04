@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 
-package ShardingSphereChaos
+package shardingspherechaos
 
 import (
 	"context"
-	"fmt"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -38,27 +37,33 @@ const (
 	targetPodSelectValue = "spec/target/value"
 )
 
-type chaosMeshHandler struct{}
+type chaosMeshHandler struct {
+	r client.Client
+}
 
-func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, r client.Client, chao chaos.PodChaos) error {
+func NewChaosMeshHandler(r client.Client) ChaosHandler {
+	return &chaosMeshHandler{r}
+}
+
+func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, chao PodChaos) error {
 	podChao := chao.(*chaosv1alpha1.PodChaos)
-	if err := r.Create(ctx, podChao); err != nil && !apierrors.IsAlreadyExists(err) {
+	if err := c.r.Create(ctx, podChao); err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 
 	return nil
 }
 
-func (c *chaosMeshHandler) CreateNetworkChaos(ctx context.Context, r client.Client, chao chaos.NetworkChaos) error {
+func (c *chaosMeshHandler) CreateNetworkChaos(ctx context.Context, chao NetworkChaos) error {
 	networkChao := chao.(*chaosv1alpha1.NetworkChaos)
-	if err := r.Create(ctx, networkChao); err != nil && !apierrors.IsAlreadyExists(err) {
+	if err := c.r.Create(ctx, networkChao); err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 
 	return nil
 }
 
-func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) chaos.PodChaos {
+func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	pcb := NewPodChaosBuilder(ssChao.GetObjectMeta(), ssChao.GetObjectKind().GroupVersionKind())
 	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 
@@ -82,7 +87,6 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) cha
 	}
 
 	if chao.Action == v1alpha1.PodFailureAction {
-		fmt.Println(chao.PodActionParam.PodFailure.Duration)
 		pcb.SetDuration(chao.PodActionParam.PodFailure.Duration)
 	}
 
@@ -91,12 +95,16 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) cha
 	}
 
 	pcb.SetContainerSelector(*containerSelector)
+	podChao := pcb.Build()
 
-	return pcb.Build()
+	if err := ctrl.SetControllerReference(ssChao, podChao, c.r.Scheme()); err != nil {
+		return nil, err
+	}
+	return podChao, nil
 }
 
-func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereChaos) chaos.NetworkChaos {
-	ncb := NewNetworkChaosBuilder(ssChao.GetObjectMeta(), ssChao.GetObjectKind().GroupVersionKind())
+func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error) {
+	ncb := NewNetworkChaosBuilder()
 
 	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 	chao := ssChao.Spec.NetworkChaos
@@ -168,32 +176,44 @@ func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereCha
 
 	ncb.SetTcParameter(*tcParams)
 
-	return ncb.Build()
+	networkChao := ncb.Build()
+
+	if err := ctrl.SetControllerReference(ssChao, networkChao, c.r.Scheme()); err != nil {
+		return nil, err
+	}
+	return networkChao, nil
 }
 
-func (c *chaosMeshHandler) UpdateNetworkChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, r client.Client, cur chaos.NetworkChaos) error {
+func (c *chaosMeshHandler) UpdateNetworkChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur NetworkChaos) error {
 	Recur := cur.(*chaosv1alpha1.NetworkChaos)
 	exp := &chaosv1alpha1.NetworkChaos{}
 	exp.ObjectMeta = Recur.ObjectMeta
-	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = Recur.Labels
 	exp.Annotations = Recur.Annotations
-	ReExp := (c.NewNetworkPodChaos(ssChaos)).(*chaosv1alpha1.NetworkChaos)
+	networkChaos, err := c.NewNetworkPodChaos(ssChaos)
+	if err != nil {
+		return err
+	}
+	ReExp := (networkChaos).(*chaosv1alpha1.NetworkChaos)
 	exp.Spec = ReExp.Spec
 
-	return r.Update(ctx, exp)
+	return c.r.Update(ctx, exp)
 }
 
-func (c *chaosMeshHandler) UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, r client.Client, cur chaos.PodChaos) error {
+func (c *chaosMeshHandler) UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur PodChaos) error {
 	Recur := cur.(*chaosv1alpha1.PodChaos)
 	exp := &chaosv1alpha1.PodChaos{}
 	exp.ObjectMeta = Recur.ObjectMeta
-	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = Recur.Labels
 	exp.Annotations = Recur.Annotations
-	ReExp := (c.NewPodChaos(ssChaos)).(*chaosv1alpha1.PodChaos)
+	podChao, err := c.NewPodChaos(ssChaos)
+	if err != nil {
+		return err
+	}
+	ReExp := (podChao).(*chaosv1alpha1.PodChaos)
 	exp.Spec = ReExp.Spec
-	return r.Update(ctx, exp)
+
+	return c.r.Create(ctx, exp)
 }
 
 type PodChaosBuilder interface {
@@ -373,9 +393,9 @@ func (n *netWorkChaosBuilder) Build() *chaosv1alpha1.NetworkChaos {
 	return n.netWorkChaos
 }
 
-func NewNetworkChaosBuilder(meta metav1.Object, gvk schema.GroupVersionKind) NetworkChaosBuilder {
+func NewNetworkChaosBuilder() NetworkChaosBuilder {
 	return &netWorkChaosBuilder{
-		netWorkChaos: DefaultNetworkChaos(meta, gvk),
+		netWorkChaos: DefaultNetworkChaos(),
 	}
 }
 
@@ -479,15 +499,12 @@ func DefaultPodChaos(meta metav1.Object, gvk schema.GroupVersionKind) *chaosv1al
 	}
 }
 
-func DefaultNetworkChaos(meta metav1.Object, gvk schema.GroupVersionKind) *chaosv1alpha1.NetworkChaos {
+func DefaultNetworkChaos() *chaosv1alpha1.NetworkChaos {
 	return &chaosv1alpha1.NetworkChaos{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "shardingsphere-proxy",
 			Namespace: "default",
 			Labels:    map[string]string{},
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(meta, gvk),
-			},
 		},
 		Spec: chaosv1alpha1.NetworkChaosSpec{
 			Action:    chaosv1alpha1.PartitionAction,

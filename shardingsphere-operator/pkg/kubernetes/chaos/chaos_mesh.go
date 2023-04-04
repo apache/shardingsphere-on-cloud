@@ -19,6 +19,7 @@ package chaos
 
 import (
 	"context"
+	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/shardingspherechaos"
 	chaosV1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,7 +30,7 @@ type chaosMeshGetter struct {
 	client.Client
 }
 
-func (cg chaosMeshGetter) GetPodChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (PodChaos, error) {
+func (cg chaosMeshGetter) GetPodChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (sschaos.PodChaos, error) {
 	dp := &chaosV1alpha1.PodChaos{}
 	if err := cg.Get(ctx, namespacedName, dp); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -41,7 +42,7 @@ func (cg chaosMeshGetter) GetPodChaosByNamespacedName(ctx context.Context, names
 	}
 }
 
-func (cg chaosMeshGetter) GetNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (NetworkChaos, error) {
+func (cg chaosMeshGetter) GetNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (sschaos.NetworkChaos, error) {
 	dp := &chaosV1alpha1.NetworkChaos{}
 	if err := cg.Get(ctx, namespacedName, dp); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -54,5 +55,5 @@ func (cg chaosMeshGetter) GetNetworkChaosByNamespacedName(ctx context.Context, n
 }
 
 type chaosMeshSetter struct {
-	client.Client
+	sschaos.ChaosHandler
 }

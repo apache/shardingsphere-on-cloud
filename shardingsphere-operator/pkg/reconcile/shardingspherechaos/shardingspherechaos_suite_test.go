@@ -14,5 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package shardingspherechaos_test
 
-package ShardingSphereChaos
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"testing"
+)
+
+func TestShardingSphereChaos(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "ShardingSphereChaos Suite")
+}

@@ -19,6 +19,7 @@ package chaos
 
 import (
 	"context"
+	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/shardingspherechaos"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -26,7 +27,9 @@ import (
 func NewChaos(client client.Client) Chaos {
 	return ChaosClient{
 		ChaosGetter: chaosMeshGetter{client},
-		ChaosSetter: chaosMeshSetter{client},
+		ChaosSetter: chaosMeshSetter{
+			sschaos.NewChaosMeshHandler(client),
+		},
 	}
 }
 
@@ -36,21 +39,16 @@ type Chaos interface {
 	ChaosSetter
 }
 
-type PodChaos interface {
-}
-
-type NetworkChaos interface {
-}
-
 type ChaosClient struct {
 	ChaosGetter
 	ChaosSetter
 }
 
 type ChaosGetter interface {
-	GetPodChaosByNamespacedName(context.Context, types.NamespacedName) (PodChaos, error)
-	GetNetworkChaosByNamespacedName(context.Context, types.NamespacedName) (NetworkChaos, error)
+	GetPodChaosByNamespacedName(context.Context, types.NamespacedName) (sschaos.PodChaos, error)
+	GetNetworkChaosByNamespacedName(context.Context, types.NamespacedName) (sschaos.NetworkChaos, error)
 }
 
 type ChaosSetter interface {
+	sschaos.ChaosHandler
 }

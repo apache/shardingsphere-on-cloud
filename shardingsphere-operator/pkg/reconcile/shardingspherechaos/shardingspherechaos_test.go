@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package ShardingSphereChaos_test
+package shardingspherechaos_test
 
 import (
 	"context"
