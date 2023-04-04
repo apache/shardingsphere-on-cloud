@@ -405,7 +405,7 @@ func (b *sharedVolumeAndMountBuilder) SetVolumeMountSize(size int) SharedVolumeA
 	if len(b.volumeMounts) != size {
 		vms := make([]*corev1.VolumeMount, size)
 		for vm := range b.volumeMounts {
-			vms = append(vms, b.volumeMounts[vm].DeepCopy())
+			vms[vm] = b.volumeMounts[vm].DeepCopy()
 		}
 		b.volumeMounts = vms
 	}
