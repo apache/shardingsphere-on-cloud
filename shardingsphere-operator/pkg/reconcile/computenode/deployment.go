@@ -93,11 +93,6 @@ func NewShardingSphereProxyContainerBuilder() ShardingSphereProxyContainerBuilde
 	}
 }
 
-// Build returns a Container
-func (b *shardingSphereProxyContainerBuilder) Build() *corev1.Container {
-	return b.ContainerBuilder.Build()
-}
-
 // BootstrapContainerBuilder returns a Container for initialization
 // The container will handle initilialization in Pod's InitContainer
 type BootstrapContainerBuilder interface {
