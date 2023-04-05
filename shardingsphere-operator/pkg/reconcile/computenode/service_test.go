@@ -25,7 +25,6 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -239,7 +238,7 @@ func TestUpdateService(t *testing.T) {
 	cur.ObjectMeta = metav1.ObjectMeta{Name: "test-service", Namespace: "test-ns"}
 	cur.Labels = map[string]string{"key": "val"}
 	cur.Annotations = map[string]string{"anno": "val"}
-	cur.Spec = corev1.ServiceSpec{ClusterIP: "10.96.0.1", Ports: []v1.ServicePort{{Name: "test-port", Port: 80}}}
+	cur.Spec = corev1.ServiceSpec{ClusterIP: "10.96.0.1", Ports: []corev1.ServicePort{{Name: "test-port", Port: 80}}}
 
 	exp := &corev1.Service{}
 	// Setting up some expected data for exp instance

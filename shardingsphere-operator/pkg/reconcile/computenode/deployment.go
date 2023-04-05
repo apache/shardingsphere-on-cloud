@@ -22,7 +22,6 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -92,11 +91,6 @@ func NewShardingSphereProxyContainerBuilder() ShardingSphereProxyContainerBuilde
 		ContainerBuilder: NewContainerBuilder().
 			SetName(defaultContainerName),
 	}
-}
-
-// Build returns a Container
-func (b *shardingSphereProxyContainerBuilder) Build() *corev1.Container {
-	return b.ContainerBuilder.Build()
 }
 
 // BootstrapContainerBuilder returns a Container for initialization
@@ -406,7 +400,7 @@ func (b *sharedVolumeAndMountBuilder) SetVolumeMountSize(size int) SharedVolumeA
 	if len(b.volumeMounts) != size {
 		vms := make([]*corev1.VolumeMount, size)
 		for vm := range b.volumeMounts {
-			vms = append(vms, b.volumeMounts[vm].DeepCopy())
+			vms[vm] = b.volumeMounts[vm].DeepCopy()
 		}
 		b.volumeMounts = vms
 	}
@@ -541,7 +535,7 @@ func (d *deploymentBuilder) Build() *appsv1.Deployment {
 }
 
 // NewDeployment creates a new Deployment
-func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
+func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 	builder := NewDeploymentBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
 	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetReplicas(&cn.Spec.Replicas)
 
@@ -681,11 +675,11 @@ func (d *deploymentBuilder) SetAgentBin(scb ContainerBuilder, cn *v1alpha1.Compu
 }
 
 // DefaultDeployment describes the default deployment
-func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Deployment {
+func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *appsv1.Deployment {
 	defaultMaxUnavailable := intstr.FromInt(0)
 	defaultMaxSurge := intstr.FromInt(3)
 
-	return &v1.Deployment{
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "shardingsphere-proxy",
 			Namespace: "default",
@@ -694,10 +688,10 @@ func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Depl
 				*metav1.NewControllerRef(meta, gvk),
 			},
 		},
-		Spec: v1.DeploymentSpec{
-			Strategy: v1.DeploymentStrategy{
-				Type: v1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &v1.RollingUpdateDeployment{
+		Spec: appsv1.DeploymentSpec{
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
 					MaxUnavailable: &defaultMaxUnavailable,
 					MaxSurge:       &defaultMaxSurge,
 				},
@@ -742,8 +736,8 @@ func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Depl
 }
 
 // UpdateDeployment updates the deployment
-func UpdateDeployment(cn *v1alpha1.ComputeNode, cur *v1.Deployment) *v1.Deployment {
-	exp := &v1.Deployment{}
+func UpdateDeployment(cn *v1alpha1.ComputeNode, cur *appsv1.Deployment) *appsv1.Deployment {
+	exp := &appsv1.Deployment{}
 	exp.ObjectMeta = cur.ObjectMeta
 	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = cur.Labels

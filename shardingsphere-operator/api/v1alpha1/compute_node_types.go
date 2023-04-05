@@ -19,7 +19,6 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -274,7 +273,7 @@ type ComputeNodeSpec struct {
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 	// +optional
-	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// +optional
 	PortBindings []PortBinding `json:"portBindings,omitempty" yaml:"portBinding"`
 

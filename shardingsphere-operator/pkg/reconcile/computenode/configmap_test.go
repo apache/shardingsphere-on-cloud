@@ -28,8 +28,8 @@ import (
 
 var _ = Describe("ConfigMap", func() {
 	var (
-		expect *corev1.ConfigMap     = &corev1.ConfigMap{}
-		cn     *v1alpha1.ComputeNode = &v1alpha1.ComputeNode{
+		expect = &corev1.ConfigMap{}
+		cn     = &v1alpha1.ComputeNode{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test_name",
 				Namespace: "test_namespace",

@@ -61,7 +61,9 @@ func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 		servconf := cn.Spec.Bootstrap.ServerConfig.DeepCopy()
 		if cn.Spec.Bootstrap.ServerConfig.Mode.Type == v1alpha1.ModeTypeCluster {
 			if len(cluster) > 0 {
-				json.Unmarshal([]byte(cluster), &servconf.Mode.Repository)
+				if err := json.Unmarshal([]byte(cluster), &servconf.Mode.Repository); err != nil {
+					return &v1.ConfigMap{}
+				}
 			}
 		}
 		if y, err := yaml.Marshal(servconf); err == nil {

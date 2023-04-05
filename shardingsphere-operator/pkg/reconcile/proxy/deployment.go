@@ -259,7 +259,7 @@ func updatePodTemplateSpec(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployme
 	exp := act.Spec.Template.DeepCopy()
 
 	SSProxyContainer := updateSSProxyContainer(proxy, act)
-	for i, _ := range exp.Spec.Containers {
+	for i := range exp.Spec.Containers {
 		if exp.Spec.Containers[i].Name == "proxy" {
 			exp.Spec.Containers[i] = *SSProxyContainer
 		}
@@ -267,7 +267,7 @@ func updatePodTemplateSpec(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployme
 
 	if proxy.Spec.MySQLDriver != nil {
 		initContainer := updateInitContainer(proxy, act)
-		for i, _ := range exp.Spec.InitContainers {
+		for i := range exp.Spec.InitContainers {
 			if exp.Spec.InitContainers[i].Name == "download-mysql-connect" {
 				exp.Spec.InitContainers[i] = *initContainer
 			}
@@ -292,7 +292,7 @@ func updateInitContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment
 
 	for _, c := range act.Spec.Template.Spec.InitContainers {
 		if c.Name == "download-mysql-connect" {
-			for i, _ := range c.Env {
+			for i := range c.Env {
 				if c.Env[i].Name == "VERSION" {
 					if c.Env[i].Value != proxy.Spec.MySQLDriver.Version {
 						c.Env[i].Value = proxy.Spec.MySQLDriver.Version
@@ -332,7 +332,7 @@ func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deploym
 				exp.StartupProbe = proxy.Spec.StartupProbe
 			}
 
-			for i, _ := range c.Env {
+			for i := range c.Env {
 				if c.Env[i].Name == "PORT" {
 					proxyPort := strconv.FormatInt(int64(proxy.Spec.Port), 10)
 					if c.Env[i].Value != proxyPort {
@@ -403,7 +403,7 @@ func newConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v
 	}
 
 	found := false
-	for idx, _ := range conditions {
+	for idx := range conditions {
 		if conditions[idx].Type == cond.Type {
 			conditions[idx].LastUpdateTime = cond.LastUpdateTime
 			conditions[idx].Status = cond.Status
@@ -426,7 +426,7 @@ func updateReadyConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condit
 func updateNotReadyConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v1alpha1.Condition {
 	cur := newConditions(conditions, cond)
 
-	for idx, _ := range cur {
+	for idx := range cur {
 		if cur[idx].Type == v1alpha1.ConditionReady {
 			cur[idx].LastUpdateTime = metav1.Now()
 			cur[idx].Status = metav1.ConditionFalse
