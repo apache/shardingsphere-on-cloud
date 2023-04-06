@@ -142,7 +142,7 @@ func (r *ProxyReconciler) reconcileDeployment(ctx context.Context, namespacedNam
 }
 
 func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types.NamespacedName) (ctrl.Result, error) {
-	ssproxy, err := r.getRuntimeShardingSphereProxy(ctx, namespacedName)
+	proxy, err := r.getRuntimeShardingSphereProxy(ctx, namespacedName)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -152,21 +152,20 @@ func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types
 	if err := r.Get(ctx, namespacedName, hpa); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
-		} else if ssproxy.Spec.AutomaticScaling != nil && ssproxy.Spec.AutomaticScaling.Enable {
-			exp := reconcile.NewHPA(ssproxy)
+		} else if proxy.Spec.AutomaticScaling != nil && proxy.Spec.AutomaticScaling.Enable {
+			exp := reconcile.NewHPA(proxy)
 			if err := r.Create(ctx, exp); err != nil {
 				return ctrl.Result{}, err
 			}
-
 		}
 	} else {
-		if ssproxy.Spec.AutomaticScaling == nil || !ssproxy.Spec.AutomaticScaling.Enable {
+		if proxy.Spec.AutomaticScaling == nil || !proxy.Spec.AutomaticScaling.Enable {
 			if err := r.Delete(ctx, hpa); err != nil {
 				return ctrl.Result{}, err
 			}
 		} else {
 			act := hpa.DeepCopy()
-			exp := reconcile.UpdateHPA(ssproxy, act)
+			exp := reconcile.UpdateHPA(proxy, act)
 			if err := r.Update(ctx, exp); err != nil {
 				return ctrl.Result{}, err
 			}
