@@ -25,6 +25,11 @@ on:
   pull_request:
     branches:
       - main 
+    paths:
+      - 'pitr/**'
+      - '.github/workflows/pitr-golint.yml'
+      - 'pitr/agent/.golangci-lint.yml'
+      - 'pitr/cli/.golangci-lint.yml'
 
 jobs:
   changes:
@@ -44,10 +49,6 @@ jobs:
           go-version: '1.19'
       - name: Download golangci-lint
         run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.49.0
-      - name: Lint ShardingSphere-Operator
-        run: |
-          cd shardingsphere-operator/
-          $(go env GOPATH)/bin/golangci-lint run -v --timeout 300s ./...
       - name: Lint Pitr Cli 
         run: |
           cd pitr/cli
