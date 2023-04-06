@@ -854,7 +854,10 @@ func Test_ClusterConditions(t *testing.T) {
 					},
 				},
 			}},
-			exp: v1alpha1.Condition{},
+			exp: v1alpha1.Condition{
+				Type:   v1alpha1.ConditionSucceed,
+				Status: metav1.ConditionTrue,
+			},
 		},
 	}
 
