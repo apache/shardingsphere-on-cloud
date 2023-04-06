@@ -21,8 +21,8 @@ import "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 
 type (
 	BackupIn struct {
-		DbPort   uint16 `json:"db_port"`
-		DbName   string `json:"db_name"`
+		DBPort   uint16 `json:"db_port"`
+		DBName   string `json:"db_name"`
 		Username string `json:"username"`
 		Password string `json:"password"`
 
@@ -42,12 +42,12 @@ func (in *BackupIn) Validate() error {
 		return cons.Internal
 	}
 
-	if in.DbPort == 0 {
-		return cons.InvalidDbPort
+	if in.DBPort == 0 {
+		return cons.InvalidDBPort
 	}
 
-	if in.DbName == "" {
-		return cons.MissingDbName
+	if in.DBName == "" {
+		return cons.MissingDBName
 	}
 
 	if in.Username == "" {

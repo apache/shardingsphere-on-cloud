@@ -40,7 +40,7 @@ const (
 	Stack      FieldKey = "stack"
 	Duration   FieldKey = "duration"
 	Path       FieldKey = "path"       // original routing path
-	RequestUri FieldKey = "requestUri" // http requesting uri
-	HttpMethod FieldKey = "httpMethod"
-	HttpStatus FieldKey = "httpStatus"
+	RequestURI FieldKey = "requestUri" // http requesting uri
+	HTTPMethod FieldKey = "httpMethod"
+	HTTPStatus FieldKey = "httpStatus"
 )

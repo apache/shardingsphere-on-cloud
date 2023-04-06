@@ -42,9 +42,9 @@ func Restore(ctx *fiber.Ctx) (err error) {
 		return
 	}
 
-	if err = pkg.OG.Auth(in.Username, in.Password, in.DbName, in.DbPort); err != nil {
+	if err = pkg.OG.Auth(in.Username, in.Password, in.DBName, in.DBPort); err != nil {
 		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
-		err = fmt.Errorf(efmt, in.Username, len(in.Password), in.DbName, err)
+		err = fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
 		return
 	}
 
@@ -68,9 +68,9 @@ func Restore(ctx *fiber.Ctx) (err error) {
 		return
 	}
 
-	if err = pkg.OG.Restore(in.DnBackupPath, in.Instance, in.DnBackupId); err != nil {
+	if err = pkg.OG.Restore(in.DnBackupPath, in.Instance, in.DnBackupID); err != nil {
 		efmt := "pkg.OG.Restore failure[path=%s,instance=%s,backupID=%s],err=%w"
-		err = fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupId, err)
+		err = fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupID, err)
 
 		err2 := pkg.OG.MvTempToPgData()
 		err = fmt.Errorf("resotre failre[err=%s],pkg.OG.MvTempToPgData return err=%w", err, err2)

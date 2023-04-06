@@ -42,7 +42,7 @@ func main() {
 		zap.AddStacktrace(zapcore.FatalLevel),
 	)
 	if err != nil {
-		panic(fmt.Errorf("an unknown error occured in the zap-log"))
+		panic(fmt.Errorf("an unknown error occurred in the zap-log"))
 	}
 	logging.Init(logger)
 

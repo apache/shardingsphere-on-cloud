@@ -33,13 +33,14 @@ func Logger(log logging.ILog) fiber.Handler {
 			start = time.Now()
 		)
 		err := ctx.Next()
+		//nolint:exhaustive
 		m := map[logging.FieldKey]string{
 			logging.Duration:   fmt.Sprintf("%dms", time.Since(start).Milliseconds()),
 			logging.Path:       ctx.Route().Path,
-			logging.RequestUri: string(ctx.Request().RequestURI()),
+			logging.RequestURI: string(ctx.Request().RequestURI()),
 			logging.RequestID:  ctx.Get(cons.RequestID),
-			logging.HttpStatus: fmt.Sprintf("%d", ctx.Response().StatusCode()),
-			logging.HttpMethod: ctx.Method(),
+			logging.HTTPStatus: fmt.Sprintf("%d", ctx.Response().StatusCode()),
+			logging.HTTPMethod: ctx.Method(),
 		}
 		if err != nil {
 			m[logging.ErrorKey] = err.Error()
@@ -52,11 +53,12 @@ func Logger(log logging.ILog) fiber.Handler {
 // AccessLog logging Access log.
 func AccessLog(log logging.ILog) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
+		//nolint:exhaustive
 		log.Fields(map[logging.FieldKey]string{
 			logging.Path:       ctx.Route().Path,
-			logging.RequestUri: string(ctx.Request().RequestURI()),
+			logging.RequestURI: string(ctx.Request().RequestURI()),
 			logging.RequestID:  ctx.Get(cons.RequestID),
-			logging.HttpMethod: ctx.Method(),
+			logging.HTTPMethod: ctx.Method(),
 		}).Info("Access log")
 		return ctx.Next()
 	}

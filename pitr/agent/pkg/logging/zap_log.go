@@ -32,6 +32,7 @@ func NewLog(l *zap.Logger) ILog {
 }
 
 func (z *ZapLogger) Field(k FieldKey, v string) ILog {
+	//nolint:exhaustive
 	m := map[FieldKey]string{k: v}
 	for k, v := range z.fields {
 		m[k] = v

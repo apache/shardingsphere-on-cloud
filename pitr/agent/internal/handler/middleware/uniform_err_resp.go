@@ -32,6 +32,7 @@ func UniformErrResp(log logging.ILog) fiber.Handler {
 		if err == nil {
 			return nil
 		}
+		//nolint:exhaustive
 		log.Fields(map[logging.FieldKey]string{
 			logging.ErrorKey:  err.Error(),
 			logging.RequestID: ctx.Get(cons.RequestID),

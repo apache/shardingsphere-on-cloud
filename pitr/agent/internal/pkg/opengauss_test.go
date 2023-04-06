@@ -49,6 +49,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 				instance,
 				"full",
 				1,
+				3306,
 			)
 
 			Expect(err).To(BeNil())

@@ -1,4 +1,4 @@
-.PHONY: build test
+.PHONY: build test cover lint
 
 GOOS := $(shell go env GOOS)
 
@@ -8,3 +8,5 @@ test:
 	go test -v ./... -cover -coverprofile cover.out
 cover:
 	go tool cover -html cover.out
+lint:
+	golangci-lint run -v --timeout 5m

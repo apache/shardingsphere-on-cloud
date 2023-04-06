@@ -44,7 +44,7 @@ type (
 )
 
 const (
-	DefaultDbName = "postgres"
+	DefaultDBName = "postgres"
 )
 
 func NewShardingSphereProxy(user, password, dbName, host string, port uint16) (IShardingSphereProxy, error) {
@@ -103,6 +103,7 @@ func (ss *shardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
 	if err != nil {
 		return nil, xerr.NewCliErr(fmt.Sprintf("export meta data failure,err=%s", err))
 	}
+
 	var (
 		id         string
 		createTime string
@@ -116,10 +117,15 @@ func (ss *shardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
 			return nil, xerr.NewCliErr(fmt.Sprintf("query close failure,err=%s", err))
 		}
 	}
+	if query.Err() != nil {
+		return nil, xerr.NewCliErr(fmt.Sprintf("query err=%s", query.Err()))
+	}
+
 	var out model.ClusterInfo
 	if err = json.Unmarshal([]byte(data), &out); err != nil {
 		return nil, fmt.Errorf("json unmarshal return err=%s", err)
 	}
+
 	out.SnapshotInfo = nil
 	return &out, nil
 }
@@ -138,6 +144,7 @@ func (ss *shardingSphereProxy) ExportStorageNodes() ([]*model.StorageNode, error
 	if err != nil {
 		return nil, xerr.NewCliErr(fmt.Sprintf("export storage nodes failure,err=%s", err))
 	}
+
 	var (
 		id         string
 		createTime string
@@ -152,6 +159,10 @@ func (ss *shardingSphereProxy) ExportStorageNodes() ([]*model.StorageNode, error
 			return nil, xerr.NewCliErr(fmt.Sprintf("query close failure,err=%s", err))
 		}
 	}
+	if query.Err() != nil {
+		return nil, xerr.NewCliErr(fmt.Sprintf("query err failure,err=%s", err))
+	}
+
 	out := &model.StorageNodesInfo{}
 	if err = json.Unmarshal([]byte(data), &out); err != nil {
 		return nil, fmt.Errorf("json unmarshal return err=%s", err)
@@ -159,14 +170,18 @@ func (ss *shardingSphereProxy) ExportStorageNodes() ([]*model.StorageNode, error
 
 	// get all storage nodes and filter duplicate nodes
 	var storageNodes []*model.StorageNode
+
 	var tmpNodesMap = make(map[string]struct{})
+
 	for _, v := range out.StorageNodes {
 		for _, vv := range v {
 			// filter duplicate nodes
 			if _, ok := tmpNodesMap[fmt.Sprintf("%s:%d", vv.IP, vv.Port)]; ok {
 				continue
 			}
+
 			tmpNodesMap[fmt.Sprintf("%s:%d", vv.IP, vv.Port)] = struct{}{}
+
 			storageNodes = append(storageNodes, vv)
 		}
 	}
@@ -179,10 +194,12 @@ func (ss *shardingSphereProxy) ImportMetaData(in *model.ClusterInfo) error {
 	if in == nil {
 		return xerr.NewCliErr("import meta data is nil")
 	}
+
 	marshal, err := json.Marshal(in)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("json marshal,invalid data[in=%+v]", in))
 	}
+
 	_, err = ss.db.Exec(fmt.Sprintf(`IMPORT METADATA '%s';`, marshal))
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("import metadata failure,err=%s", err))

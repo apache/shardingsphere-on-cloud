@@ -91,7 +91,7 @@ var _ = Describe("Show", func() {
 					},
 				},
 			}
-			err := formatRecord([]model.LsBackup{*bak, *bak})
+			err := formatRecord([]*model.LsBackup{bak, bak})
 			Expect(err).To(BeNil())
 		})
 	})
@@ -118,7 +118,7 @@ var _ = Describe("Show", func() {
 		It("no record", func() {
 			CSN = ""
 			RecordID = ""
-			ls.EXPECT().ReadAll().Return([]model.LsBackup{}, nil)
+			ls.EXPECT().ReadAll().Return([]*model.LsBackup{}, nil)
 			Expect(show()).To(BeNil())
 		})
 

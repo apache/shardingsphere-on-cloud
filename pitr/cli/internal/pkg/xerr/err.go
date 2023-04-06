@@ -19,16 +19,13 @@ package xerr
 
 import "fmt"
 
-type (
-	service string
-	err     struct {
-		msg string
-	}
-)
+type err struct {
+	msg string
+}
 
 const (
 	Unknown           = "Unknown error"
-	InvalidHttpStatus = "Invalid http status"
+	InvalidHTTPStatus = "Invalid http status"
 	NotFound          = "Not found"
 )
 
