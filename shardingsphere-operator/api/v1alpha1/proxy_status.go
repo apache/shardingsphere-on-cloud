@@ -35,6 +35,7 @@ const (
 	ConditionDeployed    ConditionType = "Deployed"
 	ConditionInitialized ConditionType = "Initialized"
 	ConditionStarted     ConditionType = "Started"
+	ConditionSucceed     ConditionType = "Succeed"
 	ConditionReady       ConditionType = "Ready"
 	ConditionUnknown     ConditionType = "Unknown"
 	ConditionFailed      ConditionType = "Failed"

@@ -447,6 +447,13 @@ func clusterCondition(podlist corev1.PodList) v1alpha1.Condition {
 		Status:         metav1.ConditionTrue,
 		LastUpdateTime: metav1.Now(),
 	}
+
+	condSucceed := v1alpha1.Condition{
+		Type:           v1alpha1.ConditionSucceed,
+		Status:         metav1.ConditionTrue,
+		LastUpdateTime: metav1.Now(),
+	}
+
 	condUnknown := v1alpha1.Condition{
 		Type:           v1alpha1.ConditionUnknown,
 		Status:         metav1.ConditionTrue,
@@ -466,6 +473,8 @@ func clusterCondition(podlist corev1.PodList) v1alpha1.Condition {
 	//FIXME: do not capture ConditionStarted in some cases
 	for _, p := range podlist.Items {
 		switch p.Status.Phase {
+		case corev1.PodSucceeded:
+			return condSucceed
 		case corev1.PodRunning:
 			return condStarted
 		case corev1.PodUnknown:
