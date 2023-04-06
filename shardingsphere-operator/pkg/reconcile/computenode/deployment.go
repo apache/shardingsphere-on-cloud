@@ -513,19 +513,19 @@ func (b *volumeAndMountBuilder) Build() (*corev1.Volume, *corev1.VolumeMount) {
 }
 
 // SetVolume sets a volume for Deployment
-func (d *deploymentBuilder) SetVolume(v *corev1.Volume) DeploymentBuilder {
+func (d *deploymentBuilder) SetVolume(vol *corev1.Volume) DeploymentBuilder {
 	if d.deployment.Spec.Template.Spec.Volumes == nil {
-		d.deployment.Spec.Template.Spec.Volumes = []corev1.Volume{*v}
+		d.deployment.Spec.Template.Spec.Volumes = []corev1.Volume{*vol}
 	}
 
-	for idx, vol := range d.deployment.Spec.Template.Spec.Volumes {
-		if vol.Name == v.Name {
-			d.deployment.Spec.Template.Spec.Volumes[idx] = *v
+	for idx, v := range d.deployment.Spec.Template.Spec.Volumes {
+		if v.Name == vol.Name {
+			d.deployment.Spec.Template.Spec.Volumes[idx] = *vol
 			return d
 		}
 	}
 
-	d.deployment.Spec.Template.Spec.Volumes = append(d.deployment.Spec.Template.Spec.Volumes, *v)
+	d.deployment.Spec.Template.Spec.Volumes = append(d.deployment.Spec.Template.Spec.Volumes, *vol)
 	return d
 }
 

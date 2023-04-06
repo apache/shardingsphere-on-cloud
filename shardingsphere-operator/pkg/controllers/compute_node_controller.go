@@ -384,37 +384,37 @@ func clusterCondition(podlist v1.PodList) v1alpha1.ComputeNodeCondition {
 }
 
 func reconcileComputeNodeStatus(podlist v1.PodList, svc v1.Service) *v1alpha1.ComputeNodeStatus {
-	s := &v1alpha1.ComputeNodeStatus{}
+	status := &v1alpha1.ComputeNodeStatus{}
 
-	s.Replicas = int32(len(podlist.Items))
+	status.Replicas = int32(len(podlist.Items))
 
 	readyInstances := getReadyProxyInstances(podlist)
-	s.ReadyInstances = readyInstances
-	if s.Replicas == 0 {
-		s.Phase = v1alpha1.ComputeNodeStatusNotReady
+	status.ReadyInstances = readyInstances
+	if status.Replicas == 0 {
+		status.Phase = v1alpha1.ComputeNodeStatusNotReady
 	} else {
 		if readyInstances < miniReadyCount {
-			s.Phase = v1alpha1.ComputeNodeStatusNotReady
+			status.Phase = v1alpha1.ComputeNodeStatusNotReady
 		} else {
-			s.Phase = v1alpha1.ComputeNodeStatusReady
+			status.Phase = v1alpha1.ComputeNodeStatusReady
 		}
 	}
 
-	if s.Phase == v1alpha1.ComputeNodeStatusReady {
-		s.Conditions = updateReadyConditions(s.Conditions, v1alpha1.ComputeNodeCondition{
+	if status.Phase == v1alpha1.ComputeNodeStatusReady {
+		status.Conditions = updateReadyConditions(status.Conditions, v1alpha1.ComputeNodeCondition{
 			Type:           v1alpha1.ComputeNodeConditionReady,
 			Status:         v1alpha1.ConditionStatusTrue,
 			LastUpdateTime: metav1.Now(),
 		})
 	} else {
 		cond := clusterCondition(podlist)
-		s.Conditions = updateNotReadyConditions(s.Conditions, cond)
+		status.Conditions = updateNotReadyConditions(status.Conditions, cond)
 	}
 
-	s.LoadBalancer.ClusterIP = svc.Spec.ClusterIP
-	s.LoadBalancer.Ingress = svc.Status.LoadBalancer.Ingress
+	status.LoadBalancer.ClusterIP = svc.Spec.ClusterIP
+	status.LoadBalancer.Ingress = svc.Status.LoadBalancer.Ingress
 
-	return s
+	return status
 }
 
 func (r *ComputeNodeReconciler) getRuntimeComputeNode(ctx context.Context, namespacedName types.NamespacedName) (*v1alpha1.ComputeNode, error) {

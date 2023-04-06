@@ -42,7 +42,7 @@ const (
 	// AnnoRollingUpdateMaxUnavailable refers to Deployment RollingUpdate Strategy
 	AnnoRollingUpdateMaxUnavailable = "shardingsphereproxy.shardingsphere.org/rolling-update-max-unavailable"
 
-	//miniReadyCount Minimum number of replicas that can be served
+	// miniReadyCount Minimum number of replicas that can be served
 	miniReadyCount = 1
 )
 
@@ -290,16 +290,16 @@ func updateConfigName(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) s
 func updateInitContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *corev1.Container {
 	var exp *corev1.Container
 
-	for _, c := range act.Spec.Template.Spec.InitContainers {
-		if c.Name == "download-mysql-connect" {
-			for i := range c.Env {
-				if c.Env[i].Name == "VERSION" {
-					if c.Env[i].Value != proxy.Spec.MySQLDriver.Version {
-						c.Env[i].Value = proxy.Spec.MySQLDriver.Version
+	for _, con := range act.Spec.Template.Spec.InitContainers {
+		if con.Name == "download-mysql-connect" {
+			for i := range con.Env {
+				if con.Env[i].Name == "VERSION" {
+					if con.Env[i].Value != proxy.Spec.MySQLDriver.Version {
+						con.Env[i].Value = proxy.Spec.MySQLDriver.Version
 					}
 				}
 			}
-			exp = c.DeepCopy()
+			exp = con.DeepCopy()
 		}
 	}
 
@@ -309,39 +309,39 @@ func updateInitContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment
 func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *corev1.Container {
 	var exp *corev1.Container
 
-	for _, c := range act.Spec.Template.Spec.Containers {
-		if c.Name == "proxy" {
-			exp = c.DeepCopy()
+	for _, con := range act.Spec.Template.Spec.Containers {
+		if con.Name == "proxy" {
+			exp = con.DeepCopy()
 
-			tag := strings.Split(c.Image, ":")[1]
+			tag := strings.Split(con.Image, ":")[1]
 			if tag != proxy.Spec.Version {
 				exp.Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
 			}
 
 			exp.Resources = proxy.Spec.Resources
 
-			if proxy.Spec.LivenessProbe != nil && !reflect.DeepEqual(c.LivenessProbe, *proxy.Spec.LivenessProbe) {
+			if proxy.Spec.LivenessProbe != nil && !reflect.DeepEqual(con.LivenessProbe, *proxy.Spec.LivenessProbe) {
 				exp.LivenessProbe = proxy.Spec.LivenessProbe
 			}
 
-			if proxy.Spec.ReadinessProbe != nil && !reflect.DeepEqual(c.ReadinessProbe, *proxy.Spec.ReadinessProbe) {
+			if proxy.Spec.ReadinessProbe != nil && !reflect.DeepEqual(con.ReadinessProbe, *proxy.Spec.ReadinessProbe) {
 				exp.ReadinessProbe = proxy.Spec.ReadinessProbe
 			}
 
-			if proxy.Spec.StartupProbe != nil && !reflect.DeepEqual(c.StartupProbe, *proxy.Spec.StartupProbe) {
+			if proxy.Spec.StartupProbe != nil && !reflect.DeepEqual(con.StartupProbe, *proxy.Spec.StartupProbe) {
 				exp.StartupProbe = proxy.Spec.StartupProbe
 			}
 
-			for i := range c.Env {
-				if c.Env[i].Name == "PORT" {
+			for i := range con.Env {
+				if con.Env[i].Name == "PORT" {
 					proxyPort := strconv.FormatInt(int64(proxy.Spec.Port), 10)
-					if c.Env[i].Value != proxyPort {
-						c.Env[i].Value = proxyPort
+					if con.Env[i].Value != proxyPort {
+						con.Env[i].Value = proxyPort
 						exp.Ports[0].ContainerPort = proxy.Spec.Port
 					}
 				}
 			}
-			exp.Env = c.Env
+			exp.Env = con.Env
 		}
 	}
 	return exp
