@@ -163,35 +163,77 @@ func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.
 }
 
 func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, cur *v1.Service) error {
-	if cn.Spec.ServiceType == v1.ServiceTypeNodePort {
-		for idx := range cur.Spec.Ports {
-			for i := range cn.Spec.PortBindings {
-				if cur.Spec.Ports[idx].Name == cn.Spec.PortBindings[i].Name {
-					if cn.Spec.PortBindings[i].NodePort == 0 {
-						cn.Spec.PortBindings[i].NodePort = cur.Spec.Ports[idx].NodePort
-						if err := r.Update(ctx, cn); err != nil {
-							return err
-						}
-					}
-					break
-				}
-			}
+	// if cn.Spec.ServiceType == v1.ServiceTypeNodePort {
+	// 	for idx := range cur.Spec.Ports {
+	// 		for i := range cn.Spec.PortBindings {
+	// 			if cur.Spec.Ports[idx].Name == cn.Spec.PortBindings[i].Name {
+	// 				if cn.Spec.PortBindings[i].NodePort == 0 {
+	// 					cn.Spec.PortBindings[i].NodePort = cur.Spec.Ports[idx].NodePort
+	// 					if err := r.Update(ctx, cn); err != nil {
+	// 						return err
+	// 					}
+	// 				}
+	// 				break
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// if cn.Spec.ServiceType == v1.ServiceTypeClusterIP {
+	// 	for idx := range cn.Spec.PortBindings {
+	// 		if cn.Spec.PortBindings[idx].NodePort != 0 {
+	// 			cn.Spec.PortBindings[idx].NodePort = 0
+	// 			if err := r.Update(ctx, cn); err != nil {
+	// 				return err
+	// 			}
+	// 			break
+	// 		}
+	// 	}
+	// }
+
+	switch cn.Spec.ServiceType {
+	case v1.ServiceTypeNodePort:
+		updateServiceNodePort()
+		if err := r.Update(ctx, cn); err != nil {
+			return err
 		}
-	}
-	if cn.Spec.ServiceType == v1.ServiceTypeClusterIP {
-		for idx := range cn.Spec.PortBindings {
-			if cn.Spec.PortBindings[idx].NodePort != 0 {
-				cn.Spec.PortBindings[idx].NodePort = 0
-				if err := r.Update(ctx, cn); err != nil {
-					return err
-				}
-				break
-			}
+	case v1.ServiceTypeClusterIP:
+		updateServiceClusterIP()
+		if err := r.Update(ctx, cn); err != nil {
+			return err
 		}
 	}
 
 	exp := reconcile.UpdateService(cn, cur)
 	return r.Update(ctx, exp)
+}
+
+func updateServiceNodePort(portBindings []v1alpha1.PortBinding, svcports []corev1.ServicePort) {
+	for idx := range svcports {
+		for i := range portBindings {
+			if svcports[idx].Name == portBindings[i].Name {
+				if portBindings[i].NodePort == 0 {
+					portBindings[i].NodePort = svcports[idx].NodePort
+					break
+					// if err := r.Update(ctx, cn); err != nil {
+					// 	return err
+					// }
+				}
+				break
+			}
+		}
+	}
+}
+
+func updateServiceClusterIP(portBindings []v1alpha1.PortBinding) {
+	for idx := range portBindings {
+		if portBindings[idx].NodePort != 0 {
+			portBindings[idx].NodePort = 0
+			// if err := r.Update(ctx, cn); err != nil {
+			// 	return err
+			// }
+			break
+		}
+	}
 }
 
 func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.Service, bool, error) {
