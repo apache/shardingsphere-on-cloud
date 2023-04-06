@@ -1,0 +1,68 @@
+run:
+  timeout: 10m
+linters:
+  disable-all: true
+  enable:
+    - ineffassign
+    - typecheck
+    - varcheck
+    - unused
+    - structcheck
+    - deadcode
+    - gosimple
+    - goimports
+    - errcheck
+    - staticcheck
+    - stylecheck
+    - gosec
+    - asciicheck
+    - bodyclose
+    - exportloopref
+    - rowserrcheck
+    - makezero
+    - durationcheck
+    - prealloc
+    - predeclared
+
+# Refers: https://gist.github.com/maratori/47a4d00457a92aa426dbd48a18776322
+linters-settings:
+  cyclop:
+    # The maximal code complexity to report.
+    # Default: 10
+    max-complexity: 30
+    # The maximal average package complexity.
+    # If it's higher than 0.0 (float) the check is enabled
+    # Default: 0.0
+    package-average: 10.0
+  errcheck:
+    # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
+    # Such cases aren't reported by default.
+    # Default: false
+    check-type-assertions: true
+  exhaustive:
+    # Program elements to check for exhaustiveness.
+    # Default: [ switch ]
+    check:
+      - switch
+      - map
+  funlen:
+    # Checks the number of lines in a function.
+    # If lower than 0, disable the check.
+    # Default: 60
+    lines: 100
+    # Checks the number of statements in a function.
+    # If lower than 0, disable the check.
+    # Default: 40
+    statements: 50
+  gocognit:
+    # Minimal code complexity to report.
+    # Default: 30 (but we recommend 10-20)
+    min-complexity: 20
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+        - rowserrcheck
+        - makezero

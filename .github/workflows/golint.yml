@@ -48,7 +48,11 @@ jobs:
         run: |
           cd shardingsphere-operator/
           $(go env GOPATH)/bin/golangci-lint run -v --timeout 300s ./...
-      - name: Lint Pitr 
+      - name: Lint Pitr Cli 
         run: |
-          cd pitr/
+          cd pitr/cli
+          $(go env GOPATH)/bin/golangci-lint run -v --timeout 300s ./...
+      - name: Lint Pitr Agent
+        run: |
+          cd pitr/gent
           $(go env GOPATH)/bin/golangci-lint run -v --timeout 300s ./...
