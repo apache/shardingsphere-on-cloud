@@ -83,9 +83,9 @@ const (
 
 // ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
 type ShardingSphereChaosStatus struct {
-	ChaosCondition DeploymentCondition `json:"deploymentCondition"`
-	InjectStatus   Jobschedule         `json:"InjectStatus"`
-	VerifyStatus   Jobschedule         `json:"VerifyStatus"`
+	//ChaosCondition DeploymentCondition `json:"deploymentCondition"`
+	//InjectStatus   Jobschedule         `json:"InjectStatus"`
+	//VerifyStatus   Jobschedule         `json:"VerifyStatus"`
 }
 
 // pod chaos

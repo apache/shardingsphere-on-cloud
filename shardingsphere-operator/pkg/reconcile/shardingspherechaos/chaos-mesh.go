@@ -23,6 +23,7 @@ import (
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -102,6 +103,8 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (Po
 	return podChao, nil
 }
 
+//func (c *chaosMeshHandler) SetControllerReference(ssChao *chaposMeshController, podChao *chaosMesh)
+
 func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error) {
 	ncb := NewNetworkChaosBuilder()
 
@@ -176,7 +179,6 @@ func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereCha
 	ncb.SetTcParameter(*tcParams)
 
 	networkChao := ncb.Build()
-
 	if err := ctrl.SetControllerReference(ssChao, networkChao, c.r.Scheme()); err != nil {
 		return nil, err
 	}
@@ -184,35 +186,50 @@ func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereCha
 }
 
 func (c *chaosMeshHandler) UpdateNetworkChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur NetworkChaos) error {
-	Recur := cur.(*chaosv1alpha1.NetworkChaos)
-	exp := &chaosv1alpha1.NetworkChaos{}
-	exp.ObjectMeta = Recur.ObjectMeta
-	exp.Labels = Recur.Labels
-	exp.Annotations = Recur.Annotations
-	networkChaos, err := c.NewNetworkPodChaos(ssChaos)
+	networkChao, err := c.NewNetworkPodChaos(ssChaos)
 	if err != nil {
 		return err
 	}
-	ReExp := (networkChaos).(*chaosv1alpha1.NetworkChaos)
-	exp.Spec = ReExp.Spec
 
-	return c.r.Update(ctx, exp)
+	reExp := networkChao.(*chaosv1alpha1.NetworkChaos)
+	reCur := cur.(*chaosv1alpha1.NetworkChaos)
+	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
+	if isEqual {
+		return nil
+	}
+
+	if err := c.r.Create(ctx, reCur); err != nil {
+		return err
+	}
+
+	if err := c.r.Update(ctx, reExp); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *chaosMeshHandler) UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur PodChaos) error {
-	Recur := cur.(*chaosv1alpha1.PodChaos)
-	exp := &chaosv1alpha1.PodChaos{}
-	exp.ObjectMeta = Recur.ObjectMeta
-	exp.Labels = Recur.Labels
-	exp.Annotations = Recur.Annotations
 	podChao, err := c.NewPodChaos(ssChaos)
 	if err != nil {
 		return err
 	}
-	ReExp := (podChao).(*chaosv1alpha1.PodChaos)
-	exp.Spec = ReExp.Spec
+	reExp := (podChao).(*chaosv1alpha1.PodChaos)
+	reCur := cur.(*chaosv1alpha1.PodChaos)
+	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
+	if isEqual {
+		return nil
+	}
 
-	return c.r.Create(ctx, exp)
+	if err := c.r.Delete(ctx, reCur); err != nil {
+		return err
+	}
+
+	if err := c.CreatePodChaos(ctx, reExp); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type PodChaosBuilder interface {

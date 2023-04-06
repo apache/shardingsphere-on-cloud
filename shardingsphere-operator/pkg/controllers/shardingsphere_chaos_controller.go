@@ -63,7 +63,6 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 	}
 
 	//todo: add inject reconcile and check status here
-
 	return ctrl.Result{}, nil
 }
 
@@ -72,24 +71,24 @@ func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssCh
 	namespaceName := types.NamespacedName{Namespace: ssChao.Namespace, Name: ssChao.Name}
 	switch ssChao.Spec.ChaosKind {
 	case sschaosv1alpha1.PodChaosKind:
-		chaos, isExist, err := r.getPodChaosByNamespacedName(ctx, namespaceName)
+		chao, isExist, err := r.getPodChaosByNamespacedName(ctx, namespaceName)
 		if err != nil {
 			logger.Error(err, "pod chaos err")
 			return err
 		}
 		if isExist {
-			return r.updatePodChaos(ctx, ssChao, chaos)
+			return r.updatePodChaos(ctx, ssChao, chao)
 		}
 
 		return r.CreatePodChaos(ctx, ssChao)
 	case sschaosv1alpha1.NetworkChaosKind:
-		chaos, isExist, err := r.getNetworkChaosByNamespacedName(ctx, namespaceName)
+		chao, isExist, err := r.getNetworkChaosByNamespacedName(ctx, namespaceName)
 		if err != nil {
 			logger.Error(err, "network chao err")
 			return err
 		}
 		if isExist {
-			return r.updateNetWorkChaos(ctx, ssChao, chaos)
+			return r.updateNetWorkChaos(ctx, ssChao, chao)
 		}
 		return r.CreateNetworkChaos(ctx, ssChao)
 	}

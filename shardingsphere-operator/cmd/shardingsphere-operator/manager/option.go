@@ -47,6 +47,7 @@ func init() {
 	utilruntime.Must(chaosv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	utilruntime.Must(batchV1.AddToScheme(scheme))
+	// +kubebuilder:scaffold:scheme
 }
 
 // Options represents common options for the controller
