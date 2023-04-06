@@ -116,6 +116,8 @@ var _ = Describe("Show", func() {
 		})
 
 		It("no record", func() {
+			CSN = ""
+			RecordID = ""
 			ls.EXPECT().ReadAll().Return([]model.LsBackup{}, nil)
 			Expect(show()).To(BeNil())
 		})
