@@ -36,20 +36,21 @@ type ShardingSphereChaosList struct {
 type ShardingSphereChaos struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec ShardingSphereChaosSpec `json:"spec,omitempty"`
-
-	Status ShardingSphereChaosStatus `json:"status,omitempty"`
+	Spec              ShardingSphereChaosSpec   `json:"spec,omitempty"`
+	Status            ShardingSphereChaosStatus `json:"status,omitempty"`
 }
 
 // ShardingSphereChaosSpec defines the desired state of ShardingSphereChaos
 type ShardingSphereChaosSpec struct {
+	//todo
 	//InjectJob batchV1Beta1.JobTemplateSpec `json:"InjectJob,omitempty"`
 	ChaosKind  ChaosKind `json:"chaosKind,omitempty"`
 	EmbedChaos `json:",inline"`
+	//todo
 	//Verify batchV1Beta1.JobTemplateSpec `json:"Verify,omitempty"`
 }
 
+// ChaosKind Specifies the type of chaos to create
 type ChaosKind string
 
 const (
@@ -64,15 +65,17 @@ type EmbedChaos struct {
 	PodChaos *PodChaosSpec `json:"podChaos,omitempty"`
 }
 
-type DeploymentCondition string
+// ChaosCondition Show Chaos Progress
+type ChaosCondition string
 
 const (
-	Creating     DeploymentCondition = "Creating"
-	AllRecovered DeploymentCondition = "AllRecovered"
-	Paused       DeploymentCondition = "Paused"
-	AllInjected  DeploymentCondition = "AllInjected"
+	Creating     ChaosCondition = "Creating"
+	AllRecovered ChaosCondition = "AllRecovered"
+	Paused       ChaosCondition = "Paused"
+	AllInjected  ChaosCondition = "AllInjected"
 )
 
+// Jobschedule Show current job progress
 type Jobschedule string
 
 const (
@@ -83,13 +86,15 @@ const (
 
 // ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
 type ShardingSphereChaosStatus struct {
-	//ChaosCondition DeploymentCondition `json:"deploymentCondition"`
+	//todo
+	//ChaosCondition ChaosCondition `json:"deploymentCondition"`
+	//todo
 	//InjectStatus   Jobschedule         `json:"InjectStatus"`
+	//todo
 	//VerifyStatus   Jobschedule         `json:"VerifyStatus"`
 }
 
-// pod chaos
-
+// PodChaosAction Specify the action type of pod Chaos
 type PodChaosAction string
 
 var (
@@ -97,6 +102,7 @@ var (
 	ContainerKillAction PodChaosAction = "containerKill"
 )
 
+// PodChaosSpec Fields that need to be configured for pod type chaos
 type PodChaosSpec struct {
 	PodSelector `json:"selector,omitempty"`
 	Action      PodChaosAction `json:"action"`
@@ -104,6 +110,7 @@ type PodChaosSpec struct {
 	PodActionParam PodActionParam `json:"params,omitempty"`
 }
 
+// PodActionParam Optional parameters for pod type configuration
 type PodActionParam struct {
 	//+optional
 	PodFailure PodFailureActionParams `json:"podFailure,omitempty"`
@@ -121,8 +128,7 @@ type ContainerKillActionParams struct {
 	ContainerNames []string `json:"containerNames,omitempty"`
 }
 
-//network chaos
-
+// NetworkChaosSpec Fields that need to be configured for network type chaos
 type NetworkChaosSpec struct {
 	Source PodSelector `json:",inline"`
 	// +optional
@@ -133,10 +139,11 @@ type NetworkChaosSpec struct {
 	Target *PodSelector       `json:"target,omitempty"`
 	Action NetworkChaosAction `json:"action"`
 	// +optional
-	Network *NetWorkParams `json:"params,omitempty"`
+	Network *NetworkParams `json:"params,omitempty"`
 }
 
-type NetWorkParams struct {
+// NetworkParams Optional parameters for network type configuration
+type NetworkParams struct {
 	// +optional
 	Delay *DelayActionParams `json:"delay,omitempty"`
 	// +optional
@@ -177,6 +184,7 @@ type CorruptActionParams struct {
 	Correlation string `json:"correlation,omitempty"`
 }
 
+// NetworkChaosAction Specify the action type of network Chaos
 type NetworkChaosAction string
 
 const (
@@ -187,6 +195,7 @@ const (
 	PartitionAction NetworkChaosAction = "partition"
 )
 
+// Direction Specifies the direction of action of network chaos
 type Direction string
 
 const (
@@ -195,8 +204,7 @@ const (
 	Both Direction = "both"
 )
 
-//pod selector
-
+// PodSelector Used to select the target of the specified chaos
 type PodSelector struct {
 	// +optional
 	Namespaces []string `json:"namespaces,omitempty"`
