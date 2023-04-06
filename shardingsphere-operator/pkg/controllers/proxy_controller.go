@@ -40,7 +40,7 @@ import (
 const (
 	//WaitingForReady Time selection reference kubelet restart time
 	WaitingForReady = 10 * time.Second
-	//miniReadyCount Minimum number of replicas that can be served
+	// miniReadyCount Minimum number of replicas that can be served
 	miniReadyCount = 1
 
 	proxyControllerName = "proxy_controller"
@@ -152,13 +152,12 @@ func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types
 	if err := r.Get(ctx, namespacedName, hpa); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
-		} else {
-			if ssproxy.Spec.AutomaticScaling != nil && ssproxy.Spec.AutomaticScaling.Enable {
-				exp := reconcile.NewHPA(ssproxy)
-				if err := r.Create(ctx, exp); err != nil {
-					return ctrl.Result{}, err
-				}
+		} else if ssproxy.Spec.AutomaticScaling != nil && ssproxy.Spec.AutomaticScaling.Enable {
+			exp := reconcile.NewHPA(ssproxy)
+			if err := r.Create(ctx, exp); err != nil {
+				return ctrl.Result{}, err
 			}
+
 		}
 	} else {
 		if ssproxy.Spec.AutomaticScaling == nil || !ssproxy.Spec.AutomaticScaling.Enable {
@@ -221,7 +220,7 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 		return ctrl.Result{}, err
 	}
 
-	rt.Status = reconcile.ReconcileStatus(*podList, *rt)
+	rt.Status = reconcile.ReconcileStatus(podList, rt)
 
 	// TODO: Compare Status with or without modification
 	if err := r.Status().Update(ctx, rt); err != nil {

@@ -164,11 +164,11 @@ func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.
 
 func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, cur *v1.Service) error {
 	if cn.Spec.ServiceType == v1.ServiceTypeNodePort {
-		for _, p := range cur.Spec.Ports {
-			for idx := range cn.Spec.PortBindings {
-				if p.Name == cn.Spec.PortBindings[idx].Name {
-					if cn.Spec.PortBindings[idx].NodePort == 0 {
-						cn.Spec.PortBindings[idx].NodePort = p.NodePort
+		for idx := range cur.Spec.Ports {
+			for i := range cn.Spec.PortBindings {
+				if cur.Spec.Ports[idx].Name == cn.Spec.PortBindings[i].Name {
+					if cn.Spec.PortBindings[i].NodePort == 0 {
+						cn.Spec.PortBindings[i].NodePort = cur.Spec.Ports[idx].NodePort
 						if err := r.Update(ctx, cn); err != nil {
 							return err
 						}
@@ -264,21 +264,21 @@ func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha
 		return err
 	}
 
-	status := reconcileComputeNodeStatus(*podlist, *service)
+	status := reconcileComputeNodeStatus(podlist, service)
 	rt.Status = *status
 
 	// TODO: Compare Status with or without modification
 	return r.Status().Update(ctx, rt)
 }
 
-func getReadyProxyInstances(podlist v1.PodList) int32 {
+func getReadyProxyInstances(podlist *v1.PodList) int32 {
 	var cnt int32
-	for _, p := range podlist.Items {
-		if p.Status.Phase == v1.PodRunning {
-			for _, c := range p.Status.Conditions {
-				if c.Type == v1.PodReady && c.Status == v1.ConditionTrue {
-					for _, con := range p.Status.ContainerStatuses {
-						if con.Name == "shardingsphere-proxy" && con.Ready {
+	for idx := range podlist.Items {
+		if podlist.Items[idx].Status.Phase == v1.PodRunning {
+			for i := range podlist.Items[idx].Status.Conditions {
+				if podlist.Items[idx].Status.Conditions[i].Type == v1.PodReady && podlist.Items[idx].Status.Conditions[i].Status == v1.ConditionTrue {
+					for j := range podlist.Items[idx].Status.ContainerStatuses {
+						if podlist.Items[idx].Status.ContainerStatuses[j].Name == "shardingsphere-proxy" && podlist.Items[idx].Status.ContainerStatuses[j].Ready {
 							cnt++
 						}
 					}
@@ -289,7 +289,7 @@ func getReadyProxyInstances(podlist v1.PodList) int32 {
 	return cnt
 }
 
-func newConditions(conditions []v1alpha1.ComputeNodeCondition, cond v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
+func newConditions(conditions []v1alpha1.ComputeNodeCondition, cond *v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
 	if conditions == nil {
 		conditions = []v1alpha1.ComputeNodeCondition{}
 	}
@@ -299,26 +299,27 @@ func newConditions(conditions []v1alpha1.ComputeNodeCondition, cond v1alpha1.Com
 
 	found := false
 	for idx := range conditions {
-		if conditions[idx].Type == cond.Type {
-			conditions[idx].LastUpdateTime = cond.LastUpdateTime
-			conditions[idx].Status = cond.Status
-			found = true
-			break
+		if conditions[idx].Type != cond.Type {
+			continue
 		}
+		conditions[idx].LastUpdateTime = cond.LastUpdateTime
+		conditions[idx].Status = cond.Status
+		found = true
+		break
 	}
 
 	if !found {
-		conditions = append(conditions, cond)
+		conditions = append(conditions, *cond)
 	}
 
 	return conditions
 }
 
-func updateReadyConditions(conditions []v1alpha1.ComputeNodeCondition, cond v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
+func updateReadyConditions(conditions []v1alpha1.ComputeNodeCondition, cond *v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
 	return newConditions(conditions, cond)
 }
 
-func updateNotReadyConditions(conditions []v1alpha1.ComputeNodeCondition, cond v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
+func updateNotReadyConditions(conditions []v1alpha1.ComputeNodeCondition, cond *v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
 	cur := newConditions(conditions, cond)
 
 	for idx := range cur {
@@ -331,7 +332,7 @@ func updateNotReadyConditions(conditions []v1alpha1.ComputeNodeCondition, cond v
 	return cur
 }
 
-func clusterCondition(podlist v1.PodList) v1alpha1.ComputeNodeCondition {
+func clusterCondition(podlist *v1.PodList) v1alpha1.ComputeNodeCondition {
 	cond := v1alpha1.ComputeNodeCondition{}
 	if len(podlist.Items) == 0 {
 		return cond
@@ -342,6 +343,13 @@ func clusterCondition(podlist v1.PodList) v1alpha1.ComputeNodeCondition {
 		Status:         v1alpha1.ConditionStatusTrue,
 		LastUpdateTime: metav1.Now(),
 	}
+
+	condSucceed := v1alpha1.ComputeNodeCondition{
+		Type:           v1alpha1.ComputeNodeConditionSucceed,
+		Status:         v1alpha1.ConditionStatusTrue,
+		LastUpdateTime: metav1.Now(),
+	}
+
 	condUnknown := v1alpha1.ComputeNodeCondition{
 		Type:           v1alpha1.ComputeNodeConditionUnknown,
 		Status:         v1alpha1.ConditionStatusTrue,
@@ -359,8 +367,10 @@ func clusterCondition(podlist v1.PodList) v1alpha1.ComputeNodeCondition {
 	}
 
 	//FIXME: do not capture ConditionStarted in some cases
-	for _, p := range podlist.Items {
-		switch p.Status.Phase {
+	for idx := range podlist.Items {
+		switch podlist.Items[idx].Status.Phase {
+		case v1.PodSucceeded:
+			return condSucceed
 		case v1.PodRunning:
 			return condStarted
 		case v1.PodUnknown:
@@ -374,38 +384,38 @@ func clusterCondition(podlist v1.PodList) v1alpha1.ComputeNodeCondition {
 	return cond
 }
 
-func reconcileComputeNodeStatus(podlist v1.PodList, svc v1.Service) *v1alpha1.ComputeNodeStatus {
-	s := &v1alpha1.ComputeNodeStatus{}
+func reconcileComputeNodeStatus(podlist *v1.PodList, svc *v1.Service) *v1alpha1.ComputeNodeStatus {
+	status := &v1alpha1.ComputeNodeStatus{}
 
-	s.Replicas = int32(len(podlist.Items))
+	status.Replicas = int32(len(podlist.Items))
 
 	readyInstances := getReadyProxyInstances(podlist)
-	s.ReadyInstances = readyInstances
-	if s.Replicas == 0 {
-		s.Phase = v1alpha1.ComputeNodeStatusNotReady
+	status.ReadyInstances = readyInstances
+	if status.Replicas == 0 {
+		status.Phase = v1alpha1.ComputeNodeStatusNotReady
 	} else {
 		if readyInstances < miniReadyCount {
-			s.Phase = v1alpha1.ComputeNodeStatusNotReady
+			status.Phase = v1alpha1.ComputeNodeStatusNotReady
 		} else {
-			s.Phase = v1alpha1.ComputeNodeStatusReady
+			status.Phase = v1alpha1.ComputeNodeStatusReady
 		}
 	}
 
-	if s.Phase == v1alpha1.ComputeNodeStatusReady {
-		s.Conditions = updateReadyConditions(s.Conditions, v1alpha1.ComputeNodeCondition{
+	if status.Phase == v1alpha1.ComputeNodeStatusReady {
+		status.Conditions = updateReadyConditions(status.Conditions, &v1alpha1.ComputeNodeCondition{
 			Type:           v1alpha1.ComputeNodeConditionReady,
 			Status:         v1alpha1.ConditionStatusTrue,
 			LastUpdateTime: metav1.Now(),
 		})
 	} else {
 		cond := clusterCondition(podlist)
-		s.Conditions = updateNotReadyConditions(s.Conditions, cond)
+		status.Conditions = updateNotReadyConditions(status.Conditions, &cond)
 	}
 
-	s.LoadBalancer.ClusterIP = svc.Spec.ClusterIP
-	s.LoadBalancer.Ingress = svc.Status.LoadBalancer.Ingress
+	status.LoadBalancer.ClusterIP = svc.Spec.ClusterIP
+	status.LoadBalancer.Ingress = svc.Status.LoadBalancer.Ingress
 
-	return s
+	return status
 }
 
 func (r *ComputeNodeReconciler) getRuntimeComputeNode(ctx context.Context, namespacedName types.NamespacedName) (*v1alpha1.ComputeNode, error) {
