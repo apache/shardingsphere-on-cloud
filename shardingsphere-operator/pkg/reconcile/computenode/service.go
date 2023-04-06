@@ -31,12 +31,12 @@ func NewService(cn *v1alpha1.ComputeNode) *corev1.Service {
 	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetType(cn.Spec.ServiceType)
 
 	ports := []corev1.ServicePort{}
-	for _, pb := range cn.Spec.PortBindings {
+	for idx := range cn.Spec.PortBindings {
 		ports = append(ports, corev1.ServicePort{
-			Name:       pb.Name,
-			Port:       pb.ServicePort,
-			TargetPort: intstr.FromInt(int(pb.ContainerPort)),
-			Protocol:   pb.Protocol,
+			Name:       cn.Spec.PortBindings[idx].Name,
+			Port:       cn.Spec.PortBindings[idx].ServicePort,
+			TargetPort: intstr.FromInt(int(cn.Spec.PortBindings[idx].ContainerPort)),
+			Protocol:   cn.Spec.PortBindings[idx].Protocol,
 		})
 	}
 	builder.SetPorts(ports)

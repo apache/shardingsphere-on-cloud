@@ -242,8 +242,8 @@ func (c *containerBuilder) SetVolumeMount(mount *corev1.VolumeMount) ContainerBu
 	if c.container.VolumeMounts == nil {
 		c.container.VolumeMounts = []corev1.VolumeMount{*mount}
 	} else {
-		for idx, v := range c.container.VolumeMounts {
-			if v.Name == mount.Name {
+		for idx := range c.container.VolumeMounts {
+			if c.container.VolumeMounts[idx].Name == mount.Name {
 				c.container.VolumeMounts[idx] = *mount
 				return c
 			}
@@ -333,8 +333,8 @@ func (d *deploymentBuilder) SetShardingSphereProxyContainer(proxy *corev1.Contai
 		d.deployment.Spec.Template.Spec.Containers = []corev1.Container{*proxy}
 	}
 
-	for idx, container := range d.deployment.Spec.Template.Spec.Containers {
-		if container.Name == defaultContainerName {
+	for idx := range d.deployment.Spec.Template.Spec.Containers {
+		if d.deployment.Spec.Template.Spec.Containers[idx].Name == defaultContainerName {
 			d.deployment.Spec.Template.Spec.Containers[idx] = *proxy
 			return d
 		}
@@ -350,8 +350,8 @@ func (d *deploymentBuilder) SetInitContainer(init *corev1.Container) DeploymentB
 		d.deployment.Spec.Template.Spec.InitContainers = []corev1.Container{}
 	}
 
-	for idx, container := range d.deployment.Spec.Template.Spec.InitContainers {
-		if container.Name == init.Name {
+	for idx := range d.deployment.Spec.Template.Spec.InitContainers {
+		if d.deployment.Spec.Template.Spec.InitContainers[idx].Name == init.Name {
 			d.deployment.Spec.Template.Spec.InitContainers[idx] = *init
 			return d
 		}
@@ -518,8 +518,8 @@ func (d *deploymentBuilder) SetVolume(vol *corev1.Volume) DeploymentBuilder {
 		d.deployment.Spec.Template.Spec.Volumes = []corev1.Volume{*vol}
 	}
 
-	for idx, v := range d.deployment.Spec.Template.Spec.Volumes {
-		if v.Name == vol.Name {
+	for idx := range d.deployment.Spec.Template.Spec.Volumes {
+		if d.deployment.Spec.Template.Spec.Volumes[idx].Name == vol.Name {
 			d.deployment.Spec.Template.Spec.Volumes[idx] = *vol
 			return d
 		}
@@ -540,12 +540,12 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetReplicas(&cn.Spec.Replicas)
 
 	ports := []corev1.ContainerPort{}
-	for _, pb := range cn.Spec.PortBindings {
+	for idx := range cn.Spec.PortBindings {
 		ports = append(ports, corev1.ContainerPort{
-			Name:          pb.Name,
-			HostIP:        pb.HostIP,
-			ContainerPort: pb.ContainerPort,
-			Protocol:      pb.Protocol,
+			Name:          cn.Spec.PortBindings[idx].Name,
+			HostIP:        cn.Spec.PortBindings[idx].HostIP,
+			ContainerPort: cn.Spec.PortBindings[idx].ContainerPort,
+			Protocol:      cn.Spec.PortBindings[idx].Protocol,
 		})
 	}
 

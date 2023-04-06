@@ -24,8 +24,8 @@ import (
 // IsRunning returns true if one of the Pods is running
 func IsRunning(podList *v1.PodList) bool {
 	status := false
-	for _, pod := range podList.Items {
-		if isNonTerminatingPod(pod) && isRunningPod(pod.Status) {
+	for i := range podList.Items {
+		if isNonTerminatingPod(&podList.Items[i]) && isRunningPod(&podList.Items[i].Status) {
 			status = true
 			break
 		}
@@ -36,12 +36,12 @@ func IsRunning(podList *v1.PodList) bool {
 // CountingReadyPods returns the current count of ready pods
 func CountingReadyPods(podList *v1.PodList) int32 {
 	var readyPods int32 = 0
-	for _, pod := range podList.Items {
-		if len(pod.Status.ContainerStatuses) == 0 {
+	for i := range podList.Items {
+		if len(podList.Items[i].Status.ContainerStatuses) == 0 {
 			continue
 		}
 
-		if isNonTerminatingPod(pod) && isReadyPod(pod.Status) {
+		if isNonTerminatingPod(&podList.Items[i]) && isReadyPod(&podList.Items[i].Status) {
 			readyPods++
 		}
 	}

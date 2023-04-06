@@ -258,10 +258,10 @@ func updateReplicas(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *in
 func updatePodTemplateSpec(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) corev1.PodTemplateSpec {
 	exp := act.Spec.Template.DeepCopy()
 
-	SSProxyContainer := updateSSProxyContainer(proxy, act)
+	ssProxyContainer := updateSSProxyContainer(proxy, act)
 	for i := range exp.Spec.Containers {
 		if exp.Spec.Containers[i].Name == "proxy" {
-			exp.Spec.Containers[i] = *SSProxyContainer
+			exp.Spec.Containers[i] = *ssProxyContainer
 		}
 	}
 
@@ -290,16 +290,16 @@ func updateConfigName(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) s
 func updateInitContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *corev1.Container {
 	var exp *corev1.Container
 
-	for _, con := range act.Spec.Template.Spec.InitContainers {
-		if con.Name == "download-mysql-connect" {
-			for i := range con.Env {
-				if con.Env[i].Name == "VERSION" {
-					if con.Env[i].Value != proxy.Spec.MySQLDriver.Version {
-						con.Env[i].Value = proxy.Spec.MySQLDriver.Version
+	for idx := range act.Spec.Template.Spec.InitContainers {
+		if act.Spec.Template.Spec.InitContainers[idx].Name == "download-mysql-connect" {
+			for i := range act.Spec.Template.Spec.InitContainers[idx].Env {
+				if act.Spec.Template.Spec.InitContainers[idx].Env[i].Name == "VERSION" {
+					if act.Spec.Template.Spec.InitContainers[idx].Env[i].Value != proxy.Spec.MySQLDriver.Version {
+						act.Spec.Template.Spec.InitContainers[idx].Env[i].Value = proxy.Spec.MySQLDriver.Version
 					}
 				}
 			}
-			exp = con.DeepCopy()
+			exp = act.Spec.Template.Spec.InitContainers[idx].DeepCopy()
 		}
 	}
 
@@ -309,52 +309,54 @@ func updateInitContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment
 func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *corev1.Container {
 	var exp *corev1.Container
 
-	for _, con := range act.Spec.Template.Spec.Containers {
-		if con.Name == "proxy" {
-			exp = con.DeepCopy()
+	for idx := range act.Spec.Template.Spec.Containers {
+		if act.Spec.Template.Spec.Containers[idx].Name != "proxy" {
+			continue
+		}
 
-			tag := strings.Split(con.Image, ":")[1]
-			if tag != proxy.Spec.Version {
-				exp.Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
-			}
+		exp = act.Spec.Template.Spec.Containers[idx].DeepCopy()
 
-			exp.Resources = proxy.Spec.Resources
+		tag := strings.Split(act.Spec.Template.Spec.Containers[idx].Image, ":")[1]
+		if tag != proxy.Spec.Version {
+			exp.Image = fmt.Sprintf("%s:%s", imageName, proxy.Spec.Version)
+		}
 
-			if proxy.Spec.LivenessProbe != nil && !reflect.DeepEqual(con.LivenessProbe, *proxy.Spec.LivenessProbe) {
-				exp.LivenessProbe = proxy.Spec.LivenessProbe
-			}
+		exp.Resources = proxy.Spec.Resources
 
-			if proxy.Spec.ReadinessProbe != nil && !reflect.DeepEqual(con.ReadinessProbe, *proxy.Spec.ReadinessProbe) {
-				exp.ReadinessProbe = proxy.Spec.ReadinessProbe
-			}
+		if proxy.Spec.LivenessProbe != nil && !reflect.DeepEqual(act.Spec.Template.Spec.Containers[idx].LivenessProbe, *proxy.Spec.LivenessProbe) {
+			exp.LivenessProbe = proxy.Spec.LivenessProbe
+		}
 
-			if proxy.Spec.StartupProbe != nil && !reflect.DeepEqual(con.StartupProbe, *proxy.Spec.StartupProbe) {
-				exp.StartupProbe = proxy.Spec.StartupProbe
-			}
+		if proxy.Spec.ReadinessProbe != nil && !reflect.DeepEqual(act.Spec.Template.Spec.Containers[idx].ReadinessProbe, *proxy.Spec.ReadinessProbe) {
+			exp.ReadinessProbe = proxy.Spec.ReadinessProbe
+		}
 
-			for i := range con.Env {
-				if con.Env[i].Name == "PORT" {
-					proxyPort := strconv.FormatInt(int64(proxy.Spec.Port), 10)
-					if con.Env[i].Value != proxyPort {
-						con.Env[i].Value = proxyPort
-						exp.Ports[0].ContainerPort = proxy.Spec.Port
-					}
+		if proxy.Spec.StartupProbe != nil && !reflect.DeepEqual(act.Spec.Template.Spec.Containers[idx].StartupProbe, *proxy.Spec.StartupProbe) {
+			exp.StartupProbe = proxy.Spec.StartupProbe
+		}
+
+		for i := range act.Spec.Template.Spec.Containers[idx].Env {
+			if act.Spec.Template.Spec.Containers[idx].Env[i].Name == "PORT" {
+				proxyPort := strconv.FormatInt(int64(proxy.Spec.Port), 10)
+				if act.Spec.Template.Spec.Containers[idx].Env[i].Value != proxyPort {
+					act.Spec.Template.Spec.Containers[idx].Env[i].Value = proxyPort
+					exp.Ports[0].ContainerPort = proxy.Spec.Port
 				}
 			}
-			exp.Env = con.Env
 		}
+		exp.Env = act.Spec.Template.Spec.Containers[idx].Env
 	}
 	return exp
 }
 
-func getReadyNodes(podlist corev1.PodList) int32 {
+func getReadyNodes(podlist *corev1.PodList) int32 {
 	var cnt int32
-	for _, p := range podlist.Items {
-		if p.Status.Phase == corev1.PodRunning {
-			for _, c := range p.Status.Conditions {
-				if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
-					for _, con := range p.Status.ContainerStatuses {
-						if con.Name == "proxy" && con.Ready {
+	for idx := range podlist.Items {
+		if podlist.Items[idx].Status.Phase == corev1.PodRunning {
+			for i := range podlist.Items[idx].Status.Conditions {
+				if podlist.Items[idx].Status.Conditions[i].Type == corev1.PodReady && podlist.Items[idx].Status.Conditions[i].Status == corev1.ConditionTrue {
+					for j := range podlist.Items[idx].Status.ContainerStatuses {
+						if podlist.Items[idx].Status.ContainerStatuses[j].Name == "proxy" && podlist.Items[idx].Status.ContainerStatuses[j].Ready {
 							cnt++
 						}
 					}
@@ -366,7 +368,7 @@ func getReadyNodes(podlist corev1.PodList) int32 {
 }
 
 // ReconcileStatus returns the status of ShardingSphereProxy
-func ReconcileStatus(podlist corev1.PodList, rt v1alpha1.ShardingSphereProxy) v1alpha1.ProxyStatus {
+func ReconcileStatus(podlist *corev1.PodList, rt *v1alpha1.ShardingSphereProxy) v1alpha1.ProxyStatus {
 	readyNodes := getReadyNodes(podlist)
 
 	rt.Status.ReadyNodes = readyNodes
@@ -404,12 +406,14 @@ func newConditions(conditions []v1alpha1.Condition, cond v1alpha1.Condition) []v
 
 	found := false
 	for idx := range conditions {
-		if conditions[idx].Type == cond.Type {
-			conditions[idx].LastUpdateTime = cond.LastUpdateTime
-			conditions[idx].Status = cond.Status
-			found = true
-			break
+		if conditions[idx].Type != cond.Type {
+			continue
 		}
+
+		conditions[idx].LastUpdateTime = cond.LastUpdateTime
+		conditions[idx].Status = cond.Status
+		found = true
+		break
 	}
 
 	if !found {
@@ -436,7 +440,7 @@ func updateNotReadyConditions(conditions []v1alpha1.Condition, cond v1alpha1.Con
 	return cur
 }
 
-func clusterCondition(podlist corev1.PodList) v1alpha1.Condition {
+func clusterCondition(podlist *corev1.PodList) v1alpha1.Condition {
 	cond := v1alpha1.Condition{}
 	if len(podlist.Items) == 0 {
 		return cond
@@ -471,8 +475,8 @@ func clusterCondition(podlist corev1.PodList) v1alpha1.Condition {
 	}
 
 	//FIXME: do not capture ConditionStarted in some cases
-	for _, p := range podlist.Items {
-		switch p.Status.Phase {
+	for i := range podlist.Items {
+		switch podlist.Items[i].Status.Phase {
 		case corev1.PodSucceeded:
 			return condSucceed
 		case corev1.PodRunning:
