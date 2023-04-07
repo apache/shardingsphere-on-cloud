@@ -29,7 +29,7 @@ import (
 func RequestIDChecker() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		if id := ctx.Get(cons.RequestID); strings.Trim(id, " ") == "" {
-			return responder.Error(ctx, cons.InvalidHttpHeader)
+			return responder.Error(ctx, cons.InvalidHTTPHeader)
 		}
 		return ctx.Next()
 	}

@@ -38,8 +38,8 @@ func TestAgentServer_Backup(t *testing.T) {
 	as := NewAgentServer("http://agent-server:18080")
 
 	backupID, err := as.Backup(&model.BackupIn{
-		DbPort:       5432,
-		DbName:       "omm",
+		DBPort:       5432,
+		DBName:       "omm",
 		Username:     "og",
 		Password:     "1234567890@SphereEx",
 		DnBackupPath: "/home/omm/data",
@@ -59,13 +59,13 @@ func TestAgentServer_Restore(t *testing.T) {
 	as := NewAgentServer("http://agent-server:18080")
 
 	err := as.Restore(&model.RestoreIn{
-		DbPort:       5432,
-		DbName:       "omm",
+		DBPort:       5432,
+		DBName:       "omm",
 		Username:     "og",
 		Password:     "1234567890@SphereEx",
 		DnBackupPath: "/home/omm/data",
 		Instance:     "ins-default-0",
-		DnBackupId:   "RR3FIC",
+		DnBackupID:   "RR3FIC",
 	})
 	if err != nil {
 		panic(err)
@@ -79,13 +79,13 @@ func TestAgentServer_ShowDetail(t *testing.T) {
 	as := NewAgentServer("http://agent-server:18080")
 
 	backupInfo, err := as.ShowDetail(&model.ShowDetailIn{
-		DbPort:       5432,
-		DbName:       "omm",
+		DBPort:       5432,
+		DBName:       "omm",
 		Username:     "og",
 		Password:     "1234567890@SphereEx",
 		DnBackupPath: "/home/omm/data",
 		Instance:     "ins-default-0",
-		DnBackupId:   "RR3FIC",
+		DnBackupID:   "RR3FIC",
 	})
 	if err != nil {
 		panic(err)
@@ -104,8 +104,8 @@ func TestAgentServer_ShowList(t *testing.T) {
 	as := NewAgentServer("http://agent-server:18080")
 
 	list, err := as.ShowList(&model.ShowListIn{
-		DbPort:       5432,
-		DbName:       "omm",
+		DBPort:       5432,
+		DBName:       "omm",
 		Username:     "og",
 		Password:     "1234567890@SphereEx",
 		DnBackupPath: "/home/omm/data",

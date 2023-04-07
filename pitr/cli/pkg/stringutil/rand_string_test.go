@@ -17,7 +17,9 @@
 
 package strutil
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestRandom(t *testing.T) {
 	one, two := Random(20), Random(20)

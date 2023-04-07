@@ -55,5 +55,5 @@ jobs:
           $(go env GOPATH)/bin/golangci-lint run -v --timeout 300s ./...
       - name: Lint Pitr Agent
         run: |
-          cd pitr/gent
+          cd pitr/agent
           $(go env GOPATH)/bin/golangci-lint run -v --timeout 300s ./...

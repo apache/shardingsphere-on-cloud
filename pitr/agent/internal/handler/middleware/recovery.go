@@ -32,6 +32,7 @@ func Recover(log logging.ILog) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		defer func() {
 			if r := recover(); r != nil {
+				//nolint:exhaustive
 				log.Fields(map[logging.FieldKey]string{
 					logging.RequestID: ctx.Get(cons.RequestID),
 					logging.ErrorKey:  fmt.Sprint(r),

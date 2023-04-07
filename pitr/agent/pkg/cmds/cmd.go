@@ -20,11 +20,11 @@ package cmds
 import (
 	"bufio"
 	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 	"io"
 	"os/exec"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/syncutils"
 )
 

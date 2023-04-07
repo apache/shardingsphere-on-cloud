@@ -27,9 +27,9 @@ func NewRecoverFuncWithErrRet(msg string, fn func() error) func() (err error) {
 			r := recover()
 			if r != nil {
 				if err, ok := r.(error); ok {
-					err = fmt.Errorf("NewRecoverFuncWithErrRet[msg=%s],err=%s", msg, err)
+					err = fmt.Errorf("NewRecoverFuncWithErrRet[msg=%s],err=%s", msg, err) //nolint
 				} else {
-					err = fmt.Errorf("NewRecoverFuncWithErrRet[msg=%s],recover msg=%+v", msg, r)
+					err = fmt.Errorf("NewRecoverFuncWithErrRet[msg=%s],recover msg=%+v", msg, r) //nolint
 				}
 			}
 		}()

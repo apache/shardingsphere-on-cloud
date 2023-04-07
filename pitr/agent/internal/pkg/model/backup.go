@@ -48,7 +48,7 @@ type (
 	}
 
 	BackupList struct {
-		Instance string   `json:"instance"`
-		List     []Backup `json:"backups"`
+		Instance string    `json:"instance"`
+		List     []*Backup `json:"backups"`
 	}
 )

@@ -100,7 +100,7 @@ func init() {
 // 7. Double check backups all finished
 func backup() error {
 	var err error
-	proxy, err := pkg.NewShardingSphereProxy(Username, Password, pkg.DefaultDbName, Host, Port)
+	proxy, err := pkg.NewShardingSphereProxy(Username, Password, pkg.DefaultDBName, Host, Port)
 	if err != nil {
 		return xerr.NewCliErr("create ss-proxy connect failed")
 	}
@@ -255,8 +255,8 @@ func execBackup(lsBackup *model.LsBackup) error {
 
 func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.DataNode) error {
 	in := &model.BackupIn{
-		DbPort:       node.Port,
-		DbName:       node.Database,
+		DBPort:       node.Port,
+		DBName:       node.Database,
 		Username:     node.Username,
 		Password:     node.Password,
 		DnBackupPath: BackupPath,
@@ -331,7 +331,7 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 	return backupFinalStatus
 }
 
-func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, backupId string, status model.BackupStatus, retryTimes uint8) model.BackupStatus {
+func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, backupID string, status model.BackupStatus, retryTimes uint8) model.BackupStatus {
 	if retryTimes+1 == 0 {
 		return status
 	}
@@ -343,18 +343,18 @@ func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, backupId string, st
 	time.Sleep(time.Second * 2)
 
 	in := &model.ShowDetailIn{
-		DbPort:       sn.Port,
-		DbName:       sn.Database,
+		DBPort:       sn.Port,
+		DBName:       sn.Database,
 		Username:     sn.Username,
 		Password:     sn.Password,
-		DnBackupId:   backupId,
+		DnBackupID:   backupID,
 		DnBackupPath: BackupPath,
 		Instance:     defaultInstance,
 	}
 	backupInfo, err := as.ShowDetail(in)
 	if err != nil {
 		logging.Error(fmt.Sprintf("get storage node [IP:%s] backup detail from agent server failed, will retry %d times.\n%s", sn.IP, retryTimes, err.Error()))
-		return checkStatus(as, sn, backupId, model.SsBackupStatusCheckError, retryTimes-1)
+		return checkStatus(as, sn, backupID, model.SsBackupStatusCheckError, retryTimes-1)
 	}
-	return checkStatus(as, sn, backupId, backupInfo.Status, retryTimes)
+	return checkStatus(as, sn, backupID, backupInfo.Status, retryTimes)
 }

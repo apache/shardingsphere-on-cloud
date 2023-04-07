@@ -97,6 +97,7 @@ func (r *req) Send(body any) (int, error) {
 	}
 
 	tr := &http.Transport{
+		//nolint:gosec
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	c := &http.Client{Transport: tr}
@@ -104,6 +105,8 @@ func (r *req) Send(body any) (int, error) {
 	if err != nil {
 		return -1, fmt.Errorf("http request err=%w", err)
 	}
+
+	defer resp.Body.Close()
 
 	all, err := io.ReadAll(resp.Body)
 	if err != nil {
