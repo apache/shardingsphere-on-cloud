@@ -27,7 +27,7 @@ type Visitor struct {
 	parser.BaseRDLStatementVisitor
 }
 
-func (v *Visitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) {
+func (v *Visitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) interface{} {
 
 	if ctx.IfNotExists() != nil {
 		v.VisitIfNotExists(ctx.IfNotExists().(*parser.IfNotExistsContext))
