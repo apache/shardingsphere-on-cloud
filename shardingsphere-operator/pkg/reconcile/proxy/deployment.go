@@ -323,15 +323,15 @@ func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deploym
 
 		exp.Resources = proxy.Spec.Resources
 
-		if proxy.Spec.LivenessProbe != nil && !reflect.DeepEqual(act.Spec.Template.Spec.Containers[idx].LivenessProbe, *proxy.Spec.LivenessProbe) {
+		if setProbe(proxy.Spec.LivenessProbe, act.Spec.Template.Spec.Containers[idx].LivenessProbe) != nil {
 			exp.LivenessProbe = proxy.Spec.LivenessProbe
 		}
 
-		if proxy.Spec.ReadinessProbe != nil && !reflect.DeepEqual(act.Spec.Template.Spec.Containers[idx].ReadinessProbe, *proxy.Spec.ReadinessProbe) {
+		if setProbe(proxy.Spec.ReadinessProbe, act.Spec.Template.Spec.Containers[idx].ReadinessProbe) != nil {
 			exp.ReadinessProbe = proxy.Spec.ReadinessProbe
 		}
 
-		if proxy.Spec.StartupProbe != nil && !reflect.DeepEqual(act.Spec.Template.Spec.Containers[idx].StartupProbe, *proxy.Spec.StartupProbe) {
+		if setProbe(proxy.Spec.StartupProbe, act.Spec.Template.Spec.Containers[idx].StartupProbe) != nil {
 			exp.StartupProbe = proxy.Spec.StartupProbe
 		}
 
@@ -347,6 +347,13 @@ func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deploym
 		exp.Env = act.Spec.Template.Spec.Containers[idx].Env
 	}
 	return exp
+}
+
+func setProbe(proxy, act *corev1.Probe) *corev1.Probe {
+	if proxy != nil && !reflect.DeepEqual(act, proxy) {
+		return proxy
+	}
+	return nil
 }
 
 func getReadyNodes(podlist *corev1.PodList) int32 {
