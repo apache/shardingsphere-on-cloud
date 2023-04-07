@@ -553,15 +553,8 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 		SetVersion(cn.Spec.ServerVersion).
 		SetPorts(ports).
 		SetResources(cn.Spec.Resources)
-	if cn.Spec.Probes != nil && cn.Spec.Probes.LivenessProbe != nil {
-		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
-	}
-	if cn.Spec.Probes != nil && cn.Spec.Probes.ReadinessProbe != nil {
-		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
-	}
-	if cn.Spec.Probes != nil && cn.Spec.Probes.StartupProbe != nil {
-		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
-	}
+
+	setProbes(scb, cn)
 
 	vcb := NewSharedVolumeAndMountBuilder().
 		SetVolumeMountSize(1).
@@ -574,22 +567,33 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 	scb.SetVolumeMount(vmc[0])
 
 	if cn.Spec.StorageNodeConnector != nil {
-		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypeMySQL {
+		switch cn.Spec.StorageNodeConnector.Type {
+		case v1alpha1.ConnectorTypeMySQL:
 			builder.SetMySQLConnector(scb, cn)
-		}
-
-		// set agent for proxy
-		if enabled, ok := cn.Annotations[defaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
-			builder.SetAgentBin(scb, cn)
-		}
-
-		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypePostgreSQL {
+		case v1alpha1.ConnectorTypePostgreSQL:
 			sc := scb.Build()
 			builder.SetShardingSphereProxyContainer(sc)
 		}
 	}
 
+	// set agent for proxy
+	if enabled, ok := cn.Annotations[defaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
+		builder.SetAgentBin(scb, cn)
+	}
+
 	return builder.Build()
+}
+
+func setProbes(scb ContainerBuilder, cn *v1alpha1.ComputeNode) {
+	if cn.Spec.Probes != nil && cn.Spec.Probes.LivenessProbe != nil {
+		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
+	}
+	if cn.Spec.Probes != nil && cn.Spec.Probes.ReadinessProbe != nil {
+		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
+	}
+	if cn.Spec.Probes != nil && cn.Spec.Probes.StartupProbe != nil {
+		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
+	}
 }
 
 // SetMySQLConnector will set an init container to download mysql jar and mount files for proxy container.

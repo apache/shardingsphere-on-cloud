@@ -57,10 +57,10 @@ linters:
     - misspell 
     - varnamelen
     - gocritic
-    #- exhaustruct
+    - gocognit
     - nestif
     #- wsl
-    #- gocognit
+    #- exhaustruct
 # Refers: https://gist.github.com/maratori/47a4d00457a92aa426dbd48a18776322
 linters-settings:
   wsl:
@@ -113,7 +113,7 @@ linters-settings:
     # The minimum length of a variable's name that is considered "long".
     # Variable names that are at least this long will be ignored.
     # Default: 3
-    min-name-length: 2
+    min-name-length: 1
     # Check method receivers.
     # Default: false
     check-receiver: false 
