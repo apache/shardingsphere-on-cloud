@@ -67,10 +67,10 @@ func (mr *MockILocalStorageMockRecorder) GenFilename(extn interface{}) *gomock.C
 }
 
 // ReadAll mocks base method.
-func (m *MockILocalStorage) ReadAll() ([]model.LsBackup, error) {
+func (m *MockILocalStorage) ReadAll() ([]*model.LsBackup, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReadAll")
-	ret0, _ := ret[0].([]model.LsBackup)
+	ret0, _ := ret[0].([]*model.LsBackup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

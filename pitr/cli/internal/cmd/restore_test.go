@@ -41,7 +41,7 @@ var _ = Describe("Restore", func() {
 		backupRecordID string
 	)
 	Context("Restore", func() {
-		proxy, _ := pkg.NewShardingSphereProxy(user, password, pkg.DefaultDbName, host, port)
+		proxy, _ := pkg.NewShardingSphereProxy(user, password, pkg.DefaultDBName, host, port)
 		ls, _ := pkg.NewLocalStorage(pkg.DefaultRootDir())
 		bak, _ := ls.ReadByID(backupRecordID)
 		It("restore to ss proxy should be ok", func() {

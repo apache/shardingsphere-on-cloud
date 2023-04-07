@@ -66,7 +66,7 @@ func show() error {
 			return nil
 		}
 
-		if err := formatRecord([]model.LsBackup{*bak}); err != nil {
+		if err := formatRecord([]*model.LsBackup{bak}); err != nil {
 			return err
 		}
 		return nil
@@ -83,7 +83,7 @@ func show() error {
 			return nil
 		}
 
-		if err := formatRecord([]model.LsBackup{*bak}); err != nil {
+		if err := formatRecord([]*model.LsBackup{bak}); err != nil {
 			return err
 		}
 		return nil
@@ -106,7 +106,7 @@ func show() error {
 
 	return nil
 }
-func formatRecord(backups []model.LsBackup, mode ...string) error {
+func formatRecord(backups []*model.LsBackup, mode ...string) error {
 	var m string
 
 	if len(mode) == 0 {
@@ -116,16 +116,16 @@ func formatRecord(backups []model.LsBackup, mode ...string) error {
 	}
 	switch m {
 	case "json":
-		return formatRecordJson(backups)
+		return formatRecordJSON(backups)
 	case "table":
 		// TODO format record table
 		return nil
 	default:
-		return formatRecordJson(backups)
+		return formatRecordJSON(backups)
 	}
 }
 
-func formatRecordJson(backups []model.LsBackup) error {
+func formatRecordJSON(backups []*model.LsBackup) error {
 	var ds []string
 	for _, backup := range backups {
 		data, err := json.MarshalIndent(backup, "", "\t")

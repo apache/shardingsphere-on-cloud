@@ -59,7 +59,7 @@ const defaultLogback = `<?xml version="1.0"?>
 
 // ConstructCascadingConfigmap Construct spec resources to Configmap
 func ConstructCascadingConfigmap(proxyConfig *v1alpha1.ShardingSphereProxyServerConfig) *v1.ConfigMap {
-	y := toYaml(proxyConfig)
+	serveryaml := toYaml(proxyConfig)
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      proxyConfig.Name,
@@ -69,7 +69,7 @@ func ConstructCascadingConfigmap(proxyConfig *v1alpha1.ShardingSphereProxyServer
 			},
 		},
 		Data: map[string]string{
-			"server.yaml": y,
+			"server.yaml": serveryaml,
 			"logback.xml": defaultLogback,
 		},
 	}

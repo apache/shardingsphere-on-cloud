@@ -1,4 +1,4 @@
-.PHONY:openssl-local test build
+.PHONY:openssl-local test build lint
 
 GOOS := $(shell go env GOOS)
 
@@ -12,3 +12,5 @@ test:
 
 build:
 	GOOS=$(GOOS) go build -o pitr-agent
+lint:
+	golangci-lint run -v --timeout 5m

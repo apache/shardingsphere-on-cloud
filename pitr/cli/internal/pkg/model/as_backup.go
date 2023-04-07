@@ -19,8 +19,8 @@ package model
 
 type (
 	BackupIn struct {
-		DbPort   uint16 `json:"db_port"`
-		DbName   string `json:"db_name"`
+		DBPort   uint16 `json:"db_port"`
+		DBName   string `json:"db_name"`
 		Username string `json:"username"`
 		Password string `json:"password"`
 

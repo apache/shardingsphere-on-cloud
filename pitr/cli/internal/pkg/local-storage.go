@@ -40,7 +40,7 @@ type (
 	ILocalStorage interface {
 		WriteByJSON(name string, contents *model.LsBackup) error
 		GenFilename(extn Extension) string
-		ReadAll() ([]model.LsBackup, error)
+		ReadAll() ([]*model.LsBackup, error)
 		ReadByID(id string) (*model.LsBackup, error)
 		ReadByCSN(csn string) (*model.LsBackup, error)
 	}
@@ -129,12 +129,14 @@ func (ls *localStorage) WriteByJSON(name string, contents *model.LsBackup) error
 	return nil
 }
 
-func (ls *localStorage) ReadAll() ([]model.LsBackup, error) {
+func (ls *localStorage) ReadAll() ([]*model.LsBackup, error) {
 	entries, err := os.ReadDir(ls.backupDir)
 	if err != nil {
 		return nil, xerr.NewCliErr(fmt.Sprintf("read the dir[path:%s] failed,err=%s", ls.backupDir, err))
 	}
-	backups := make([]model.LsBackup, 0, len(entries))
+
+	backups := make([]*model.LsBackup, 0, len(entries))
+
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -157,10 +159,11 @@ func (ls *localStorage) ReadAll() ([]model.LsBackup, error) {
 			return nil, xerr.NewCliErr(fmt.Sprintf("read file failed,err=%s", err))
 		}
 
-		b := model.LsBackup{}
-		if err := json.Unmarshal(file, &b); err != nil {
+		b := &model.LsBackup{}
+		if err := json.Unmarshal(file, b); err != nil {
 			return nil, xerr.NewCliErr(fmt.Sprintf("invalid contents[filePath=%s],err=%s", path, err))
 		}
+
 		backups = append(backups, b)
 	}
 	return backups, nil
@@ -173,7 +176,7 @@ func (ls *localStorage) ReadByCSN(csn string) (*model.LsBackup, error) {
 	}
 	for _, v := range list {
 		if v.Info.CSN == csn {
-			return &v, nil
+			return v, nil
 		}
 	}
 	return nil, xerr.NewCliErr(xerr.NotFound)
@@ -186,7 +189,7 @@ func (ls *localStorage) ReadByID(id string) (*model.LsBackup, error) {
 	}
 	for _, v := range list {
 		if v.Info.ID == id {
-			return &v, nil
+			return v, nil
 		}
 	}
 	return nil, xerr.NewCliErr(xerr.NotFound)

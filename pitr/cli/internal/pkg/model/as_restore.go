@@ -19,13 +19,13 @@ package model
 
 type (
 	RestoreIn struct {
-		DbPort       uint16 `json:"db_port"`
-		DbName       string `json:"db_name"`
+		DBPort       uint16 `json:"db_port"`
+		DBName       string `json:"db_name"`
 		Username     string `json:"username"`
 		Password     string `json:"password"`
 		Instance     string `json:"instance"`
 		DnBackupPath string `json:"dn_backup_path"`
-		DnBackupId   string `json:"dn_backup_id"`
+		DnBackupID   string `json:"dn_backup_id"`
 	}
 
 	RestoreResp struct {

@@ -23,7 +23,7 @@ run:
 linters:
   disable-all: true
   enable:
-    # The base lints 
+    # The base lints
     - errcheck
     - gosimple
     - govet
@@ -45,22 +45,22 @@ linters:
     - durationcheck
     - gosec
     - predeclared
-    # Deprecated lints 
+    # Deprecated lints
     - structcheck
     - varcheck
     - deadcode
 
-    # The advanced lints 
+    # The advanced lints
     - dupl
     - exhaustive
     - godot
-    - misspell 
-    - varnamelen
+    - misspell
+    # - varnamelen
     - gocritic
-    - gocognit
-    - nestif
-    #- wsl
     #- exhaustruct
+    #- nestif
+    #- wsl
+    - gocognit
 # Refers: https://gist.github.com/maratori/47a4d00457a92aa426dbd48a18776322
 linters-settings:
   wsl:
@@ -113,10 +113,10 @@ linters-settings:
     # The minimum length of a variable's name that is considered "long".
     # Variable names that are at least this long will be ignored.
     # Default: 3
-    min-name-length: 1
+    min-name-length: 2
     # Check method receivers.
     # Default: false
-    check-receiver: false 
+    check-receiver: false
     # Check named return values.
     # Default: false
     check-return: true
@@ -165,10 +165,10 @@ linters-settings:
     # Report pre-allocation suggestions on for loops.
     # Default: false
     for-loops: true
-  nestif:
+    #nestif:
     # Minimal complexity of if statements to report.
     # Default: 5
-    min-complexity: 4
+  # min-complexity: 4
   misspell:
     # Correct spellings using locale preferences for US or UK.
     # Setting locale to US will correct the British spelling of 'colour' to 'color'.
@@ -192,7 +192,7 @@ linters-settings:
     period: false
     # Check that each sentence starts with a capital letter.
     # Default: false
-    capital: false 
+    capital: false
   dupl:
     # Tokens count to trigger issue.
     # Default: 150
@@ -238,7 +238,7 @@ linters-settings:
       - elseif
       - nestingReduce
       - unnamedResult
-    #  - ruleguard
+      #  - ruleguard
       - truncateCmp
       - hugeparam
       - rangevalcopy

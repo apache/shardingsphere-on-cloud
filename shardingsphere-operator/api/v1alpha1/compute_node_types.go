@@ -336,6 +336,7 @@ type ComputeNodeConditionType string
 const (
 	ComputeNodeConditionInitialized ComputeNodeConditionType = "Initialized"
 	ComputeNodeConditionStarted     ComputeNodeConditionType = "Started"
+	ComputeNodeConditionSucceed     ComputeNodeConditionType = "Succeed"
 	ComputeNodeConditionReady       ComputeNodeConditionType = "Ready"
 	ComputeNodeConditionUnknown     ComputeNodeConditionType = "Unknown"
 	ComputeNodeConditionDeployed    ComputeNodeConditionType = "Deployed"

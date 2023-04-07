@@ -24,18 +24,18 @@ import (
 
 type (
 	ShowIn struct {
-		DbPort       uint16 `json:"db_port"`
-		DbName       string `json:"db_name"`
+		DBPort       uint16 `json:"db_port"`
+		DBName       string `json:"db_name"`
 		Username     string `json:"username"`
 		Password     string `json:"password"`
-		DnBackupId   string `json:"dn_backup_id"`
+		DnBackupID   string `json:"dn_backup_id"`
 		DnBackupPath string `json:"dn_backup_path"`
 		Instance     string `json:"instance"`
 	}
 
 	ShowListIn struct {
-		DbPort       uint16 `json:"db_port"`
-		DbName       string `json:"db_name"`
+		DBPort       uint16 `json:"db_port"`
+		DBName       string `json:"db_name"`
 		Username     string `json:"username"`
 		Password     string `json:"password"`
 		DnBackupPath string `json:"dn_backup_path"`
@@ -43,7 +43,7 @@ type (
 	}
 
 	BackupInfo struct {
-		Id        string `json:"dn_backup_id"`
+		ID        string `json:"dn_backup_id"`
 		Path      string `json:"dn_backup_path"`
 		Mode      string `json:"db_backup_mode"`
 		Instance  string `json:"instance"`
@@ -53,17 +53,18 @@ type (
 	}
 )
 
+//nolint:dupl
 func (in *ShowIn) Validate() error {
 	if in == nil {
 		return cons.Internal
 	}
 
-	if in.DbPort == 0 {
-		return cons.InvalidDbPort
+	if in.DBPort == 0 {
+		return cons.InvalidDBPort
 	}
 
-	if in.DbName == "" {
-		return cons.MissingDbName
+	if in.DBName == "" {
+		return cons.MissingDBName
 	}
 
 	if in.Username == "" {
@@ -78,8 +79,8 @@ func (in *ShowIn) Validate() error {
 		return cons.MissingDnBackupPath
 	}
 
-	if in.DnBackupId == "" {
-		return cons.MissingDnBackupId
+	if in.DnBackupID == "" {
+		return cons.MissingDnBackupID
 	}
 
 	if in.Instance == "" {
@@ -93,7 +94,7 @@ func NewBackupInfo(data *model.Backup, path, instance string) *BackupInfo {
 		return nil
 	}
 	return &BackupInfo{
-		Id:        data.ID,
+		ID:        data.ID,
 		Path:      path,
 		Mode:      data.BackupMode,
 		Instance:  instance,
@@ -103,14 +104,14 @@ func NewBackupInfo(data *model.Backup, path, instance string) *BackupInfo {
 	}
 }
 
-func NewBackupInfoList(list []model.Backup, path, instance string) []BackupInfo {
+func NewBackupInfoList(list []*model.Backup, path, instance string) []BackupInfo {
 	if len(list) == 0 {
 		return []BackupInfo{}
 	}
 	ret := make([]BackupInfo, 0, len(list))
 	for _, v := range list {
 		ret = append(ret, BackupInfo{
-			Id:        v.ID,
+			ID:        v.ID,
 			Path:      path,
 			Mode:      v.BackupMode,
 			Instance:  instance,
@@ -140,12 +141,12 @@ func (in *ShowListIn) Validate() error {
 		return cons.Internal
 	}
 
-	if in.DbPort == 0 {
-		return cons.InvalidDbPort
+	if in.DBPort == 0 {
+		return cons.InvalidDBPort
 	}
 
-	if in.DbName == "" {
-		return cons.MissingDbName
+	if in.DBName == "" {
+		return cons.MissingDBName
 	}
 
 	if in.Username == "" {

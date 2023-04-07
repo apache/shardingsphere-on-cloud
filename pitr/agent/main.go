@@ -20,6 +20,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/middleware"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
@@ -28,10 +33,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
 )
 
 const (
@@ -112,7 +113,7 @@ func main() {
 		zap.AddStacktrace(zapcore.FatalLevel),
 	)
 	if err != nil {
-		panic(fmt.Errorf("an unknown error occured in the zap-log"))
+		panic(fmt.Errorf("an unknown error occurred in the zap-log"))
 	}
 
 	log = logging.Init(logger)

@@ -39,9 +39,9 @@ func Backup(ctx *fiber.Ctx) error {
 		return fmt.Errorf("invalid parameter,err=%w", err)
 	}
 
-	if err := pkg.OG.Auth(in.Username, in.Password, in.DbName, in.DbPort); err != nil {
+	if err := pkg.OG.Auth(in.Username, in.Password, in.DBName, in.DBPort); err != nil {
 		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
-		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DbName, err)
+		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
 	}
 
 	// try to add backup instance
@@ -49,7 +49,7 @@ func Backup(ctx *fiber.Ctx) error {
 		return fmt.Errorf("add instance failed, err=%w", err)
 	}
 
-	backupID, err := pkg.OG.AsyncBackup(in.DnBackupPath, in.Instance, in.DnBackupMode, 1, in.DbPort)
+	backupID, err := pkg.OG.AsyncBackup(in.DnBackupPath, in.Instance, in.DnBackupMode, 1, in.DBPort)
 	if err != nil {
 		efmt := "pkg.OG.AsyncBackup[path=%s,instance=%s,mode=%s] failure,err=%w"
 		return fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupMode, err)

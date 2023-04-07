@@ -20,9 +20,10 @@ package gsutil
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+
 	_ "gitee.com/opengauss/openGauss-connector-go-pq"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
-	"strings"
 )
 
 const defaultOGHost = "127.0.0.1"
@@ -49,7 +50,7 @@ func Open(user, password, dbName string, dbPort uint16) (*OpenGauss, error) {
 	db, err := sql.Open("opengauss", fmt.Sprintf(connStr, defaultOGHost, dbPort, user, password, dbName))
 	if err != nil {
 		efmt := "sql:open fail[user=%s,pwLen=%d,dbName=%s],err=%s,wrap=%w"
-		return nil, fmt.Errorf(efmt, user, len(password), dbName, err, cons.DbConnectionFailed)
+		return nil, fmt.Errorf(efmt, user, len(password), dbName, err, cons.DBConnectionFailed)
 	}
 
 	return &OpenGauss{
@@ -63,7 +64,7 @@ func Open(user, password, dbName string, dbPort uint16) (*OpenGauss, error) {
 func (og *OpenGauss) Ping() error {
 	if err := og.db.Ping(); err != nil {
 		efmt := "db ping fail[user=%s,pwLen=%d,dbName=%s],err=%s,wrap=%w"
-		return fmt.Errorf(efmt, og.user, og.pwLen, og.dbName, err, cons.DbConnectionFailed)
+		return fmt.Errorf(efmt, og.user, og.pwLen, og.dbName, err, cons.DBConnectionFailed)
 	}
 	return nil
 }

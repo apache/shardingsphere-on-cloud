@@ -40,7 +40,7 @@ import (
 const (
 	//WaitingForReady Time selection reference kubelet restart time
 	WaitingForReady = 10 * time.Second
-	//miniReadyCount Minimum number of replicas that can be served
+	// miniReadyCount Minimum number of replicas that can be served
 	miniReadyCount = 1
 
 	proxyControllerName = "proxy_controller"
@@ -111,67 +111,72 @@ func (r *ProxyReconciler) reconcile(ctx context.Context, req ctrl.Request, rt *v
 }
 
 func (r *ProxyReconciler) reconcileDeployment(ctx context.Context, namespacedName types.NamespacedName) (ctrl.Result, error) {
-	ssproxy, err := r.getRuntimeShardingSphereProxy(ctx, namespacedName)
+	proxy, err := r.getRuntimeShardingSphereProxy(ctx, namespacedName)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	deploy := &appsv1.Deployment{}
+	err = r.Get(ctx, namespacedName, deploy)
 
-	if err := r.Get(ctx, namespacedName, deploy); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		} else {
-			exp := reconcile.NewDeployment(ssproxy)
-			if err := r.Create(ctx, exp); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-	} else {
-		act := deploy.DeepCopy()
-
-		exp := reconcile.UpdateDeployment(ssproxy, act)
-		if err != nil {
+	if apierrors.IsNotFound(err) {
+		exp := reconcile.NewDeployment(proxy)
+		if err := r.Create(ctx, exp); err != nil {
 			return ctrl.Result{}, err
 		}
-		if err := r.Update(ctx, exp); err != nil {
-			return ctrl.Result{Requeue: true}, err
-		}
+	}
+
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	act := deploy.DeepCopy()
+	exp := reconcile.UpdateDeployment(proxy, act)
+
+	if err := r.Update(ctx, exp); err != nil {
+		return ctrl.Result{Requeue: true}, err
 	}
 	return ctrl.Result{}, nil
 }
 
 func (r *ProxyReconciler) reconcileHPA(ctx context.Context, namespacedName types.NamespacedName) (ctrl.Result, error) {
-	ssproxy, err := r.getRuntimeShardingSphereProxy(ctx, namespacedName)
+	proxy, err := r.getRuntimeShardingSphereProxy(ctx, namespacedName)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
+	// Get the HPA
 	hpa := &autoscalingv2beta2.HorizontalPodAutoscaler{}
+	err = r.Get(ctx, namespacedName, hpa)
 
-	if err := r.Get(ctx, namespacedName, hpa); err != nil {
-		if !apierrors.IsNotFound(err) {
+	// If the HPA doesn't exist, create it
+	if apierrors.IsNotFound(err) {
+		if proxy.Spec.AutomaticScaling != nil && proxy.Spec.AutomaticScaling.Enable {
+			exp := reconcile.NewHPA(proxy)
+			if err := r.Create(ctx, exp); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// If the HPA exists, but we don't want it, delete it
+	if proxy.Spec.AutomaticScaling == nil || !proxy.Spec.AutomaticScaling.Enable {
+		if err := r.Delete(ctx, hpa); err != nil {
 			return ctrl.Result{}, err
-		} else {
-			if ssproxy.Spec.AutomaticScaling != nil && ssproxy.Spec.AutomaticScaling.Enable {
-				exp := reconcile.NewHPA(ssproxy)
-				if err := r.Create(ctx, exp); err != nil {
-					return ctrl.Result{}, err
-				}
-			}
 		}
-	} else {
-		if ssproxy.Spec.AutomaticScaling == nil || !ssproxy.Spec.AutomaticScaling.Enable {
-			if err := r.Delete(ctx, hpa); err != nil {
-				return ctrl.Result{}, err
-			}
-		} else {
-			act := hpa.DeepCopy()
-			exp := reconcile.UpdateHPA(ssproxy, act)
-			if err := r.Update(ctx, exp); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
+		return ctrl.Result{}, nil
+	}
+
+	// If the HPA exists and we want it, update it
+	act := hpa.DeepCopy()
+	exp := reconcile.UpdateHPA(proxy, act)
+	if err := r.Update(ctx, exp); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -184,22 +189,23 @@ func (r *ProxyReconciler) reconcileService(ctx context.Context, namespacedName t
 	}
 
 	service := &v1.Service{}
+	err = r.Get(ctx, namespacedName, service)
 
-	if err := r.Get(ctx, namespacedName, service); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		} else {
-			exp := reconcile.NewService(ssproxy)
-			if err := r.Create(ctx, exp); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-	} else {
-		act := service.DeepCopy()
-		exp := reconcile.UpdateService(ssproxy, act)
-		if err := r.Update(ctx, exp); err != nil {
+	if apierrors.IsNotFound(err) {
+		exp := reconcile.NewService(ssproxy)
+		if err := r.Create(ctx, exp); err != nil {
 			return ctrl.Result{}, err
 		}
+	}
+
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	act := service.DeepCopy()
+	exp := reconcile.UpdateService(ssproxy, act)
+	if err := r.Update(ctx, exp); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -221,7 +227,7 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 		return ctrl.Result{}, err
 	}
 
-	rt.Status = reconcile.ReconcileStatus(*podList, *rt)
+	rt.Status = reconcile.ReconcileStatus(podList, rt)
 
 	// TODO: Compare Status with or without modification
 	if err := r.Status().Update(ctx, rt); err != nil {

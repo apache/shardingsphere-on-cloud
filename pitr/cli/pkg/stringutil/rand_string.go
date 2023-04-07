@@ -18,9 +18,8 @@
 package strutil
 
 import (
-	"math/rand"
+	"crypto/rand"
 	"strconv"
-	"time"
 )
 
 const (
@@ -34,20 +33,25 @@ const (
 )
 
 func Random(n uint) string {
-	rand.Seed(time.Now().UnixNano())
-	bs := make([]byte, 0, n)
+	bs := make([]byte, n)
+
 	for i := uint(0); i < n; i++ {
-		bs = append(bs, charSet[rand.Intn(charSize)])
+		_, _ = rand.Read(bs[i : i+1])
+	}
+	for i, v := range bs {
+		bs[i] = charSet[int(v)%charSize]
 	}
 	return string(bs)
 }
 
 func RandomInt(n uint) int64 {
-	rand.Seed(time.Now().UnixNano())
-	bs := make([]byte, 0, n)
-	bs = append(bs, digitSet[rand.Intn(digitSize-1)])
-	for i := uint(0); i < n-1; i++ {
-		bs = append(bs, digitSet[rand.Intn(digitSize)])
+	bs := make([]byte, n)
+	_, _ = rand.Read(bs[0:1])
+	for i := uint(1); i < n; i++ {
+		_, _ = rand.Read(bs[i : i+1])
+	}
+	for i, v := range bs {
+		bs[i] = digitSet[int(v)%digitSize]
 	}
 	v, _ := strconv.ParseInt(string(bs), 10, 64)
 	return v

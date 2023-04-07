@@ -20,26 +20,27 @@ package view
 import "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 
 type RestoreIn struct {
-	DbPort       uint16 `json:"db_port"`
-	DbName       string `json:"db_name"`
+	DBPort       uint16 `json:"db_port"`
+	DBName       string `json:"db_name"`
 	Username     string `json:"username"`
 	Password     string `json:"password"`
 	Instance     string `json:"instance"`
 	DnBackupPath string `json:"dn_backup_path"`
-	DnBackupId   string `json:"dn_backup_id"`
+	DnBackupID   string `json:"dn_backup_id"`
 }
 
+//nolint:dupl
 func (in *RestoreIn) Validate() error {
 	if in == nil {
 		return cons.Internal
 	}
 
-	if in.DbPort == 0 {
-		return cons.InvalidDbPort
+	if in.DBPort == 0 {
+		return cons.InvalidDBPort
 	}
 
-	if in.DbName == "" {
-		return cons.MissingDbName
+	if in.DBName == "" {
+		return cons.MissingDBName
 	}
 
 	if in.Username == "" {
@@ -54,8 +55,8 @@ func (in *RestoreIn) Validate() error {
 		return cons.MissingDnBackupPath
 	}
 
-	if in.DnBackupId == "" {
-		return cons.MissingDnBackupId
+	if in.DnBackupID == "" {
+		return cons.MissingDnBackupID
 	}
 
 	if in.Instance == "" {

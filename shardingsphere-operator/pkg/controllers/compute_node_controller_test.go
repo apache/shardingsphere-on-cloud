@@ -102,7 +102,7 @@ func Test_GetReadyProxyInstances(t *testing.T) {
 	expected := int32(1)
 
 	// call the function to get the actual result
-	actual := getReadyProxyInstances(podlist)
+	actual := getReadyProxyInstances(&podlist)
 
 	// compare the expected and actual results
 	if actual != expected {

@@ -65,6 +65,7 @@ func (as *agentServer) Backup(in *model.BackupIn) (string, error) {
 		"content-type": "application/json",
 	})
 	r.Body(in)
+
 	httpCode, err := r.Send(out)
 	if err != nil {
 		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
@@ -72,7 +73,7 @@ func (as *agentServer) Backup(in *model.BackupIn) (string, error) {
 	}
 
 	if httpCode != http.StatusOK {
-		return "", fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHttpStatus))
+		return "", fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
 	}
 
 	if out.Code != 0 {
@@ -100,7 +101,7 @@ func (as *agentServer) Restore(in *model.RestoreIn) error {
 	}
 
 	if httpCode != http.StatusOK {
-		return fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHttpStatus))
+		return fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
 	}
 
 	if out.Code != 0 {
@@ -128,7 +129,7 @@ func (as *agentServer) ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, er
 	}
 
 	if httpCode != http.StatusOK {
-		return nil, fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHttpStatus))
+		return nil, fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
 	}
 
 	if out.Code != 0 {
@@ -156,7 +157,7 @@ func (as *agentServer) ShowList(in *model.ShowListIn) ([]model.BackupInfo, error
 	}
 
 	if httpCode != http.StatusOK {
-		return nil, fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHttpStatus))
+		return nil, fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
 	}
 
 	if out.Code != 0 {

@@ -741,7 +741,7 @@ func Test_ReconcileStatus(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		act := ReconcileStatus(c.podlist, *c.exp)
+		act := ReconcileStatus(&c.podlist, c.exp)
 		assertReadyNodes(t, c.exp.Status.ReadyNodes, act.ReadyNodes, c.message)
 		assertPhase(t, c.exp.Status.Phase, act.Phase, c.message)
 		assertConditions(t, c.exp.Status.Conditions, act.Conditions, c.message)
@@ -854,12 +854,15 @@ func Test_ClusterConditions(t *testing.T) {
 					},
 				},
 			}},
-			exp: v1alpha1.Condition{},
+			exp: v1alpha1.Condition{
+				Type:   v1alpha1.ConditionSucceed,
+				Status: metav1.ConditionTrue,
+			},
 		},
 	}
 
 	for _, c := range cases {
-		act := clusterCondition(c.podlist)
+		act := clusterCondition(&c.podlist)
 		assert.Equal(t, c.exp.Type, act.Type, c.name)
 		assert.Equal(t, c.exp.Status, act.Status, c.name)
 	}

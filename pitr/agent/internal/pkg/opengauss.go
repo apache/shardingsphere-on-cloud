@@ -21,15 +21,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/gsutil"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 	"strings"
-
-	"github.com/dlclark/regexp2"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/cmds"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/gsutil"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
+	"github.com/dlclark/regexp2"
 )
 
 type (
@@ -50,7 +49,7 @@ type (
 		Stop() error
 		Status() (string, error)
 		Restore(backupPath, instance, backupID string) error
-		ShowBackupList(backupPath, instanceName string) ([]model.Backup, error)
+		ShowBackupList(backupPath, instanceName string) ([]*model.Backup, error)
 		Auth(user, password, dbName string, dbPort uint16) error
 		MvTempToPgData() error
 		MvPgDataToTemp() error
@@ -115,9 +114,9 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, th
 		if err != nil {
 			return "", fmt.Errorf("og.getBackupID[source=%s] return err=%w", output.Message, err)
 		}
-		//ignore other output
+		// ignore other output
 		go og.ignore(outputs)
-		return bid, nil
+		return bid, nil //nolint
 	}
 	return "", fmt.Errorf("unknow err")
 }
@@ -129,7 +128,7 @@ func (og *openGauss) ShowBackup(backupPath, instanceName, backupID string) (*mod
 		return nil, fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
 	}
 
-	var list []model.BackupList
+	var list []*model.BackupList
 	if err = json.Unmarshal([]byte(output), &list); err != nil {
 		return nil, fmt.Errorf("json.Unmarshal[output=%s] return err=%s,wrap=%w", output, err, cons.Internal)
 	}
@@ -140,7 +139,7 @@ func (og *openGauss) ShowBackup(backupPath, instanceName, backupID string) (*mod
 				return nil, fmt.Errorf("instance[name=%s],backupList[v=%+v],err=%w", ins.Instance, list, cons.DataNotFound)
 			}
 
-			return &ins.List[0], nil
+			return ins.List[0], nil
 		}
 	}
 
@@ -278,6 +277,7 @@ func (og *openGauss) Restore(backupPath, instance, backupID string) error {
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
 	for output := range outputs {
 		og.log.
+			//nolint:exhaustive
 			Fields(map[logging.FieldKey]string{
 				"backup_path": backupPath,
 				"instance":    instance,
@@ -295,14 +295,14 @@ func (og *openGauss) Restore(backupPath, instance, backupID string) error {
 	return nil
 }
 
-func (og *openGauss) ShowBackupList(backupPath, instanceName string) ([]model.Backup, error) {
+func (og *openGauss) ShowBackupList(backupPath, instanceName string) ([]*model.Backup, error) {
 	cmd := fmt.Sprintf(_showListFmt, instanceName, backupPath)
 	output, err := cmds.Exec(og.shell, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
 	}
 
-	var list []model.BackupList
+	var list []*model.BackupList
 	if err = json.Unmarshal([]byte(output), &list); err != nil {
 		return nil, fmt.Errorf("json.Unmarshal[output=%s] return err=%s,wrap=%w", output, err, cons.Internal)
 	}

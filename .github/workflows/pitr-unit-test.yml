@@ -21,27 +21,9 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - 'shardingsphere-operator/**'
       - 'pitr/**'
       - '.github/workflows/unit-test.yml'
 jobs:
-  operator:
-    runs-on: ubuntu-latest
-    steps:
-      - name: "checkout codes"
-        uses: actions/checkout@v3
-      - name: "setup go"
-        uses: actions/setup-go@v4
-        with:
-          go-version: '^1.18.1'
-      - name: "unit test"
-        run: |
-          cd shardingsphere-operator
-          make test
-      - name: "Code coverage"
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./shardingsphere-operator/coverage.txt
   pitr-cli:
     runs-on: ubuntu-latest
     steps:
