@@ -18,23 +18,19 @@
 package visitor
 
 import (
-	"atlt/encrypt_visitor/ast"
-	parser "atlt/encrypt_visitor_parser"
 	"fmt"
+
+	parser "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/distsql/visitor_parser/encrypt"
 )
 
 type Visitor struct {
 	parser.BaseRDLStatementVisitor
 }
 
-func (v *Visitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) *ast.CreateEncryptRule {
-	stmt := &ast.CreateEncryptRule{}
-	stmt.Create = ctx.CREATE().GetText()
-	stmt.Encrypt = ctx.ENCRYPT().GetText()
-	stmt.EncryptName = ctx.RULE().GetText()
+func (v *Visitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) {
 
 	if ctx.IfNotExists() != nil {
-		stmt.IfNotExists = v.VisitIfNotExists(ctx.IfNotExists().(*parser.IfNotExistsContext))
+		v.VisitIfNotExists(ctx.IfNotExists().(*parser.IfNotExistsContext))
 	}
 
 	if ctx.AllEncryptRuleDefinition() != nil {
@@ -43,7 +39,7 @@ func (v *Visitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) *
 		}
 	}
 
-	return stmt
+	return v.VisitChildren(ctx)
 }
 
 func (v *Visitor) VisitAlterEncryptRule(ctx *parser.AlterEncryptRuleContext) interface{} {
@@ -68,10 +64,10 @@ func (v *Visitor) VisitDropEncryptRule(ctx *parser.DropEncryptRuleContext) inter
 	return v.VisitChildren(ctx)
 }
 
-func (v *Visitor) VisitIfNotExists(ctx *parser.IfNotExistsContext) *ast.IfNotExists {
-	return &ast.IfNotExists{
-		IfNotExists: fmt.Sprintf("%s %s %s", ctx.IF().GetText(), ctx.NOT().GetText(), ctx.EXISTS().GetText()),
-	}
+func (v *Visitor) VisitIfNotExists(ctx *parser.IfNotExistsContext) interface{} {
+
+	// TDDO: set fmt.Sprintf("%s %s %s", ctx.IF().GetText(), ctx.NOT().GetText(), ctx.EXISTS().GetText()) to AST
+	return v.VisitChildren(ctx)
 }
 
 func (v *Visitor) VisitEncryptRuleDefinition(ctx *parser.EncryptRuleDefinitionContext) interface{} {
