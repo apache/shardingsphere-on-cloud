@@ -75,8 +75,7 @@ func (v *Visitor) VisitIfNotExists(ctx *parser.IfNotExistsContext) *ast.IfNotExi
 }
 
 func (v *Visitor) VisitEncryptRuleDefinition(ctx *parser.EncryptRuleDefinitionContext) interface{} {
-	// TODO: get table name set AST
-	fmt.Println("rd >>>>> ", ctx.TableName().GetText())
+	// TODO: get table name set AST with ctx.TableName().GetTxt()
 
 	if ctx.ResourceDefinition() != nil {
 		v.VisitResourceDefinition(ctx.ResourceDefinition().(*parser.ResourceDefinitionContext))
@@ -98,9 +97,9 @@ func (v *Visitor) VisitEncryptRuleDefinition(ctx *parser.EncryptRuleDefinitionCo
 func (v *Visitor) VisitQueryWithCipherColumn(ctx *parser.QueryWithCipherColumnContext) interface{} {
 	switch {
 	case ctx.TRUE() != nil:
-		fmt.Println("cipher column: >> ", ctx.TRUE().GetText())
+		//TODO: set ctx.TRUE().GetText() to AST
 	case ctx.FALSE() != nil:
-		fmt.Println("cipher column: >> ", ctx.FALSE().GetText())
+		//TODO: set ctx.FALSE().GetText() to AST
 	}
 	return v.VisitChildren(ctx)
 }
@@ -159,7 +158,7 @@ func (v *Visitor) VisitPlainColumnDefinition(ctx *parser.PlainColumnDefinitionCo
 
 func (v *Visitor) VisitPlainColumnName(ctx *parser.PlainColumnNameContext) interface{} {
 	if ctx.IDENTIFIER_() != nil {
-		fmt.Println("identifier: >> ", ctx.IDENTIFIER_().GetText())
+		//TODO:set ctx.IDENTIFIER_().GetText() to AST
 	}
 	return v.VisitChildren(ctx)
 }
@@ -178,7 +177,7 @@ func (v *Visitor) VisitCipherColumnDefinition(ctx *parser.CipherColumnDefinition
 
 func (v *Visitor) VisitCipherColumnName(ctx *parser.CipherColumnNameContext) interface{} {
 	if ctx.IDENTIFIER_() != nil {
-		fmt.Println("identifi >> ", ctx.IDENTIFIER_().GetText())
+		//TODO: set ctx.IDENTIFIER_().GetText() to AST
 	}
 	return v.VisitChildren(ctx)
 }
@@ -197,7 +196,7 @@ func (v *Visitor) VisitAssistedQueryColumnDefinition(ctx *parser.AssistedQueryCo
 
 func (v *Visitor) VisitAssistedQueryColumnName(ctx *parser.AssistedQueryColumnNameContext) interface{} {
 	if ctx.IDENTIFIER_() != nil {
-		fmt.Println("identifieer: ", ctx.IDENTIFIER_().GetText())
+		//TODO: set ctx.IDENTIFIER_().GetText() to AST
 	}
 	return v.VisitChildren(ctx)
 }
@@ -215,7 +214,7 @@ func (v *Visitor) VisitLikeQueryColumnDefinition(ctx *parser.LikeQueryColumnDefi
 
 func (v *Visitor) VisitLikeQueryColumnName(ctx *parser.LikeQueryColumnNameContext) interface{} {
 	if ctx.IDENTIFIER_() != nil {
-		fmt.Println("identifier >>> ", ctx.IDENTIFIER_())
+		//TODO: set ctx.IDENTIFIER_() to AST
 	}
 	return v.VisitChildren(ctx)
 }
@@ -251,14 +250,14 @@ func (v *Visitor) VisitColumnDefinition(ctx *parser.ColumnDefinitionContext) int
 
 func (v *Visitor) VisitColumnName(ctx *parser.ColumnNameContext) interface{} {
 	if ctx.IDENTIFIER_() != nil {
-		fmt.Println("identifier: >>> ", ctx.IDENTIFIER_().GetText())
+		// TODO: set ctx.IDENTIFIER_().GetText() to AST
 	}
 	return v.VisitChildren(ctx)
 }
 
 func (v *Visitor) VisitDataType(ctx *parser.DataTypeContext) interface{} {
 	if ctx.STRING_() != nil {
-		fmt.Println("string >>>> ", ctx.STRING_().GetText())
+		//TODO: set ctx.STRING_().GetText() to AST
 	}
 	return v.VisitChildren(ctx)
 }
@@ -273,7 +272,7 @@ func (v *Visitor) VisitResourceDefinition(ctx *parser.ResourceDefinitionContext)
 
 func (v *Visitor) VisitResourceName(ctx *parser.ResourceNameContext) interface{} {
 	if ctx.IDENTIFIER_() != nil {
-		fmt.Println("resource name >>>>", ctx.IDENTIFIER_().GetText())
+		// TODO: set ctx.IDENTIFIER_().GetText() to AST
 	}
 	return v.VisitChildren(ctx)
 }
@@ -281,15 +280,15 @@ func (v *Visitor) VisitResourceName(ctx *parser.ResourceNameContext) interface{}
 func (v *Visitor) VisitLiteral(ctx *parser.LiteralContext) interface{} {
 	switch {
 	case ctx.STRING_() != nil:
-		fmt.Println("rrr ", ctx.STRING_().GetText())
+		// TODO: set ctx.STRING_().GetText() to AST
 	case ctx.MINUS_() != nil:
-		fmt.Println("rrr ", ctx.MINUS_().GetText())
+		// TODO: set ctx.MINUS_().GetText() to AST
 	case ctx.INT_() != nil:
-		fmt.Println("rrr ", ctx.INT_().GetText())
+		// TODO: set ctx.INT_().GetText() to AST
 	case ctx.TRUE() != nil:
-		fmt.Println("rrr ", ctx.TRUE().GetText())
+		// TODO: set ctx.TRUE().GetText() to AST
 	case ctx.FALSE() != nil:
-		fmt.Println("rrr ", ctx.FALSE().GetText())
+		// TODO: set ctx.FALSE().GetText() to AST
 	}
 	return v.VisitChildren(ctx)
 }
@@ -308,7 +307,7 @@ func (v *Visitor) VisitAlgorithmDefinition(ctx *parser.AlgorithmDefinitionContex
 func (v *Visitor) VisitAlgorithmTypeName(ctx *parser.AlgorithmTypeNameContext) interface{} {
 	switch {
 	case ctx.STRING_() != nil:
-		fmt.Println("ctx.STRING_(): ", ctx.STRING_().GetText())
+		//TODO: set ctx.STRING_().GetText() to AST
 	case ctx.BuildinAlgorithmTypeName() != nil:
 		v.VisitBuildinAlgorithmTypeName(ctx.BuildinAlgorithmTypeName().(*parser.BuildinAlgorithmTypeNameContext))
 	}
@@ -318,17 +317,17 @@ func (v *Visitor) VisitAlgorithmTypeName(ctx *parser.AlgorithmTypeNameContext) i
 func (v *Visitor) VisitBuildinAlgorithmTypeName(ctx *parser.BuildinAlgorithmTypeNameContext) interface{} {
 	switch {
 	case ctx.MD5() != nil:
-		fmt.Println("algorithmtypename: ", ctx.MD5().GetText())
+		//TODO: set ctx.MD5().GetText() to AST
 	case ctx.AES() != nil:
-		fmt.Println("algorithmtypename: ", ctx.AES().GetText())
+		//TODO: set ctx.AES().GetText() to AST
 	case ctx.RC4() != nil:
-		fmt.Println("algorithmtypename: ", ctx.RC4().GetText())
+		//TODO: set ctx.RC4().GetText() to AST
 	case ctx.SM3() != nil:
-		fmt.Println("algorithmtypename: ", ctx.SM3().GetText())
+		//TODO: set ctx.SM3().GetText() to AST
 	case ctx.SM4() != nil:
-		fmt.Println("algorithmtypename: ", ctx.SM4().GetText())
+		//TODO: set ctx.SM4().GetText() to AST
 	case ctx.CHAR_DIGEST_LIKE() != nil:
-		fmt.Println("algorithmtypename: ", ctx.CHAR_DIGEST_LIKE().GetText())
+		//TODO: set ctx.CHAR_DIGEST_LIKE().GetText() to AST
 	}
 	return v.VisitChildren(ctx)
 }
@@ -349,7 +348,7 @@ func (v *Visitor) VisitProperties(ctx *parser.PropertiesContext) interface{} {
 
 func (v *Visitor) VisitProperty(ctx *parser.PropertyContext) interface{} {
 	if ctx.STRING_() != nil {
-		fmt.Println("key ", ctx.STRING_())
+		//TODO: set ctx.STRING_() to AST
 	}
 	if ctx.Literal() != nil {
 		v.VisitLiteral(ctx.Literal().(*parser.LiteralContext))
@@ -359,7 +358,7 @@ func (v *Visitor) VisitProperty(ctx *parser.PropertyContext) interface{} {
 
 func (v *Visitor) VisitTableName(ctx *parser.TableNameContext) interface{} {
 	if ctx.IDENTIFIER_() != nil {
-		fmt.Println("table name: ", ctx.IDENTIFIER_().GetText())
+		// TODO: set ctx.IDENTIFIER_().GetText() to AST
 	}
 	return v.VisitChildren(ctx)
 }
