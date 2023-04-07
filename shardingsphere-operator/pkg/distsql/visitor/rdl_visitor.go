@@ -20,6 +20,7 @@ package visitor
 import (
 	"fmt"
 
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/distsql/ast"
 	parser "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/distsql/visitor_parser/encrypt"
 )
 
@@ -27,334 +28,374 @@ type Visitor struct {
 	parser.BaseRDLStatementVisitor
 }
 
-func (v *Visitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) interface{} {
+func (v *Visitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) *ast.CreateEncryptRule {
+	stmt := &ast.CreateEncryptRule{}
+	stmt.Create = ctx.CREATE().GetText()
+	stmt.Encrypt = ctx.ENCRYPT().GetText()
+	stmt.EncryptName = ctx.RULE().GetText()
 
 	if ctx.IfNotExists() != nil {
-		v.VisitIfNotExists(ctx.IfNotExists().(*parser.IfNotExistsContext))
+		stmt.IfNotExists = v.VisitIfNotExists(ctx.IfNotExists().(*parser.IfNotExistsContext))
 	}
 
 	if ctx.AllEncryptRuleDefinition() != nil {
 		for _, r := range ctx.AllEncryptRuleDefinition() {
-			v.VisitEncryptRuleDefinition(r.(*parser.EncryptRuleDefinitionContext))
+			stmt.AllEncryptRuleDefinition = append(stmt.AllEncryptRuleDefinition, v.VisitEncryptRuleDefinition(r.(*parser.EncryptRuleDefinitionContext)))
 		}
 	}
 
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitAlterEncryptRule(ctx *parser.AlterEncryptRuleContext) interface{} {
+func (v *Visitor) VisitIfNotExists(ctx *parser.IfNotExistsContext) *ast.IfNotExists {
+	return &ast.IfNotExists{
+		IfNotExists: fmt.Sprintf("%s %s %s", ctx.IF().GetText(), ctx.NOT().GetText(), ctx.EXISTS().GetText()),
+	}
+}
+
+func (v *Visitor) VisitAlterEncryptRule(ctx *parser.AlterEncryptRuleContext) *ast.AlterEncryptRule {
+	stmt := &ast.AlterEncryptRule{}
 	if ctx.AllEncryptRuleDefinition() != nil {
 		for _, encryptRuleDefinition := range ctx.AllEncryptRuleDefinition() {
-			v.VisitEncryptRuleDefinition(encryptRuleDefinition.(*parser.EncryptRuleDefinitionContext))
+			stmt.EncryptRuleDefinition = append(stmt.EncryptRuleDefinition, v.VisitEncryptRuleDefinition(encryptRuleDefinition.(*parser.EncryptRuleDefinitionContext)))
 		}
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitDropEncryptRule(ctx *parser.DropEncryptRuleContext) interface{} {
-	if ctx.IfExists() != nil {
-		v.VisitIfExists(ctx.IfExists().(*parser.IfExistsContext))
-	}
+func (v *Visitor) VisitDropEncryptRule(ctx *parser.DropEncryptRuleContext) *ast.DropEncryptRule {
+	stmt := &ast.DropEncryptRule{}
+
+	// TODO: Add IfExists to AST
+	// if ctx.IfExists() != nil {
+	// 	stmt.IfExists = v.VisitIfExists(ctx.IfExists().(*parser.IfExistsContext))
+	// }
 
 	if ctx.AllTableName() != nil {
 		for _, tableName := range ctx.AllTableName() {
-			v.VisitTableName(tableName.(*parser.TableNameContext))
+			stmt.AllTableName = append(stmt.AllTableName, v.VisitTableName(tableName.(*parser.TableNameContext)))
 		}
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitIfNotExists(ctx *parser.IfNotExistsContext) interface{} {
+func (v *Visitor) VisitEncryptRuleDefinition(ctx *parser.EncryptRuleDefinitionContext) *ast.EncryptRuleDefinition {
+	stmt := &ast.EncryptRuleDefinition{}
 
-	// TDDO: set fmt.Sprintf("%s %s %s", ctx.IF().GetText(), ctx.NOT().GetText(), ctx.EXISTS().GetText()) to AST
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitEncryptRuleDefinition(ctx *parser.EncryptRuleDefinitionContext) interface{} {
-	// TODO: get table name set AST with ctx.TableName().GetTxt()
+	if ctx.TableName() != nil {
+		stmt.TableName = v.VisitTableName(ctx.TableName().(*parser.TableNameContext))
+	}
 
 	if ctx.ResourceDefinition() != nil {
-		v.VisitResourceDefinition(ctx.ResourceDefinition().(*parser.ResourceDefinitionContext))
+		stmt.ResourceDefinition = v.VisitResourceDefinition(ctx.ResourceDefinition().(*parser.ResourceDefinitionContext))
 	}
 
 	if ctx.AllEncryptColumnDefinition() != nil {
 		for _, column := range ctx.AllEncryptColumnDefinition() {
-			v.VisitEncryptColumnDefinition(column.(*parser.EncryptColumnDefinitionContext))
+			stmt.AllEncryptColumnDefinition = append(stmt.AllEncryptColumnDefinition, v.VisitEncryptColumnDefinition(column.(*parser.EncryptColumnDefinitionContext)))
 		}
 	}
 
 	if ctx.QueryWithCipherColumn() != nil {
-		v.VisitQueryWithCipherColumn(ctx.QueryWithCipherColumn().(*parser.QueryWithCipherColumnContext))
+		stmt.QueryWithCipherColumn = v.VisitQueryWithCipherColumn(ctx.QueryWithCipherColumn().(*parser.QueryWithCipherColumnContext))
 	}
 
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitQueryWithCipherColumn(ctx *parser.QueryWithCipherColumnContext) interface{} {
+func (v *Visitor) VisitQueryWithCipherColumn(ctx *parser.QueryWithCipherColumnContext) *ast.QueryWithCipherColumn {
+	stmt := &ast.QueryWithCipherColumn{}
 	switch {
 	case ctx.TRUE() != nil:
-		//TODO: set ctx.TRUE().GetText() to AST
+		stmt.QueryWithCipherColumn = ctx.TRUE().GetText()
 	case ctx.FALSE() != nil:
-		//TODO: set ctx.FALSE().GetText() to AST
+		stmt.QueryWithCipherColumn = ctx.FALSE().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitEncryptColumnDefinition(ctx *parser.EncryptColumnDefinitionContext) interface{} {
+func (v *Visitor) VisitEncryptColumnDefinition(ctx *parser.EncryptColumnDefinitionContext) *ast.EncryptColumnDefinition {
+	stmt := &ast.EncryptColumnDefinition{}
 
 	if ctx.ColumnDefinition() != nil {
-		v.VisitColumnDefinition(ctx.ColumnDefinition().(*parser.ColumnDefinitionContext))
+		stmt.ColumnDefinition = v.VisitColumnDefinition(ctx.ColumnDefinition().(*parser.ColumnDefinitionContext))
 	}
 
 	if ctx.PlainColumnDefinition() != nil {
-		v.VisitPlainColumnDefinition(ctx.PlainColumnDefinition().(*parser.PlainColumnDefinitionContext))
+		stmt.PlainColumnDefinition = v.VisitPlainColumnDefinition(ctx.PlainColumnDefinition().(*parser.PlainColumnDefinitionContext))
 	}
 
 	if ctx.CipherColumnDefinition() != nil {
-		v.VisitCipherColumnDefinition(ctx.CipherColumnDefinition().(*parser.CipherColumnDefinitionContext))
+		stmt.CipherColumnDefinition = v.VisitCipherColumnDefinition(ctx.CipherColumnDefinition().(*parser.CipherColumnDefinitionContext))
 	}
 
 	if ctx.AssistedQueryColumnDefinition() != nil {
-		v.VisitAssistedQueryColumnDefinition(ctx.AssistedQueryColumnDefinition().(*parser.AssistedQueryColumnDefinitionContext))
+		stmt.AssistedQueryColumnDefinition = v.VisitAssistedQueryColumnDefinition(ctx.AssistedQueryColumnDefinition().(*parser.AssistedQueryColumnDefinitionContext))
 	}
 
 	if ctx.LikeQueryColumnDefinition() != nil {
-		v.VisitLikeQueryColumnDefinition(ctx.LikeQueryColumnDefinition().(*parser.LikeQueryColumnDefinitionContext))
+		stmt.LikeQueryColumnDefinition = v.VisitLikeQueryColumnDefinition(ctx.LikeQueryColumnDefinition().(*parser.LikeQueryColumnDefinitionContext))
 	}
 
 	if ctx.EncryptAlgorithm() != nil {
-		v.VisitEncryptAlgorithm(ctx.EncryptAlgorithm().(*parser.EncryptAlgorithmContext))
+		stmt.EncryptAlgorithm = v.VisitEncryptAlgorithm(ctx.EncryptAlgorithm().(*parser.EncryptAlgorithmContext))
 	}
 
 	if ctx.AssistedQueryAlgorithm() != nil {
-		v.VisitAssistedQueryAlgorithm(ctx.AssistedQueryAlgorithm().(*parser.AssistedQueryAlgorithmContext))
+		stmt.AssistedQueryAlgorithm = v.VisitAssistedQueryAlgorithm(ctx.AssistedQueryAlgorithm().(*parser.AssistedQueryAlgorithmContext))
 	}
 
 	if ctx.LikeQueryAlgorithm() != nil {
-		v.VisitLikeQueryAlgorithm(ctx.LikeQueryAlgorithm().(*parser.LikeQueryAlgorithmContext))
+		stmt.LikeQueryAlgorithm = v.VisitLikeQueryAlgorithm(ctx.LikeQueryAlgorithm().(*parser.LikeQueryAlgorithmContext))
 	}
 
 	if ctx.QueryWithCipherColumn() != nil {
-		v.VisitQueryWithCipherColumn(ctx.QueryWithCipherColumn().(*parser.QueryWithCipherColumnContext))
+		stmt.QueryWithCipherColumn = v.VisitQueryWithCipherColumn(ctx.QueryWithCipherColumn().(*parser.QueryWithCipherColumnContext))
 	}
 
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitPlainColumnDefinition(ctx *parser.PlainColumnDefinitionContext) interface{} {
+func (v *Visitor) VisitPlainColumnDefinition(ctx *parser.PlainColumnDefinitionContext) *ast.PlainColumnDefinition {
+	stmt := &ast.PlainColumnDefinition{}
 	if ctx.PlainColumnName() != nil {
-		v.VisitPlainColumnName(ctx.PlainColumnName().(*parser.PlainColumnNameContext))
+		stmt.PlainColumnName = v.VisitPlainColumnName(ctx.PlainColumnName().(*parser.PlainColumnNameContext))
 	}
 
 	if ctx.DataType() != nil {
-		v.VisitDataType(ctx.DataType().(*parser.DataTypeContext))
+		stmt.DataType = v.VisitDataType(ctx.DataType().(*parser.DataTypeContext))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitPlainColumnName(ctx *parser.PlainColumnNameContext) interface{} {
+func (v *Visitor) VisitPlainColumnName(ctx *parser.PlainColumnNameContext) *ast.CommonIdentifier {
+	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
-		//TODO:set ctx.IDENTIFIER_().GetText() to AST
+		stmt.Identifier = ctx.IDENTIFIER_().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitCipherColumnDefinition(ctx *parser.CipherColumnDefinitionContext) interface{} {
+func (v *Visitor) VisitCipherColumnDefinition(ctx *parser.CipherColumnDefinitionContext) *ast.CipherColumnDefinition {
+	stmt := &ast.CipherColumnDefinition{}
 	if ctx.CipherColumnName() != nil {
-		v.VisitCipherColumnName(ctx.CipherColumnName().(*parser.CipherColumnNameContext))
+		stmt.CipherColumnName = v.VisitCipherColumnName(ctx.CipherColumnName().(*parser.CipherColumnNameContext))
 	}
 
 	if ctx.DataType() != nil {
-		v.VisitDataType(ctx.DataType().(*parser.DataTypeContext))
+		stmt.DataType = v.VisitDataType(ctx.DataType().(*parser.DataTypeContext))
 	}
 
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitCipherColumnName(ctx *parser.CipherColumnNameContext) interface{} {
+func (v *Visitor) VisitCipherColumnName(ctx *parser.CipherColumnNameContext) *ast.CommonIdentifier {
+	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
-		//TODO: set ctx.IDENTIFIER_().GetText() to AST
+		stmt.Identifier = ctx.IDENTIFIER_().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitAssistedQueryColumnDefinition(ctx *parser.AssistedQueryColumnDefinitionContext) interface{} {
+func (v *Visitor) VisitAssistedQueryColumnDefinition(ctx *parser.AssistedQueryColumnDefinitionContext) *ast.AssistedQueryColumnDefinition {
+	stmt := &ast.AssistedQueryColumnDefinition{}
 	if ctx.AssistedQueryColumnName() != nil {
-		v.VisitAssistedQueryColumnName(ctx.AssistedQueryColumnName().(*parser.AssistedQueryColumnNameContext))
+		stmt.AssistedQueryColumnName = v.VisitAssistedQueryColumnName(ctx.AssistedQueryColumnName().(*parser.AssistedQueryColumnNameContext))
 	}
 
 	if ctx.DataType() != nil {
-		v.VisitDataType(ctx.DataType().(*parser.DataTypeContext))
+		stmt.DataType = v.VisitDataType(ctx.DataType().(*parser.DataTypeContext))
 	}
 
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitAssistedQueryColumnName(ctx *parser.AssistedQueryColumnNameContext) interface{} {
+func (v *Visitor) VisitAssistedQueryColumnName(ctx *parser.AssistedQueryColumnNameContext) *ast.CommonIdentifier {
+	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
-		//TODO: set ctx.IDENTIFIER_().GetText() to AST
+		stmt.Identifier = ctx.IDENTIFIER_().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitLikeQueryColumnDefinition(ctx *parser.LikeQueryColumnDefinitionContext) interface{} {
+func (v *Visitor) VisitLikeQueryColumnDefinition(ctx *parser.LikeQueryColumnDefinitionContext) *ast.LikeQueryColumnDefinition {
+	stmt := &ast.LikeQueryColumnDefinition{}
 	if ctx.LikeQueryColumnName() != nil {
-		v.VisitLikeQueryColumnName(ctx.LikeQueryColumnName().(*parser.LikeQueryColumnNameContext))
+		stmt.LikeQueryColumnName = v.VisitLikeQueryColumnName(ctx.LikeQueryColumnName().(*parser.LikeQueryColumnNameContext))
 	}
 
 	if ctx.DataType() != nil {
-		v.VisitDataType(ctx.DataType().(*parser.DataTypeContext))
+		stmt.DataType = v.VisitDataType(ctx.DataType().(*parser.DataTypeContext))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitLikeQueryColumnName(ctx *parser.LikeQueryColumnNameContext) interface{} {
+func (v *Visitor) VisitLikeQueryColumnName(ctx *parser.LikeQueryColumnNameContext) *ast.CommonIdentifier {
+	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
-		//TODO: set ctx.IDENTIFIER_() to AST
+		stmt.Identifier = ctx.IDENTIFIER_().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitAssistedQueryAlgorithm(ctx *parser.AssistedQueryAlgorithmContext) interface{} {
+func (v *Visitor) VisitAssistedQueryAlgorithm(ctx *parser.AssistedQueryAlgorithmContext) *ast.AssistedQueryAlgorithm {
+	stmt := &ast.AssistedQueryAlgorithm{}
 	if ctx.AlgorithmDefinition() != nil {
-		v.VisitAlgorithmDefinition(ctx.AlgorithmDefinition().(*parser.AlgorithmDefinitionContext))
+		stmt.AlgorithmDefinition = v.VisitAlgorithmDefinition(ctx.AlgorithmDefinition().(*parser.AlgorithmDefinitionContext))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitLikeQueryAlgorithm(ctx *parser.LikeQueryAlgorithmContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitEncryptAlgorithm(ctx *parser.EncryptAlgorithmContext) interface{} {
+func (v *Visitor) VisitLikeQueryAlgorithm(ctx *parser.LikeQueryAlgorithmContext) *ast.LikeQueryAlgorithm {
+	stmt := &ast.LikeQueryAlgorithm{}
 	if ctx.AlgorithmDefinition() != nil {
-		v.VisitAlgorithmDefinition(ctx.AlgorithmDefinition().(*parser.AlgorithmDefinitionContext))
+		stmt.AlgorithmDefinition = v.VisitAlgorithmDefinition(ctx.AlgorithmDefinition().(*parser.AlgorithmDefinitionContext))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitColumnDefinition(ctx *parser.ColumnDefinitionContext) interface{} {
+func (v *Visitor) VisitEncryptAlgorithm(ctx *parser.EncryptAlgorithmContext) *ast.EncryptAlgorithm {
+	stmt := &ast.EncryptAlgorithm{}
+	if ctx.AlgorithmDefinition() != nil {
+		stmt.AlgorithmDefinition = v.VisitAlgorithmDefinition(ctx.AlgorithmDefinition().(*parser.AlgorithmDefinitionContext))
+	}
+	return stmt
+}
+
+func (v *Visitor) VisitColumnDefinition(ctx *parser.ColumnDefinitionContext) *ast.ColumnDefinition {
+	stmt := &ast.ColumnDefinition{}
 	if ctx.ColumnName() != nil {
-		v.VisitColumnName(ctx.ColumnName().(*parser.ColumnNameContext))
+		stmt.ColumnName = v.VisitColumnName(ctx.ColumnName().(*parser.ColumnNameContext))
 	}
 
 	if ctx.DataType() != nil {
-		v.VisitDataType(ctx.DataType().(*parser.DataTypeContext))
+		stmt.DataType = v.VisitDataType(ctx.DataType().(*parser.DataTypeContext))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitColumnName(ctx *parser.ColumnNameContext) interface{} {
+func (v *Visitor) VisitColumnName(ctx *parser.ColumnNameContext) *ast.CommonIdentifier {
+	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
-		// TODO: set ctx.IDENTIFIER_().GetText() to AST
+		stmt.Identifier = ctx.IDENTIFIER_().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitDataType(ctx *parser.DataTypeContext) interface{} {
+func (v *Visitor) VisitDataType(ctx *parser.DataTypeContext) *ast.DataType {
+	stmt := &ast.DataType{}
 	if ctx.STRING_() != nil {
-		//TODO: set ctx.STRING_().GetText() to AST
+		stmt.String = ctx.STRING_().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitResourceDefinition(ctx *parser.ResourceDefinitionContext) interface{} {
-	fmt.Println("rrrr >>> ", ctx.ResourceName().GetText())
+func (v *Visitor) VisitResourceDefinition(ctx *parser.ResourceDefinitionContext) *ast.ResourceDefinition {
+	stmt := &ast.ResourceDefinition{}
 	if ctx.ResourceName() != nil {
-		v.VisitResourceName(ctx.ResourceName().(*parser.ResourceNameContext))
+		stmt.ResourceName = v.VisitResourceName(ctx.ResourceName().(*parser.ResourceNameContext))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitResourceName(ctx *parser.ResourceNameContext) interface{} {
+func (v *Visitor) VisitResourceName(ctx *parser.ResourceNameContext) *ast.CommonIdentifier {
+	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
-		// TODO: set ctx.IDENTIFIER_().GetText() to AST
+		stmt.Identifier = ctx.IDENTIFIER_().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitLiteral(ctx *parser.LiteralContext) interface{} {
+func (v *Visitor) VisitLiteral(ctx *parser.LiteralContext) *ast.Literal {
+	stmt := &ast.Literal{}
 	switch {
 	case ctx.STRING_() != nil:
-		// TODO: set ctx.STRING_().GetText() to AST
+		stmt.Literal = ctx.STRING_().GetText()
 	case ctx.MINUS_() != nil:
-		// TODO: set ctx.MINUS_().GetText() to AST
+		stmt.Literal = ctx.MINUS_().GetText()
 	case ctx.INT_() != nil:
-		// TODO: set ctx.INT_().GetText() to AST
+		stmt.Literal = ctx.INT_().GetText()
 	case ctx.TRUE() != nil:
-		// TODO: set ctx.TRUE().GetText() to AST
+		stmt.Literal = ctx.TRUE().GetText()
 	case ctx.FALSE() != nil:
-		// TODO: set ctx.FALSE().GetText() to AST
+		stmt.Literal = ctx.FALSE().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitAlgorithmDefinition(ctx *parser.AlgorithmDefinitionContext) interface{} {
+func (v *Visitor) VisitAlgorithmDefinition(ctx *parser.AlgorithmDefinitionContext) *ast.AlgorithmDefinition {
+	stmt := &ast.AlgorithmDefinition{}
 	if ctx.AlgorithmTypeName() != nil {
-		v.VisitAlgorithmTypeName(ctx.AlgorithmTypeName().(*parser.AlgorithmTypeNameContext))
+		stmt.AlgorithmTypeName = v.VisitAlgorithmTypeName(ctx.AlgorithmTypeName().(*parser.AlgorithmTypeNameContext))
 	}
 
 	if ctx.PropertiesDefinition() != nil {
-		v.VisitPropertiesDefinition(ctx.PropertiesDefinition().(*parser.PropertiesDefinitionContext))
+		stmt.PropertiesDefinition = v.VisitPropertiesDefinition(ctx.PropertiesDefinition().(*parser.PropertiesDefinitionContext))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitAlgorithmTypeName(ctx *parser.AlgorithmTypeNameContext) interface{} {
+func (v *Visitor) VisitAlgorithmTypeName(ctx *parser.AlgorithmTypeNameContext) *ast.AlgorithmTypeName {
+	stmt := &ast.AlgorithmTypeName{}
 	switch {
 	case ctx.STRING_() != nil:
-		//TODO: set ctx.STRING_().GetText() to AST
+		stmt.String = ctx.STRING_().GetText()
 	case ctx.BuildinAlgorithmTypeName() != nil:
-		v.VisitBuildinAlgorithmTypeName(ctx.BuildinAlgorithmTypeName().(*parser.BuildinAlgorithmTypeNameContext))
+		stmt.BuildinAlgorithmTypeName = v.VisitBuildinAlgorithmTypeName(ctx.BuildinAlgorithmTypeName().(*parser.BuildinAlgorithmTypeNameContext))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitBuildinAlgorithmTypeName(ctx *parser.BuildinAlgorithmTypeNameContext) interface{} {
+func (v *Visitor) VisitBuildinAlgorithmTypeName(ctx *parser.BuildinAlgorithmTypeNameContext) *ast.BuildinAlgorithmTypeName {
+	stmt := &ast.BuildinAlgorithmTypeName{}
 	switch {
 	case ctx.MD5() != nil:
-		//TODO: set ctx.MD5().GetText() to AST
+		stmt.AlgorithmTypeName = ctx.MD5().GetText()
 	case ctx.AES() != nil:
-		//TODO: set ctx.AES().GetText() to AST
+		stmt.AlgorithmTypeName = ctx.AES().GetText()
 	case ctx.RC4() != nil:
-		//TODO: set ctx.RC4().GetText() to AST
+		stmt.AlgorithmTypeName = ctx.RC4().GetText()
 	case ctx.SM3() != nil:
-		//TODO: set ctx.SM3().GetText() to AST
+		stmt.AlgorithmTypeName = ctx.SM3().GetText()
 	case ctx.SM4() != nil:
-		//TODO: set ctx.SM4().GetText() to AST
+		stmt.AlgorithmTypeName = ctx.SM4().GetText()
 	case ctx.CHAR_DIGEST_LIKE() != nil:
-		//TODO: set ctx.CHAR_DIGEST_LIKE().GetText() to AST
+		stmt.AlgorithmTypeName = ctx.CHAR_DIGEST_LIKE().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitPropertiesDefinition(ctx *parser.PropertiesDefinitionContext) interface{} {
+func (v *Visitor) VisitPropertiesDefinition(ctx *parser.PropertiesDefinitionContext) *ast.PropertiesDefinition {
+	stmt := &ast.PropertiesDefinition{}
 	if ctx.Properties() != nil {
-		v.VisitProperties(ctx.Properties().(*parser.PropertiesContext))
+		stmt.Properties = v.VisitProperties(ctx.Properties().(*parser.PropertiesContext))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitProperties(ctx *parser.PropertiesContext) interface{} {
+func (v *Visitor) VisitProperties(ctx *parser.PropertiesContext) *ast.Properties {
+	stmt := &ast.Properties{}
 	for _, p := range ctx.AllProperty() {
-		v.VisitProperty(p.(*parser.PropertyContext))
+		stmt.Properties = append(stmt.Properties, v.VisitProperty(p.(*parser.PropertyContext)))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitProperty(ctx *parser.PropertyContext) interface{} {
+func (v *Visitor) VisitProperty(ctx *parser.PropertyContext) *ast.Property {
+	stmt := &ast.Property{}
 	if ctx.STRING_() != nil {
-		//TODO: set ctx.STRING_() to AST
+		stmt.Key = ctx.STRING_().GetText()
 	}
 	if ctx.Literal() != nil {
-		v.VisitLiteral(ctx.Literal().(*parser.LiteralContext))
+		stmt.Literal = v.VisitLiteral(ctx.Literal().(*parser.LiteralContext))
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
 
-func (v *Visitor) VisitTableName(ctx *parser.TableNameContext) interface{} {
+func (v *Visitor) VisitTableName(ctx *parser.TableNameContext) *ast.CommonIdentifier {
+	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
-		// TODO: set ctx.IDENTIFIER_().GetText() to AST
+		stmt.Identifier = ctx.IDENTIFIER_().GetText()
 	}
-	return v.VisitChildren(ctx)
+	return stmt
 }
