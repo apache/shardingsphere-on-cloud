@@ -358,20 +358,34 @@ func setProbe(proxy, act *corev1.Probe) *corev1.Probe {
 
 func getReadyNodes(podlist *corev1.PodList) int32 {
 	var cnt int32
-	for idx := range podlist.Items {
-		if podlist.Items[idx].Status.Phase == corev1.PodRunning {
-			for i := range podlist.Items[idx].Status.Conditions {
-				if podlist.Items[idx].Status.Conditions[i].Type == corev1.PodReady && podlist.Items[idx].Status.Conditions[i].Status == corev1.ConditionTrue {
-					for j := range podlist.Items[idx].Status.ContainerStatuses {
-						if podlist.Items[idx].Status.ContainerStatuses[j].Name == "proxy" && podlist.Items[idx].Status.ContainerStatuses[j].Ready {
-							cnt++
-						}
-					}
+
+	findRunningPod := func(pod *corev1.Pod) {
+		if pod.Status.Phase != corev1.PodRunning {
+			return
+		}
+
+		if isTrueReadyPod(pod) {
+			for j := range pod.Status.ContainerStatuses {
+				if pod.Status.ContainerStatuses[j].Name == "shardingsphere-proxy" && pod.Status.ContainerStatuses[j].Ready {
+					cnt++
 				}
 			}
 		}
 	}
+
+	for idx := range podlist.Items {
+		findRunningPod(&podlist.Items[idx])
+	}
 	return cnt
+}
+
+func isTrueReadyPod(pod *corev1.Pod) bool {
+	for i := range pod.Status.Conditions {
+		if pod.Status.Conditions[i].Type == corev1.PodReady && pod.Status.Conditions[i].Status == corev1.ConditionTrue {
+			return true
+		}
+	}
+	return false
 }
 
 // ReconcileStatus returns the status of ShardingSphereProxy

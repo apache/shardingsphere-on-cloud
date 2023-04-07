@@ -325,7 +325,7 @@ func getReadyProxyInstances(podlist *corev1.PodList) int32 {
 			return
 		}
 
-		if isReadyPod(pod) {
+		if isTrueReadyPod(pod) {
 			for j := range pod.Status.ContainerStatuses {
 				if pod.Status.ContainerStatuses[j].Name == "shardingsphere-proxy" && pod.Status.ContainerStatuses[j].Ready {
 					cnt++
@@ -340,7 +340,7 @@ func getReadyProxyInstances(podlist *corev1.PodList) int32 {
 	return cnt
 }
 
-func isReadyPod(pod *corev1.Pod) bool {
+func isTrueReadyPod(pod *corev1.Pod) bool {
 	for i := range pod.Status.Conditions {
 		if pod.Status.Conditions[i].Type == corev1.PodReady && pod.Status.Conditions[i].Status == corev1.ConditionTrue {
 			return true
