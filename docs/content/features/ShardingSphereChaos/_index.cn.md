@@ -11,7 +11,7 @@ metadata:
   name: shardingspherechaos-lala
   namespace: default
   annotations:
-    spec/mode: "all"
+    selector.chaos-mesh.org/mode: "all"
 spec:
   chaosKind: podChaos
   podChaos:
