@@ -71,7 +71,7 @@ func (c *chaosMeshHandler) ConvertChaosStatus(ctx context.Context, ssChaos *v1al
 		}
 		return v1alpha1.UnKnown
 	}
-	var conditions map[chaosv1alpha1.ChaosConditionType]bool
+	var conditions = map[chaosv1alpha1.ChaosConditionType]bool{}
 	for _, item := range status.Conditions {
 		conditions[item.Type] = item.Status == corev1.ConditionTrue
 	}
@@ -85,16 +85,17 @@ func judgeCondition(condition map[chaosv1alpha1.ChaosConditionType]bool, phase c
 		if !condition[chaosv1alpha1.ConditionSelected] {
 			return v1alpha1.NoTarget
 		}
+		return v1alpha1.Paused
+	}
 
+	if condition[chaosv1alpha1.ConditionSelected] {
 		if condition[chaosv1alpha1.ConditionAllRecovered] && phase == chaosv1alpha1.StoppedPhase {
 			return v1alpha1.AllRecovered
 		}
 
-		return v1alpha1.Paused
-	}
-
-	if condition[chaosv1alpha1.ConditionSelected] && condition[chaosv1alpha1.ConditionAllInjected] && phase == chaosv1alpha1.RunningPhase {
-		return v1alpha1.AllInjected
+		if condition[chaosv1alpha1.ConditionAllInjected] && phase == chaosv1alpha1.RunningPhase {
+			return v1alpha1.AllInjected
+		}
 	}
 
 	return v1alpha1.UnKnown

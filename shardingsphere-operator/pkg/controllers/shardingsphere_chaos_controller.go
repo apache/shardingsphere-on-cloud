@@ -130,13 +130,13 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, ssC
 		chaoCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
 	}
 
-	var rt *sschaosv1alpha1.ShardingSphereChaos
-	if err := r.Get(ctx, namespacedName, rt); err != nil {
+	var rt sschaosv1alpha1.ShardingSphereChaos
+	if err := r.Get(ctx, namespacedName, &rt); err != nil {
 		return err
 	}
 	ssChaos.Status.ChaosCondition = chaoCondition
 	rt.Status = ssChaos.Status
-	return r.Status().Update(ctx, rt)
+	return r.Status().Update(ctx, &rt)
 }
 
 func (r *ShardingSphereChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (reconcile.NetworkChaos, bool, error) {

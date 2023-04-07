@@ -88,7 +88,6 @@ const (
 
 // ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
 type ShardingSphereChaosStatus struct {
-	todo
 	ChaosCondition ChaosCondition `json:"chaosCondition"`
 	//todo
 	//InjectStatus   Jobschedule         `json:"InjectStatus"`
