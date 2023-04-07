@@ -19,9 +19,9 @@ package shardingspherechaos
 
 import (
 	"context"
-	"fmt"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
@@ -46,20 +46,49 @@ func NewChaosMeshHandler(r client.Client) ChaosHandler {
 	return &chaosMeshHandler{r}
 }
 
-func (c *chaosMeshHandler) ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) {
+func (c *chaosMeshHandler) ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) v1alpha1.ChaosCondition {
 	var status chaosv1alpha1.ChaosStatus
 	if ssChaos.Spec.ChaosKind == v1alpha1.PodChaosKind {
 		if podChao, ok := chaos.(*chaosv1alpha1.PodChaos); ok && podChao != nil {
 			status = *podChao.GetStatus()
+		} else {
+			return v1alpha1.UnKnown
 		}
 	}
 
 	if ssChaos.Spec.ChaosKind == v1alpha1.NetworkChaosKind {
-		if networkChaos, ok := chaos.(chaosv1alpha1.NetworkChaos); ok && networkChaos != nil {
+		if networkChaos, ok := chaos.(*chaosv1alpha1.NetworkChaos); ok && networkChaos != nil {
 			status = *networkChaos.GetStatus()
 		}
+		return v1alpha1.UnKnown
 	}
-	fmt.Println(status)
+	var conditions map[chaosv1alpha1.ChaosConditionType]bool
+	for _, item := range status.Conditions {
+		conditions[item.Type] = item.Status == corev1.ConditionTrue
+	}
+
+	return judgeCondition(conditions, status.Experiment.DesiredPhase)
+}
+
+func judgeCondition(condition map[chaosv1alpha1.ChaosConditionType]bool, phase chaosv1alpha1.DesiredPhase) v1alpha1.ChaosCondition {
+
+	if condition[chaosv1alpha1.ConditionPaused] {
+		if !condition[chaosv1alpha1.ConditionSelected] {
+			return v1alpha1.NoTarget
+		}
+
+		if condition[chaosv1alpha1.ConditionAllRecovered] && phase == chaosv1alpha1.StoppedPhase {
+			return v1alpha1.AllRecovered
+		}
+
+		return v1alpha1.Paused
+	}
+
+	if condition[chaosv1alpha1.ConditionSelected] && condition[chaosv1alpha1.ConditionAllInjected] && phase == chaosv1alpha1.RunningPhase {
+		return v1alpha1.AllInjected
+	}
+
+	return v1alpha1.UnKnown
 }
 
 func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, chao PodChaos) error {

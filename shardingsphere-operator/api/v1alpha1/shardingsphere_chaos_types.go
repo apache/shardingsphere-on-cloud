@@ -73,6 +73,8 @@ const (
 	AllRecovered ChaosCondition = "AllRecovered"
 	Paused       ChaosCondition = "Paused"
 	AllInjected  ChaosCondition = "AllInjected"
+	NoTarget     ChaosCondition = "NoTarget"
+	UnKnown      ChaosCondition = "UnKnown"
 )
 
 // Jobschedule Show current job progress
@@ -86,8 +88,8 @@ const (
 
 // ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
 type ShardingSphereChaosStatus struct {
-	//todo
-	//ChaosCondition ChaosCondition `json:"deploymentCondition"`
+	todo
+	ChaosCondition ChaosCondition `json:"chaosCondition"`
 	//todo
 	//InjectStatus   Jobschedule         `json:"InjectStatus"`
 	//todo

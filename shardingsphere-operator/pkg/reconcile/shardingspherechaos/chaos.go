@@ -29,7 +29,7 @@ type ChaosHandler interface {
 	UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur PodChaos) error
 	CreatePodChaos(ctx context.Context, podChao PodChaos) error
 	CreateNetworkChaos(ctx context.Context, networkChao NetworkChaos) error
-	ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) *v1alpha1.ChaosCondition
+	ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) v1alpha1.ChaosCondition
 }
 
 type GenericChaos interface {

@@ -63,6 +63,11 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 	}
 
 	//todo: add inject reconcile and check status here
+
+	if err := r.reconcileStatus(ctx, &ssChaos); err != nil {
+		logger.Error(err, "failed to update status")
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -93,6 +98,39 @@ func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssCh
 		return r.CreateNetworkChaos(ctx, ssChao)
 	}
 	return nil
+}
+
+func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
+	var (
+		chaoCondition  sschaosv1alpha1.ChaosCondition
+		namespacedName = types.NamespacedName{
+			Namespace: ssChaos.Namespace,
+			Name:      ssChaos.Name,
+		}
+	)
+	if ssChaos.Spec.ChaosKind == sschaosv1alpha1.PodChaosKind {
+		chao, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
+		if err != nil {
+			return err
+		}
+		chaoCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
+	}
+
+	if ssChaos.Spec.ChaosKind == sschaosv1alpha1.NetworkChaosKind {
+		chao, err := r.Chaos.GetNetworkChaosByNamespacedName(ctx, namespacedName)
+		if err != nil {
+			return err
+		}
+		chaoCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
+	}
+
+	var rt *sschaosv1alpha1.ShardingSphereChaos
+	if err := r.Get(ctx, namespacedName, rt); err != nil {
+		return err
+	}
+	ssChaos.Status.ChaosCondition = chaoCondition
+	rt.Status = ssChaos.Status
+	return r.Status().Update(ctx, rt)
 }
 
 func (r *ShardingSphereChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (reconcile.NetworkChaos, bool, error) {
