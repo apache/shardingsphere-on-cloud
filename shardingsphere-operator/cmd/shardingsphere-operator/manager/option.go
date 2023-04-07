@@ -19,6 +19,8 @@ package manager
 
 import (
 	"flag"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
+	batchV1 "k8s.io/api/batch/v1"
 	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -26,6 +28,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
+	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -41,7 +44,10 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(chaosv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
+	utilruntime.Must(batchV1.AddToScheme(scheme))
+	// +kubebuilder:scaffold:scheme
 }
 
 // Options represents common options for the controller
@@ -72,7 +78,7 @@ func ParseOptionsFromCmdFlags() *Options {
 	flag.BoolVar(&opt.LeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&opt.FeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for alpha/experimental features.")
+	flag.StringVar(&opt.FeatureGates, "feature-gates", "ShardingSphereChaos=true", "A set of key=value pairs that describe feature gates for alpha/experimental features.")
 
 	opt.ZapOptions.BindFlags(flag.CommandLine)
 	flag.Parse()
@@ -134,6 +140,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 			Log:    mgr.GetLogger(),
+			Chaos:  chaos.NewChaos(mgr.GetClient()),
 		}).SetupWithManager(mgr); err != nil {
 			logger.Error(err, "unable to create controller", "controller", "ShardingSphereChaos")
 			return err

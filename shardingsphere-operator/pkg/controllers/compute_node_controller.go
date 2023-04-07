@@ -125,6 +125,7 @@ func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alph
 
 	return err
 }
+
 func (r *ComputeNodeReconciler) updateDeployment(ctx context.Context, cn *v1alpha1.ComputeNode, deploy *appsv1.Deployment) error {
 	exp := reconcile.UpdateDeployment(cn, deploy)
 	return r.Update(ctx, exp)
