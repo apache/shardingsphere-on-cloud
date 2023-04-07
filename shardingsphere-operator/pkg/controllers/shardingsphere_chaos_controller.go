@@ -29,6 +29,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
+)
+
+const (
+	ShardingSphereChaosControllerName = "shardingSphereChaos-controller"
+	ssChaosDefaultEnqueueTime         = 5 * time.Second
 )
 
 // ShardingSphereChaosReconciler is a controller for the ShardingSphereChaos
@@ -44,7 +50,7 @@ type ShardingSphereChaosReconciler struct { //
 
 // Reconcile handles main function of this controller
 func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := r.Log.WithValues("ShardingSphereChaos", req.NamespacedName)
+	logger := r.Log.WithValues(ShardingSphereChaosControllerName, req.NamespacedName)
 
 	var ssChaos sschaosv1alpha1.ShardingSphereChaos
 	if err := r.Get(ctx, req.NamespacedName, &ssChaos); err != nil {

@@ -27,15 +27,24 @@ import (
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 const (
 	podSelectorMode      = "spec/mode"
 	podSelectorValue     = "spec/value"
-	device               = "spec/device"
-	targetDevice         = "spec/targetDevice"
 	targetPodSelectMode  = "spec/target/mode"
 	targetPodSelectValue = "spec/target/value"
+	podAction            = "spec/pod/action"
+	gracePeriod          = "spec/pod/gracePeriod"
+	device               = "spec/device"
+	targetDevice         = "spec/targetDevice"
+	networkAction        = "spec/network/action"
+	rate                 = "spec/network/rate"
+	limit                = "spec/network/limit"
+	buffer               = "spec/network/buffer"
+	peakrate             = "spec/network/peakrate"
+	minburst             = "spec/network/minburst"
 )
 
 type chaosMeshHandler struct {
@@ -114,7 +123,18 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (Po
 	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 
 	chao := ssChao.Spec.PodChaos
-	pcb.SetAction(chao.Action)
+	if act, ok := ssChao.Annotations[podAction]; ok {
+		pcb.SetAction(act)
+		if gp, ok := ssChao.Annotations[gracePeriod]; chaosv1alpha1.PodChaosAction(act) == chaosv1alpha1.PodKillAction && ok {
+			gpInt, err := strconv.ParseInt(gp, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			pcb.SetGracePeriod(gpInt)
+		}
+	} else {
+		pcb.SetAction(string(chao.Action))
+	}
 
 	psb := NewPodSelectorBuilder()
 
@@ -149,14 +169,19 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (Po
 	return podChao, nil
 }
 
-//func (c *chaosMeshHandler) SetControllerReference(ssChao *chaposMeshController, podChao *chaosMesh)
-
 func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error) {
 	ncb := NewNetworkChaosBuilder()
 
 	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 	chao := ssChao.Spec.NetworkChaos
-	ncb.SetAction(chao.Action).SetDuration(*chao.Duration).SetDirection(string(chao.Direction))
+	act, ok := ssChao.Annotations[networkAction]
+	if ok {
+		ncb.SetAction(act)
+	} else {
+		ncb.SetAction(string(chao.Action))
+	}
+
+	ncb.SetDuration(*chao.Duration).SetDirection(string(chao.Direction))
 
 	psb := NewPodSelectorBuilder()
 
@@ -222,6 +247,42 @@ func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereCha
 		}
 	}
 
+	if chaosv1alpha1.NetworkChaosAction(act) == chaosv1alpha1.BandwidthAction {
+		if ind1, ok := ssChao.Annotations[rate]; ok {
+			tcParams.Bandwidth.Rate = ind1
+		}
+
+		if ind2, ok := ssChao.Annotations[limit]; ok {
+			lim, err := strconv.ParseInt(ind2, 10, 32)
+			if err != nil {
+				return nil, err
+			}
+			tcParams.Bandwidth.Limit = uint32(lim)
+		}
+		if ind3, ok := ssChao.Annotations[buffer]; ok {
+			buf, err := strconv.ParseInt(ind3, 10, 32)
+			if err != nil {
+				return nil, err
+			}
+			tcParams.Bandwidth.Buffer = uint32(buf)
+		}
+		if ind4, ok := ssChao.Annotations[peakrate]; ok {
+			pr, err := strconv.ParseInt(ind4, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			ret := uint64(pr)
+			tcParams.Bandwidth.Peakrate = &ret
+		}
+		if ind5, ok := ssChao.Annotations[minburst]; ok {
+			burst, err := strconv.ParseInt(ind5, 10, 32)
+			if err != nil {
+				return nil, err
+			}
+			tcParams.Bandwidth.Buffer = uint32(burst)
+		}
+
+	}
 	ncb.SetTcParameter(*tcParams)
 
 	networkChao := ncb.Build()
@@ -284,7 +345,7 @@ type PodChaosBuilder interface {
 	SetLabels(map[string]string) PodChaosBuilder
 	SetAnnotations(map[string]string) PodChaosBuilder
 	SetContainerSelector(chaosv1alpha1.ContainerSelector) PodChaosBuilder
-	SetAction(v1alpha1.PodChaosAction) PodChaosBuilder
+	SetAction(string) PodChaosBuilder
 	SetDuration(string) PodChaosBuilder
 	SetGracePeriod(int64) PodChaosBuilder
 	Build() *chaosv1alpha1.PodChaos
@@ -325,13 +386,17 @@ func (p *podChaosBuilder) SetContainerSelector(selector chaosv1alpha1.ContainerS
 	return p
 }
 
-func (p *podChaosBuilder) SetAction(action v1alpha1.PodChaosAction) PodChaosBuilder {
-	if action == v1alpha1.PodFailureAction {
+func (p *podChaosBuilder) SetAction(action string) PodChaosBuilder {
+	if v1alpha1.PodChaosAction(action) == v1alpha1.PodFailureAction {
 		p.podChaos.Spec.Action = chaosv1alpha1.PodFailureAction
 	}
 
-	if action == v1alpha1.ContainerKillAction {
+	if v1alpha1.PodChaosAction(action) == v1alpha1.ContainerKillAction {
 		p.podChaos.Spec.Action = chaosv1alpha1.ContainerKillAction
+	}
+
+	if chaosv1alpha1.PodChaosAction(action) == chaosv1alpha1.PodKillAction {
+		p.podChaos.Spec.Action = chaosv1alpha1.PodKillAction
 	}
 	return p
 }
@@ -362,7 +427,7 @@ type NetworkChaosBuilder interface {
 	SetLabels(map[string]string) NetworkChaosBuilder
 	SetAnnotations(map[string]string) NetworkChaosBuilder
 	SetPodSelector(*chaosv1alpha1.PodSelector) NetworkChaosBuilder
-	SetAction(v1alpha1.NetworkChaosAction) NetworkChaosBuilder
+	SetAction(string) NetworkChaosBuilder
 	SetDevice(string) NetworkChaosBuilder
 	SetDuration(string) NetworkChaosBuilder
 	SetDirection(string) NetworkChaosBuilder
@@ -401,20 +466,25 @@ func (n *netWorkChaosBuilder) SetPodSelector(selector *chaosv1alpha1.PodSelector
 	return n
 }
 
-func (n *netWorkChaosBuilder) SetAction(action v1alpha1.NetworkChaosAction) NetworkChaosBuilder {
-	if action == v1alpha1.CorruptAction {
+func (n *netWorkChaosBuilder) SetAction(action string) NetworkChaosBuilder {
+
+	if chaosv1alpha1.NetworkChaosAction(action) == chaosv1alpha1.BandwidthAction {
+		n.netWorkChaos.Spec.Action = chaosv1alpha1.BandwidthAction
+	}
+
+	if v1alpha1.NetworkChaosAction(action) == v1alpha1.CorruptAction {
 		n.netWorkChaos.Spec.Action = chaosv1alpha1.CorruptAction
 	}
 
-	if action == v1alpha1.PartitionAction {
+	if v1alpha1.NetworkChaosAction(action) == v1alpha1.PartitionAction {
 		n.netWorkChaos.Spec.Action = chaosv1alpha1.PartitionAction
 	}
 
-	if action == v1alpha1.LossAction {
+	if v1alpha1.NetworkChaosAction(action) == v1alpha1.LossAction {
 		n.netWorkChaos.Spec.Action = chaosv1alpha1.LossAction
 	}
 
-	if action == v1alpha1.DuplicateAction {
+	if v1alpha1.NetworkChaosAction(action) == v1alpha1.DuplicateAction {
 		n.netWorkChaos.Spec.Action = chaosv1alpha1.DuplicateAction
 	}
 
