@@ -29,7 +29,7 @@ import (
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -59,9 +59,9 @@ func (r *ComputeNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ComputeNode{}).
 		Owns(&appsv1.Deployment{}).
-		Owns(&v1.Pod{}).
-		Owns(&v1.Service{}).
-		Owns(&v1.ConfigMap{}).
+		Owns(&corev1.Pod{}).
+		Owns(&corev1.Service{}).
+		Owns(&corev1.ConfigMap{}).
 		Complete(r)
 }
 
@@ -162,7 +162,7 @@ func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.
 	return err
 }
 
-func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, cur *v1.Service) error {
+func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, cur *corev1.Service) error {
 	// if cn.Spec.ServiceType == v1.ServiceTypeNodePort {
 	// 	for idx := range cur.Spec.Ports {
 	// 		for i := range cn.Spec.PortBindings {
@@ -191,13 +191,17 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 	// }
 
 	switch cn.Spec.ServiceType {
-	case v1.ServiceTypeNodePort:
-		updateServiceNodePort()
+	case corev1.ServiceTypeClusterIP:
+		updateServiceClusterIP(cn.Spec.PortBindings)
 		if err := r.Update(ctx, cn); err != nil {
 			return err
 		}
-	case v1.ServiceTypeClusterIP:
-		updateServiceClusterIP()
+	case corev1.ServiceTypeExternalName:
+		fallthrough
+	case corev1.ServiceTypeLoadBalancer:
+		fallthrough
+	case corev1.ServiceTypeNodePort:
+		updateServiceNodePort(cn.Spec.PortBindings, cur.Spec.Ports)
 		if err := r.Update(ctx, cn); err != nil {
 			return err
 		}
@@ -236,7 +240,7 @@ func updateServiceClusterIP(portBindings []v1alpha1.PortBinding) {
 	}
 }
 
-func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.Service, bool, error) {
+func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.Service, bool, error) {
 	svc, err := r.Service.GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return nil, false, err
@@ -256,12 +260,12 @@ func (r *ComputeNodeReconciler) createConfigMap(ctx context.Context, cn *v1alpha
 	return err
 }
 
-func (r *ComputeNodeReconciler) updateConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode, cm *v1.ConfigMap) error {
+func (r *ComputeNodeReconciler) updateConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode, cm *corev1.ConfigMap) error {
 	exp := reconcile.UpdateConfigMap(cn, cm)
 	return r.Update(ctx, exp)
 }
 
-func (r *ComputeNodeReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.ConfigMap, bool, error) {
+func (r *ComputeNodeReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.ConfigMap, bool, error) {
 	cm, err := r.ConfigMap.GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return nil, false, err
@@ -285,12 +289,12 @@ func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1al
 }
 
 func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	podlist := &v1.PodList{}
+	podlist := &corev1.PodList{}
 	if err := r.List(ctx, podlist, client.InNamespace(cn.Namespace), client.MatchingLabels(cn.Spec.Selector.MatchLabels)); err != nil {
 		return err
 	}
 
-	service := &v1.Service{}
+	service := &corev1.Service{}
 	if err := r.Get(ctx, types.NamespacedName{
 		Namespace: cn.Namespace,
 		Name:      cn.Name,
@@ -313,12 +317,12 @@ func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha
 	return r.Status().Update(ctx, rt)
 }
 
-func getReadyProxyInstances(podlist *v1.PodList) int32 {
+func getReadyProxyInstances(podlist *corev1.PodList) int32 {
 	var cnt int32
 	for idx := range podlist.Items {
-		if podlist.Items[idx].Status.Phase == v1.PodRunning {
+		if podlist.Items[idx].Status.Phase == corev1.PodRunning {
 			for i := range podlist.Items[idx].Status.Conditions {
-				if podlist.Items[idx].Status.Conditions[i].Type == v1.PodReady && podlist.Items[idx].Status.Conditions[i].Status == v1.ConditionTrue {
+				if podlist.Items[idx].Status.Conditions[i].Type == corev1.PodReady && podlist.Items[idx].Status.Conditions[i].Status == corev1.ConditionTrue {
 					for j := range podlist.Items[idx].Status.ContainerStatuses {
 						if podlist.Items[idx].Status.ContainerStatuses[j].Name == "shardingsphere-proxy" && podlist.Items[idx].Status.ContainerStatuses[j].Ready {
 							cnt++
@@ -374,7 +378,7 @@ func updateNotReadyConditions(conditions []v1alpha1.ComputeNodeCondition, cond *
 	return cur
 }
 
-func clusterCondition(podlist *v1.PodList) v1alpha1.ComputeNodeCondition {
+func clusterCondition(podlist *corev1.PodList) v1alpha1.ComputeNodeCondition {
 	cond := v1alpha1.ComputeNodeCondition{}
 	if len(podlist.Items) == 0 {
 		return cond
@@ -411,22 +415,22 @@ func clusterCondition(podlist *v1.PodList) v1alpha1.ComputeNodeCondition {
 	//FIXME: do not capture ConditionStarted in some cases
 	for idx := range podlist.Items {
 		switch podlist.Items[idx].Status.Phase {
-		case v1.PodSucceeded:
+		case corev1.PodSucceeded:
 			return condSucceed
-		case v1.PodRunning:
+		case corev1.PodRunning:
 			return condStarted
-		case v1.PodUnknown:
+		case corev1.PodUnknown:
 			return condUnknown
-		case v1.PodPending:
+		case corev1.PodPending:
 			return condDeployed
-		case v1.PodFailed:
+		case corev1.PodFailed:
 			return condFailed
 		}
 	}
 	return cond
 }
 
-func reconcileComputeNodeStatus(podlist *v1.PodList, svc *v1.Service) *v1alpha1.ComputeNodeStatus {
+func reconcileComputeNodeStatus(podlist *corev1.PodList, svc *corev1.Service) *v1alpha1.ComputeNodeStatus {
 	status := &v1alpha1.ComputeNodeStatus{}
 
 	status.Replicas = int32(len(podlist.Items))
