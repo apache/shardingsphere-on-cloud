@@ -19,6 +19,7 @@ package shardingspherechaos
 
 import (
 	"context"
+	"fmt"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,6 +44,22 @@ type chaosMeshHandler struct {
 
 func NewChaosMeshHandler(r client.Client) ChaosHandler {
 	return &chaosMeshHandler{r}
+}
+
+func (c *chaosMeshHandler) ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) {
+	var status chaosv1alpha1.ChaosStatus
+	if ssChaos.Spec.ChaosKind == v1alpha1.PodChaosKind {
+		if podChao, ok := chaos.(*chaosv1alpha1.PodChaos); ok && podChao != nil {
+			status = *podChao.GetStatus()
+		}
+	}
+
+	if ssChaos.Spec.ChaosKind == v1alpha1.NetworkChaosKind {
+		if networkChaos, ok := chaos.(chaosv1alpha1.NetworkChaos); ok && networkChaos != nil {
+			status = *networkChaos.GetStatus()
+		}
+	}
+	fmt.Println(status)
 }
 
 func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, chao PodChaos) error {
