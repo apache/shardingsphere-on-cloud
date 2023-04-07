@@ -58,7 +58,7 @@ linters:
     - varnamelen
     - gocritic
     #- exhaustruct
-    #- nestif
+    - nestif
     #- wsl
     #- gocognit
 # Refers: https://gist.github.com/maratori/47a4d00457a92aa426dbd48a18776322
@@ -165,10 +165,10 @@ linters-settings:
     # Report pre-allocation suggestions on for loops.
     # Default: false
     for-loops: true
-  #nestif:
+  nestif:
     # Minimal complexity of if statements to report.
     # Default: 5
-  # min-complexity: 4
+    min-complexity: 4
   misspell:
     # Correct spellings using locale preferences for US or UK.
     # Setting locale to US will correct the British spelling of 'colour' to 'color'.

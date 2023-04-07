@@ -59,15 +59,10 @@ func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	// NOTE: ShardingSphere Proxy 5.3.0 needs a server.yaml no matter if it is empty
 	if !reflect.DeepEqual(cn.Spec.Bootstrap.ServerConfig, v1alpha1.ServerConfig{}) {
 		servconf := cn.Spec.Bootstrap.ServerConfig.DeepCopy()
-		if cn.Spec.Bootstrap.ServerConfig.Mode.Type == v1alpha1.ModeTypeCluster {
-			if len(cluster) > 0 {
-				if err := json.Unmarshal([]byte(cluster), &servconf.Mode.Repository); err != nil {
-					return &v1.ConfigMap{}
-				}
-			}
-		}
-		if y, err := yaml.Marshal(servconf); err == nil {
-			builder.SetServerConfig(string(y))
+		if y, err := updateConfigMapServerConf(cluster, servconf, cn); err == nil {
+			builder.SetServerConfig(y)
+		} else {
+			return &v1.ConfigMap{}
 		}
 	} else {
 		builder.SetServerConfig("# Empty file is needed")
@@ -82,6 +77,16 @@ func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	}
 
 	return builder.Build()
+}
+
+func updateConfigMapServerConf(cluster string, servconf *v1alpha1.ServerConfig, cn *v1alpha1.ComputeNode) (string, error) {
+	if cn.Spec.Bootstrap.ServerConfig.Mode.Type == v1alpha1.ModeTypeCluster && len(cluster) > 0 {
+		if err := json.Unmarshal([]byte(cluster), &servconf.Mode.Repository); err != nil {
+			return "", err
+		}
+	}
+	y, err := yaml.Marshal(servconf)
+	return string(y), err
 }
 
 // ConfigMapBuilder is a builder for ConfigMap by ComputeNode
