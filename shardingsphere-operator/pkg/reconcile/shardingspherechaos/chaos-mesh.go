@@ -31,20 +31,20 @@ import (
 )
 
 const (
-	podSelectorMode      = "spec/mode"
-	podSelectorValue     = "spec/value"
-	targetPodSelectMode  = "spec/target/mode"
-	targetPodSelectValue = "spec/target/value"
-	podAction            = "spec/pod/action"
-	gracePeriod          = "spec/pod/gracePeriod"
-	device               = "spec/device"
-	targetDevice         = "spec/targetDevice"
-	networkAction        = "spec/network/action"
-	rate                 = "spec/network/rate"
-	limit                = "spec/network/limit"
-	buffer               = "spec/network/buffer"
-	peakrate             = "spec/network/peakrate"
-	minburst             = "spec/network/minburst"
+	podSelectorMode      = "selector.chaos-mesh.org/mode"
+	podSelectorValue     = "selector.chaos-mesh.org/value"
+	targetPodSelectMode  = "target-selector.chaos-mesh.org/mode"
+	targetPodSelectValue = "target-selector.chaos-mesh.org/value"
+	podAction            = "podchaos.chaos-mesh.org/action"
+	gracePeriod          = "podchaos.chaos-mesh.org/gracePeriod"
+	device               = "networkchaos.chaos-mesh.org/device"
+	targetDevice         = "networkchaos.chaos-mesh.org/targetDevice"
+	networkAction        = "networkchaos.chaos-mesh.org/action"
+	rate                 = "networkchaos.chaos-mesh.org/bandwidth:rate"
+	limit                = "networkchaos.chaos-mesh.org/bandwidth:limit"
+	buffer               = "networkchaos.chaos-mesh.org/bandwidth:buffer"
+	peakrate             = "networkchaos.chaos-mesh.org/bandwidth:peakrate"
+	minburst             = "networkchaos.chaos-mesh.org/bandwidth:minburst"
 )
 
 type chaosMeshHandler struct {
