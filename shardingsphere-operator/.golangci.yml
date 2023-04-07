@@ -57,10 +57,10 @@ linters:
     - misspell 
     - varnamelen
     - gocritic
-    #- exhaustruct
     - gocognit
     - nestif
     #- wsl
+    #- exhaustruct
 # Refers: https://gist.github.com/maratori/47a4d00457a92aa426dbd48a18776322
 linters-settings:
   wsl:
