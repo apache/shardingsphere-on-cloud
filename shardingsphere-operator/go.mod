@@ -3,6 +3,7 @@ module github.com/apache/shardingsphere-on-cloud/shardingsphere-operator
 go 1.19
 
 require (
+	github.com/antlr/antlr4 v0.0.0-20181218183524-be58ebffde8e
 	github.com/go-logr/logr v1.2.3
 	github.com/onsi/ginkgo/v2 v2.8.0
 	github.com/onsi/gomega v1.26.0
