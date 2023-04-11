@@ -53,6 +53,12 @@ func (v *Visitor) VisitIfNotExists(ctx *parser.IfNotExistsContext) *ast.IfNotExi
 	}
 }
 
+func (v *Visitor) VisitIfExists(ctx *parser.IfExistsContext) *ast.IfExists {
+	return &ast.IfExists{
+		IfExists: fmt.Sprintf("%s %s", ctx.IF().GetText(), ctx.EXISTS().GetText()),
+	}
+}
+
 func (v *Visitor) VisitAlterEncryptRule(ctx *parser.AlterEncryptRuleContext) *ast.AlterEncryptRule {
 	stmt := &ast.AlterEncryptRule{}
 	if ctx.AllEncryptRuleDefinition() != nil {
@@ -66,10 +72,9 @@ func (v *Visitor) VisitAlterEncryptRule(ctx *parser.AlterEncryptRuleContext) *as
 func (v *Visitor) VisitDropEncryptRule(ctx *parser.DropEncryptRuleContext) *ast.DropEncryptRule {
 	stmt := &ast.DropEncryptRule{}
 
-	// TODO: Add IfExists to AST
-	// if ctx.IfExists() != nil {
-	// 	stmt.IfExists = v.VisitIfExists(ctx.IfExists().(*parser.IfExistsContext))
-	// }
+	if ctx.IfExists() != nil {
+		stmt.IfExists = v.VisitIfExists(ctx.IfExists().(*parser.IfExistsContext))
+	}
 
 	if ctx.AllTableName() != nil {
 		for _, tableName := range ctx.AllTableName() {
