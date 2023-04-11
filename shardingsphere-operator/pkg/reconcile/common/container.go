@@ -1,7 +1,7 @@
 package common
 
 import (
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // ContainerBuilder is a common builder for Container
