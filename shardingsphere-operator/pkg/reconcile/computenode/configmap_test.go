@@ -56,7 +56,7 @@ var _ = Describe("ConfigMap", func() {
 	})
 
 	Context("Assert ObjectMeta", func() {
-		cm := computenode.NewConfigMap(cn)
+		cm := computenode.NewCNConfigMap(cn)
 		It("name should be equal", func() {
 			Expect(expect.Name).To(Equal(cm.Name))
 		})
@@ -69,7 +69,7 @@ var _ = Describe("ConfigMap", func() {
 	})
 
 	Context("Assert Default Spec Data", func() {
-		cm := computenode.NewConfigMap(cn)
+		cm := computenode.NewCNConfigMap(cn)
 		It("default logback should be equal", func() {
 			Expect(expect.Data[computenode.AnnoLogbackConfig]).To(Equal(cm.Data[computenode.AnnoLogbackConfig]))
 		})
