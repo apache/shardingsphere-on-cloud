@@ -19,17 +19,20 @@ package controllers
 
 import (
 	"context"
+	"time"
+
 	sschaosv1alpha1 "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/job"
 	reconcile "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/shardingspherechaos"
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/go-logr/logr"
 	batchV1 "k8s.io/api/batch/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 const (
@@ -43,9 +46,7 @@ type ShardingSphereChaosReconciler struct { //
 	Scheme *runtime.Scheme
 	Log    logr.Logger
 	Chaos  chaos.Chaos
-
-	//todo: add job definition
-	//Job    job.Job
+	Job    job.Job
 }
 
 // Reconcile handles main function of this controller
@@ -67,14 +68,17 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 		logger.Error(err, " unable to reconcile chaos")
 		return ctrl.Result{}, err
 	}
-
-	//todo: add inject reconcile and check status here
-
+	if len(ssChaos.Spec.InjectJob.Pressure) > 0 {
+		if err := r.reconcileJob(ctx, &ssChaos); err != nil {
+			logger.Error(err, "unable to reconcile job")
+			return ctrl.Result{}, err
+		}
+	}
 	if err := r.reconcileStatus(ctx, &ssChaos); err != nil {
 		logger.Error(err, "failed to update status")
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: ssChaosDefaultEnqueueTime}, nil
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssChao *sschaosv1alpha1.ShardingSphereChaos) error {
@@ -104,6 +108,23 @@ func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssCh
 		return r.CreateNetworkChaos(ctx, ssChao)
 	}
 	return nil
+}
+
+func (r *ShardingSphereChaosReconciler) reconcileJob(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
+	logger := r.Log.WithValues("reconcile job", ssChaos.Name)
+	namespaceName := types.NamespacedName{Namespace: ssChaos.Namespace, Name: ssChaos.Name}
+
+	rJob, isExist, err := r.getJobByNamespacedName(ctx, namespaceName)
+	if err != nil {
+		logger.Error(err, "get job err")
+		return err
+	}
+	//todo: update InjectRequirement by chaos status
+	if isExist {
+		return r.updateJob(ctx, reconcile.Experimental, ssChaos, rJob)
+	}
+
+	return r.createJob(ctx, reconcile.Experimental, ssChaos)
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
@@ -159,6 +180,42 @@ func (r *ShardingSphereChaosReconciler) getPodChaosByNamespacedName(ctx context.
 		return nil, false, nil
 	}
 	return pc, true, nil
+}
+
+func (r *ShardingSphereChaosReconciler) getJobByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*batchV1.Job, bool, error) {
+	injectJob, err := r.Job.GetByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return nil, false, err
+	}
+	if injectJob == nil {
+		return nil, false, nil
+	}
+
+	return injectJob, true, nil
+}
+
+func (r *ShardingSphereChaosReconciler) updateJob(ctx context.Context, requirement reconcile.InjectRequirement, chao *sschaosv1alpha1.ShardingSphereChaos, cur *batchV1.Job) error {
+	exp, err := reconcile.UpdateJob(chao, requirement, cur)
+	if err != nil {
+		return err
+	}
+	return r.Update(ctx, exp)
+}
+
+// todo:
+func (r *ShardingSphereChaosReconciler) createJob(ctx context.Context, requirement reconcile.InjectRequirement, chao *sschaosv1alpha1.ShardingSphereChaos) error {
+	injectJob, err := reconcile.NewJob(chao, requirement)
+	if err := ctrl.SetControllerReference(chao, injectJob, r.Scheme); err != nil {
+		return err
+	}
+	if err != nil {
+		return err
+	}
+	err = r.Create(ctx, injectJob)
+	if err == nil && apierrors.IsAlreadyExists(err) {
+		return nil
+	}
+	return err
 }
 
 func (r *ShardingSphereChaosReconciler) updatePodChaos(ctx context.Context, chao *sschaosv1alpha1.ShardingSphereChaos, podChaos reconcile.PodChaos) error {

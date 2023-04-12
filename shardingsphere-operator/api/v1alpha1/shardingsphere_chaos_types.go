@@ -42,12 +42,21 @@ type ShardingSphereChaos struct {
 
 // ShardingSphereChaosSpec defines the desired state of ShardingSphereChaos
 type ShardingSphereChaosSpec struct {
-	//todo
-	//InjectJob batchV1Beta1.JobTemplateSpec `json:"InjectJob,omitempty"`
+	InjectJob  JobSpec   `json:"injectJob,omitempty"`
 	ChaosKind  ChaosKind `json:"chaosKind,omitempty"`
 	EmbedChaos `json:",inline"`
 	//todo
 	//Verify batchV1Beta1.JobTemplateSpec `json:"Verify,omitempty"`
+}
+
+// JobSpec Specifies the config of job to create
+type JobSpec struct {
+	// +optional
+	Experimental string `json:"experimental,omitempty"`
+	// +optional
+	Pressure string `json:"pressure,omitempty"`
+	// +optional
+	Position string `json:"position,omitempty"`
 }
 
 // ChaosKind Specifies the type of chaos to create

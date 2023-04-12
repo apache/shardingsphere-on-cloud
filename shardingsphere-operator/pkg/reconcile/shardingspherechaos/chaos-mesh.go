@@ -19,15 +19,17 @@ package shardingspherechaos
 
 import (
 	"context"
+	"errors"
+	"reflect"
+	"strconv"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 const (
@@ -45,6 +47,10 @@ const (
 	buffer               = "networkchaos.chaos-mesh.org/bandwidth:buffer"
 	peakrate             = "networkchaos.chaos-mesh.org/bandwidth:peakrate"
 	minburst             = "networkchaos.chaos-mesh.org/bandwidth:minburst"
+)
+
+var (
+	ErrConvert = errors.New("can not convert chaos interface to specify struct")
 )
 
 type chaosMeshHandler struct {
@@ -72,8 +78,8 @@ func (c *chaosMeshHandler) ConvertChaosStatus(ctx context.Context, ssChaos *v1al
 		return v1alpha1.UnKnown
 	}
 	var conditions = map[chaosv1alpha1.ChaosConditionType]bool{}
-	for _, item := range status.Conditions {
-		conditions[item.Type] = item.Status == corev1.ConditionTrue
+	for i := range status.Conditions {
+		conditions[status.Conditions[i].Type] = status.Conditions[i].Status == corev1.ConditionTrue
 	}
 
 	return judgeCondition(conditions, status.Experiment.DesiredPhase)
@@ -102,7 +108,10 @@ func judgeCondition(condition map[chaosv1alpha1.ChaosConditionType]bool, phase c
 }
 
 func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, chao PodChaos) error {
-	podChao := chao.(*chaosv1alpha1.PodChaos)
+	podChao, ok := chao.(*chaosv1alpha1.PodChaos)
+	if !ok {
+		return ErrConvert
+	}
 	if err := c.r.Create(ctx, podChao); err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
@@ -111,7 +120,10 @@ func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, chao PodChaos) er
 }
 
 func (c *chaosMeshHandler) CreateNetworkChaos(ctx context.Context, chao NetworkChaos) error {
-	networkChao := chao.(*chaosv1alpha1.NetworkChaos)
+	networkChao, ok := chao.(*chaosv1alpha1.NetworkChaos)
+	if !ok {
+		return ErrConvert
+	}
 	if err := c.r.Create(ctx, networkChao); err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
@@ -161,7 +173,7 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (Po
 		containerSelector.ContainerNames = chao.PodActionParam.ContainerKill.ContainerNames
 	}
 
-	pcb.SetContainerSelector(*containerSelector)
+	pcb.SetContainerSelector(containerSelector)
 	podChao := pcb.Build()
 
 	if err := ctrl.SetControllerReference(ssChao, podChao, c.r.Scheme()); err != nil {
@@ -172,7 +184,6 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (Po
 
 func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error) {
 	ncb := NewNetworkChaosBuilder()
-
 	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 	chao := ssChao.Spec.NetworkChaos
 	act, ok := ssChao.Annotations[networkAction]
@@ -249,40 +260,24 @@ func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereCha
 	}
 
 	if chaosv1alpha1.NetworkChaosAction(act) == chaosv1alpha1.BandwidthAction {
+		bwab := NewBandWidthActionBuilder()
 		if ind1, ok := ssChao.Annotations[rate]; ok {
-			tcParams.Bandwidth.Rate = ind1
+			bwab.SetRate(ind1)
 		}
 
 		if ind2, ok := ssChao.Annotations[limit]; ok {
-			lim, err := strconv.ParseInt(ind2, 10, 32)
-			if err != nil {
-				return nil, err
-			}
-			tcParams.Bandwidth.Limit = uint32(lim)
+			bwab.SetLimit(ind2)
 		}
 		if ind3, ok := ssChao.Annotations[buffer]; ok {
-			buf, err := strconv.ParseInt(ind3, 10, 32)
-			if err != nil {
-				return nil, err
-			}
-			tcParams.Bandwidth.Buffer = uint32(buf)
+			bwab.SetBuffer(ind3)
 		}
 		if ind4, ok := ssChao.Annotations[peakrate]; ok {
-			pr, err := strconv.ParseInt(ind4, 10, 64)
-			if err != nil {
-				return nil, err
-			}
-			ret := uint64(pr)
-			tcParams.Bandwidth.Peakrate = &ret
+			bwab.SetPeakRate(ind4)
 		}
 		if ind5, ok := ssChao.Annotations[minburst]; ok {
-			burst, err := strconv.ParseInt(ind5, 10, 32)
-			if err != nil {
-				return nil, err
-			}
-			tcParams.Bandwidth.Buffer = uint32(burst)
+			bwab.SetMinBurst(ind5)
 		}
-
+		tcParams.Bandwidth = bwab.Build()
 	}
 	ncb.SetTcParameter(*tcParams)
 
@@ -299,8 +294,14 @@ func (c *chaosMeshHandler) UpdateNetworkChaos(ctx context.Context, ssChaos *v1al
 		return err
 	}
 
-	reExp := networkChao.(*chaosv1alpha1.NetworkChaos)
-	reCur := cur.(*chaosv1alpha1.NetworkChaos)
+	reExp, ok := networkChao.(*chaosv1alpha1.NetworkChaos)
+	if !ok {
+		return ErrConvert
+	}
+	reCur, ok := cur.(*chaosv1alpha1.NetworkChaos)
+	if !ok {
+		return ErrConvert
+	}
 	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
 	if isEqual {
 		return nil
@@ -322,8 +323,14 @@ func (c *chaosMeshHandler) UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1
 	if err != nil {
 		return err
 	}
-	reExp := (podChao).(*chaosv1alpha1.PodChaos)
-	reCur := cur.(*chaosv1alpha1.PodChaos)
+	reExp, ok := (podChao).(*chaosv1alpha1.PodChaos)
+	if !ok {
+		return ErrConvert
+	}
+	reCur, ok := cur.(*chaosv1alpha1.PodChaos)
+	if !ok {
+		return ErrConvert
+	}
 	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
 	if isEqual {
 		return nil
@@ -345,7 +352,7 @@ type PodChaosBuilder interface {
 	SetName(string) PodChaosBuilder
 	SetLabels(map[string]string) PodChaosBuilder
 	SetAnnotations(map[string]string) PodChaosBuilder
-	SetContainerSelector(chaosv1alpha1.ContainerSelector) PodChaosBuilder
+	SetContainerSelector(*chaosv1alpha1.ContainerSelector) PodChaosBuilder
 	SetAction(string) PodChaosBuilder
 	SetDuration(string) PodChaosBuilder
 	SetGracePeriod(int64) PodChaosBuilder
@@ -360,6 +367,68 @@ func NewPodChaosBuilder() PodChaosBuilder {
 
 type podChaosBuilder struct {
 	podChaos *chaosv1alpha1.PodChaos
+}
+
+type BandWidthActionBuilder interface {
+	SetRate(string) BandWidthActionBuilder
+	SetLimit(string) BandWidthActionBuilder
+	SetBuffer(string) BandWidthActionBuilder
+	SetPeakRate(string) BandWidthActionBuilder
+	SetMinBurst(string) BandWidthActionBuilder
+	Build() *chaosv1alpha1.BandwidthSpec
+}
+
+func NewBandWidthActionBuilder() BandWidthActionBuilder {
+	return &bandWidthActionBuilder{
+		bandwidth: &chaosv1alpha1.BandwidthSpec{},
+	}
+}
+
+type bandWidthActionBuilder struct {
+	bandwidth *chaosv1alpha1.BandwidthSpec
+}
+
+func (b *bandWidthActionBuilder) SetRate(s string) BandWidthActionBuilder {
+	b.bandwidth.Rate = s
+	return b
+}
+
+func (b *bandWidthActionBuilder) SetLimit(s string) BandWidthActionBuilder {
+	lim, err := strconv.ParseInt(s, 10, 32)
+	if err == nil {
+		b.bandwidth.Limit = uint32(lim)
+	}
+	return b
+}
+
+func (b *bandWidthActionBuilder) SetBuffer(s string) BandWidthActionBuilder {
+	buf, err := strconv.ParseInt(s, 10, 32)
+	if err == nil {
+		b.bandwidth.Buffer = uint32(buf)
+	}
+	return b
+}
+
+func (b *bandWidthActionBuilder) SetPeakRate(s string) BandWidthActionBuilder {
+	pr, err := strconv.ParseInt(s, 10, 64)
+	if err == nil {
+		ret := uint64(pr)
+		b.bandwidth.Peakrate = &ret
+	}
+	return b
+}
+
+func (b *bandWidthActionBuilder) SetMinBurst(s string) BandWidthActionBuilder {
+	burst, err := strconv.ParseInt(s, 10, 32)
+	if err == nil {
+		ret := uint32(burst)
+		b.bandwidth.Minburst = &ret
+	}
+	return b
+}
+
+func (b *bandWidthActionBuilder) Build() *chaosv1alpha1.BandwidthSpec {
+	return b.bandwidth
 }
 
 func (p *podChaosBuilder) SetNamespace(namespace string) PodChaosBuilder {
@@ -382,8 +451,8 @@ func (p *podChaosBuilder) SetAnnotations(annotations map[string]string) PodChaos
 	return p
 }
 
-func (p *podChaosBuilder) SetContainerSelector(selector chaosv1alpha1.ContainerSelector) PodChaosBuilder {
-	p.podChaos.Spec.ContainerSelector = selector
+func (p *podChaosBuilder) SetContainerSelector(selector *chaosv1alpha1.ContainerSelector) PodChaosBuilder {
+	p.podChaos.Spec.ContainerSelector = *selector
 	return p
 }
 
