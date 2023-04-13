@@ -42,5 +42,6 @@ header:
     - 'cloudformation/multi-az/*.json'
     - '**/*.json'
     - '**/Cargo.lock'
+    - '**/mocks/**'
 
   comment: on-failure

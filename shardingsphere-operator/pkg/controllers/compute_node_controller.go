@@ -43,7 +43,7 @@ const (
 	defaultRequeueTime        = 10 * time.Second
 )
 
-// ComputeNodeController is a controller for the compute node
+// ComputeNodeReconciler is a controller for the compute node
 type ComputeNodeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
