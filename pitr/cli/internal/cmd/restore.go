@@ -89,7 +89,7 @@ func restore() error {
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("new local storage failed, err:%s", err.Error()))
 	}
-	proxy, err := pkg.NewShardingSphereProxy(Username, Password, pkg.DefaultDbName, Host, Port)
+	proxy, err := pkg.NewShardingSphereProxy(Username, Password, pkg.DefaultDBName, Host, Port)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("new ss-proxy failed, err:%s", err.Error()))
 	}
@@ -140,11 +140,16 @@ func checkDatabaseExist(proxy pkg.IShardingSphereProxy, bak *model.LsBackup) err
 		return xerr.NewCliErr(fmt.Sprintf("get cluster metadata failed:%s", err.Error()))
 	}
 
-	for k, _ := range bak.SsBackup.ClusterInfo.MetaData.Databases {
+	for k := range bak.SsBackup.ClusterInfo.MetaData.Databases {
 		if _, ok := clusterNow.MetaData.Databases[k]; ok {
 			databaseNamesExist = append(databaseNamesExist, k)
 		}
 	}
+
+	if len(databaseNamesExist) == 0 {
+		return nil
+	}
+
 	// get user input to confirm
 	return getUserApproveInTerminal()
 }
@@ -206,13 +211,13 @@ func execRestore(lsBackup *model.LsBackup) error {
 
 func _execRestore(as pkg.IAgentServer, node *model.StorageNode, backupID string, failedCh chan error) {
 	in := &model.RestoreIn{
-		DbPort:       node.Port,
-		DbName:       node.Database,
+		DBPort:       node.Port,
+		DBName:       node.Database,
 		Username:     node.Username,
 		Password:     node.Password,
 		Instance:     defaultInstance,
 		DnBackupPath: BackupPath,
-		DnBackupId:   backupID,
+		DnBackupID:   backupID,
 	}
 
 	if err := as.Restore(in); err != nil {

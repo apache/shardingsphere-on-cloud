@@ -19,18 +19,18 @@ package model
 
 type (
 	ShowDetailIn struct {
-		DbPort       uint16 `json:"db_port"`
-		DbName       string `json:"db_name"`
+		DBPort       uint16 `json:"db_port"`
+		DBName       string `json:"db_name"`
 		Username     string `json:"username"`
 		Password     string `json:"password"`
-		DnBackupId   string `json:"dn_backup_id"`
+		DnBackupID   string `json:"dn_backup_id"`
 		DnBackupPath string `json:"dn_backup_path"`
 		Instance     string `json:"instance"`
 	}
 
 	ShowListIn struct {
-		DbPort       uint16 `json:"db_port"`
-		DbName       string `json:"db_name"`
+		DBPort       uint16 `json:"db_port"`
+		DBName       string `json:"db_name"`
 		Username     string `json:"username"`
 		Password     string `json:"password"`
 		DnBackupPath string `json:"dn_backup_path"`
@@ -38,7 +38,7 @@ type (
 	}
 
 	BackupInfo struct {
-		Id        string       `json:"dn_backup_id"`
+		ID        string       `json:"dn_backup_id"`
 		Path      string       `json:"dn_backup_path"`
 		Mode      string       `json:"db_backup_mode"`
 		Instance  string       `json:"instance"`

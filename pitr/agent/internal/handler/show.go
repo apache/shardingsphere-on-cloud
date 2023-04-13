@@ -19,6 +19,7 @@ package handler
 
 import (
 	"fmt"
+
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 
@@ -40,15 +41,15 @@ func Show(ctx *fiber.Ctx) error {
 		return fmt.Errorf("invalid parameter,err=%w", err)
 	}
 
-	if err := pkg.OG.Auth(in.Username, in.Password, in.DbName, in.DbPort); err != nil {
+	if err := pkg.OG.Auth(in.Username, in.Password, in.DBName, in.DBPort); err != nil {
 		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
-		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DbName, err)
+		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
 	}
 
-	data, err := pkg.OG.ShowBackup(in.DnBackupPath, in.Instance, in.DnBackupId)
+	data, err := pkg.OG.ShowBackup(in.DnBackupPath, in.Instance, in.DnBackupID)
 	if err != nil {
 		efmt := "pkg.OG.ShowBackupDetail failure[backupPath=%s,instance=%s,backupID=%s],err=%w"
-		return fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupId, err)
+		return fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupID, err)
 	}
 
 	return responder.Success(ctx, view.NewBackupInfo(data, in.DnBackupPath, in.Instance))
@@ -65,9 +66,9 @@ func ShowList(ctx *fiber.Ctx) error {
 		return fmt.Errorf("invalid parameter,err=%w", err)
 	}
 
-	if err := pkg.OG.Auth(in.Username, in.Password, in.DbName, in.DbPort); err != nil {
+	if err := pkg.OG.Auth(in.Username, in.Password, in.DBName, in.DBPort); err != nil {
 		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
-		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DbName, err)
+		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
 	}
 
 	//Show list

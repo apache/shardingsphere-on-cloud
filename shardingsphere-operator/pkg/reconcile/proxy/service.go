@@ -66,7 +66,7 @@ func ConstructCascadingService(proxy *v1alpha1.ShardingSphereProxy) *v1.Service 
 
 // UpdateService updates the specified service with ShardingSphereProxy
 func UpdateService(proxy *v1alpha1.ShardingSphereProxy, runtimeService *v1.Service) *v1.Service {
-	exp := &v1.Service{}
+	var exp *v1.Service
 	runtimeService.Spec.Type = proxy.Spec.ServiceType.Type
 	runtimeService.Spec.Ports[0].Port = proxy.Spec.Port
 	runtimeService.Spec.Ports[0].TargetPort = fromInt32(proxy.Spec.Port)

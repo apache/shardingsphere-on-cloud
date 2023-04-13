@@ -20,9 +20,10 @@ package computenode
 import (
 	"fmt"
 
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -69,14 +70,14 @@ func absoluteMySQLDriverMountName(p, v string) string {
 // and several different Proxy related attributes
 type ShardingSphereProxyContainerBuilder interface {
 	// A default container builder
-	ContainerBuilder
+	common.ContainerBuilder
 
 	// set the version of ShardingSphere Proxy
 	SetVersion(version string) ShardingSphereProxyContainerBuilder
 }
 
 type shardingSphereProxyContainerBuilder struct {
-	ContainerBuilder
+	common.ContainerBuilder
 }
 
 // SetVersion sets the version of ShardingSphere Proxy
@@ -89,31 +90,26 @@ func (c *shardingSphereProxyContainerBuilder) SetVersion(version string) Shardin
 // This will set default container name
 func NewShardingSphereProxyContainerBuilder() ShardingSphereProxyContainerBuilder {
 	return &shardingSphereProxyContainerBuilder{
-		ContainerBuilder: NewContainerBuilder().
+		ContainerBuilder: common.NewContainerBuilder().
 			SetName(defaultContainerName),
 	}
-}
-
-// Build returns a Container
-func (b *shardingSphereProxyContainerBuilder) Build() *corev1.Container {
-	return b.ContainerBuilder.Build()
 }
 
 // BootstrapContainerBuilder returns a Container for initialization
 // The container will handle initilialization in Pod's InitContainer
 type BootstrapContainerBuilder interface {
-	ContainerBuilder
+	common.ContainerBuilder
 }
 
 type bootstrapContainerBuilder struct {
-	ContainerBuilder
+	common.ContainerBuilder
 }
 
 // NewBootstrapContainerBuilderForMysqlJar will return a builder for MysqlJar download container
 // This will set the default container name, image and commands
 func NewBootstrapContainerBuilderForMysqlJar() BootstrapContainerBuilder {
 	return &bootstrapContainerBuilder{
-		ContainerBuilder: NewContainerBuilder().
+		ContainerBuilder: common.NewContainerBuilder().
 			SetName("download-mysql-jar").
 			SetImage("busybox:1.35.0").
 			SetCommand([]string{"/bin/sh", "-c", downloadMysqlJarScript}),
@@ -124,7 +120,7 @@ func NewBootstrapContainerBuilderForMysqlJar() BootstrapContainerBuilder {
 // This will set the default container name, image and commands
 func NewBootstrapContainerBuilderForAgentBin() BootstrapContainerBuilder {
 	return &bootstrapContainerBuilder{
-		ContainerBuilder: NewContainerBuilder().
+		ContainerBuilder: common.NewContainerBuilder().
 			SetName("download-agent-bin-jar").
 			SetImage("busybox:1.35.0").
 			SetCommand([]string{"/bin/sh", "-c", downloadAgentJarScript}),
@@ -136,144 +132,6 @@ func (b *bootstrapContainerBuilder) Build() *corev1.Container {
 	return b.ContainerBuilder.Build()
 }
 
-// ContainerBuilder is a common builder for Container
-type ContainerBuilder interface {
-	SetName(name string) ContainerBuilder
-	SetImage(image string) ContainerBuilder
-	SetPorts(ports []corev1.ContainerPort) ContainerBuilder
-	SetResources(res corev1.ResourceRequirements) ContainerBuilder
-	SetLivenessProbe(probe *corev1.Probe) ContainerBuilder
-	SetReadinessProbe(probe *corev1.Probe) ContainerBuilder
-	SetStartupProbe(probe *corev1.Probe) ContainerBuilder
-	SetEnv(envs []corev1.EnvVar) ContainerBuilder
-	SetCommand(cmds []string) ContainerBuilder
-	SetVolumeMount(mount *corev1.VolumeMount) ContainerBuilder
-	Build() *corev1.Container
-}
-
-// NewContainerBuilder return a builder for Container
-func NewContainerBuilder() ContainerBuilder {
-	return &containerBuilder{
-		container: DefaultContainer(),
-	}
-}
-
-type containerBuilder struct {
-	container *corev1.Container
-}
-
-// SetName sets the name of the container
-func (c *containerBuilder) SetName(name string) ContainerBuilder {
-	c.container.Name = name
-	return c
-}
-
-// SetImage sets the name of the container
-func (c *containerBuilder) SetImage(image string) ContainerBuilder {
-	c.container.Image = image
-	return c
-}
-
-// SetPorts set the container port of the container
-func (c *containerBuilder) SetPorts(ports []corev1.ContainerPort) ContainerBuilder {
-	if ports == nil {
-		c.container.Ports = []corev1.ContainerPort{}
-	}
-	if ports != nil {
-		c.container.Ports = ports
-	}
-	return c
-}
-
-// SetResources set the resources of the container
-func (c *containerBuilder) SetResources(res corev1.ResourceRequirements) ContainerBuilder {
-	c.container.Resources = res
-	return c
-}
-
-// SetLivenessProbe set the livenessProbe of the container
-func (c *containerBuilder) SetLivenessProbe(probe *corev1.Probe) ContainerBuilder {
-	if probe != nil {
-		if c.container.LivenessProbe == nil {
-			c.container.LivenessProbe = &corev1.Probe{}
-		}
-		c.container.LivenessProbe = probe
-	}
-	return c
-}
-
-// SetReadinessProbe set the readinessProbe of the container
-func (c *containerBuilder) SetReadinessProbe(probe *corev1.Probe) ContainerBuilder {
-	if probe != nil {
-		if c.container.ReadinessProbe == nil {
-			c.container.ReadinessProbe = &corev1.Probe{}
-		}
-		c.container.ReadinessProbe = probe
-	}
-	return c
-}
-
-// SetStartupProbe set the startupProbe of the container
-func (c *containerBuilder) SetStartupProbe(probe *corev1.Probe) ContainerBuilder {
-	if probe != nil {
-		if c.container.StartupProbe == nil {
-			c.container.StartupProbe = &corev1.Probe{}
-		}
-		c.container.StartupProbe = probe
-	}
-	return c
-}
-
-// SetEnv set the env of the container
-func (c *containerBuilder) SetEnv(envs []corev1.EnvVar) ContainerBuilder {
-	if envs == nil {
-		c.container.Env = []corev1.EnvVar{}
-	}
-	if envs != nil {
-		c.container.Env = envs
-	}
-	return c
-}
-
-// SetCommand set the command of the container
-func (c *containerBuilder) SetCommand(cmds []string) ContainerBuilder {
-	if cmds != nil {
-		c.container.Command = cmds
-	}
-	return c
-}
-
-// SetVolumeMount set the mount point of the container
-func (c *containerBuilder) SetVolumeMount(mount *corev1.VolumeMount) ContainerBuilder {
-	if c.container.VolumeMounts == nil {
-		c.container.VolumeMounts = []corev1.VolumeMount{*mount}
-	} else {
-		for idx, v := range c.container.VolumeMounts {
-			if v.Name == mount.Name {
-				c.container.VolumeMounts[idx] = *mount
-				return c
-			}
-		}
-		c.container.VolumeMounts = append(c.container.VolumeMounts, *mount)
-	}
-
-	return c
-}
-
-// Build returns a Container
-func (c *containerBuilder) Build() *corev1.Container {
-	return c.container
-}
-
-// DefaultContainer returns a container with busybox
-func DefaultContainer() *corev1.Container {
-	con := &corev1.Container{
-		Name:  "default",
-		Image: "busybox:1.35.0",
-	}
-	return con
-}
-
 // DeploymentBuilder returns a deployment builder
 type DeploymentBuilder interface {
 	SetName(name string) DeploymentBuilder
@@ -281,8 +139,8 @@ type DeploymentBuilder interface {
 	SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder
 	SetAnnotations(annos map[string]string) DeploymentBuilder
 	SetShardingSphereProxyContainer(con *corev1.Container) DeploymentBuilder
-	SetMySQLConnector(scb ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder
-	SetAgentBin(scb ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder
+	SetMySQLConnector(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder
+	SetAgentBin(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder
 	SetInitContainer(con *corev1.Container) DeploymentBuilder
 	SetVolume(volume *corev1.Volume) DeploymentBuilder
 	SetReplicas(r *int32) DeploymentBuilder
@@ -339,8 +197,8 @@ func (d *deploymentBuilder) SetShardingSphereProxyContainer(proxy *corev1.Contai
 		d.deployment.Spec.Template.Spec.Containers = []corev1.Container{*proxy}
 	}
 
-	for idx, container := range d.deployment.Spec.Template.Spec.Containers {
-		if container.Name == defaultContainerName {
+	for idx := range d.deployment.Spec.Template.Spec.Containers {
+		if d.deployment.Spec.Template.Spec.Containers[idx].Name == defaultContainerName {
 			d.deployment.Spec.Template.Spec.Containers[idx] = *proxy
 			return d
 		}
@@ -356,8 +214,8 @@ func (d *deploymentBuilder) SetInitContainer(init *corev1.Container) DeploymentB
 		d.deployment.Spec.Template.Spec.InitContainers = []corev1.Container{}
 	}
 
-	for idx, container := range d.deployment.Spec.Template.Spec.InitContainers {
-		if container.Name == init.Name {
+	for idx := range d.deployment.Spec.Template.Spec.InitContainers {
+		if d.deployment.Spec.Template.Spec.InitContainers[idx].Name == init.Name {
 			d.deployment.Spec.Template.Spec.InitContainers[idx] = *init
 			return d
 		}
@@ -406,7 +264,7 @@ func (b *sharedVolumeAndMountBuilder) SetVolumeMountSize(size int) SharedVolumeA
 	if len(b.volumeMounts) != size {
 		vms := make([]*corev1.VolumeMount, size)
 		for vm := range b.volumeMounts {
-			vms = append(vms, b.volumeMounts[vm].DeepCopy())
+			vms[vm] = b.volumeMounts[vm].DeepCopy()
 		}
 		b.volumeMounts = vms
 	}
@@ -519,19 +377,19 @@ func (b *volumeAndMountBuilder) Build() (*corev1.Volume, *corev1.VolumeMount) {
 }
 
 // SetVolume sets a volume for Deployment
-func (d *deploymentBuilder) SetVolume(v *corev1.Volume) DeploymentBuilder {
+func (d *deploymentBuilder) SetVolume(vol *corev1.Volume) DeploymentBuilder {
 	if d.deployment.Spec.Template.Spec.Volumes == nil {
-		d.deployment.Spec.Template.Spec.Volumes = []corev1.Volume{*v}
+		d.deployment.Spec.Template.Spec.Volumes = []corev1.Volume{*vol}
 	}
 
-	for idx, vol := range d.deployment.Spec.Template.Spec.Volumes {
-		if vol.Name == v.Name {
-			d.deployment.Spec.Template.Spec.Volumes[idx] = *v
+	for idx := range d.deployment.Spec.Template.Spec.Volumes {
+		if d.deployment.Spec.Template.Spec.Volumes[idx].Name == vol.Name {
+			d.deployment.Spec.Template.Spec.Volumes[idx] = *vol
 			return d
 		}
 	}
 
-	d.deployment.Spec.Template.Spec.Volumes = append(d.deployment.Spec.Template.Spec.Volumes, *v)
+	d.deployment.Spec.Template.Spec.Volumes = append(d.deployment.Spec.Template.Spec.Volumes, *vol)
 	return d
 }
 
@@ -541,17 +399,17 @@ func (d *deploymentBuilder) Build() *appsv1.Deployment {
 }
 
 // NewDeployment creates a new Deployment
-func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
+func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 	builder := NewDeploymentBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
 	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetReplicas(&cn.Spec.Replicas)
 
 	ports := []corev1.ContainerPort{}
-	for _, pb := range cn.Spec.PortBindings {
+	for idx := range cn.Spec.PortBindings {
 		ports = append(ports, corev1.ContainerPort{
-			Name:          pb.Name,
-			HostIP:        pb.HostIP,
-			ContainerPort: pb.ContainerPort,
-			Protocol:      pb.Protocol,
+			Name:          cn.Spec.PortBindings[idx].Name,
+			HostIP:        cn.Spec.PortBindings[idx].HostIP,
+			ContainerPort: cn.Spec.PortBindings[idx].ContainerPort,
+			Protocol:      cn.Spec.PortBindings[idx].Protocol,
 		})
 	}
 
@@ -559,15 +417,8 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 		SetVersion(cn.Spec.ServerVersion).
 		SetPorts(ports).
 		SetResources(cn.Spec.Resources)
-	if cn.Spec.Probes != nil && cn.Spec.Probes.LivenessProbe != nil {
-		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
-	}
-	if cn.Spec.Probes != nil && cn.Spec.Probes.ReadinessProbe != nil {
-		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
-	}
-	if cn.Spec.Probes != nil && cn.Spec.Probes.StartupProbe != nil {
-		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
-	}
+
+	setProbes(scb, cn)
 
 	vcb := NewSharedVolumeAndMountBuilder().
 		SetVolumeMountSize(1).
@@ -580,26 +431,37 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *v1.Deployment {
 	scb.SetVolumeMount(vmc[0])
 
 	if cn.Spec.StorageNodeConnector != nil {
-		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypeMySQL {
+		switch cn.Spec.StorageNodeConnector.Type {
+		case v1alpha1.ConnectorTypeMySQL:
 			builder.SetMySQLConnector(scb, cn)
-		}
-
-		// set agent for proxy
-		if enabled, ok := cn.Annotations[defaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
-			builder.SetAgentBin(scb, cn)
-		}
-
-		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypePostgreSQL {
+		case v1alpha1.ConnectorTypePostgreSQL:
 			sc := scb.Build()
 			builder.SetShardingSphereProxyContainer(sc)
 		}
 	}
 
+	// set agent for proxy
+	if enabled, ok := cn.Annotations[defaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
+		builder.SetAgentBin(scb, cn)
+	}
+
 	return builder.Build()
 }
 
+func setProbes(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) {
+	if cn.Spec.Probes != nil && cn.Spec.Probes.LivenessProbe != nil {
+		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
+	}
+	if cn.Spec.Probes != nil && cn.Spec.Probes.ReadinessProbe != nil {
+		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
+	}
+	if cn.Spec.Probes != nil && cn.Spec.Probes.StartupProbe != nil {
+		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
+	}
+}
+
 // SetMySQLConnector will set an init container to download mysql jar and mount files for proxy container.
-func (d *deploymentBuilder) SetMySQLConnector(scb ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder {
+func (d *deploymentBuilder) SetMySQLConnector(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder {
 	scb.SetEnv([]corev1.EnvVar{
 		{
 			Name:  defaultMySQLDriverEnvName,
@@ -635,7 +497,7 @@ func (d *deploymentBuilder) SetMySQLConnector(scb ContainerBuilder, cn *v1alpha1
 }
 
 // SetAgentBin set `agent bin` for ShardingSphereProxy with [observability](https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/observability/)
-func (d *deploymentBuilder) SetAgentBin(scb ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder {
+func (d *deploymentBuilder) SetAgentBin(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder {
 	// set env JAVA_TOOL_OPTIONS to proxy container, make sure proxy will apply agent-bin.jar
 	// agent-bin's version is always equals to shardingsphere proxy image's version
 	scb.SetEnv([]corev1.EnvVar{
@@ -681,11 +543,11 @@ func (d *deploymentBuilder) SetAgentBin(scb ContainerBuilder, cn *v1alpha1.Compu
 }
 
 // DefaultDeployment describes the default deployment
-func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Deployment {
+func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *appsv1.Deployment {
 	defaultMaxUnavailable := intstr.FromInt(0)
 	defaultMaxSurge := intstr.FromInt(3)
 
-	return &v1.Deployment{
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "shardingsphere-proxy",
 			Namespace: "default",
@@ -694,10 +556,10 @@ func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Depl
 				*metav1.NewControllerRef(meta, gvk),
 			},
 		},
-		Spec: v1.DeploymentSpec{
-			Strategy: v1.DeploymentStrategy{
-				Type: v1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &v1.RollingUpdateDeployment{
+		Spec: appsv1.DeploymentSpec{
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
 					MaxUnavailable: &defaultMaxUnavailable,
 					MaxSurge:       &defaultMaxSurge,
 				},
@@ -742,8 +604,8 @@ func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Depl
 }
 
 // UpdateDeployment updates the deployment
-func UpdateDeployment(cn *v1alpha1.ComputeNode, cur *v1.Deployment) *v1.Deployment {
-	exp := &v1.Deployment{}
+func UpdateDeployment(cn *v1alpha1.ComputeNode, cur *appsv1.Deployment) *appsv1.Deployment {
+	exp := &appsv1.Deployment{}
 	exp.ObjectMeta = cur.ObjectMeta
 	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = cur.Labels

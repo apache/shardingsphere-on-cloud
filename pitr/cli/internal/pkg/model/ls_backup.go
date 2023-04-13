@@ -26,10 +26,11 @@ type (
 	}
 
 	BackupMetaInfo struct {
-		ID        string `json:"id"`
-		CSN       string `json:"csn"`
-		StartTime int64  `json:"start_time"` // Unix time
-		EndTime   int64  `json:"end_time"`   // Unix time
+		ID         string       `json:"id"`
+		CSN        string       `json:"csn"`
+		BackupMode DBBackupMode `json:"backup_mode"`
+		StartTime  int64        `json:"start_time"` // Unix time
+		EndTime    int64        `json:"end_time"`   // Unix time
 	}
 
 	DataNode struct {
@@ -59,10 +60,6 @@ type (
 	}
 
 	StorageNodesInfo struct {
-		StorageNodes *StorageNodes `json:"storage_nodes"`
-	}
-
-	StorageNodes struct {
-		List []*StorageNode `json:"sharding_db"`
+		StorageNodes map[string][]*StorageNode `json:"storage_nodes"`
 	}
 )

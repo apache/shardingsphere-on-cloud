@@ -1,0 +1,365 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+run:
+  timeout: 10m
+  skip-files:
+    - "^zz_generated.*"
+    - "_test.go"
+linters:
+  disable-all: true
+  enable:
+    # The base lints
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - unused
+    - bodyclose
+    - cyclop
+    - nilerr
+    - goimports
+    - asciicheck
+    - prealloc
+    - stylecheck
+    - exportloopref
+    - rowserrcheck
+    - makezero
+    - durationcheck
+    - gosec
+    - predeclared
+    # Deprecated lints
+    - structcheck
+    - varcheck
+    - deadcode
+
+    # The advanced lints
+    - dupl
+    - exhaustive
+    - godot
+    - misspell
+    # - varnamelen
+    - gocritic
+    #- exhaustruct
+    #- nestif
+    #- wsl
+    - gocognit
+# Refers: https://gist.github.com/maratori/47a4d00457a92aa426dbd48a18776322
+linters-settings:
+  wsl:
+    # See https://github.com/bombsimon/wsl/blob/master/doc/configuration.md for documentation of available settings.
+    # These are the defaults for `golangci-lint`.
+
+    # Do strict checking when assigning from append (x = append(x, y)). If
+    # this is set to true - the append call must append either a variable
+    # assigned, called or used on the line above.
+    strict-append: true
+    # Allows assignments to be cuddled with variables used in calls on
+    # line above and calls to be cuddled with assignments of variables
+    # used in call on line above.
+    allow-assign-and-call: true
+    # Allows assignments to be cuddled with anything.
+    allow-assign-and-anything: false
+    # Allows cuddling to assignments even if they span over multiple lines.
+    allow-multiline-assign: true
+    # If the number of lines in a case block is equal to or lager than this
+    # number, the case *must* end white a newline.
+    force-case-trailing-whitespace: 0
+    # Allow blocks to end with comments.
+    allow-trailing-comment: false
+    # Allow multiple comments in the beginning of a block separated with newline.
+    allow-separated-leading-comment: false
+    # Allow multiple var/declaration statements to be cuddled.
+    allow-cuddle-declarations: false
+    # A list of call idents that everything can be cuddled with.
+    # Defaults to calls looking like locks.
+    allow-cuddle-with-calls: ["Lock", "RLock"]
+    # AllowCuddleWithRHS is a list of right hand side variables that is allowed
+    # to be cuddled with anything. Defaults to assignments or calls looking
+    # like unlocks.
+    allow-cuddle-with-rhs: ["Unlock", "RUnlock"]
+    # Causes an error when an If statement that checks an error variable doesn't
+    # cuddle with the assignment of that variable.
+    force-err-cuddling: false
+    # When force-err-cuddling is enabled this is a list of names
+    # used for error variables to check for in the conditional.
+    error-variable-names: ["err"]
+    # Causes an error if a short declaration (:=) cuddles with anything other than
+    # another short declaration.
+    # This logic overrides force-err-cuddling among others.
+    force-short-decl-cuddling: false
+  varnamelen:
+    # The longest distance, in source lines, that is being considered a "small scope".
+    # Variables used in at most this many lines will be ignored.
+    # Default: 5
+    max-distance: 6
+    # The minimum length of a variable's name that is considered "long".
+    # Variable names that are at least this long will be ignored.
+    # Default: 3
+    min-name-length: 2
+    # Check method receivers.
+    # Default: false
+    check-receiver: false
+    # Check named return values.
+    # Default: false
+    check-return: true
+    # Check type parameters.
+    # Default: false
+    check-type-param: true
+    # Ignore "ok" variables that hold the bool return value of a type assertion.
+    # Default: false
+    ignore-type-assert-ok: true
+    # Ignore "ok" variables that hold the bool return value of a map index.
+    # Default: false
+    ignore-map-index-ok: true
+    # Ignore "ok" variables that hold the bool return value of a channel receive.
+    # Default: false
+    ignore-chan-recv-ok: true
+    # Optional list of variable names that should be ignored completely.
+    # Default: []
+    ignore-names:
+      - err
+    # Optional list of variable declarations that should be ignored completely.
+    # Entries must be in one of the following forms (see below for examples):
+    # - for variables, parameters, named return values, method receivers, or type parameters:
+    #   <name> <type>  (<type> can also be a pointer/slice/map/chan/...)
+    # - for constants: const <name>
+    #
+    # Default: []
+    ignore-decls:
+      - c echo.Context
+      - t testing.T
+      - f *foo.Bar
+      - e error
+      - i int
+      - const C
+      - T any
+      - m map[string]int
+  prealloc:
+    # IMPORTANT: we don't recommend using this linter before doing performance profiling.
+    # For most programs usage of prealloc will be a premature optimization.
+
+    # Report pre-allocation suggestions only on simple loops that have no returns/breaks/continues/gotos in them.
+    # Default: true
+    simple: false
+    # Report pre-allocation suggestions on range loops.
+    # Default: true
+    range-loops: false
+    # Report pre-allocation suggestions on for loops.
+    # Default: false
+    for-loops: true
+    #nestif:
+    # Minimal complexity of if statements to report.
+    # Default: 5
+  # min-complexity: 4
+  misspell:
+    # Correct spellings using locale preferences for US or UK.
+    # Setting locale to US will correct the British spelling of 'colour' to 'color'.
+    # Default is to use a neutral variety of English.
+    locale: US
+    # Default: []
+    ignore-words:
+      - someword
+  godot:
+    # Comments to be checked: `declarations`, `toplevel`, or `all`.
+    # Default: declarations
+    scope: toplevel
+    # List of regexps for excluding particular comment lines from check.
+    # Default: []
+    exclude:
+      # Exclude todo and fixme comments.
+      - "^fixme:"
+      - "^todo:"
+    # Check that each sentence ends with a period.
+    # Default: true
+    period: false
+    # Check that each sentence starts with a capital letter.
+    # Default: false
+    capital: false
+  dupl:
+    # Tokens count to trigger issue.
+    # Default: 150
+    threshold: 100
+  cyclop:
+    # The maximal code complexity to report.
+    # Default: 10
+    max-complexity: 30
+    # The maximal average package complexity.
+    # If it's higher than 0.0 (float) the check is enabled
+    # Default: 0.0
+    package-average: 10.0
+  errcheck:
+    # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
+    # Such cases aren't reported by default.
+    # Default: false
+    check-type-assertions: true
+  exhaustive:
+    # Program elements to check for exhaustiveness.
+    # Default: [ switch ]
+    check:
+      - switch
+      - map
+  funlen:
+    # Checks the number of lines in a function.
+    # If lower than 0, disable the check.
+    # Default: 60
+    lines: 100
+    # Checks the number of statements in a function.
+    # If lower than 0, disable the check.
+    # Default: 40
+    statements: 50
+  gocognit:
+    # Minimal code complexity to report.
+    # Default: 30 (but we recommend 10-20)
+    min-complexity: 20
+  gocritic:
+    # Which checks should be enabled; can't be combined with 'disabled-checks'.
+    # See https://go-critic.github.io/overview#checks-overview.
+    # To check which checks are enabled run `GL_DEBUG=gocritic golangci-lint run`.
+    # By default, list of stable checks is used.
+    enabled-checks:
+      - elseif
+      - nestingReduce
+      - unnamedResult
+      #  - ruleguard
+      - truncateCmp
+      - hugeparam
+      - rangevalcopy
+      - captlocal
+      - underef
+      - toomanyresultschecker
+      - rangeexprcopy
+    # Which checks should be disabled; can't be combined with 'enabled-checks'.
+    # Default: []
+    disabled-checks:
+      - regexpMust
+    # Enable multiple checks by tags, run `GL_DEBUG=gocritic golangci-lint run` to see all tags and checks.
+    # See https://github.com/go-critic/go-critic#usage -> section "Tags".
+    # Default: []
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+    disabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+    # Settings passed to gocritic.
+    # The settings key is the name of a supported gocritic checker.
+    # The list of supported checkers can be find in https://go-critic.github.io/overview.
+    settings:
+      # Must be valid enabled check name.
+      captLocal:
+        # Whether to restrict checker to params only.
+        # Default: true
+        paramsOnly: false
+      elseif:
+        # Whether to skip balanced if-else pairs.
+        # Default: true
+        skipBalanced: false
+      hugeParam:
+        # Size in bytes that makes the warning trigger.
+        # Default: 80
+        sizeThreshold: 70
+      nestingReduce:
+        # Min number of statements inside a branch to trigger a warning.
+        # Default: 5
+        bodyWidth: 4
+      rangeExprCopy:
+        # Size in bytes that makes the warning trigger.
+        # Default: 512
+        sizeThreshold: 516
+        # Whether to check test functions
+        # Default: true
+        skipTestFuncs: false
+      rangeValCopy:
+        # Size in bytes that makes the warning trigger.
+        # Default: 128
+        sizeThreshold: 32
+        # Whether to check test functions.
+        # Default: true
+        skipTestFuncs: false
+      ruleguard:
+        # Enable debug to identify which 'Where' condition was rejected.
+        # The value of the parameter is the name of a function in a ruleguard file.
+        #
+        # When a rule is evaluated:
+        # If:
+        #   The Match() clause is accepted; and
+        #   One of the conditions in the Where() clause is rejected,
+        # Then:
+        #   ruleguard prints the specific Where() condition that was rejected.
+        #
+        # The flag is passed to the ruleguard 'debug-group' argument.
+        # Default: ""
+        debug: 'emptyDecl'
+        # Deprecated, use 'failOn' param.
+        # If set to true, identical to failOn='all', otherwise failOn=''
+        failOnError: false
+        # Determines the behavior when an error occurs while parsing ruleguard files.
+        # If flag is not set, log error and skip rule files that contain an error.
+        # If flag is set, the value must be a comma-separated list of error conditions.
+        # - 'all':    fail on all errors.
+        # - 'import': ruleguard rule imports a package that cannot be found.
+        # - 'dsl':    gorule file does not comply with the ruleguard DSL.
+        # Default: ""
+        failOn: dsl
+        # Comma-separated list of file paths containing ruleguard rules.
+        # If a path is relative, it is relative to the directory where the golangci-lint command is executed.
+        # The special '${configDir}' variable is substituted with the absolute directory containing the golangci config file.
+        # Glob patterns such as 'rules-*.go' may be specified.
+        # Default: ""
+        rules: '${configDir}/ruleguard/rules-*.go,${configDir}/myrule1.go'
+        # Comma-separated list of enabled groups or skip empty to enable everything.
+        # Tags can be defined with # character prefix.
+        # Default: "<all>"
+        enable: "myGroupName,#myTagName"
+        # Comma-separated list of disabled groups or skip empty to enable everything.
+        # Tags can be defined with # character prefix.
+        # Default: ""
+        disable: "myGroupName,#myTagName"
+      tooManyResultsChecker:
+        # Maximum number of results.
+        # Default: 5
+        maxResults: 10
+      truncateCmp:
+        # Whether to skip int/uint/uintptr types.
+        # Default: true
+        skipArchDependent: false
+      underef:
+        # Whether to skip (*x).method() calls where x is a pointer receiver.
+        # Default: true
+        skipRecvDeref: false
+      unnamedResult:
+        # Whether to check exported functions.
+        # Default: false
+        checkExported: true
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+        - rowserrcheck
+        - makezero

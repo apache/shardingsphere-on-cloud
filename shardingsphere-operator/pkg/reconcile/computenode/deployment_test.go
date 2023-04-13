@@ -24,7 +24,6 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -38,7 +37,7 @@ func Test_NewDeployment(t *testing.T) {
 	cases := []struct {
 		id      int
 		cn      *v1alpha1.ComputeNode
-		exp     *v1.Deployment
+		exp     *appsv1.Deployment
 		message string
 	}{
 		{
@@ -105,7 +104,7 @@ func Test_NewDeployment(t *testing.T) {
 					},
 				},
 			},
-			exp: &v1.Deployment{
+			exp: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-name",
 					Namespace: "test-namespace",
@@ -117,11 +116,11 @@ func Test_NewDeployment(t *testing.T) {
 						"anno1": "value1",
 					},
 				},
-				Spec: v1.DeploymentSpec{
+				Spec: appsv1.DeploymentSpec{
 					Replicas: &defaultReplicas,
-					Strategy: v1.DeploymentStrategy{
-						Type: v1.RollingUpdateDeploymentStrategyType,
-						RollingUpdate: &v1.RollingUpdateDeployment{
+					Strategy: appsv1.DeploymentStrategy{
+						Type: appsv1.RollingUpdateDeploymentStrategyType,
+						RollingUpdate: &appsv1.RollingUpdateDeployment{
 							MaxUnavailable: &defaultMaxUnavailable,
 							MaxSurge:       &defaultMaxSurge,
 						},
@@ -265,7 +264,7 @@ func Test_NewDeployment(t *testing.T) {
 					},
 				},
 			},
-			exp: &v1.Deployment{
+			exp: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-java-agent",
 					Namespace: "test-namespace",
@@ -276,11 +275,11 @@ func Test_NewDeployment(t *testing.T) {
 						"anno1": "value1",
 					},
 				},
-				Spec: v1.DeploymentSpec{
+				Spec: appsv1.DeploymentSpec{
 					Replicas: &defaultReplicas,
-					Strategy: v1.DeploymentStrategy{
-						Type: v1.RollingUpdateDeploymentStrategyType,
-						RollingUpdate: &v1.RollingUpdateDeployment{
+					Strategy: appsv1.DeploymentStrategy{
+						Type: appsv1.RollingUpdateDeploymentStrategyType,
+						RollingUpdate: &appsv1.RollingUpdateDeployment{
 							MaxUnavailable: &defaultMaxUnavailable,
 							MaxSurge:       &defaultMaxSurge,
 						},
@@ -432,14 +431,14 @@ func assertObjectMeta(t *testing.T, exp, act metav1.ObjectMeta) bool {
 		assert.Equal(t, exp.Labels, act.Labels, "labels should be equal")
 }
 
-func assertDeploymentSpec(t *testing.T, exp, act v1.DeploymentSpec) bool {
+func assertDeploymentSpec(t *testing.T, exp, act appsv1.DeploymentSpec) bool {
 	return assertRollingUpdateDeployment(t, *exp.Strategy.RollingUpdate, *act.Strategy.RollingUpdate) &&
 		assert.Equal(t, exp.Selector, act.Selector, "selectors should be equal") &&
 		assert.Equal(t, exp.Replicas, act.Replicas, "replicas should be equal") &&
 		assertTemplateSpec(t, exp.Template, act.Template)
 }
 
-func assertRollingUpdateDeployment(t *testing.T, exp, act v1.RollingUpdateDeployment) bool {
+func assertRollingUpdateDeployment(t *testing.T, exp, act appsv1.RollingUpdateDeployment) bool {
 	return assert.Equal(t, exp.MaxSurge, act.MaxSurge, "maxSurge should be equal") &&
 		assert.Equal(t, exp.MaxUnavailable, act.MaxUnavailable, "maxUnavailable should be equal")
 }
@@ -453,53 +452,6 @@ func assertPodSpec(t *testing.T, exp, act corev1.PodSpec) bool {
 	return assert.ElementsMatch(t, exp.InitContainers, act.InitContainers, "init containers should be equal") &&
 		assert.ElementsMatch(t, exp.Containers, act.Containers, "containers should be equal") &&
 		assert.ElementsMatch(t, exp.Volumes, act.Volumes, "volumes should be equal")
-}
-
-func TestContainerBuilder_SetVolumeMount(t *testing.T) {
-	var found bool
-
-	// create a new container builder
-	c := &containerBuilder{
-		container: &corev1.Container{
-			VolumeMounts: []corev1.VolumeMount{},
-		},
-	}
-
-	// add a new volume mount
-	mount := &corev1.VolumeMount{
-		Name:      "test-mount",
-		MountPath: "/test",
-	}
-	c.SetVolumeMount(mount)
-
-	// check if the volume mount has been added
-	for _, v := range c.container.VolumeMounts {
-		if v.Name == mount.Name {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Errorf("SetVolumeMount() failed to add the VolumeMount")
-	}
-
-	// update an existing volume mount
-	updatedMount := &corev1.VolumeMount{
-		Name:      "test-mount",
-		MountPath: "/new-test",
-	}
-	c.SetVolumeMount(updatedMount)
-
-	// check if the volume mount has been updated
-	for _, v := range c.container.VolumeMounts {
-		if v.MountPath == updatedMount.MountPath {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Errorf("SetVolumeMount() failed to update the VolumeMount")
-	}
 }
 
 func TestDeploymentBuilder_SetShardingSphereProxyContainer(t *testing.T) {
