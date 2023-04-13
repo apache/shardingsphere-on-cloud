@@ -53,7 +53,7 @@ fmt: ## Run go fmt against code.
 
 .PHONY: test
 test: manifests generate fmt envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -gcflags=-l ./... -coverprofile cover.out
 
 .PHONY: clean
 clean: 
