@@ -1,0 +1,38 @@
+package visitor
+
+import (
+	"github.com/antlr/antlr4/runtime/Go/antlr"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/distsql/ast"
+	parser "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/distsql/visitor_parser/encrypt"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("Distsql", func() {
+	var (
+		encryptDistSQL = "CREATE ENCRYPT RULE t_encrypt (COLUMNS((NAME=user_id,PLAIN=user_plain,CIPHER=user_cipher,ENCRYPT_ALGORITHM(TYPE(NAME='AES',PROPERTIES('aes-key-value'='123456abc')))),(NAME=order_id,CIPHER=order_cipher,ENCRYPT_ALGORITHM(TYPE(NAME='MD5')))),QUERY_WITH_CIPHER_COLUMN=true);"
+		visitor        = Visitor{}
+		ast            = &ast.CreateEncryptRule{}
+	)
+
+	BeforeEach(func() {
+		inputStream := antlr.NewInputStream(encryptDistSQL)
+		lexer := parser.NewRDLStatementLexer(inputStream)
+		tokens := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+		distSQLParser := parser.NewRDLStatementParser(tokens)
+		createEncryptRule := distSQLParser.CreateEncryptRule()
+		ast = visitor.VisitCreateEncryptRule(createEncryptRule.(*parser.CreateEncryptRuleContext))
+	})
+
+	Context("parse distSQL to AST", func() {
+		It("should encrypt distSQL parse correctly", func() {
+			Expect(ast.AllEncryptRuleDefinition[0].TableName.Identifier).To(Equal("t_encrypt"))
+		})
+	})
+
+	Context("covert distSQL AST to string", func() {
+		It("should encrypt distsql parse correctly", func() {
+			Expect(ast.AllEncryptRuleDefinition[0].TableName.ToString()).To(Equal("t_encrypt"))
+		})
+	})
+})

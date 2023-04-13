@@ -30,17 +30,20 @@ type Visitor struct {
 
 func (v *Visitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) *ast.CreateEncryptRule {
 	stmt := &ast.CreateEncryptRule{}
-	stmt.Create = ctx.CREATE().GetText()
-	stmt.Encrypt = ctx.ENCRYPT().GetText()
-	stmt.EncryptName = ctx.RULE().GetText()
 
 	if ctx.IfNotExists() != nil {
 		stmt.IfNotExists = v.VisitIfNotExists(ctx.IfNotExists().(*parser.IfNotExistsContext))
 	}
 
+	if ctx.EncryptRuleDefinition(0) != nil {
+		stmt.EncryptRuleDefinition = v.VisitEncryptRuleDefinition(ctx.EncryptRuleDefinition(0).(*parser.EncryptRuleDefinitionContext))
+	}
+
 	if ctx.AllEncryptRuleDefinition() != nil {
 		for _, r := range ctx.AllEncryptRuleDefinition() {
-			stmt.AllEncryptRuleDefinition = append(stmt.AllEncryptRuleDefinition, v.VisitEncryptRuleDefinition(r.(*parser.EncryptRuleDefinitionContext)))
+			if r != nil {
+				stmt.AllEncryptRuleDefinition = append(stmt.AllEncryptRuleDefinition, v.VisitEncryptRuleDefinition(r.(*parser.EncryptRuleDefinitionContext)))
+			}
 		}
 	}
 
@@ -94,6 +97,10 @@ func (v *Visitor) VisitEncryptRuleDefinition(ctx *parser.EncryptRuleDefinitionCo
 	if ctx.ResourceDefinition() != nil {
 		stmt.ResourceDefinition = v.VisitResourceDefinition(ctx.ResourceDefinition().(*parser.ResourceDefinitionContext))
 	}
+
+	// if ctx.EncryptColumnDefinition(0) != nil {
+	// 	stmt.EncryptColumnDefinition = v.VisitEncryptColumnDefinition(ctx.EncryptColumnDefinition(0).(*parser.EncryptColumnDefinitionContext))
+	// }
 
 	if ctx.AllEncryptColumnDefinition() != nil {
 		for _, column := range ctx.AllEncryptColumnDefinition() {
