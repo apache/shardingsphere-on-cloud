@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"reflect"
 
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
@@ -42,8 +44,8 @@ const (
 	AnnoLogbackConfig = "computenode.shardingsphere.org/logback"
 )
 
-// NewConfigMap returns a new ConfigMap
-func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
+// NewCNConfigMap returns a new ConfigMap
+func NewCNConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	builder := NewConfigMapBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
 	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabels(cn.Labels).SetAnnotations(cn.Annotations)
 
@@ -89,74 +91,44 @@ func updateConfigMapServerConf(cluster string, servconf *v1alpha1.ServerConfig, 
 	return string(y), err
 }
 
-// ConfigMapBuilder is a builder for ConfigMap by ComputeNode
-type ConfigMapBuilder interface {
-	SetName(name string) ConfigMapBuilder
-	SetNamespace(namespace string) ConfigMapBuilder
-	SetLabels(labels map[string]string) ConfigMapBuilder
-	SetAnnotations(annos map[string]string) ConfigMapBuilder
-	SetLogback(logback string) ConfigMapBuilder
-	SetServerConfig(serverConfig string) ConfigMapBuilder
-	SetAgentConfig(agentConfig string) ConfigMapBuilder
-	Build() *v1.ConfigMap
+// CNConfigMapBuilder is a builder for ConfigMap by ComputeNode
+type CNConfigMapBuilder interface {
+	common.ConfigMapBuilder
+	SetLogback(logback string) CNConfigMapBuilder
+	SetServerConfig(serverConfig string) CNConfigMapBuilder
+	SetAgentConfig(agentConfig string) CNConfigMapBuilder
 }
 
 type configmapBuilder struct {
+	common.ConfigMapBuilder
 	configmap *v1.ConfigMap
 }
 
-// NewConfigMapBuilder returns a ConfigMapBuilder
-func NewConfigMapBuilder(meta metav1.Object, gvk schema.GroupVersionKind) ConfigMapBuilder {
+// NewConfigMapBuilder returns a CNConfigMapBuilder
+func NewConfigMapBuilder(meta metav1.Object, gvk schema.GroupVersionKind) CNConfigMapBuilder {
+	configmap := DefaultConfigMap(meta, gvk)
 	return &configmapBuilder{
-		configmap: DefaultConfigMap(meta, gvk),
+		common.NewCommonConfigMapBuilder(configmap),
+		configmap,
 	}
 }
 
-// SetName set the ConfigMap name
-func (c *configmapBuilder) SetName(name string) ConfigMapBuilder {
-	c.configmap.Name = name
-	return c
-}
-
-// SetNamespace set the ConfigMap namespace
-func (c *configmapBuilder) SetNamespace(namespace string) ConfigMapBuilder {
-	c.configmap.Namespace = namespace
-	return c
-}
-
-// SetLabels set the ConfigMap labels
-func (c *configmapBuilder) SetLabels(labels map[string]string) ConfigMapBuilder {
-	c.configmap.Labels = labels
-	return c
-}
-
-// SetAnnotations set the ConfigMap annotations
-func (c *configmapBuilder) SetAnnotations(annos map[string]string) ConfigMapBuilder {
-	c.configmap.Annotations = annos
-	return c
-}
-
 // SetLogback set the ConfigMap data logback
-func (c *configmapBuilder) SetLogback(logback string) ConfigMapBuilder {
+func (c *configmapBuilder) SetLogback(logback string) CNConfigMapBuilder {
 	c.configmap.Data[ConfigDataKeyForLogback] = logback
 	return c
 }
 
 // SetServerConfig set the ConfigMap data server config
-func (c *configmapBuilder) SetServerConfig(serviceConfig string) ConfigMapBuilder {
+func (c *configmapBuilder) SetServerConfig(serviceConfig string) CNConfigMapBuilder {
 	c.configmap.Data[ConfigDataKeyForServer] = serviceConfig
 	return c
 }
 
 // SetAgentConfig set the ConfigMap data agent config
-func (c *configmapBuilder) SetAgentConfig(agentConfig string) ConfigMapBuilder {
+func (c *configmapBuilder) SetAgentConfig(agentConfig string) CNConfigMapBuilder {
 	c.configmap.Data[ConfigDataKeyForAgent] = agentConfig
 	return c
-}
-
-// Build returns a ConfigMap
-func (c *configmapBuilder) Build() *v1.ConfigMap {
-	return c.configmap
 }
 
 // DefaultConfigMap returns a ConfigMap filling with default expected values
@@ -181,7 +153,7 @@ func UpdateConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1.ConfigMap 
 	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = cur.Labels
 	exp.Annotations = cur.Annotations
-	exp.Data = NewConfigMap(cn).Data
+	exp.Data = NewCNConfigMap(cn).Data
 	return exp
 }
 

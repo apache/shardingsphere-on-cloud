@@ -252,7 +252,7 @@ func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, 
 }
 
 func (r *ComputeNodeReconciler) createConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	cm := reconcile.NewConfigMap(cn)
+	cm := reconcile.NewCNConfigMap(cn)
 	err := r.Create(ctx, cm)
 	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
 		return nil
