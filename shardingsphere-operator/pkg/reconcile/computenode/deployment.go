@@ -191,7 +191,7 @@ func (d *deploymentBuilder) SetReplicas(r *int32) DeploymentBuilder {
 	return d
 }
 
-// SetShardingSphereProxyContainet sets a container for ShardingSphereProxy
+// SetShardingSphereProxyContainer sets a container for ShardingSphereProxy
 func (d *deploymentBuilder) SetShardingSphereProxyContainer(proxy *corev1.Container) DeploymentBuilder {
 	if d.deployment.Spec.Template.Spec.Containers == nil {
 		d.deployment.Spec.Template.Spec.Containers = []corev1.Container{*proxy}
@@ -242,7 +242,7 @@ type sharedVolumeAndMountBuilder struct {
 	volumeMounts []*corev1.VolumeMount
 }
 
-// NewSHaredVolumeAndMountBuilder returns a new SharedVolumeAndMountBuilder
+// NewSharedVolumeAndMountBuilder returns a new SharedVolumeAndMountBuilder
 func NewSharedVolumeAndMountBuilder() SharedVolumeAndMountBuilder {
 	return &sharedVolumeAndMountBuilder{
 		volume:       &corev1.Volume{},
@@ -327,7 +327,7 @@ type VolumeAndMountBuilder interface {
 	Build() (*corev1.Volume, *corev1.VolumeMount)
 }
 
-// NewVolumeAndMountBulder returns a VolumeAndMountBuilder
+// NewVolumeAndMountBuilder returns a VolumeAndMountBuilder
 func NewVolumeAndMountBuilder() VolumeAndMountBuilder {
 	return &volumeAndMountBuilder{
 		volume:      &corev1.Volume{},
@@ -371,7 +371,7 @@ func (b *volumeAndMountBuilder) SetVolumeSourceConfigMap(name string) VolumeAndM
 	return b
 }
 
-// Build builds a Volume and VolumeMoun
+// Build builds a Volume and VolumeMount
 func (b *volumeAndMountBuilder) Build() (*corev1.Volume, *corev1.VolumeMount) {
 	return b.volume, b.volumemount
 }
