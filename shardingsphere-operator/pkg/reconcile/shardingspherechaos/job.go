@@ -32,9 +32,11 @@ import (
 const (
 	DefaultImageName     = "agoiyanzsa/tools-runtime:1.0"
 	DefaultContainerName = "tools-runtime"
-	DefaultWorkPath      = "/app"
+	DefaultWorkPath      = "/app/start"
 	DefaultConfigName    = "cmd-conf"
 )
+
+var DefaultFileMode int32 = 493
 
 const (
 	completions             = "jobs.batch/completions"
@@ -110,6 +112,7 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 
 	v.ConfigMap = &corev1.ConfigMapVolumeSource{}
 	v.ConfigMap.LocalObjectReference.Name = ssChaos.Name
+	v.ConfigMap.DefaultMode = &DefaultFileMode
 	jbd.SetVolumes(v)
 
 	vm := &corev1.VolumeMount{Name: DefaultConfigName, MountPath: DefaultWorkPath}
@@ -118,8 +121,9 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 	cbd.SetImage(DefaultImageName)
 	cbd.SetName(DefaultContainerName)
 	cbd.SetVolumeMount(vm)
-	cbd.SetCommand(NewCmds(requirement))
+	cbd.SetCommand([]string{"sh", "-c"})
 	container := cbd.Build()
+	container.Args = NewCmds(requirement)
 	jbd.SetContainers(container)
 	rjob := jbd.Build()
 	return rjob, nil
@@ -128,10 +132,10 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 func NewCmds(requirement InjectRequirement) (cmds []string) {
 
 	if requirement == Experimental {
-		cmds = append(cmds, fmt.Sprintf("./%s", configExperimental))
+		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultWorkPath, configExperimental))
 	}
 	if requirement == Pressure {
-		cmds = append(cmds, fmt.Sprintf("./%s", configExperimental), fmt.Sprintf("./%s", configPressure))
+		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultWorkPath, configExperimental), fmt.Sprintf("%s/%s", DefaultWorkPath, configPressure))
 	}
 	return
 }
