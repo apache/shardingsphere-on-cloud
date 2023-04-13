@@ -82,7 +82,6 @@ var _ = Describe("ShardingSphereChaos", func() {
 					},
 				},
 				Spec: v1alpha1.ShardingSphereChaosSpec{
-					ChaosKind: v1alpha1.PodChaosKind,
 					EmbedChaos: v1alpha1.EmbedChaos{
 						PodChaos: &v1alpha1.PodChaosSpec{
 							PodSelector: v1alpha1.PodSelector{

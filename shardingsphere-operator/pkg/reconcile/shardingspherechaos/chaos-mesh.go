@@ -63,15 +63,13 @@ func NewChaosMeshHandler(r client.Client) ChaosHandler {
 
 func (c *chaosMeshHandler) ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) v1alpha1.ChaosCondition {
 	var status chaosv1alpha1.ChaosStatus
-	if ssChaos.Spec.ChaosKind == v1alpha1.PodChaosKind {
+	if ssChaos.Spec.EmbedChaos.PodChaos != nil {
 		if podChao, ok := chaos.(*chaosv1alpha1.PodChaos); ok && podChao != nil {
 			status = *podChao.GetStatus()
 		} else {
 			return v1alpha1.UnKnown
 		}
-	}
-
-	if ssChaos.Spec.ChaosKind == v1alpha1.NetworkChaosKind {
+	} else if ssChaos.Spec.EmbedChaos.NetworkChaos != nil {
 		if networkChaos, ok := chaos.(*chaosv1alpha1.NetworkChaos); ok && networkChaos != nil {
 			status = *networkChaos.GetStatus()
 		}

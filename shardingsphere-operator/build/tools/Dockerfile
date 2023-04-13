@@ -23,9 +23,9 @@ ENV ZOOKEEPER_VERSION 3.7.1
 ENV ZOOKEEPER_DOWNLOAD_URL https://dlcdn.apache.org/zookeeper/zookeeper-3.7.1/apache-zookeeper-3.7.1-bin.tar.gz
 ENV ZOOKEEPER_DIR /app/zookeeper
 WORKDIR /app
-COPY start.sh .
-RUN chmod +x start.sh
-CMD ["./start.sh"]
+RUN mkdir -p start
+COPY start.sh /app/start/
+CMD ["chmod +x /app/start/start.sh","sh /app/start/start.sh"]
 ENTRYPOINT ["sh","-c"]
 RUN set -eux; \
         \

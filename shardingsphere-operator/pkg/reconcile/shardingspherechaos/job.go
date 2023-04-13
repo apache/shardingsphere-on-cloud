@@ -18,6 +18,7 @@
 package shardingspherechaos
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 
@@ -29,8 +30,11 @@ import (
 )
 
 const (
-	DefaultImageName     = "tools-runtime:1.0"
-	DefaultContainerName = "tools-runtime"
+	DefaultImageName          = "agoiyanzsa/tools-runtime:1.0"
+	DefaultContainerName      = "tools-runtime"
+	DefaultBashPath           = "/app/start"
+	DefaultConfigName         = "cmd-conf"
+	DefaultAddPermissionsToSh = "chmod +x /app/start"
 )
 
 const (
@@ -49,7 +53,6 @@ var (
 	Pressure     InjectRequirement = "pressure"
 )
 
-// todo
 func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement) (*v1.Job, error) {
 	jbd := NewJobBuilder()
 	jbd.SetNamespace(ssChaos.Namespace).SetLabels(ssChaos.Labels).SetName(ssChaos.Name)
@@ -104,17 +107,35 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 		}
 	}
 
+	v := &corev1.Volume{Name: DefaultConfigName}
+
+	v.ConfigMap = &corev1.ConfigMapVolumeSource{}
+	v.ConfigMap.LocalObjectReference.Name = ssChaos.Name
+	jbd.SetVolumes(v)
+
+	vm := &corev1.VolumeMount{Name: DefaultConfigName, MountPath: DefaultBashPath}
 	cbd := common.NewContainerBuilder()
-
-	cbd.SetImage("perl:5.34.0")
+	//todo: replace as DefaultImageName
+	cbd.SetImage(DefaultImageName)
 	cbd.SetName(DefaultContainerName)
-	//todo: add cmd line
-
-	cbd.SetCommand([]string{"perl", "-Mbignum=bpi", "-wle", "print bpi(1000)"})
+	cbd.SetVolumeMount(vm)
+	cbd.SetCommand(NewCmds(requirement))
 	container := cbd.Build()
 	jbd.SetContainers(container)
 	rjob := jbd.Build()
 	return rjob, nil
+}
+
+func NewCmds(requirement InjectRequirement) (cmds []string) {
+
+	if requirement == Experimental {
+		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultAddPermissionsToSh, configExperimental))
+		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultBashPath, configExperimental))
+	} else if requirement == Pressure {
+		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultAddPermissionsToSh, configExperimental), fmt.Sprintf("%s/%s", DefaultBashPath, configPressure))
+		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultBashPath, configExperimental), fmt.Sprintf("%s/%s", DefaultBashPath, configPressure))
+	}
+	return
 }
 
 func MustInt32(s string) (int32, error) {
@@ -126,19 +147,77 @@ func MustInt32(s string) (int32, error) {
 }
 
 func UpdateJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement, cur *v1.Job) (*v1.Job, error) {
-	exp := &v1.Job{}
-	exp.ObjectMeta = cur.ObjectMeta
-	exp.Labels = cur.Labels
-	exp.Annotations = cur.Annotations
 	now, err := NewJob(ssChaos, requirement)
 	if err != nil {
 		return nil, err
 	}
-	if reflect.DeepEqual(now.Spec, cur.Spec) {
+	isEqual := judgeJobEqual(cur, now)
+	if isEqual {
 		return nil, nil
 	}
-	exp.Spec = now.Spec
-	return exp, nil
+
+	return now, nil
+}
+
+func judgeJobEqual(now *v1.Job, exp *v1.Job) bool {
+	if !judgeJobConfigEqual(now, exp) {
+		return false
+	}
+	if !judgeContainerEqual(&now.Spec.Template.Spec.Containers[0], &exp.Spec.Template.Spec.Containers[0]) {
+		return false
+	}
+	return true
+}
+
+func judgeJobConfigEqual(now *v1.Job, exp *v1.Job) bool {
+	if !judgeTTLSecondsAfterFinished(now.Spec.TTLSecondsAfterFinished, exp.Spec.TTLSecondsAfterFinished) {
+		return false
+	}
+	if exp.Spec.BackoffLimit != nil && *now.Spec.BackoffLimit != *exp.Spec.BackoffLimit {
+		return false
+	}
+	if exp.Spec.Suspend != nil && *now.Spec.Suspend != *exp.Spec.Suspend {
+		return false
+	}
+	if exp.Spec.Parallelism != nil && *now.Spec.Parallelism != *exp.Spec.Parallelism {
+		return false
+	}
+	if exp.Spec.Completions != nil && *now.Spec.Completions != *exp.Spec.Completions {
+		return false
+	}
+	if !judgeActiveDeadlineSeconds(now.Spec.ActiveDeadlineSeconds, exp.Spec.ActiveDeadlineSeconds) {
+		return false
+	}
+	return true
+}
+func judgeTTLSecondsAfterFinished(cur *int32, exp *int32) bool {
+	if exp != nil && *cur != *exp {
+		return false
+	}
+	return true
+}
+func judgeActiveDeadlineSeconds(cur *int64, exp *int64) bool {
+	if exp != nil && *cur != *exp {
+		return false
+	}
+	return true
+}
+func judgeContainerEqual(now *corev1.Container, exp *corev1.Container) bool {
+	if now.Name != exp.Name {
+		return false
+	}
+	if !reflect.DeepEqual(now.Command, exp.Command) {
+		return false
+	}
+	if now.Image != exp.Image {
+		return false
+	}
+
+	if !reflect.DeepEqual(now.VolumeMounts, now.VolumeMounts) {
+		return false
+	}
+
+	return true
 }
 
 type JobBuilder interface {
@@ -152,6 +231,7 @@ type JobBuilder interface {
 	SetContainers(*corev1.Container) JobBuilder
 	SetTTLSecondsAfterFinished(int32) JobBuilder
 	SetSuspend(bool) JobBuilder
+	SetVolumes(*corev1.Volume) JobBuilder
 	Build() *v1.Job
 }
 
@@ -223,6 +303,22 @@ func (j *jobBuilder) SetTTLSecondsAfterFinished(i int32) JobBuilder {
 
 func (j *jobBuilder) SetSuspend(b bool) JobBuilder {
 	j.job.Spec.Suspend = &b
+	return j
+}
+
+func (j *jobBuilder) SetVolumes(volume *corev1.Volume) JobBuilder {
+	if j.job.Spec.Template.Spec.Volumes == nil || len(j.job.Spec.Template.Spec.Volumes) == 0 {
+		j.job.Spec.Template.Spec.Volumes = []corev1.Volume{}
+	}
+
+	for i := range j.job.Spec.Template.Spec.Volumes {
+		if j.job.Spec.Template.Spec.Volumes[i].Name == volume.Name {
+			j.job.Spec.Template.Spec.Volumes[i] = *volume
+			return j
+		}
+	}
+
+	j.job.Spec.Template.Spec.Volumes = append(j.job.Spec.Template.Spec.Volumes, *volume)
 	return j
 }
 

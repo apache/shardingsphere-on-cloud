@@ -18,16 +18,17 @@
 package shardingspherechaos
 
 import (
+	"reflect"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
 )
 
 const (
-	configExperimental = "experimental"
-	configPressure     = "pressure"
+	configExperimental = "experimental.sh"
+	configPressure     = "pressure.sh"
 )
 
 const (
