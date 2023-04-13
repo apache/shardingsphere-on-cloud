@@ -19,6 +19,8 @@ package controllers
 
 import (
 	"context"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
+	v1 "k8s.io/api/core/v1"
 	"time"
 
 	sschaosv1alpha1 "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -43,10 +45,11 @@ const (
 // ShardingSphereChaosReconciler is a controller for the ShardingSphereChaos
 type ShardingSphereChaosReconciler struct { //
 	client.Client
-	Scheme *runtime.Scheme
-	Log    logr.Logger
-	Chaos  chaos.Chaos
-	Job    job.Job
+	Scheme    *runtime.Scheme
+	Log       logr.Logger
+	Chaos     chaos.Chaos
+	Job       job.Job
+	ConfigMap configmap.ConfigMap
 }
 
 // Reconcile handles main function of this controller
@@ -68,11 +71,13 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 		logger.Error(err, " unable to reconcile chaos")
 		return ctrl.Result{}, err
 	}
-	if len(ssChaos.Spec.InjectJob.Pressure) > 0 {
-		if err := r.reconcileJob(ctx, &ssChaos); err != nil {
-			logger.Error(err, "unable to reconcile job")
-			return ctrl.Result{}, err
-		}
+	if err := r.reconcileConfigMap(ctx, &ssChaos); err != nil {
+		logger.Error(err, "unable to reconcile configmap")
+		return ctrl.Result{}, err
+	}
+	if err := r.reconcileJob(ctx, &ssChaos); err != nil {
+		logger.Error(err, "unable to reconcile job")
+		return ctrl.Result{}, err
 	}
 	if err := r.reconcileStatus(ctx, &ssChaos); err != nil {
 		logger.Error(err, "failed to update status")
@@ -108,6 +113,22 @@ func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssCh
 		return r.CreateNetworkChaos(ctx, ssChao)
 	}
 	return nil
+}
+
+func (r *ShardingSphereChaosReconciler) reconcileConfigMap(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
+	logger := r.Log.WithValues("reconcile configmap", ssChaos.Name)
+	namespaceName := types.NamespacedName{Namespace: ssChaos.Namespace, Name: ssChaos.Name}
+	rConfigmap, isExist, err := r.getConfigMapByNamespacedName(ctx, namespaceName)
+	if err != nil {
+		logger.Error(err, "get configmap error")
+		return err
+	}
+
+	if isExist {
+		return r.updateConfigMap(ctx, ssChaos, rConfigmap)
+	}
+
+	return r.CreateConfigMap(ctx, ssChaos)
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileJob(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
@@ -182,6 +203,18 @@ func (r *ShardingSphereChaosReconciler) getPodChaosByNamespacedName(ctx context.
 	return pc, true, nil
 }
 
+func (r *ShardingSphereChaosReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.ConfigMap, bool, error) {
+	config, err := r.ConfigMap.GetByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return nil, false, err
+	}
+	if config == nil {
+		return nil, false, nil
+	}
+
+	return config, true, nil
+}
+
 func (r *ShardingSphereChaosReconciler) getJobByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*batchV1.Job, bool, error) {
 	injectJob, err := r.Job.GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
@@ -192,6 +225,24 @@ func (r *ShardingSphereChaosReconciler) getJobByNamespacedName(ctx context.Conte
 	}
 
 	return injectJob, true, nil
+}
+
+func (r *ShardingSphereChaosReconciler) updateConfigMap(ctx context.Context, chao *sschaosv1alpha1.ShardingSphereChaos, cur *v1.ConfigMap) error {
+	exp := reconcile.UpdateConfigMap(chao, cur)
+	return r.Update(ctx, exp)
+}
+
+func (r *ShardingSphereChaosReconciler) CreateConfigMap(ctx context.Context, chao *sschaosv1alpha1.ShardingSphereChaos) error {
+	rConfigMap := reconcile.NewSSConfigMap(chao)
+	if err := ctrl.SetControllerReference(chao, rConfigMap, r.Scheme); err != nil {
+		return err
+	}
+	err := r.Create(ctx, rConfigMap)
+	if err == nil && apierrors.IsAlreadyExists(err) {
+		return nil
+	}
+
+	return err
 }
 
 func (r *ShardingSphereChaosReconciler) updateJob(ctx context.Context, requirement reconcile.InjectRequirement, chao *sschaosv1alpha1.ShardingSphereChaos, cur *batchV1.Job) error {

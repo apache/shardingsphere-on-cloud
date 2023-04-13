@@ -113,8 +113,8 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 	cbd.SetCommand([]string{"perl", "-Mbignum=bpi", "-wle", "print bpi(1000)"})
 	container := cbd.Build()
 	jbd.SetContainers(container)
-	Rjob := jbd.Build()
-	return Rjob, nil
+	rjob := jbd.Build()
+	return rjob, nil
 }
 
 func MustInt32(s string) (int32, error) {
@@ -239,6 +239,7 @@ func defaultJob() *v1.Job {
 		Spec: v1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
+					Containers:    []corev1.Container{},
 					RestartPolicy: corev1.RestartPolicyOnFailure,
 				},
 			},
