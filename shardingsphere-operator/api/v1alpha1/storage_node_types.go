@@ -31,10 +31,12 @@ const (
 
 type StorageNodeConditionType string
 
-// StorageNodeConditionType shows some states during the startup process of storage node
+// StorageNodeConditionType shows some states during the startup process of storage node.
 const (
 	// StorageNodeConditionTypeAvailable means the all the instances and the cluster are ready, and the storage node is ready to provide external services.
 	StorageNodeConditionTypeAvailable StorageNodeConditionType = "Available"
+	// StorageNodeConditionTypeClusterReady means the cluster is ready, does not mean the instances are all ready.
+	StorageNodeConditionTypeClusterReady StorageNodeConditionType = "ClusterReady"
 )
 
 type StorageNodeConditions []*StorageNodeCondition
@@ -51,10 +53,12 @@ type StorageNodeCondition struct {
 // ClusterStatus is the status of a database cluster, including the primary endpoint, reader endpoints, and other properties.
 // Properties are some additional information about the cluster, like 'arn, identifier, credentials, etc.'
 type ClusterStatus struct {
-	Status          string            `json:"status"`
-	PrimaryEndpoint Endpoint          `json:"primaryEndpoint"`
-	ReaderEndpoints []Endpoint        `json:"readerEndpoints"`
-	Properties      map[string]string `json:"properties"`
+	Status          string   `json:"status"`
+	PrimaryEndpoint Endpoint `json:"primaryEndpoint"`
+	// +optional
+	ReaderEndpoints []Endpoint `json:"readerEndpoints"`
+	// +optional
+	Properties map[string]string `json:"properties"`
 }
 
 type CredentialType struct {
@@ -62,8 +66,9 @@ type CredentialType struct {
 }
 
 type InstanceStatus struct {
-	Status     string            `json:"status"`
-	Endpoint   Endpoint          `json:"primaryEndpoint"`
+	Status   string   `json:"status"`
+	Endpoint Endpoint `json:"primaryEndpoint"`
+	// +optional
 	Properties map[string]string `json:"properties"`
 }
 
@@ -128,7 +133,6 @@ type StorageNodeStatus struct {
 	Cluster ClusterStatus `json:"cluster,omitempty"`
 
 	// Instance contains the current status of the StorageNode instance
-	// +optional
 	Instances []InstanceStatus `json:"instances,omitempty"`
 }
 
