@@ -174,7 +174,7 @@ func (r *ShardingSphereChaosReconciler) reconcileJob(ctx context.Context, ssChao
 		return err
 	}
 	var nowInjectRequirement reconcile.InjectRequirement
-	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment || ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment {
+	if ssChaos.Status.Phase == "" || ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment || ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment {
 		nowInjectRequirement = reconcile.Experimental
 	}
 	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseInChaos || ssChaos.Status.Phase == sschaosv1alpha1.PhaseRecoveredChaos {
@@ -188,16 +188,12 @@ func (r *ShardingSphereChaosReconciler) reconcileJob(ctx context.Context, ssChao
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, namespacedName types.NamespacedName) error {
-	var (
-		status sschaosv1alpha1.ShardingSphereChaosStatus
-	)
-
 	ssChaos, err := r.getRuntimeSSChaos(ctx, namespacedName)
 	if err != nil {
 		return err
 	}
 	if ssChaos.Status.Phase == "" {
-		status.Phase = sschaosv1alpha1.PhaseBeforeExperiment
+		ssChaos.Status.Phase = sschaosv1alpha1.PhaseBeforeExperiment
 	}
 	rJob := &batchV1.Job{}
 	if err := r.Get(ctx, namespacedName, rJob); err != nil {
@@ -205,29 +201,29 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, nam
 	}
 
 	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment && rJob.Status.Succeeded == 1 {
-		status.Phase = sschaosv1alpha1.PhaseAfterExperiment
+		ssChaos.Status.Phase = sschaosv1alpha1.PhaseAfterExperiment
 	}
-	if ssChaos.Status.Phase != sschaosv1alpha1.PhaseBeforeExperiment && ssChaos.Status.Phase != sschaosv1alpha1.PhaseAfterExperiment {
+	if ssChaos.Status.Phase != sschaosv1alpha1.PhaseBeforeExperiment {
 		if ssChaos.Spec.EmbedChaos.PodChaos != nil {
 			chao, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
 			if err != nil {
 				return err
 			}
-			status.ChaosCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
+			ssChaos.Status.ChaosCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
 		} else if ssChaos.Spec.EmbedChaos.NetworkChaos != nil {
 			chao, err := r.Chaos.GetNetworkChaosByNamespacedName(ctx, namespacedName)
 			if err != nil {
 				return err
 			}
-			status.ChaosCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
+			ssChaos.Status.ChaosCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
 		}
 
-		if status.ChaosCondition == sschaosv1alpha1.AllInjected && ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment {
-			status.Phase = sschaosv1alpha1.PhaseInChaos
+		if ssChaos.Status.ChaosCondition == sschaosv1alpha1.AllInjected && ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment {
+			ssChaos.Status.Phase = sschaosv1alpha1.PhaseInChaos
 		}
 
-		if status.ChaosCondition == sschaosv1alpha1.AllRecovered && ssChaos.Status.Phase == sschaosv1alpha1.PhaseRecoveredChaos {
-			status.Phase = sschaosv1alpha1.PhaseRecoveredChaos
+		if ssChaos.Status.ChaosCondition == sschaosv1alpha1.AllRecovered && ssChaos.Status.Phase == sschaosv1alpha1.PhaseInChaos {
+			ssChaos.Status.Phase = sschaosv1alpha1.PhaseRecoveredChaos
 		}
 	}
 
@@ -235,10 +231,8 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, nam
 	if err != nil {
 		return err
 	}
-	rt.Status = status
-	err = r.Status().Update(ctx, rt)
-	fmt.Println(err)
-	return err
+	rt.Status = ssChaos.Status
+	return r.Status().Update(ctx, rt)
 }
 
 func (r *ShardingSphereChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (reconcile.NetworkChaos, bool, error) {
