@@ -47,11 +47,22 @@ func (createEncryptRule *CreateEncryptRule) ToString() string {
 }
 
 type AlterEncryptRule struct {
-	EncryptRuleDefinition []*EncryptRuleDefinition
+	EncryptRuleDefinition        *EncryptRuleDefinition
+	AllEncryptRuleDefinitionList []*EncryptRuleDefinition
 }
 
 func (alterEncryptRule *AlterEncryptRule) ToString() string {
-	return ""
+	var encryptRuleDefinition string
+	var encryptRuleDefinitionList []string
+	if alterEncryptRule.EncryptRuleDefinition != nil {
+		encryptRuleDefinition = alterEncryptRule.EncryptRuleDefinition.ToString()
+	}
+	if alterEncryptRule.AllEncryptRuleDefinitionList != nil {
+		for _, encryptRuleDefinition := range alterEncryptRule.AllEncryptRuleDefinitionList {
+			encryptRuleDefinitionList = append(encryptRuleDefinitionList, encryptRuleDefinition.ToString())
+		}
+	}
+	return fmt.Sprintf("ALTER ENCRYPT RULE %s %s;", encryptRuleDefinition, strings.Join(encryptRuleDefinitionList, ","))
 }
 
 type DropEncryptRule struct {
@@ -59,12 +70,28 @@ type DropEncryptRule struct {
 	AllTableName []*CommonIdentifier
 }
 
+func (dropEncryptRule *DropEncryptRule) ToString() string {
+	var (
+		ifExists     string
+		allTableName []string
+	)
+	if dropEncryptRule.IfExists != nil {
+		ifExists = dropEncryptRule.IfExists.ToString()
+	}
+	if dropEncryptRule.AllTableName != nil {
+		for _, tableName := range dropEncryptRule.AllTableName {
+			allTableName = append(allTableName, tableName.ToString())
+		}
+	}
+	return fmt.Sprintf("DROP ENCRYPT RULE %s %s;", ifExists, strings.Join(allTableName, ","))
+}
+
 type IfExists struct {
 	IfExists string
 }
 
-func (dropEncryptRule *DropEncryptRule) ToString() string {
-	return ""
+func (ifExists *IfExists) ToString() string {
+	return ifExists.IfExists
 }
 
 type EncryptRuleDefinition struct {
@@ -261,7 +288,7 @@ type LikeQueryColumnDefinition struct {
 func (likeQueryColumnDefinition *LikeQueryColumnDefinition) ToString() string {
 	var dataType string
 	if likeQueryColumnDefinition.DataType != nil {
-		dataType = fmt.Sprintf("COMMA_ LIKE_QUERY_DATA_TYPE=%s", likeQueryColumnDefinition.DataType.ToString())
+		dataType = fmt.Sprintf(", LIKE_QUERY_DATA_TYPE=%s", likeQueryColumnDefinition.DataType.ToString())
 	}
 	return fmt.Sprintf("LIKE_QUERY_COLUMN=%s%s", likeQueryColumnDefinition.LikeQueryColumnName.ToString(), dataType)
 }
