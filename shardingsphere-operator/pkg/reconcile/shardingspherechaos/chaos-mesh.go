@@ -50,7 +50,9 @@ const (
 )
 
 var (
-	ErrConvert = errors.New("can not convert chaos interface to specify struct")
+	ErrConvert     = errors.New("can not convert chaos interface to specify struct")
+	ErrNotChanged  = errors.New("object not changed")
+	ErrChangedSpec = errors.New("change spec")
 )
 
 type chaosMeshHandler struct {
@@ -67,13 +69,13 @@ func (c *chaosMeshHandler) ConvertChaosStatus(ctx context.Context, ssChaos *v1al
 		if podChao, ok := chaos.(*chaosv1alpha1.PodChaos); ok && podChao != nil {
 			status = *podChao.GetStatus()
 		} else {
-			return v1alpha1.UnKnown
+			return v1alpha1.Unknown
 		}
 	} else if ssChaos.Spec.EmbedChaos.NetworkChaos != nil {
 		if networkChaos, ok := chaos.(*chaosv1alpha1.NetworkChaos); ok && networkChaos != nil {
 			status = *networkChaos.GetStatus()
 		}
-		return v1alpha1.UnKnown
+		return v1alpha1.Unknown
 	}
 	var conditions = map[chaosv1alpha1.ChaosConditionType]bool{}
 	for i := range status.Conditions {
@@ -102,7 +104,7 @@ func judgeCondition(condition map[chaosv1alpha1.ChaosConditionType]bool, phase c
 		}
 	}
 
-	return v1alpha1.UnKnown
+	return v1alpha1.Unknown
 }
 
 func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, chao PodChaos) error {
@@ -302,7 +304,7 @@ func (c *chaosMeshHandler) UpdateNetworkChaos(ctx context.Context, ssChaos *v1al
 	}
 	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
 	if isEqual {
-		return nil
+		return ErrNotChanged
 	}
 
 	if err := c.r.Create(ctx, reCur); err != nil {
@@ -331,7 +333,7 @@ func (c *chaosMeshHandler) UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1
 	}
 	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
 	if isEqual {
-		return nil
+		return ErrNotChanged
 	}
 
 	if err := c.r.Delete(ctx, reCur); err != nil {

@@ -146,6 +146,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Chaos:     chaos.NewChaos(mgr.GetClient()),
 			Job:       job.NewJob(mgr.GetClient()),
 			ConfigMap: configmap.NewConfigMap(mgr.GetClient()),
+			Events:    mgr.GetEventRecorderFor("shardingsphere-chaos-controller"),
 		}).SetupWithManager(mgr); err != nil {
 			logger.Error(err, "unable to create controller", "controller", "ShardingSphereChaos")
 			return err

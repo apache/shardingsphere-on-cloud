@@ -121,7 +121,7 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 	cbd.SetImage(DefaultImageName)
 	cbd.SetName(DefaultContainerName)
 	cbd.SetVolumeMount(vm)
-	cbd.SetCommand([]string{"sh", "-c"})
+	cbd.SetCommand([]string{"sh"})
 	container := cbd.Build()
 	container.Args = NewCmds(requirement)
 	jbd.SetContainers(container)
@@ -129,15 +129,16 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 	return rjob, nil
 }
 
-func NewCmds(requirement InjectRequirement) (cmds []string) {
-
+func NewCmds(requirement InjectRequirement) []string {
+	var cmds []string
+	cmds = append(cmds, "-c")
 	if requirement == Experimental {
 		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultWorkPath, configExperimental))
 	}
 	if requirement == Pressure {
 		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultWorkPath, configExperimental), fmt.Sprintf("%s/%s", DefaultWorkPath, configPressure))
 	}
-	return
+	return cmds
 }
 
 func MustInt32(s string) (int32, error) {
