@@ -44,8 +44,6 @@ import (
 const (
 	ShardingSphereChaosControllerName = "shardingsphere-chaos-controller"
 	ssChaosDefaultEnqueueTime         = 10 * time.Second
-	defaultCreatedMessage             = " is created successfully"
-	defaultUpdateMessage              = "new changes updated"
 )
 
 // ShardingSphereChaosReconciler is a controller for the ShardingSphereChaos
@@ -123,8 +121,10 @@ func (r *ShardingSphereChaosReconciler) getRuntimeSSChaos(ctx context.Context, n
 func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssChao *sschaosv1alpha1.ShardingSphereChaos) error {
 	logger := r.Log.WithValues("reconcile chaos", ssChao.Name)
 	if ssChao.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment || ssChao.Status.Phase == "" {
+		fmt.Println("reach here")
 		return nil
 	}
+	fmt.Println("reach here  after")
 	namespaceName := types.NamespacedName{Namespace: ssChao.Namespace, Name: ssChao.Name}
 	if ssChao.Spec.EmbedChaos.PodChaos != nil {
 		chao, isExist, err := r.getPodChaosByNamespacedName(ctx, namespaceName)
@@ -368,7 +368,7 @@ func (r *ShardingSphereChaosReconciler) updatePodChaos(ctx context.Context, chao
 		}
 		return err
 	}
-	r.Events.Event(chao, "Normal", "applied", fmt.Sprintf("podChaos %s", defaultUpdateMessage))
+	r.Events.Event(chao, "Normal", "applied", fmt.Sprintf("podChaos %s", "new changes updated"))
 	return reconcile.ErrChangedSpec
 }
 
@@ -381,8 +381,7 @@ func (r *ShardingSphereChaosReconciler) CreatePodChaos(ctx context.Context, chao
 	if err != nil {
 		return err
 	}
-	fmt.Println("phase", chao.Status.Phase)
-	r.Events.Event(chao, "Normal", "created", fmt.Sprintf("podChaos %s", defaultCreatedMessage))
+	r.Events.Event(chao, "Normal", "created", fmt.Sprintf("podChaos %s", " is created successfully"))
 	return nil
 }
 
@@ -394,7 +393,7 @@ func (r *ShardingSphereChaosReconciler) updateNetWorkChaos(ctx context.Context, 
 		}
 		return err
 	}
-	r.Events.Event(chao, "Normal", "applied", fmt.Sprintf("networkChaos %s", defaultUpdateMessage))
+	r.Events.Event(chao, "Normal", "applied", fmt.Sprintf("networkChaos %s", "new changes updated"))
 	return reconcile.ErrChangedSpec
 }
 
@@ -408,7 +407,7 @@ func (r *ShardingSphereChaosReconciler) CreateNetworkChaos(ctx context.Context, 
 		return err
 	}
 
-	r.Events.Event(chao, "Normal", "created", fmt.Sprintf("networkChaos %s", defaultCreatedMessage))
+	r.Events.Event(chao, "Normal", "created", fmt.Sprintf("networkChaos %s", "  is created successfully"))
 	return nil
 }
 

@@ -24,7 +24,6 @@ ENV ZOOKEEPER_DOWNLOAD_URL https://dlcdn.apache.org/zookeeper/zookeeper-3.7.1/ap
 ENV ZOOKEEPER_DIR /app/zookeeper
 WORKDIR /app
 RUN mkdir -p "/app/start" && chmod -R 777 /app/start
-ENTRYPOINT ["sh","-c"]
 CMD ["tail -f /dev/null"]
 RUN set -eux; \
         \
@@ -43,7 +42,8 @@ RUN set -eux; \
         wget -O zookeeper.tar.gz "${ZOOKEEPER_DOWNLOAD_URL}"; \
         mkdir -p ${ZOOKEEPER_DIR}; \
         tar -zxf zookeeper.tar.gz -C ${ZOOKEEPER_DIR} --strip-components 1; \
-        rm zookeeper.tar.gz; \
-        \
+        rm zookeeper.tar.gz;
+
+ENTRYPOINT ["sh","-c"]
 
 

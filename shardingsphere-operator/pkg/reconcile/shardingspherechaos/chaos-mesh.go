@@ -69,13 +69,13 @@ func (c *chaosMeshHandler) ConvertChaosStatus(ctx context.Context, ssChaos *v1al
 		if podChao, ok := chaos.(*chaosv1alpha1.PodChaos); ok && podChao != nil {
 			status = *podChao.GetStatus()
 		} else {
-			return v1alpha1.UnKnown
+			return v1alpha1.Unknown
 		}
 	} else if ssChaos.Spec.EmbedChaos.NetworkChaos != nil {
 		if networkChaos, ok := chaos.(*chaosv1alpha1.NetworkChaos); ok && networkChaos != nil {
 			status = *networkChaos.GetStatus()
 		}
-		return v1alpha1.UnKnown
+		return v1alpha1.Unknown
 	}
 	var conditions = map[chaosv1alpha1.ChaosConditionType]bool{}
 	for i := range status.Conditions {
@@ -104,7 +104,7 @@ func judgeCondition(condition map[chaosv1alpha1.ChaosConditionType]bool, phase c
 		}
 	}
 
-	return v1alpha1.UnKnown
+	return v1alpha1.Unknown
 }
 
 func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, chao PodChaos) error {

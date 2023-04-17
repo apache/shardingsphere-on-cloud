@@ -67,12 +67,11 @@ type EmbedChaos struct {
 type ChaosCondition string
 
 const (
-	Creating     ChaosCondition = "Creating"
 	AllRecovered ChaosCondition = "AllRecovered"
 	Paused       ChaosCondition = "Paused"
 	AllInjected  ChaosCondition = "AllInjected"
 	NoTarget     ChaosCondition = "NoTarget"
-	UnKnown      ChaosCondition = "UnKnown"
+	Unknown      ChaosCondition = "Unknown"
 )
 
 // ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
@@ -84,10 +83,10 @@ type ShardingSphereChaosStatus struct {
 type Phase string
 
 var (
-	PhaseBeforeExperiment Phase = "before experiment"
-	PhaseAfterExperiment  Phase = "after experiment"
-	PhaseInChaos          Phase = "inject chaos"
-	PhaseRecoveredChaos   Phase = "recover chaos"
+	PhaseBeforeExperiment Phase = "BeforeReq"
+	PhaseAfterExperiment  Phase = "AfterReq"
+	PhaseInChaos          Phase = "Injected"
+	PhaseRecoveredChaos   Phase = "Recovered"
 )
 
 // PodChaosAction Specify the action type of pod Chaos
