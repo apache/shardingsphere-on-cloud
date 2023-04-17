@@ -44,8 +44,6 @@ type ShardingSphereChaos struct {
 type ShardingSphereChaosSpec struct {
 	InjectJob  JobSpec `json:"injectJob,omitempty"`
 	EmbedChaos `json:",inline"`
-	//todo
-	//Verify batchV1Beta1.JobTemplateSpec `json:"Verify,omitempty"`
 }
 
 // JobSpec Specifies the config of job to create
@@ -77,23 +75,20 @@ const (
 	UnKnown      ChaosCondition = "UnKnown"
 )
 
-// Jobschedule Show current job progress
-type Jobschedule string
-
-const (
-	JobCreating Jobschedule = "JobCreating"
-	JobFailed   Jobschedule = "JobFailed"
-	JobFinish   Jobschedule = "JobFinish"
-)
-
 // ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
 type ShardingSphereChaosStatus struct {
 	ChaosCondition ChaosCondition `json:"chaosCondition"`
-	//todo
-	//InjectStatus   Jobschedule         `json:"InjectStatus"`
-	//todo
-	//VerifyStatus   Jobschedule         `json:"VerifyStatus"`
+	Phase          Phase          `json:"phase"`
 }
+
+type Phase string
+
+var (
+	PhaseBeforeExperiment Phase = "before experiment"
+	PhaseAfterExperiment  Phase = "after experiment"
+	PhaseInChaos          Phase = "inject chaos"
+	PhaseRecoveredChaos   Phase = "recover chaos"
+)
 
 // PodChaosAction Specify the action type of pod Chaos
 type PodChaosAction string

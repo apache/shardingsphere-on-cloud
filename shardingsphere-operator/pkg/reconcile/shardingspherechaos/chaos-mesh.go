@@ -50,7 +50,9 @@ const (
 )
 
 var (
-	ErrConvert = errors.New("can not convert chaos interface to specify struct")
+	ErrConvert     = errors.New("can not convert chaos interface to specify struct")
+	ErrNotChanged  = errors.New("object not changed")
+	ErrChangedSpec = errors.New("change spec")
 )
 
 type chaosMeshHandler struct {
@@ -302,7 +304,7 @@ func (c *chaosMeshHandler) UpdateNetworkChaos(ctx context.Context, ssChaos *v1al
 	}
 	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
 	if isEqual {
-		return nil
+		return ErrNotChanged
 	}
 
 	if err := c.r.Create(ctx, reCur); err != nil {
@@ -331,7 +333,7 @@ func (c *chaosMeshHandler) UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1
 	}
 	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
 	if isEqual {
-		return nil
+		return ErrNotChanged
 	}
 
 	if err := c.r.Delete(ctx, reCur); err != nil {
