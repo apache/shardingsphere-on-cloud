@@ -20,8 +20,9 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"k8s.io/client-go/tools/record"
 	"time"
+
+	"k8s.io/client-go/tools/record"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	v1 "k8s.io/api/core/v1"
@@ -203,19 +204,23 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, nam
 	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment && rJob.Status.Succeeded == 1 {
 		ssChaos.Status.Phase = sschaosv1alpha1.PhaseAfterExperiment
 	}
+
+	if err := r.updatePhaseStart(ctx, ssChaos); err != nil {
+		return err
+	}
+
+	rt, err := r.getRuntimeSSChaos(ctx, namespacedName)
+	if err != nil {
+		return err
+	}
+	rt.Status = ssChaos.Status
+	return r.Status().Update(ctx, rt)
+}
+
+func (r *ShardingSphereChaosReconciler) updatePhaseStart(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
 	if ssChaos.Status.Phase != sschaosv1alpha1.PhaseBeforeExperiment {
-		if ssChaos.Spec.EmbedChaos.PodChaos != nil {
-			chao, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
-			if err != nil {
-				return err
-			}
-			ssChaos.Status.ChaosCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
-		} else if ssChaos.Spec.EmbedChaos.NetworkChaos != nil {
-			chao, err := r.Chaos.GetNetworkChaosByNamespacedName(ctx, namespacedName)
-			if err != nil {
-				return err
-			}
-			ssChaos.Status.ChaosCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
+		if err := r.updateChaosCondition(ctx, ssChaos); err != nil {
+			return err
 		}
 
 		if ssChaos.Status.ChaosCondition == sschaosv1alpha1.AllInjected && ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment {
@@ -227,12 +232,29 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, nam
 		}
 	}
 
-	rt, err := r.getRuntimeSSChaos(ctx, namespacedName)
-	if err != nil {
-		return err
+	return nil
+}
+
+func (r *ShardingSphereChaosReconciler) updateChaosCondition(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
+	namespacedName := types.NamespacedName{
+		Namespace: ssChaos.Namespace,
+		Name:      ssChaos.Name,
 	}
-	rt.Status = ssChaos.Status
-	return r.Status().Update(ctx, rt)
+	if ssChaos.Spec.EmbedChaos.PodChaos != nil {
+		chao, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
+		if err != nil {
+			return err
+		}
+		ssChaos.Status.ChaosCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
+	} else if ssChaos.Spec.EmbedChaos.NetworkChaos != nil {
+		chao, err := r.Chaos.GetNetworkChaosByNamespacedName(ctx, namespacedName)
+		if err != nil {
+			return err
+		}
+		ssChaos.Status.ChaosCondition = r.Chaos.ConvertChaosStatus(ctx, ssChaos, chao)
+	}
+
+	return nil
 }
 
 func (r *ShardingSphereChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (reconcile.NetworkChaos, bool, error) {
