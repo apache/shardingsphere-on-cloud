@@ -64,9 +64,13 @@ func (v *Visitor) VisitIfExists(ctx *parser.IfExistsContext) *ast.IfExists {
 
 func (v *Visitor) VisitAlterEncryptRule(ctx *parser.AlterEncryptRuleContext) *ast.AlterEncryptRule {
 	stmt := &ast.AlterEncryptRule{}
+	// if ctx.EncryptRuleDefinition(0) != nil {
+	// 	stmt.EncryptRuleDefinition = v.VisitEncryptRuleDefinition(ctx.EncryptRuleDefinition(0).(*parser.EncryptRuleDefinitionContext))
+	// }
+
 	if ctx.AllEncryptRuleDefinition() != nil {
 		for _, encryptRuleDefinition := range ctx.AllEncryptRuleDefinition() {
-			stmt.EncryptRuleDefinition = append(stmt.EncryptRuleDefinition, v.VisitEncryptRuleDefinition(encryptRuleDefinition.(*parser.EncryptRuleDefinitionContext)))
+			stmt.AllEncryptRuleDefinitionList = append(stmt.AllEncryptRuleDefinitionList, v.VisitEncryptRuleDefinition(encryptRuleDefinition.(*parser.EncryptRuleDefinitionContext)))
 		}
 	}
 	return stmt
