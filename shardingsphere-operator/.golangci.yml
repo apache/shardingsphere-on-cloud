@@ -17,11 +17,11 @@
 
 run:
   timeout: 10m
+  tests: false
   skip-files:
     - "^zz_generated.*"
-    - "_test.go"
 linters:
-  disable-all: true
+  disable-all: true 
   enable:
     # The base lints 
     - errcheck
@@ -30,7 +30,6 @@ linters:
     - ineffassign
     - staticcheck
     - typecheck
-    - unused
     - unused
     - bodyclose
     - cyclop
@@ -45,10 +44,6 @@ linters:
     - durationcheck
     - gosec
     - predeclared
-    # Deprecated lints 
-    - structcheck
-    - varcheck
-    - deadcode
 
     # The advanced lints 
     - dupl
@@ -60,7 +55,6 @@ linters:
     - gocognit
     - nestif
     #- wsl
-    #- exhaustruct
 # Refers: https://gist.github.com/maratori/47a4d00457a92aa426dbd48a18776322
 linters-settings:
   wsl:
@@ -359,6 +353,7 @@ issues:
   exclude-rules:
     - path: _test\.go
       linters:
+        - dupl
         - errcheck
         - gosec
         - rowserrcheck
