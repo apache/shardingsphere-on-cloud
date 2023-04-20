@@ -20,14 +20,16 @@ package controllers_test
 
 import (
 	"context"
+	"reflect"
+	"time"
 
 	"bou.ke/monkey"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/awsaurora"
-	mock_storagenode "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/mocks"
-	"github.com/database-mesh/golang-sdk/aws/client/rds"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
+	mock_aws "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws/mocks"
+	dbmesh_aws "github.com/database-mesh/golang-sdk/aws"
+	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
@@ -43,7 +45,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-var _ = Describe("StorageNode Controller", func() {
+var _ = Describe("StorageNode Controller Mock Test", func() {
 	var fakeClient client.Client
 	var reconciler *controllers.StorageNodeReconciler
 	BeforeEach(func() {
@@ -62,10 +64,12 @@ var _ = Describe("StorageNode Controller", func() {
 			},
 		)
 
+		sess := dbmesh_aws.NewSessions().SetCredential("AwsRegion", "AwsAccessKeyID", "AwsSecretAccessKey").Build()
 		reconciler = &controllers.StorageNodeReconciler{
 			Client:   fakeClient,
 			Log:      logf.Log,
 			Recorder: recorder,
+			AwsRDS:   dbmesh_rds.NewService(sess["AwsRegion"]),
 		}
 	})
 
@@ -114,33 +118,29 @@ var _ = Describe("StorageNode Controller", func() {
 		})
 	})
 
-	Context("create storage node with exist databaseClass", func() {
-		// test create node with exist databaseClass and success
-		It("should reconcile successfully", func() {
-			var mockCtrl *gomock.Controller
-			var cc *mock_storagenode.MockIDBClusterClient
-
+	Context("reconcile storageNode with exist databaseClass", func() {
+		var mockCtrl *gomock.Controller
+		var mockAws *mock_aws.MockIRdsClient
+		BeforeEach(func() {
 			mockCtrl = gomock.NewController(GinkgoT())
-			cc = mock_storagenode.NewMockIDBClusterClient(mockCtrl)
+			mockAws = mock_aws.NewMockIRdsClient(mockCtrl)
 
-			monkey.Patch(awsaurora.New, func(_ rds.RDS) storagenode.IDBClusterClient {
-				return cc
+			monkey.Patch(aws.NewRdsClient, func(rds dbmesh_rds.RDS) aws.IRdsClient {
+				return mockAws
 			})
 
-			defer func() {
-				mockCtrl.Finish()
-			}()
-
+			// create databaseClass
 			dbClass := &dbmeshv1alpha1.DatabaseClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-database-class",
 				},
 				Spec: dbmeshv1alpha1.DatabaseClassSpec{
-					Provisioner: "aws-aurora",
+					Provisioner: dbmeshv1alpha1.ProvisionerAWSRDSInstance,
 				},
 			}
 			Expect(fakeClient.Create(context.Background(), dbClass)).Should(Succeed())
 
+			// create storageNode
 			storageNode := &v1alpha1.StorageNode{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-storage-node",
@@ -150,8 +150,16 @@ var _ = Describe("StorageNode Controller", func() {
 					DatabaseClassName: "test-database-class",
 				},
 			}
-			Expect(fakeClient.Create(context.Background(), storageNode)).Should(Succeed())
 
+			Expect(fakeClient.Create(context.Background(), storageNode)).Should(Succeed())
+		})
+
+		AfterEach(func() {
+			mockCtrl.Finish()
+			monkey.UnpatchAll()
+		})
+
+		It("should reconcile successfully with Creating Instance", func() {
 			req := ctrl.Request{
 				NamespacedName: client.ObjectKey{
 					Name:      "test-storage-node",
@@ -159,15 +167,225 @@ var _ = Describe("StorageNode Controller", func() {
 				},
 			}
 
-			// cluster is not exist and create a new cluster
-			cc.EXPECT().IsValid(gomock.Any()).Return(nil).AnyTimes()
-			cc.EXPECT().GetCluster(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
-			cc.EXPECT().CreateCluster(gomock.Any(), gomock.Any(), gomock.Any()).Return(&storagenode.DatabaseCluster{}, nil).AnyTimes()
+			rdsInstance := &dbmesh_rds.DescInstance{
+				DBInstanceStatus: "creating",
+				Endpoint: dbmesh_rds.Endpoint{
+					Address: "127.0.0.1",
+					Port:    3306,
+				},
+			}
+
+			// mock aws rds client
+			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(rdsInstance, nil).AnyTimes()
 			_, err := reconciler.Reconcile(context.Background(), req)
 			Expect(err).To(BeNil())
 
 			newSN := &v1alpha1.StorageNode{}
 			Expect(fakeClient.Get(context.Background(), client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, newSN)).Should(Succeed())
+			Expect(newSN.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseNotReady))
+			Expect(newSN.Status.Instances).To(HaveLen(1))
+			Expect(newSN.Status.Instances[0].Status).To(Equal("creating"))
+		})
+
+		It("should reconcile successfully with Available Instance", func() {
+			req := ctrl.Request{
+				NamespacedName: client.ObjectKey{
+					Name:      "test-storage-node",
+					Namespace: "test-namespace",
+				},
+			}
+
+			rdsInstance := &dbmesh_rds.DescInstance{
+				DBInstanceStatus: "available",
+				Endpoint: dbmesh_rds.Endpoint{
+					Address: "127.0.0.1",
+					Port:    3306,
+				},
+			}
+
+			// mock aws rds client
+			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(rdsInstance, nil)
+			_, err := reconciler.Reconcile(context.Background(), req)
+			Expect(err).To(BeNil())
+
+			newSN := &v1alpha1.StorageNode{}
+			Expect(fakeClient.Get(context.Background(), client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, newSN)).Should(Succeed())
+
+			Expect(newSN.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseReady))
+			Expect(newSN.Status.Instances).To(HaveLen(1))
+			Expect(newSN.Status.Instances[0].Status).To(Equal("Ready"))
+		})
+
+		It("should reconcile successfully when storage node be deleted", func() {
+			req := ctrl.Request{
+				NamespacedName: client.ObjectKey{
+					Name:      "test-storage-node",
+					Namespace: "test-namespace",
+				},
+			}
+
+			rdsInstance := &dbmesh_rds.DescInstance{
+				DBInstanceStatus: "available",
+				Endpoint: dbmesh_rds.Endpoint{
+					Address: "127.0.0.1",
+					Port:    3306,
+				},
+			}
+
+			// mock aws rds client, get instance
+			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(rdsInstance, nil).AnyTimes()
+			// reconcile storage node, add instance and set status to ready
+			_, err := reconciler.Reconcile(context.Background(), req)
+			Expect(err).To(BeNil())
+
+			// delete storage node
+			sn := &v1alpha1.StorageNode{}
+			Expect(fakeClient.Get(context.Background(), client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, sn)).Should(Succeed())
+			Expect(fakeClient.Delete(context.Background(), sn)).Should(Succeed())
+
+			// mock aws rds client, delete instance
+			mockAws.EXPECT().DeleteInstance(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			_, err = reconciler.Reconcile(context.Background(), req)
+			Expect(err).To(BeNil())
+		})
+	})
+})
+
+var _ = Describe("StorageNode Controller Suite Test", func() {
+	var databaseClassName = "test-database-class"
+
+	BeforeEach(func() {
+
+		databaseClass := &dbmeshv1alpha1.DatabaseClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: databaseClassName,
+			},
+			Spec: dbmeshv1alpha1.DatabaseClassSpec{
+				Provisioner: dbmeshv1alpha1.ProvisionerAWSRDSInstance,
+				Parameters: map[string]string{
+					"engine":             "mysql",
+					"engineVersion":      "5.7",
+					"instanceClass":      "db.t3.micro",
+					"allocatedStorage":   "20",
+					"masterUsername":     "root",
+					"masterUserPassword": "root123456",
+				},
+			},
+		}
+
+		Expect(k8sClient.Create(context.Background(), databaseClass)).Should(Succeed())
+	})
+
+	AfterEach(func() {
+		databaseClass := &dbmeshv1alpha1.DatabaseClass{}
+		Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: databaseClassName}, databaseClass)).Should(Succeed())
+		Expect(k8sClient.Delete(context.Background(), databaseClass)).Should(Succeed())
+	})
+
+	Context("reconcile storageNode", func() {
+		BeforeEach(func() {
+
+			// mock get instance func returns Available status
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
+				return &dbmesh_rds.DescInstance{
+					DBInstanceStatus: "available",
+					Endpoint: dbmesh_rds.Endpoint{
+						Address: "127.0.0.1",
+						Port:    3306,
+					},
+				}, nil
+			})
+
+			// mock delete instance func returns success
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "DeleteInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode, _ *dbmeshv1alpha1.DatabaseClass) error {
+				return nil
+			})
+		})
+
+		AfterEach(func() {
+			monkey.UnpatchAll()
+		})
+
+		It("should be success", func() {
+
+			nodeName := "test-storage-node-ready"
+			node := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      nodeName,
+					Namespace: "default",
+					Annotations: map[string]string{
+						dbmeshv1alpha1.AnnotationsInstanceIdentifier: "test-instance-identifier",
+					},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					DatabaseClassName: databaseClassName,
+				},
+			}
+
+			// create resource
+			Expect(k8sClient.Create(context.Background(), node)).Should(Succeed())
+
+			// check storage node status
+			Eventually(func() v1alpha1.StorageNodePhaseStatus {
+				newSN := &v1alpha1.StorageNode{}
+				Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
+				return newSN.Status.Phase
+			}, 10*time.Second, 1*time.Second).Should(Equal(v1alpha1.StorageNodePhaseReady))
+
+			// delete resource
+			Expect(k8sClient.Delete(context.Background(), node)).Should(Succeed())
+		})
+
+		Context("reconcile storageNode with Creating instance", func() {
+			BeforeEach(func() {
+				// mock get instance func returns creating status
+				monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
+					return &dbmesh_rds.DescInstance{
+						DBInstanceStatus: "creating",
+						Endpoint: dbmesh_rds.Endpoint{
+							Address: "127.0.0.1",
+							Port:    3306,
+						},
+					}, nil
+				})
+				// mock delete instance func return success
+				monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "DeleteInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode, _ *dbmeshv1alpha1.DatabaseClass) error {
+					return nil
+				})
+			})
+
+			AfterEach(func() {
+				monkey.UnpatchAll()
+			})
+
+			It("should be success", func() {
+				nodeName := "test-storage-node-creating"
+				node := &v1alpha1.StorageNode{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      nodeName,
+						Namespace: "default",
+						Annotations: map[string]string{
+							dbmeshv1alpha1.AnnotationsInstanceIdentifier: "test-instance-identifier",
+						},
+					},
+					Spec: v1alpha1.StorageNodeSpec{
+						DatabaseClassName: databaseClassName,
+					},
+				}
+
+				// create resource
+				Expect(k8sClient.Create(context.Background(), node)).Should(Succeed())
+
+				// check storage node status
+				Eventually(func() v1alpha1.StorageNodePhaseStatus {
+					newSN := &v1alpha1.StorageNode{}
+					Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
+					return newSN.Status.Phase
+				}, 10*time.Second, 1*time.Second).Should(Equal(v1alpha1.StorageNodePhaseNotReady))
+
+				// delete resource
+				Expect(k8sClient.Delete(context.Background(), node)).Should(Succeed())
+			})
 		})
 	})
 })
