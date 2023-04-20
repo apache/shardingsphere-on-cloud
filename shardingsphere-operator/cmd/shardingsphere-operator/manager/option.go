@@ -31,6 +31,7 @@ import (
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/database-mesh/golang-sdk/aws"
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
+	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	"go.uber.org/zap/zapcore"
 	batchV1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -53,6 +54,7 @@ func init() {
 	utilruntime.Must(chaosv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	utilruntime.Must(batchV1.AddToScheme(scheme))
+	utilruntime.Must(dbmeshv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

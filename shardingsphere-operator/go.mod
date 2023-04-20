@@ -6,8 +6,8 @@ require (
 	bou.ke/monkey v1.0.2
 	github.com/antlr/antlr4 v0.0.0-20181218183524-be58ebffde8e
 	github.com/chaos-mesh/chaos-mesh/api v0.0.0-20230410023700-25a841a23cd2
-	github.com/database-mesh/golang-sdk v0.0.0-20230330100228-9fca0778e327
-	github.com/go-logr/logr v1.2.3
+	github.com/database-mesh/golang-sdk v0.0.0-20230420101548-53265cd9883a
+	github.com/go-logr/logr v1.2.4
 	github.com/golang/mock v1.4.4
 	github.com/onsi/ginkgo/v2 v2.8.0
 	github.com/onsi/gomega v1.26.0
@@ -15,11 +15,11 @@ require (
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/zap v1.24.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.26.1
-	k8s.io/apimachinery v0.26.1
+	k8s.io/api v0.26.4
+	k8s.io/apimachinery v0.26.4
 	k8s.io/client-go v0.26.1
-	k8s.io/utils v0.0.0-20230313181309-38a27ef9d749
-	sigs.k8s.io/controller-runtime v0.14.2
+	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
+	sigs.k8s.io/controller-runtime v0.14.6
 )
 
 require github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
@@ -75,11 +75,11 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/oauth2 v0.6.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/term v0.7.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
