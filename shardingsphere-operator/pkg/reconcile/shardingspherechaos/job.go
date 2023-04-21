@@ -30,10 +30,14 @@ import (
 )
 
 const (
-	DefaultImageName     = "agoiyanzsa/tools-runtime:1.0"
+	DefaultImageName     = "agoiyanzsa/tools-runtime:2.0"
 	DefaultContainerName = "tools-runtime"
 	DefaultWorkPath      = "/app/start"
 	DefaultConfigName    = "cmd-conf"
+)
+
+var (
+	DefaultTTLSecondsAfterFinished int32 = 300
 )
 
 var DefaultFileMode int32 = 493
@@ -52,11 +56,16 @@ type InjectRequirement string
 var (
 	Experimental InjectRequirement = "experimental"
 	Pressure     InjectRequirement = "pressure"
+	Verify       InjectRequirement = "verify"
 )
+
+func SetJobNamespaceName(name string, requirement InjectRequirement) string {
+	return fmt.Sprintf("%s-%s", name, string(requirement))
+}
 
 func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement) (*v1.Job, error) {
 	jbd := NewJobBuilder()
-	jbd.SetNamespace(ssChaos.Namespace).SetLabels(ssChaos.Labels).SetName(ssChaos.Name)
+	jbd.SetNamespace(ssChaos.Namespace).SetLabels(ssChaos.Labels).SetName(SetJobNamespaceName(ssChaos.Name, requirement))
 
 	if v, ok := ssChaos.Annotations[completions]; ok {
 		value, err := MustInt32(v)
@@ -117,11 +126,10 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 
 	vm := &corev1.VolumeMount{Name: DefaultConfigName, MountPath: DefaultWorkPath}
 	cbd := common.NewContainerBuilder()
-	//todo: replace as DefaultImageName
 	cbd.SetImage(DefaultImageName)
 	cbd.SetName(DefaultContainerName)
 	cbd.SetVolumeMount(vm)
-	cbd.SetCommand([]string{"sh"})
+	cbd.SetCommand([]string{"sh", "-c"})
 	container := cbd.Build()
 	container.Args = NewCmds(requirement)
 	jbd.SetContainers(container)
@@ -131,12 +139,14 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 
 func NewCmds(requirement InjectRequirement) []string {
 	var cmds []string
-	cmds = append(cmds, "-c")
 	if requirement == Experimental {
 		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultWorkPath, configExperimental))
 	}
 	if requirement == Pressure {
-		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultWorkPath, configExperimental), fmt.Sprintf("%s/%s", DefaultWorkPath, configPressure))
+		cmds = append(cmds, fmt.Sprintf("%s/%s;%s/%s", DefaultWorkPath, configPressure, DefaultWorkPath, configExperimental))
+	}
+	if requirement == Verify {
+		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultWorkPath, configVerify))
 	}
 	return cmds
 }
@@ -149,17 +159,17 @@ func MustInt32(s string) (int32, error) {
 	return int32(v), nil
 }
 
-func UpdateJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement, cur *v1.Job) (*v1.Job, error) {
+func IsJobChanged(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement, cur *v1.Job) (bool, error) {
 	now, err := NewJob(ssChaos, requirement)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	isEqual := judgeJobEqual(cur, now)
 	if isEqual {
-		return nil, nil
+		return true, nil
 	}
 
-	return now, nil
+	return false, nil
 }
 
 func judgeJobEqual(now *v1.Job, exp *v1.Job) bool {
@@ -194,10 +204,15 @@ func judgeJobConfigEqual(now *v1.Job, exp *v1.Job) bool {
 	return true
 }
 func judgeTTLSecondsAfterFinished(cur *int32, exp *int32) bool {
-	if exp != nil && *cur != *exp {
-		return false
+	if cur == nil && exp == nil {
+		return true
 	}
-	return true
+	if cur != nil && exp != nil {
+		if *cur == *exp {
+			return true
+		}
+	}
+	return false
 }
 func judgeActiveDeadlineSeconds(cur *int64, exp *int64) bool {
 	if exp != nil && *cur != *exp {
@@ -210,6 +225,9 @@ func judgeContainerEqual(now *corev1.Container, exp *corev1.Container) bool {
 		return false
 	}
 	if !reflect.DeepEqual(now.Command, exp.Command) {
+		return false
+	}
+	if !reflect.DeepEqual(now.Args, exp.Args) {
 		return false
 	}
 	if now.Image != exp.Image {
@@ -300,7 +318,8 @@ func (j *jobBuilder) SetContainers(container *corev1.Container) JobBuilder {
 }
 
 func (j *jobBuilder) SetTTLSecondsAfterFinished(i int32) JobBuilder {
-	j.job.Spec.TTLSecondsAfterFinished = &i
+	ret := i
+	j.job.Spec.TTLSecondsAfterFinished = &ret
 	return j
 }
 

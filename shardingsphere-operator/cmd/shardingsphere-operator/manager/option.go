@@ -21,6 +21,8 @@ import (
 	"flag"
 	"strings"
 
+	clientset "k8s.io/client-go/kubernetes"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/job"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
@@ -139,6 +141,10 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 		return nil
 	},
 	"ShardingSphereChaos": func(mgr manager.Manager) error {
+		clientset, err := clientset.NewForConfig(mgr.GetConfig())
+		if err != nil {
+			return err
+		}
 		if err := (&controllers.ShardingSphereChaosReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
@@ -147,6 +153,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Job:       job.NewJob(mgr.GetClient()),
 			ConfigMap: configmap.NewConfigMap(mgr.GetClient()),
 			Events:    mgr.GetEventRecorderFor("shardingsphere-chaos-controller"),
+			ClientSet: clientset,
 		}).SetupWithManager(mgr); err != nil {
 			logger.Error(err, "unable to create controller", "controller", "ShardingSphereChaos")
 			return err

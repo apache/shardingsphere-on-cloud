@@ -49,7 +49,6 @@ func SetupWithOptions(opts *Options) *Manager {
 		logger.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
 	if err = (&controllers.ProxyReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

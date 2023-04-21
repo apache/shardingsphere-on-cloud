@@ -44,6 +44,11 @@ type ShardingSphereChaos struct {
 type ShardingSphereChaosSpec struct {
 	InjectJob  JobSpec `json:"injectJob,omitempty"`
 	EmbedChaos `json:",inline"`
+	Expect     Expect `json:"expect,omitempty"`
+}
+
+type Expect struct {
+	Verify string `json:"verify,omitempty"`
 }
 
 // JobSpec Specifies the config of job to create
@@ -54,6 +59,8 @@ type JobSpec struct {
 	Pressure string `json:"pressure,omitempty"`
 	// +optional
 	Position string `json:"position,omitempty"`
+	// +optional
+	Verify string `json:"verify,omitempty"`
 }
 
 type EmbedChaos struct {
@@ -78,6 +85,18 @@ const (
 type ShardingSphereChaosStatus struct {
 	ChaosCondition ChaosCondition `json:"chaosCondition"`
 	Phase          Phase          `json:"phase"`
+	Result         []Result       `json:"result"`
+}
+
+// Result represents the result of the ShardingSphereChaos
+type Result struct {
+	Success bool   `json:"success"`
+	Detail  Detail `json:"details"`
+}
+
+type Detail struct {
+	Time metav1.Time `json:"time"`
+	Msg  string      `json:"message"`
 }
 
 type Phase string
@@ -85,6 +104,7 @@ type Phase string
 var (
 	PhaseBeforeExperiment Phase = "BeforeReq"
 	PhaseAfterExperiment  Phase = "AfterReq"
+	PhaseCreatingChaos    Phase = "Creating"
 	PhaseInChaos          Phase = "Injected"
 	PhaseRecoveredChaos   Phase = "Recovered"
 )
