@@ -5,10 +5,9 @@ go 1.20
 require (
 	bou.ke/monkey v1.0.2
 	gitee.com/opengauss/openGauss-connector-go-pq v1.0.4
-	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
-	github.com/jarcoal/httpmock v1.3.0
+	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/onsi/ginkgo/v2 v2.9.1
 	github.com/onsi/gomega v1.27.3
 	github.com/spf13/cobra v1.6.1
@@ -24,7 +23,9 @@ require (
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
+	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect

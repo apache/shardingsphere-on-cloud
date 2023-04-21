@@ -18,6 +18,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 
 	"bou.ke/monkey"
@@ -25,6 +26,8 @@ import (
 	mock_pkg "github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/mocks"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils"
+	mock_httputils "github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils/mocks"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -274,6 +277,57 @@ var _ = Describe("test backup mock", func() {
 			ls.EXPECT().GenFilename(gomock.Any()).Return("filename")
 			ls.EXPECT().WriteByJSON(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 			Expect(backup()).To(BeNil())
+		})
+	})
+
+	Context("test check agent server status", func() {
+		var mockCtrl *gomock.Controller
+		var mockIreq *mock_httputils.MockIreq
+
+		ls := &model.LsBackup{
+			Info:   nil,
+			DnList: nil,
+			SsBackup: &model.SsBackup{
+				StorageNodes: []*model.StorageNode{
+					{
+						IP:   "127.0.0.1",
+						Port: 3306,
+					},
+					{
+						IP:   "127.0.0.2",
+						Port: 3307,
+					},
+				},
+			},
+		}
+		BeforeEach(func() {
+			mockCtrl = gomock.NewController(GinkgoT())
+			mockIreq = mock_httputils.NewMockIreq(mockCtrl)
+
+			monkey.Patch(httputils.NewRequest, func(ctx context.Context, method, url string) httputils.Ireq {
+				return mockIreq
+			})
+		})
+
+		AfterEach(func() {
+			monkey.UnpatchAll()
+			mockCtrl.Finish()
+		})
+
+		It("agent server is not running", func() {
+			mockIreq.EXPECT().Send(gomock.Any()).Return(-1, errors.New("error")).AnyTimes()
+			Expect(checkAgentServerStatus(ls)).To(BeFalse())
+		})
+
+		It("agent server are running", func() {
+			mockIreq.EXPECT().Send(gomock.Any()).Return(200, nil).AnyTimes()
+			Expect(checkAgentServerStatus(ls)).To(BeTrue())
+		})
+
+		It("one agent server is not running", func() {
+			mockIreq.EXPECT().Send(gomock.Any()).Return(500, nil)
+			mockIreq.EXPECT().Send(gomock.Any()).Return(200, nil).AnyTimes()
+			Expect(checkAgentServerStatus(ls)).To(BeFalse())
 		})
 	})
 })

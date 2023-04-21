@@ -19,6 +19,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 	"github.com/google/uuid"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
@@ -221,6 +223,12 @@ func execBackup(lsBackup *model.LsBackup) error {
 	dnCh := make(chan *model.DataNode, len(sNodes))
 	g := new(errgroup.Group)
 
+	logging.Info("Checking agent server status...")
+	available := checkAgentServerStatus(lsBackup)
+	if !available {
+		return xerr.NewCliErr("one or more agent server are not available.")
+	}
+
 	logging.Info("Starting send backup command to agent server...")
 
 	for _, node := range sNodes {
@@ -251,6 +259,42 @@ func execBackup(lsBackup *model.LsBackup) error {
 
 	lsBackup.SsBackup.Status = model.SsBackupStatusRunning
 	return nil
+}
+
+func checkAgentServerStatus(lsBackup *model.LsBackup) bool {
+
+	statusList := make([]*model.AgentServerStatus, 0)
+
+	// all agent server are available
+	available := true
+
+	for _, node := range lsBackup.SsBackup.StorageNodes {
+		n := node
+		agentHost := n.IP
+		if agentHost == "127.0.0.1" {
+			agentHost = Host
+		}
+		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", agentHost, AgentPort))
+		if err := as.CheckStatus(); err != nil {
+			statusList = append(statusList, &model.AgentServerStatus{IP: n.IP, Status: "Unavailable"})
+			available = false
+		} else {
+			statusList = append(statusList, &model.AgentServerStatus{IP: n.IP, Status: "Available"})
+		}
+	}
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.SetTitle("Agent Server Status")
+	t.AppendHeader(table.Row{"#", "Agent Server IP", "Status"})
+
+	for i, s := range statusList {
+		t.AppendRow([]interface{}{i + 1, s.IP, s.Status})
+		t.AppendSeparator()
+	}
+
+	t.Render()
+
+	return available
 }
 
 func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.DataNode) error {
