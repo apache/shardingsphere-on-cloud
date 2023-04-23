@@ -20,14 +20,15 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/prettyoutput"
 	"github.com/google/uuid"
+	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -232,14 +233,10 @@ func execBackup(lsBackup *model.LsBackup) error {
 	logging.Info("Starting send backup command to agent server...")
 
 	for _, node := range sNodes {
-		node := node
-		agentHost := node.IP
-		if agentHost == "127.0.0.1" {
-			agentHost = Host
-		}
-		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", agentHost, AgentPort))
+		sn := node
+		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
 		g.Go(func() error {
-			return _execBackup(as, node, dnCh)
+			return _execBackup(as, sn, dnCh)
 		})
 	}
 
@@ -269,19 +266,16 @@ func checkAgentServerStatus(lsBackup *model.LsBackup) bool {
 	available := true
 
 	for _, node := range lsBackup.SsBackup.StorageNodes {
-		n := node
-		agentHost := n.IP
-		if agentHost == "127.0.0.1" {
-			agentHost = Host
-		}
-		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", agentHost, AgentPort))
+		sn := node
+		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
 		if err := as.CheckStatus(); err != nil {
-			statusList = append(statusList, &model.AgentServerStatus{IP: n.IP, Status: "Unavailable"})
+			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Status: "Unavailable"})
 			available = false
 		} else {
-			statusList = append(statusList, &model.AgentServerStatus{IP: n.IP, Status: "Available"})
+			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Status: "Available"})
 		}
 	}
+
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetTitle("Agent Server Status")
@@ -328,64 +322,100 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 
 func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 	var (
-		wg                sync.WaitGroup
 		dataNodeMap       = make(map[string]*model.DataNode)
+		dnCh              = make(chan *model.DataNode, len(lsBackup.DnList))
 		backupFinalStatus = model.SsBackupStatusCompleted
-		statusCh          = make(chan *model.DataNode, len(lsBackup.DnList))
+		totalNum          = len(lsBackup.SsBackup.StorageNodes)
+		dnResult          = make([]*model.DataNode, 0)
 	)
 
-	// DataNode.IP -> DataNode
 	for _, dn := range lsBackup.DnList {
 		dataNodeMap[dn.IP] = dn
 	}
 
-	for _, sn := range lsBackup.SsBackup.StorageNodes {
-		wg.Add(1)
-		go func(wg *sync.WaitGroup, sn *model.StorageNode) {
-			defer wg.Done()
-			agentHost := sn.IP
-			if agentHost == "127.0.0.1" {
-				agentHost = Host
-			}
-			as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", agentHost, AgentPort))
-			dn := dataNodeMap[sn.IP]
-
-			// check backup status
-			status := checkStatus(as, sn, dn.BackupID, model.BackupStatus(""), defaultShowDetailRetryTimes)
-
-			// update DataNode status
-			dn.Status = status
-			dn.EndTime = time.Now().Unix()
-			statusCh <- dn
-		}(&wg, sn)
+	pw := prettyoutput.NewPW(totalNum)
+	go pw.Render()
+	for idx := 0; idx < totalNum; idx++ {
+		sn := lsBackup.SsBackup.StorageNodes[idx]
+		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
+		dn := dataNodeMap[sn.IP]
+		go checkStatus(as, sn, dn, dnCh, pw)
 	}
 
-	wg.Wait()
-	close(statusCh)
+	// wait for all data node backup finished
+	time.Sleep(time.Millisecond * 100)
+	for pw.IsRenderInProgress() {
+		if pw.LengthActive() == 0 {
+			pw.Stop()
+		}
+		time.Sleep(time.Millisecond * 100)
+	}
 
-	for dn := range statusCh {
-		logging.Info(fmt.Sprintf("data node backup final status: [IP:%s, backupID:%s] ==> %s", dn.IP, dn.BackupID, dn.Status))
+	close(dnCh)
+
+	for dn := range dnCh {
+		dnResult = append(dnResult, dn)
 		if dn.Status != model.SsBackupStatusCompleted {
 			backupFinalStatus = model.SsBackupStatusFailed
 		}
 	}
 
+	// print backup result formatted
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.SetTitle("Backup Task Result: %s", backupFinalStatus)
+	t.AppendHeader(table.Row{"#", "Data Node IP", "Data Node Port", "Result"})
+
+	for i, dn := range dnResult {
+		t.AppendRow([]interface{}{i + 1, dn.IP, dn.Port, dn.Status})
+		t.AppendSeparator()
+	}
+
+	t.Render()
+
+	lsBackup.DnList = dnResult
 	lsBackup.SsBackup.Status = backupFinalStatus
 	lsBackup.Info.EndTime = time.Now().Unix()
 	return backupFinalStatus
 }
 
-func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, backupID string, status model.BackupStatus, retryTimes uint8) model.BackupStatus {
-	if retryTimes+1 == 0 {
-		return status
-	}
-	if status == model.SsBackupStatusCompleted || status == model.SsBackupStatusFailed {
-		return status
-	}
+func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, dn *model.DataNode, dnCh chan *model.DataNode, pw progress.Writer) {
+	var (
+		// mark check status is done, time ticker should break.
+		done = make(chan bool)
+		// time ticker, try to doCheck request every 2 seconds.
+		ticker = time.Tick(time.Second * 2)
+		// progress bar.
+		tracker = progress.Tracker{Message: fmt.Sprintf("Checking backup status  # %s:%d", sn.IP, AgentPort), Total: 0, Units: progress.UnitsDefault}
+	)
 
-	// todo: how often to check backup status
-	time.Sleep(time.Second * 2)
+	pw.AppendTracker(&tracker)
 
+	for !tracker.IsDone() {
+		select {
+		case <-done:
+			return
+		case <-ticker:
+			status, err := doCheck(as, sn, dn.BackupID, defaultShowDetailRetryTimes)
+			if err != nil {
+				tracker.MarkAsErrored()
+				dn.Status = status
+				dn.EndTime = time.Now().Unix()
+				dnCh <- dn
+				done <- true
+			}
+			if status == model.SsBackupStatusCompleted || status == model.SsBackupStatusFailed {
+				tracker.MarkAsDone()
+				dn.Status = status
+				dn.EndTime = time.Now().Unix()
+				dnCh <- dn
+				done <- true
+			}
+		}
+	}
+}
+
+func doCheck(as pkg.IAgentServer, sn *model.StorageNode, backupID string, retries int) (status model.BackupStatus, err error) {
 	in := &model.ShowDetailIn{
 		DBPort:       sn.Port,
 		DBName:       sn.Database,
@@ -397,8 +427,19 @@ func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, backupID string, st
 	}
 	backupInfo, err := as.ShowDetail(in)
 	if err != nil {
-		logging.Error(fmt.Sprintf("get storage node [IP:%s] backup detail from agent server failed, will retry %d times.\n%s", sn.IP, retryTimes, err.Error()))
-		return checkStatus(as, sn, backupID, model.SsBackupStatusCheckError, retryTimes-1)
+		if retries == 0 {
+			return model.SsBackupStatusCheckError, err
+		}
+		time.Sleep(time.Second * 1)
+		return doCheck(as, sn, backupID, retries-1)
 	}
-	return checkStatus(as, sn, backupID, backupInfo.Status, retryTimes)
+
+	return backupInfo.Status, nil
+}
+
+func convertLocalhost(ip string) string {
+	if ip == "127.0.0.1" {
+		return Host
+	}
+	return ip
 }
