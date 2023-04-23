@@ -38,11 +38,14 @@ type agentServer struct {
 }
 
 type IAgentServer interface {
+	CheckStatus() error
 	Backup(in *model.BackupIn) (string, error)
 	Restore(in *model.RestoreIn) error
 	ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, error)
 	ShowList(in *model.ShowListIn) ([]model.BackupInfo, error)
 }
+
+var _ IAgentServer = (*agentServer)(nil)
 
 func NewAgentServer(addr string) IAgentServer {
 	return &agentServer{
@@ -53,6 +56,21 @@ func NewAgentServer(addr string) IAgentServer {
 		_apiShowDetail: "/api/show",
 		_apiShowList:   "/api/show/list",
 	}
+}
+
+// CheckStatus check agent server is alive
+func (as *agentServer) CheckStatus() error {
+	url := fmt.Sprintf("%s/%s", as.addr, "ping")
+	r := httputils.NewRequest(context.Background(), http.MethodGet, url)
+	httpCode, err := r.Send(nil)
+	if err != nil {
+		efmt := "httputils.NewRequest[url=%s] return err=%s,wrap=%w"
+		return fmt.Errorf(efmt, url, err, xerr.NewCliErr(xerr.Unknown))
+	}
+	if httpCode != http.StatusOK {
+		return fmt.Errorf("httpCode=%d", httpCode)
+	}
+	return nil
 }
 
 func (as *agentServer) Backup(in *model.BackupIn) (string, error) {

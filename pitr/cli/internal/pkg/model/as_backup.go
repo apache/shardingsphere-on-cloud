@@ -40,3 +40,8 @@ type (
 		Data BackupOut `json:"data"`
 	}
 )
+
+type AgentServerStatus struct {
+	IP     string `json:"ip"`
+	Status string `json:"status"`
+}
