@@ -146,6 +146,7 @@ func (og *openGauss) ShowBackup(backupPath, instanceName, backupID string) (*mod
 	return nil, fmt.Errorf("backupList[v=%+v],err=%w", list, cons.DataNotFound)
 }
 
+// nolint
 func (og *openGauss) delBackup(backupPath, instanceName, backupID string) error {
 	cmd := fmt.Sprintf(_delBackupFmt, backupPath, instanceName, backupID)
 	_, err := cmds.Exec(og.shell, cmd)

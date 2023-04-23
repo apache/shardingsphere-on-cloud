@@ -32,7 +32,6 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
-	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -116,18 +115,7 @@ func main() {
 		level = zapcore.DebugLevel
 	}
 
-	prodConfig := zap.NewProductionConfig()
-	prodConfig.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
-	prodConfig.Level = zap.NewAtomicLevelAt(level)
-	logger, err := prodConfig.Build(
-		zap.AddCallerSkip(1),
-		zap.AddStacktrace(zapcore.FatalLevel),
-	)
-	if err != nil {
-		panic(fmt.Errorf("an unknown error occurred in the zap-log"))
-	}
-
-	log = logging.Init(logger)
+	log = logging.Init(level)
 	pkg.Init(shell, pgData, log)
 	app = fiber.New()
 

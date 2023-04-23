@@ -56,15 +56,17 @@ var _ = Describe("Commands", func() {
 
 	Context("test loadArgs", func() {
 		It("test reload gs_probackup", func() {
-			new := "/bin/new/gs_probackup"
-			os.Setenv("gs_probackup", new)
+			newGS := "/bin/new/gs_probackup"
+			err := os.Setenv("gs_probackup", newGS)
+			Expect(err).To(BeNil())
+
 			defer os.Unsetenv("gs_probackup")
 
 			args := loadArgs("gs_probackup", "backup", "-B", "/tmp", "-b", "FULL", "-D", "/tmp")
-			Expect(args[0]).To(Equal(new))
+			Expect(args[0]).To(Equal(newGS))
 
 			args = loadArgs("gs_probackup backup -B /tmp -b FULL -D /tmp")
-			Expect(strings.HasPrefix(args[0], new)).To(Equal(true))
+			Expect(strings.HasPrefix(args[0], newGS)).To(Equal(true))
 		})
 	})
 })

@@ -41,3 +41,20 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: ./pitr/cli/cover.out
+  pitr-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "checkout codes"
+        uses: actions/checkout@v3
+      - name: "setup go"
+        uses: actions/setup-go@v4
+        with:
+          go-version: '^1.18.1'
+      - name: "unit test"
+        run: |
+          cd pitr/agent
+          make test
+      - name: "Code coverage"
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./pitr/agent/cover.out
