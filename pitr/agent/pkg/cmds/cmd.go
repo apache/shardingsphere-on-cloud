@@ -21,7 +21,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
@@ -36,6 +38,8 @@ type Output struct {
 
 // AsyncExec Async exec a command
 func AsyncExec(name string, args ...string) (chan *Output, error) {
+	args = loadArgs(args...)
+
 	c := "-c"
 	args = append([]string{c}, args...)
 
@@ -98,6 +102,8 @@ func AsyncExec(name string, args ...string) (chan *Output, error) {
 
 // Exec exec a command
 func Exec(name string, args ...string) (string, error) {
+	args = loadArgs(args...)
+
 	c := "-c"
 	args = append([]string{c}, args...)
 
@@ -124,4 +130,22 @@ func Exec(name string, args ...string) (string, error) {
 		return "", cons.Internal
 	}
 	return string(reader), nil
+}
+
+// loadArgs if env is set, replace the command.
+func loadArgs(args ...string) []string {
+	if len(args) > 0 {
+		arg := args[0]
+
+		// check gs_probackup
+		if v, ok := os.LookupEnv("gs_probackup"); ok && strings.HasPrefix(arg, "gs_probackup") {
+			args[0] = strings.Replace(arg, "gs_probackup", v, 1)
+		}
+
+		// check gs_ctrl
+		if v, ok := os.LookupEnv("gs_ctrl"); ok && strings.HasPrefix(arg, "gs_ctrl") {
+			args[0] = strings.Replace(arg, "gs_ctrl", v, 1)
+		}
+	}
+	return args
 }
