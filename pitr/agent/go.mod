@@ -6,6 +6,7 @@ require (
 	gitee.com/opengauss/openGauss-connector-go-pq v1.0.4
 	github.com/dlclark/regexp2 v1.8.0
 	github.com/gofiber/fiber/v2 v2.42.0
+	github.com/joho/godotenv v1.5.1
 	github.com/onsi/ginkgo/v2 v2.8.0
 	github.com/onsi/gomega v1.26.0
 	go.uber.org/zap v1.24.0

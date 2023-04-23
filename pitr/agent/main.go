@@ -31,6 +31,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -45,11 +46,12 @@ var (
 )
 
 var (
-	logLevel string
-	port     string
-	pgData   string
-	tlsCrt   string
-	tlsKey   string
+	logLevel      string
+	port          string
+	pgData        string
+	tlsCrt        string
+	tlsKey        string
+	envSourceFile string
 )
 
 func init() {
@@ -61,10 +63,19 @@ func init() {
 	flag.StringVar(&tlsKey, "tls-key", "", "Require:TLS key file path")
 
 	flag.StringVar(&pgData, "pgdata", "", "Optional:Get the value from cli flags or env")
+
+	flag.StringVar(&envSourceFile, "env-source-file", "", "Optional:env source file path")
 }
 
 func main() {
 	flag.Parse()
+
+	if envSourceFile != "" {
+		err := godotenv.Load(envSourceFile)
+		if err != nil {
+			panic(fmt.Errorf("load env source file error:%s", err.Error()))
+		}
+	}
 
 	shell := os.Getenv("SHELL")
 	if shell == "" {
@@ -170,6 +181,6 @@ func Serve(port string) error {
 		return responder.NotFound(ctx, "API not found")
 	})
 
-	//	return app.Listen(":18080")
+	//return app.Listen(":18080")
 	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)
 }
