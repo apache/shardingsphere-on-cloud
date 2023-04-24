@@ -29,6 +29,7 @@ import (
 const (
 	configExperimental = "experimental.sh"
 	configPressure     = "pressure.sh"
+	configVerify       = "verify.sh"
 )
 
 const (
@@ -40,7 +41,7 @@ func NewSSConfigMap(chaos *v1alpha1.ShardingSphereChaos) *v1.ConfigMap {
 
 	cmb.SetName(chaos.Name).SetNamespace(chaos.Namespace).SetLabels(chaos.Labels)
 
-	cmb.SetExperimental(chaos.Spec.InjectJob.Experimental).SetPressure(chaos.Spec.InjectJob.Pressure)
+	cmb.SetExperimental(chaos.Spec.InjectJob.Experimental).SetPressure(chaos.Spec.InjectJob.Pressure).SetVerify(chaos.Spec.InjectJob.Verify)
 
 	return cmb.Build()
 }
@@ -50,6 +51,7 @@ type SSConfigMapBuilder interface {
 	common.ConfigMapBuilder
 	SetExperimental(string) SSConfigMapBuilder
 	SetPressure(string) SSConfigMapBuilder
+	SetVerify(string) SSConfigMapBuilder
 }
 
 type configmapBuilder struct {
@@ -72,6 +74,11 @@ func (c *configmapBuilder) SetExperimental(cmd string) SSConfigMapBuilder {
 
 func (c *configmapBuilder) SetPressure(cmd string) SSConfigMapBuilder {
 	c.configmap.Data[configPressure] = cmd
+	return c
+}
+
+func (c *configmapBuilder) SetVerify(cmd string) SSConfigMapBuilder {
+	c.configmap.Data[configVerify] = cmd
 	return c
 }
 

@@ -33,6 +33,8 @@ RUN set -eux; \
         apt-get install -y --no-install-recommends libncursesw6 libreadline8 libssh-4; \
         apt-get install -y --no-install-recommends openjdk-11-jre-headless; \
         echo "export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-11-amd64" >> /etc/profile; \
+        echo "alias mysql=\"mysqlsh\"" >> /etc/profile; \
+        . /etc/profile; \
         \
         rm -rf /var/lib/apt/lists/*; \
         \

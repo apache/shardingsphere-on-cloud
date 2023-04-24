@@ -19,8 +19,17 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	clientset "k8s.io/client-go/kubernetes"
 
 	"k8s.io/client-go/tools/record"
 
@@ -44,6 +53,20 @@ import (
 const (
 	ShardingSphereChaosControllerName = "shardingsphere-chaos-controller"
 	ssChaosDefaultEnqueueTime         = 10 * time.Second
+	VerifyJobCheck                    = "Verify"
+)
+
+var (
+	ErrNoPod = errors.New("no pod in list")
+)
+
+type JobCondition string
+
+var (
+	CompleteJob JobCondition = "complete"
+	FailureJob  JobCondition = "failure"
+	SuspendJob  JobCondition = "suspend"
+	ActiveJob   JobCondition = "active"
 )
 
 // ShardingSphereChaosReconciler is a controller for the ShardingSphereChaos
@@ -55,6 +78,7 @@ type ShardingSphereChaosReconciler struct { //
 	Job       job.Job
 	ConfigMap configmap.ConfigMap
 	Events    record.EventRecorder
+	ClientSet *clientset.Clientset
 }
 
 // Reconcile handles main function of this controller
@@ -120,72 +144,92 @@ func (r *ShardingSphereChaosReconciler) getRuntimeSSChaos(ctx context.Context, n
 
 func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssChao *sschaosv1alpha1.ShardingSphereChaos) error {
 	logger := r.Log.WithValues("reconcile chaos", ssChao.Name)
+
 	if ssChao.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment || ssChao.Status.Phase == "" {
-		fmt.Println("reach here")
 		return nil
 	}
-	fmt.Println("reach here  after")
 	namespaceName := types.NamespacedName{Namespace: ssChao.Namespace, Name: ssChao.Name}
+
 	if ssChao.Spec.EmbedChaos.PodChaos != nil {
-		chao, isExist, err := r.getPodChaosByNamespacedName(ctx, namespaceName)
+		chao, err := r.getPodChaosByNamespacedName(ctx, namespaceName)
 		if err != nil {
 			logger.Error(err, "pod chaos err")
 			return err
 		}
-		if isExist {
+		if chao != nil {
 			return r.updatePodChaos(ctx, ssChao, chao)
 		}
 		return r.CreatePodChaos(ctx, ssChao)
 	} else if ssChao.Spec.EmbedChaos.NetworkChaos != nil {
-		chao, isExist, err := r.getNetworkChaosByNamespacedName(ctx, namespaceName)
+		chao, err := r.getNetworkChaosByNamespacedName(ctx, namespaceName)
 		if err != nil {
 			logger.Error(err, "network chao err")
 			return err
 		}
-		if isExist {
+		if chao != nil {
 			return r.updateNetWorkChaos(ctx, ssChao, chao)
 		}
 		return r.CreateNetworkChaos(ctx, ssChao)
 	}
+
 	return nil
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileConfigMap(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
 	logger := r.Log.WithValues("reconcile configmap", ssChaos.Name)
 	namespaceName := types.NamespacedName{Namespace: ssChaos.Namespace, Name: ssChaos.Name}
-	rConfigmap, isExist, err := r.getConfigMapByNamespacedName(ctx, namespaceName)
+	rConfigmap, err := r.getConfigMapByNamespacedName(ctx, namespaceName)
 	if err != nil {
 		logger.Error(err, "get configmap error")
 		return err
 	}
 
-	if isExist {
+	if rConfigmap != nil {
 		return r.updateConfigMap(ctx, ssChaos, rConfigmap)
 	}
 
-	return r.CreateConfigMap(ctx, ssChaos)
+	err = r.CreateConfigMap(ctx, ssChaos)
+	if err != nil {
+		r.Events.Event(ssChaos, "Warning", "Created", fmt.Sprintf("configmap created fail %s", err))
+		return err
+	}
+
+	r.Events.Event(ssChaos, "Normal", "Created", "configmap created successfully")
+	return nil
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileJob(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
 	logger := r.Log.WithValues("reconcile job", ssChaos.Name)
-	namespaceName := types.NamespacedName{Namespace: ssChaos.Namespace, Name: ssChaos.Name}
-	rJob, isExist, err := r.getJobByNamespacedName(ctx, namespaceName)
+
+	var nowInjectRequirement reconcile.InjectRequirement
+	switch {
+	case ssChaos.Status.Phase == "" || ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment || ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment:
+		nowInjectRequirement = reconcile.Experimental
+	case ssChaos.Status.Phase == sschaosv1alpha1.PhaseInChaos:
+		nowInjectRequirement = reconcile.Pressure
+	case ssChaos.Status.Phase == sschaosv1alpha1.PhaseRecoveredChaos:
+		nowInjectRequirement = reconcile.Verify
+	}
+
+	namespaceName := types.NamespacedName{Namespace: ssChaos.Namespace, Name: reconcile.SetJobNamespaceName(ssChaos.Name, nowInjectRequirement)}
+
+	rJob, err := r.getJobByNamespacedName(ctx, namespaceName)
 	if err != nil {
 		logger.Error(err, "get job err")
 		return err
 	}
-	var nowInjectRequirement reconcile.InjectRequirement
-	if ssChaos.Status.Phase == "" || ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment || ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment {
-		nowInjectRequirement = reconcile.Experimental
-	}
-	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseInChaos || ssChaos.Status.Phase == sschaosv1alpha1.PhaseRecoveredChaos {
-		nowInjectRequirement = reconcile.Pressure
-	}
-	if isExist {
+
+	if rJob != nil {
 		return r.updateJob(ctx, nowInjectRequirement, ssChaos, rJob)
 	}
 
-	return r.createJob(ctx, nowInjectRequirement, ssChaos)
+	err = r.createJob(ctx, nowInjectRequirement, ssChaos)
+	if err != nil {
+		return err
+	}
+
+	r.Events.Event(ssChaos, "Normal", "Created", fmt.Sprintf("%s job created successfully", string(nowInjectRequirement)))
+	return nil
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, namespacedName types.NamespacedName) error {
@@ -193,16 +237,29 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, nam
 	if err != nil {
 		return err
 	}
-	if ssChaos.Status.Phase == "" {
-		ssChaos.Status.Phase = sschaosv1alpha1.PhaseBeforeExperiment
-	}
-	rJob := &batchV1.Job{}
-	if err := r.Get(ctx, namespacedName, rJob); err != nil {
+
+	setDefault(ssChaos)
+
+	jobName := getRequirement(ssChaos)
+	rJob, err := r.getJobByNamespacedName(ctx, types.NamespacedName{Namespace: ssChaos.Namespace, Name: reconcile.SetJobNamespaceName(ssChaos.Name, jobName)})
+	if err != nil || rJob == nil {
 		return err
 	}
 
 	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment && rJob.Status.Succeeded == 1 {
 		ssChaos.Status.Phase = sschaosv1alpha1.PhaseAfterExperiment
+	}
+	jobConditions := rJob.Status.Conditions
+	condition := getJobCondition(jobConditions)
+
+	if condition == FailureJob {
+		r.Events.Event(ssChaos, "Warning", "failed", fmt.Sprintf("job: %s", rJob.Name))
+	}
+	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseRecoveredChaos {
+		if err := r.updateRecoveredJob(ctx, ssChaos, rJob); err != nil {
+			r.Events.Event(ssChaos, "Warning", "getPodLog", err.Error())
+			return err
+		}
 	}
 
 	if err := r.updatePhaseStart(ctx, ssChaos); err != nil {
@@ -213,8 +270,178 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, nam
 	if err != nil {
 		return err
 	}
-	rt.Status = ssChaos.Status
+	setRtStatus(rt, ssChaos)
 	return r.Status().Update(ctx, rt)
+}
+
+func getRequirement(ssChaos *sschaosv1alpha1.ShardingSphereChaos) reconcile.InjectRequirement {
+	var jobName reconcile.InjectRequirement
+	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment || ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment {
+		jobName = reconcile.Experimental
+	}
+	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseInChaos {
+		jobName = reconcile.Pressure
+	}
+	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseRecoveredChaos {
+		jobName = reconcile.Verify
+	}
+	return jobName
+}
+
+func getJobCondition(conditions []batchV1.JobCondition) JobCondition {
+	var ret = ActiveJob
+	for i := range conditions {
+		p := &conditions[i]
+		switch {
+		case p.Type == batchV1.JobComplete && p.Status == v1.ConditionTrue:
+			ret = CompleteJob
+		case p.Type == batchV1.JobFailed && p.Status == v1.ConditionTrue:
+			ret = FailureJob
+		case p.Type == batchV1.JobSuspended && p.Status == v1.ConditionTrue:
+			ret = SuspendJob
+		case p.Type == batchV1.JobFailureTarget:
+			ret = FailureJob
+		}
+	}
+	return ret
+}
+
+func setDefault(ssChaos *sschaosv1alpha1.ShardingSphereChaos) {
+	if ssChaos.Status.Phase == "" {
+		ssChaos.Status.Phase = sschaosv1alpha1.PhaseBeforeExperiment
+	}
+	if ssChaos.Status.Result == nil {
+		ssChaos.Status.Result = []sschaosv1alpha1.Result{}
+	}
+}
+
+func setRtStatus(rt *sschaosv1alpha1.ShardingSphereChaos, ssChaos *sschaosv1alpha1.ShardingSphereChaos) {
+	rt.Status.Result = []sschaosv1alpha1.Result{}
+	for i := range ssChaos.Status.Result {
+		r := &ssChaos.Status.Result[i]
+		rt.Status.Result = append(rt.Status.Result, sschaosv1alpha1.Result{
+			Success: r.Success,
+			Detail: sschaosv1alpha1.Detail{
+				Time: metav1.Time{Time: time.Now()},
+				Msg:  r.Detail.Msg,
+			},
+		})
+	}
+
+	rt.Status.Phase = ssChaos.Status.Phase
+	rt.Status.ChaosCondition = ssChaos.Status.ChaosCondition
+}
+
+func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos, rJob *batchV1.Job) error {
+	if isResultExist(rJob) {
+		return nil
+	}
+
+	for i := range ssChaos.Status.Result {
+		r := &ssChaos.Status.Result[i]
+		if strings.HasPrefix(r.Detail.Msg, VerifyJobCheck) {
+			return nil
+		}
+	}
+
+	logOpts := &v1.PodLogOptions{}
+	pod, err := r.getPodHaveLog(ctx, rJob)
+	if err != nil || pod == nil {
+		return err
+	}
+	podNamespacedName := types.NamespacedName{
+		Namespace: pod.Namespace,
+		Name:      pod.Name,
+	}
+	condition := getJobCondition(rJob.Status.Conditions)
+	result := &sschaosv1alpha1.Result{}
+
+	if condition == CompleteJob {
+		log, err := r.getPodLog(ctx, podNamespacedName, logOpts)
+		if err != nil {
+			return err
+		}
+		if ssChaos.Spec.Expect.Verify == "" || ssChaos.Spec.Expect.Verify == log {
+			result.Success = true
+			result.Detail = sschaosv1alpha1.Detail{
+				Time: metav1.Time{Time: time.Now()},
+				Msg:  fmt.Sprintf("%s: job succeeded", VerifyJobCheck),
+			}
+		} else {
+			result.Success = false
+			result.Detail = sschaosv1alpha1.Detail{
+				Time: metav1.Time{Time: time.Now()},
+				Msg:  fmt.Sprintf("%s: %s", VerifyJobCheck, log),
+			}
+		}
+	}
+
+	if condition == FailureJob {
+		log, err := r.getPodLog(ctx, podNamespacedName, logOpts)
+		if err != nil {
+			return err
+		}
+		result.Success = false
+		result.Detail = sschaosv1alpha1.Detail{
+			Time: metav1.Time{Time: time.Now()},
+			Msg:  fmt.Sprintf("%s: %s", VerifyJobCheck, log),
+		}
+	}
+
+	ssChaos.Status.Result = updateResult(ssChaos.Status.Result, *result, VerifyJobCheck)
+
+	return nil
+}
+
+func (r *ShardingSphereChaosReconciler) getPodHaveLog(ctx context.Context, rJob *batchV1.Job) (*v1.Pod, error) {
+	pods := &v1.PodList{}
+	if err := r.List(ctx, pods, client.MatchingLabels{"controller-uid": rJob.Spec.Template.Labels["controller-uid"]}); err != nil {
+		return nil, err
+	}
+	if pods.Items == nil {
+		return nil, nil
+	}
+	var pod *v1.Pod
+	for i := range pods.Items {
+		pod = &pods.Items[i]
+		break
+	}
+	return pod, nil
+}
+
+func isResultExist(rJob *batchV1.Job) bool {
+	for _, cmd := range rJob.Spec.Template.Spec.Containers[0].Args {
+		if strings.Contains(cmd, string(reconcile.Verify)) {
+			return true
+		}
+	}
+	return false
+}
+
+func updateResult(results []sschaosv1alpha1.Result, r sschaosv1alpha1.Result, check string) []sschaosv1alpha1.Result {
+	for i := range results {
+		msg := results[i].Detail.Msg
+		if strings.HasPrefix(msg, check) && strings.HasPrefix(r.Detail.Msg, check) {
+			results[i] = r
+			return results
+		}
+	}
+	results = append(results, r)
+	return results
+}
+
+func (r *ShardingSphereChaosReconciler) getPodLog(ctx context.Context, namespacedName types.NamespacedName, options *v1.PodLogOptions) (string, error) {
+	req := r.ClientSet.CoreV1().Pods(namespacedName.Namespace).GetLogs(namespacedName.Name, options)
+	res := req.Do(ctx)
+	if res.Error() != nil {
+		return "", res.Error()
+	}
+	var ret []byte
+	ret, err := res.Raw()
+	if err != nil {
+		return "", err
+	}
+	return string(ret), nil
 }
 
 func (r *ShardingSphereChaosReconciler) updatePhaseStart(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
@@ -257,50 +484,37 @@ func (r *ShardingSphereChaosReconciler) updateChaosCondition(ctx context.Context
 	return nil
 }
 
-func (r *ShardingSphereChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (reconcile.NetworkChaos, bool, error) {
+func (r *ShardingSphereChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (reconcile.NetworkChaos, error) {
 	nc, err := r.Chaos.GetNetworkChaosByNamespacedName(ctx, namespacedName)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	if nc == nil {
-		return nil, false, nil
-	}
-	return nc, true, nil
+	return nc, nil
 }
 
-func (r *ShardingSphereChaosReconciler) getPodChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (reconcile.PodChaos, bool, error) {
+func (r *ShardingSphereChaosReconciler) getPodChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (reconcile.PodChaos, error) {
 	pc, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	if pc == nil {
-		return nil, false, nil
-	}
-	return pc, true, nil
+	return pc, nil
 }
 
-func (r *ShardingSphereChaosReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.ConfigMap, bool, error) {
+func (r *ShardingSphereChaosReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.ConfigMap, error) {
 	config, err := r.ConfigMap.GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
-		return nil, false, err
-	}
-	if config == nil {
-		return nil, false, nil
+		return nil, err
 	}
 
-	return config, true, nil
+	return config, nil
 }
 
-func (r *ShardingSphereChaosReconciler) getJobByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*batchV1.Job, bool, error) {
+func (r *ShardingSphereChaosReconciler) getJobByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*batchV1.Job, error) {
 	injectJob, err := r.Job.GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	if injectJob == nil {
-		return nil, false, nil
-	}
-
-	return injectJob, true, nil
+	return injectJob, nil
 }
 
 func (r *ShardingSphereChaosReconciler) updateConfigMap(ctx context.Context, chao *sschaosv1alpha1.ShardingSphereChaos, cur *v1.ConfigMap) error {
@@ -325,39 +539,87 @@ func (r *ShardingSphereChaosReconciler) CreateConfigMap(ctx context.Context, cha
 }
 
 func (r *ShardingSphereChaosReconciler) updateJob(ctx context.Context, requirement reconcile.InjectRequirement, chao *sschaosv1alpha1.ShardingSphereChaos, cur *batchV1.Job) error {
-	exp, err := reconcile.UpdateJob(chao, requirement, cur)
+	isEqual, err := reconcile.IsJobChanged(chao, requirement, cur)
 	if err != nil {
 		return err
 	}
-	if exp != nil {
-		if err := r.Delete(ctx, cur); err != nil {
+	if !isEqual {
+		if err := r.Delete(ctx, cur); err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
-		if err := ctrl.SetControllerReference(chao, exp, r.Scheme); err != nil {
-			return err
-		}
-		if err := r.Create(ctx, exp); err != nil {
-			return err
-		}
+		r.Events.Event(chao, "Normal", "Updated", "job Updated")
 	}
 	return nil
 }
 
-// todo:
 func (r *ShardingSphereChaosReconciler) createJob(ctx context.Context, requirement reconcile.InjectRequirement, chao *sschaosv1alpha1.ShardingSphereChaos) error {
 	injectJob, err := reconcile.NewJob(chao, requirement)
-	if err := ctrl.SetControllerReference(chao, injectJob, r.Scheme); err != nil {
-		return err
-	}
 	if err != nil {
 		return err
 	}
-	err = r.Create(ctx, injectJob)
-	if err == nil && apierrors.IsAlreadyExists(err) {
-		return nil
+	if err := ctrl.SetControllerReference(chao, injectJob, r.Scheme); err != nil {
+		return err
 	}
 
-	return err
+	err = r.Create(ctx, injectJob)
+	if err != nil {
+		return client.IgnoreAlreadyExists(err)
+	}
+
+	rJob := &batchV1.Job{}
+	backoff := wait.Backoff{
+		Steps:    6,
+		Duration: 500 * time.Millisecond,
+		Factor:   5.0,
+		Jitter:   0.1,
+	}
+
+	if err := retry.OnError(backoff, func(e error) bool {
+		return true
+	}, func() error {
+		return r.Get(ctx, types.NamespacedName{Namespace: chao.Namespace, Name: reconcile.SetJobNamespaceName(chao.Name, requirement)}, rJob)
+	}); err != nil {
+		return err
+	}
+
+	podList := &v1.PodList{}
+	if err := retry.OnError(backoff, func(e error) bool {
+		return e != nil
+	}, func() error {
+		if err := r.List(ctx, podList, client.MatchingLabels{"controller-uid": rJob.Spec.Template.Labels["controller-uid"]}); err != nil {
+			return err
+		}
+		if len(podList.Items) == 0 {
+			return ErrNoPod
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	for i := range podList.Items {
+		rPod := &podList.Items[i]
+		if err := ctrl.SetControllerReference(rJob, rPod, r.Scheme); err != nil {
+			return err
+		}
+
+		exp := rPod.DeepCopy()
+		updateBackoff := wait.Backoff{
+			Steps:    5,
+			Duration: 30 * time.Millisecond,
+			Factor:   5.0,
+			Jitter:   0.1,
+		}
+		if err := retry.RetryOnConflict(updateBackoff, func() error {
+			if err := r.Update(ctx, exp); err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *ShardingSphereChaosReconciler) updatePodChaos(ctx context.Context, chao *sschaosv1alpha1.ShardingSphereChaos, podChaos reconcile.PodChaos) error {
@@ -417,6 +679,7 @@ func (r *ShardingSphereChaosReconciler) SetupWithManager(mgr ctrl.Manager) error
 		For(&sschaosv1alpha1.ShardingSphereChaos{}).
 		Owns(&chaosv1alpha1.PodChaos{}).
 		Owns(&chaosv1alpha1.NetworkChaos{}).
+		Owns(&v1.ConfigMap{}).
 		Owns(&batchV1.Job{}).
 		Complete(r)
 }
