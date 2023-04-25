@@ -45,3 +45,9 @@ type AgentServerStatus struct {
 	IP     string `json:"ip"`
 	Status string `json:"status"`
 }
+
+type BackupResult struct {
+	IP     string       `json:"ip"`
+	Port   uint16       `json:"port"`
+	Status BackupStatus `json:"status"`
+}
