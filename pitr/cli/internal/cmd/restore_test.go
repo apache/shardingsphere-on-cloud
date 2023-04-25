@@ -20,6 +20,7 @@ package cmd
 
 import (
 	"reflect"
+	"time"
 
 	"bou.ke/monkey"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
@@ -59,14 +60,21 @@ var _ = Describe("Restore", func() {
 		})
 	})
 })
+
 var _ = Describe("test restore", func() {
 	var (
 		proxy *mock_pkg.MockIShardingSphereProxy
 		ls    *mock_pkg.MockILocalStorage
 		as    *mock_pkg.MockIAgentServer
 		bak   = &model.LsBackup{
-			Info:   nil,
-			DnList: nil,
+			Info: &model.BackupMetaInfo{
+				ID: "backup-id-1",
+			},
+			DnList: []*model.DataNode{
+				{
+					IP: "127.0.0.1",
+				},
+			},
 			SsBackup: &model.SsBackup{
 				Status: "",
 				ClusterInfo: &model.ClusterInfo{
@@ -77,16 +85,12 @@ var _ = Describe("test restore", func() {
 					},
 					SnapshotInfo: nil,
 				},
-				StorageNodes: nil,
+				StorageNodes: []*model.StorageNode{
+					{
+						IP: "127.0.0.1",
+					},
+				},
 			},
-		}
-		sn = &model.StorageNode{
-			IP:       "127.0.0.1",
-			Port:     3306,
-			Username: "",
-			Password: "",
-			Database: "",
-			Remark:   "",
 		}
 	)
 
@@ -114,24 +118,16 @@ var _ = Describe("test restore", func() {
 		Expect(checkDatabaseExist(proxy, bak)).To(BeNil())
 	})
 
-	It("test exec restore", func() {
-		failedCh := make(chan error, 1)
-		as.EXPECT().Restore(gomock.Any()).Return(nil)
-		_execRestore(as, sn, "backup-id", failedCh)
-		close(failedCh)
-		Expect(<-failedCh).To(BeNil())
-	})
-
 	It("test exec restore main func", func() {
 		// patch ReadByID of mock ls
-		monkey.PatchInstanceMethod(reflect.TypeOf(ls), "ReadByID", func(_ *mock_pkg.MockILocalStorage, _ string) (*model.LsBackup, error) {
-			return bak, nil
-		})
-		// mock ExportMetaData and return a *ClusterInfo with bak in it
-		proxy.EXPECT().ExportMetaData().Return(bak.SsBackup.ClusterInfo, nil)
-		// mock ImportMetaData and return nil
-		proxy.EXPECT().ImportMetaData(gomock.Any()).Return(nil)
+		monkey.PatchInstanceMethod(reflect.TypeOf(ls), "ReadByID", func(_ *mock_pkg.MockILocalStorage, _ string) (*model.LsBackup, error) { return bak, nil })
+		monkey.Patch(pkg.NewAgentServer, func(_ string) pkg.IAgentServer { return as })
+
 		RecordID = "backup-id"
+		proxy.EXPECT().ExportMetaData().Return(&model.ClusterInfo{}, nil)
+		proxy.EXPECT().ImportMetaData(gomock.Any()).Return(nil)
+		as.EXPECT().CheckStatus().Return(nil)
+		as.EXPECT().Restore(gomock.Any()).Return(nil)
 		Expect(restore()).To(BeNil())
 	})
 
@@ -142,7 +138,6 @@ var _ = Describe("test restore", func() {
 			// exec getUserApproveInTerminal
 			Expect(getUserApproveInTerminal("")).To(Equal(xerr.NewCliErr("User abort")))
 		})
-		// TODO test user approve, how to patch os.Stdin?
 	})
 
 	Context("restore data to ss proxy", func() {
@@ -160,4 +155,21 @@ var _ = Describe("test restore", func() {
 		})
 	})
 
+	Context("test exec restore", func() {
+		It("should be success", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			as := mock_pkg.NewMockIAgentServer(ctrl)
+			monkey.Patch(pkg.NewAgentServer, func(_ string) pkg.IAgentServer {
+				return as
+			})
+			defer func() {
+				ctrl.Finish()
+				monkey.UnpatchAll()
+			}()
+			as.EXPECT().Restore(gomock.Any()).Do(func(_ *model.RestoreIn) {
+				time.Sleep(3 * time.Second)
+			}).Return(nil)
+			Expect(execRestore(bak)).To(BeNil())
+		})
+	})
 })

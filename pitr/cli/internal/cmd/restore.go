@@ -19,17 +19,19 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
-	"github.com/spf13/pflag"
-
-	"github.com/spf13/cobra"
-
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/prettyoutput"
+	"github.com/jedib0t/go-pretty/v6/progress"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var (
@@ -156,67 +158,10 @@ func checkDatabaseExist(proxy pkg.IShardingSphereProxy, bak *model.LsBackup) err
 
 	// get user input to confirm
 	prompt := fmt.Sprintf(
-		"Detected that the database [%s] already exists in shardingsphere-proxy metadata.\n"+
-			"The logic database will be DROPPED and then insert backup's metadata into shardingsphere-proxy after restoring the backup data.\n"+
-			"PLEASE MAKE SURE OF THIS ACTION, CONTINUE? (Y|N)\n", strings.Join(databaseNamesExist, ","))
+		"Detected That The Database [%s] Already Exists In ShardingSphere-Proxy Metadata.\n"+
+			"The Logic Database Will Be DROPPED And Then Insert Backup's Metadata Into ShardingSphere-Proxy After Restoring The Backup Data.\n"+
+			"Are you sure to continue? (Y|N)", strings.Join(databaseNamesExist, ","))
 	return getUserApproveInTerminal(prompt)
-}
-
-func execRestore(lsBackup *model.LsBackup) error {
-	var (
-		wg           sync.WaitGroup
-		storageNodes = lsBackup.SsBackup.StorageNodes
-		dataNodeMap  = make(map[string]*model.DataNode)
-		failedCh     = make(chan error, len(storageNodes))
-	)
-
-	for _, dataNode := range lsBackup.DnList {
-		dataNodeMap[dataNode.IP] = dataNode
-	}
-
-	for _, storageNode := range storageNodes {
-		wg.Add(1)
-		storageNode := storageNode
-		agentHost := storageNode.IP
-		if agentHost == "127.0.0.1" {
-			agentHost = Host
-		}
-		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", agentHost, AgentPort))
-		dataNode, ok := dataNodeMap[storageNode.IP]
-		if !ok {
-			return xerr.NewCliErr(fmt.Sprintf("data node not found:%s", storageNode.IP))
-		}
-		go func() {
-			defer wg.Done()
-			_execRestore(as, storageNode, dataNode.BackupID, failedCh)
-		}()
-	}
-	wg.Wait()
-	close(failedCh)
-	if len(failedCh) > 0 {
-		var errMsg string
-		for err := range failedCh {
-			errMsg += err.Error() + "\n"
-		}
-		return xerr.NewCliErr(errMsg)
-	}
-	return nil
-}
-
-func _execRestore(as pkg.IAgentServer, node *model.StorageNode, backupID string, failedCh chan error) {
-	in := &model.RestoreIn{
-		DBPort:       node.Port,
-		DBName:       node.Database,
-		Username:     node.Username,
-		Password:     node.Password,
-		Instance:     defaultInstance,
-		DnBackupPath: BackupPath,
-		DnBackupID:   backupID,
-	}
-
-	if err := as.Restore(in); err != nil {
-		failedCh <- xerr.NewCliErr(fmt.Sprintf("restore node:[IP:%s] failed:%s", node.IP, err.Error()))
-	}
 }
 
 func restoreDataToSSProxy(proxy pkg.IShardingSphereProxy, lsBackup *model.LsBackup) error {
@@ -234,4 +179,91 @@ func restoreDataToSSProxy(proxy pkg.IShardingSphereProxy, lsBackup *model.LsBack
 	}
 
 	return nil
+}
+
+func execRestore(lsBackup *model.LsBackup) error {
+	var (
+		totalNum           = len(lsBackup.SsBackup.StorageNodes)
+		dataNodeMap        = make(map[string]*model.DataNode)
+		resultCh           = make(chan *model.RestoreResult, totalNum)
+		dnResult           = make([]*model.RestoreResult, 0)
+		restoreFinalStatus = "Completed"
+	)
+
+	for _, dataNode := range lsBackup.DnList {
+		dataNodeMap[dataNode.IP] = dataNode
+	}
+
+	if totalNum == 0 {
+		return xerr.NewCliErr(fmt.Sprintf("no storage node found, please check backup record [%s].", lsBackup.Info.ID))
+	}
+
+	pw := prettyoutput.NewPW(totalNum)
+	go pw.Render()
+	for i := 0; i < totalNum; i++ {
+		sn := lsBackup.SsBackup.StorageNodes[i]
+		dn := dataNodeMap[sn.IP]
+		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
+		go doRestore(as, sn, dn.BackupID, resultCh, pw)
+	}
+
+	time.Sleep(time.Millisecond * 100)
+	for pw.IsRenderInProgress() {
+		time.Sleep(time.Millisecond * 100)
+	}
+
+	close(resultCh)
+
+	for result := range resultCh {
+		dnResult = append(dnResult, result)
+		if result.Status != "Completed" {
+			restoreFinalStatus = "Failed"
+		}
+	}
+
+	// print result formatted
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.SetTitle("Restore Task Result: %s", restoreFinalStatus)
+	t.AppendHeader(table.Row{"#", "Data Node IP", "Data Node Port", "Result"})
+
+	for i, dn := range dnResult {
+		t.AppendRow([]interface{}{i + 1, dn.IP, dn.Port, dn.Status})
+		t.AppendSeparator()
+	}
+
+	t.Render()
+
+	return nil
+}
+
+func doRestore(as pkg.IAgentServer, sn *model.StorageNode, backupID string, resultCh chan *model.RestoreResult, pw progress.Writer) {
+	tracker := &progress.Tracker{Message: fmt.Sprintf("Restore data to openGauss: %s", sn.IP)}
+	result := ""
+
+	in := &model.RestoreIn{
+		DBPort:       sn.Port,
+		DBName:       sn.Database,
+		Username:     sn.Username,
+		Password:     sn.Password,
+		Instance:     defaultInstance,
+		DnBackupPath: BackupPath,
+		DnBackupID:   backupID,
+	}
+
+	pw.AppendTracker(tracker)
+
+	if err := as.Restore(in); err != nil {
+		tracker.MarkAsErrored()
+		result = "Failed"
+	} else {
+		tracker.MarkAsDone()
+		result = "Completed"
+	}
+
+	resultCh <- &model.RestoreResult{
+		IP:     sn.IP,
+		Port:   sn.Port,
+		Status: result,
+	}
 }

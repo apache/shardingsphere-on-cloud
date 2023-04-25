@@ -26,6 +26,7 @@ const (
 	SsBackupStatusCompleted  BackupStatus = "Completed"
 	SsBackupStatusFailed     BackupStatus = "Failed"
 	SsBackupStatusCheckError BackupStatus = "CheckError"
+	SsBackupStatusCanceled   BackupStatus = "Canceled"
 
 	BDBackModeFull   DBBackupMode = "FULL"
 	DBBackModePTrack DBBackupMode = "PTRACK"

@@ -92,7 +92,7 @@ func main() {
 		panic(fmt.Errorf("PGDATA:%s the database directory does not exist", pgData))
 	}
 
-	pgData := strings.Trim(pgData, " ")
+	pgData = strings.Trim(pgData, " ")
 	if strings.HasSuffix(pgData, "/") {
 		dirs := strings.Split(pgData, "/")
 		dirs = dirs[0 : len(dirs)-1]

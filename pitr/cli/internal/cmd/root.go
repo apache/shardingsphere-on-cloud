@@ -97,20 +97,20 @@ func checkAgentServerStatus(lsBackup *model.LsBackup) bool {
 		sn := node
 		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
 		if err := as.CheckStatus(); err != nil {
-			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Status: "Unavailable"})
+			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Port: sn.Port, Status: "Unavailable"})
 			available = false
 		} else {
-			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Status: "Available"})
+			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Port: sn.Port, Status: "Available"})
 		}
 	}
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetTitle("Agent Server Status")
-	t.AppendHeader(table.Row{"#", "Agent Server IP", "Status"})
+	t.AppendHeader(table.Row{"#", "Agent Server IP", "Agent Server Port", "Status"})
 
 	for i, s := range statusList {
-		t.AppendRow([]interface{}{i + 1, s.IP, s.Status})
+		t.AppendRow([]interface{}{i + 1, s.IP, s.Port, s.Status})
 		t.AppendSeparator()
 	}
 

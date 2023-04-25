@@ -43,6 +43,7 @@ type (
 
 type AgentServerStatus struct {
 	IP     string `json:"ip"`
+	Port   uint16 `json:"port"`
 	Status string `json:"status"`
 }
 
