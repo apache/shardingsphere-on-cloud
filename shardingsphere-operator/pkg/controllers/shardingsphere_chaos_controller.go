@@ -333,10 +333,9 @@ func setRtStatus(rt *sschaosv1alpha1.ShardingSphereChaos, ssChaos *sschaosv1alph
 }
 
 func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos, rJob *batchV1.Job) error {
-	if isResultExist(rJob) {
+	if !isRecoveredJobType(rJob, reconcile.Verify) {
 		return nil
 	}
-
 	for i := range ssChaos.Status.Result {
 		r := &ssChaos.Status.Result[i]
 		if strings.HasPrefix(r.Detail.Msg, VerifyJobCheck) {
@@ -374,6 +373,7 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 				Msg:  fmt.Sprintf("%s: %s", VerifyJobCheck, log),
 			}
 		}
+		ssChaos.Status.Result = updateResult(ssChaos.Status.Result, *result, VerifyJobCheck)
 	}
 
 	if condition == FailureJob {
@@ -386,11 +386,20 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 			Time: metav1.Time{Time: time.Now()},
 			Msg:  fmt.Sprintf("%s: %s", VerifyJobCheck, log),
 		}
+		ssChaos.Status.Result = updateResult(ssChaos.Status.Result, *result, VerifyJobCheck)
 	}
 
-	ssChaos.Status.Result = updateResult(ssChaos.Status.Result, *result, VerifyJobCheck)
-
 	return nil
+}
+
+func isRecoveredJobType(rJob *batchV1.Job, requirement reconcile.InjectRequirement) bool {
+	for i := range rJob.Spec.Template.Spec.Containers[0].Args {
+		r := rJob.Spec.Template.Spec.Containers[0].Args[i]
+		if strings.Contains(r, string(requirement)) {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *ShardingSphereChaosReconciler) getPodHaveLog(ctx context.Context, rJob *batchV1.Job) (*v1.Pod, error) {
@@ -407,15 +416,6 @@ func (r *ShardingSphereChaosReconciler) getPodHaveLog(ctx context.Context, rJob 
 		break
 	}
 	return pod, nil
-}
-
-func isResultExist(rJob *batchV1.Job) bool {
-	for _, cmd := range rJob.Spec.Template.Spec.Containers[0].Args {
-		if strings.Contains(cmd, string(reconcile.Verify)) {
-			return true
-		}
-	}
-	return false
 }
 
 func updateResult(results []sschaosv1alpha1.Result, r sschaosv1alpha1.Result, check string) []sschaosv1alpha1.Result {
