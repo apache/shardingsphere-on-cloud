@@ -51,4 +51,5 @@ var (
 	MvPgDataToTempFailed   = xerror.New(10026, "Move pgdata dir to temp failed.")
 	MvTempToPgDataFailed   = xerror.New(10027, "Move temp dir to pgdata failed.")
 	CleanPgDataTempFailed  = xerror.New(10028, "Clean pgdata temp dir failed.")
+	MissingDiskPath        = xerror.New(10029, "Missing disk path.")
 )

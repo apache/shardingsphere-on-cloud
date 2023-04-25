@@ -18,9 +18,7 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 
@@ -119,6 +117,12 @@ func restore() error {
 		return xerr.NewCliErr(fmt.Sprintf("check database exist failed:%s", err.Error()))
 	}
 
+	// check agent server status
+	logging.Info("Checking agent server status...")
+	if available := checkAgentServerStatus(bak); !available {
+		return xerr.NewCliErr("one or more agent server are not available.")
+	}
+
 	// exec restore
 	logging.Info("Start restore backup data to openGauss...")
 	if err := execRestore(bak); err != nil {
@@ -151,21 +155,11 @@ func checkDatabaseExist(proxy pkg.IShardingSphereProxy, bak *model.LsBackup) err
 	}
 
 	// get user input to confirm
-	return getUserApproveInTerminal()
-}
-
-func getUserApproveInTerminal() error {
-	fmt.Printf("Detected that the database [%s] already exists in shardingsphere-proxy metadata.\nThe logic database will be DROPPED and then insert backup's metadata into shardingsphere-proxy after restoring the backup data.\nPLEASE MAKE SURE OF THIS ACTION, CONTINUE? (Y|N)\n", strings.Join(databaseNamesExist, ","))
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	err := scanner.Err()
-	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("read user input failed:%s", err.Error()))
-	}
-	if scanner.Text() != "Y" && scanner.Text() != "y" && scanner.Text() != "yes" && scanner.Text() != "YES" && scanner.Text() != "Yes" {
-		return xerr.NewCliErr("User abort")
-	}
-	return nil
+	prompt := fmt.Sprintf(
+		"Detected that the database [%s] already exists in shardingsphere-proxy metadata.\n"+
+			"The logic database will be DROPPED and then insert backup's metadata into shardingsphere-proxy after restoring the backup data.\n"+
+			"PLEASE MAKE SURE OF THIS ACTION, CONTINUE? (Y|N)\n", strings.Join(databaseNamesExist, ","))
+	return getUserApproveInTerminal(prompt)
 }
 
 func execRestore(lsBackup *model.LsBackup) error {

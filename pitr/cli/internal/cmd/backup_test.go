@@ -33,9 +33,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var ctrl *gomock.Controller
-
 var _ = Describe("Backup", func() {
+
 	Context("do check", func() {
 		var (
 			as *mock_pkg.MockIAgentServer
@@ -52,29 +51,29 @@ var _ = Describe("Backup", func() {
 		})
 
 		It("agent server return err", func() {
-			as.EXPECT().ShowDetail(&model.ShowDetailIn{Instance: defaultInstance}).Return(nil, errors.New("timeout"))
+			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout"))
 			status, err := doCheck(as, sn, "", 0)
 			Expect(err).To(HaveOccurred())
 			Expect(status).To(Equal(model.SsBackupStatusCheckError))
 		})
 
 		It("mock agent server and return failed status", func() {
-			as.EXPECT().ShowDetail(&model.ShowDetailIn{Instance: defaultInstance}).Return(&model.BackupInfo{Status: model.SsBackupStatusFailed}, nil)
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusFailed}, nil)
 			status, err := doCheck(as, sn, "", 0)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(status).To(Equal(model.SsBackupStatusFailed))
 		})
 
 		It("mock agent server and return completed status", func() {
-			as.EXPECT().ShowDetail(&model.ShowDetailIn{Instance: defaultInstance}).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil)
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil)
 			status, err := doCheck(as, sn, "", 0)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(status).To(Equal(model.SsBackupStatusCompleted))
 		})
 
 		It("mock agent server and return check err first time and then success", func() {
-			as.EXPECT().ShowDetail(&model.ShowDetailIn{Instance: defaultInstance}).Return(nil, errors.New("timeout"))
-			as.EXPECT().ShowDetail(&model.ShowDetailIn{Instance: defaultInstance}).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil)
+			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout"))
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil)
 			status, err := doCheck(as, sn, "", 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(status).To(Equal(model.SsBackupStatusCompleted))
@@ -325,6 +324,9 @@ var _ = Describe("test backup mock", func() {
 			})
 			monkey.Patch(pkg.NewAgentServer, func(addr string) pkg.IAgentServer {
 				return as
+			})
+			monkey.Patch(getUserApproveInTerminal, func(_ string) error {
+				return nil
 			})
 		})
 		AfterEach(func() {

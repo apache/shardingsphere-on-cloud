@@ -35,6 +35,7 @@ type agentServer struct {
 	_apiRestore    string
 	_apiShowDetail string
 	_apiShowList   string
+	_apiDiskspace  string
 }
 
 type IAgentServer interface {
@@ -43,6 +44,7 @@ type IAgentServer interface {
 	Restore(in *model.RestoreIn) error
 	ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, error)
 	ShowList(in *model.ShowListIn) ([]model.BackupInfo, error)
+	ShowDiskSpace(in *model.DiskSpaceIn) (*model.DiskSpaceInfo, error)
 }
 
 var _ IAgentServer = (*agentServer)(nil)
@@ -55,6 +57,7 @@ func NewAgentServer(addr string) IAgentServer {
 		_apiRestore:    "/api/restore",
 		_apiShowDetail: "/api/show",
 		_apiShowList:   "/api/show/list",
+		_apiDiskspace:  "/api/diskspace",
 	}
 }
 
@@ -184,4 +187,33 @@ func (as *agentServer) ShowList(in *model.ShowListIn) ([]model.BackupInfo, error
 	}
 
 	return out.Data, nil
+}
+
+func (as *agentServer) ShowDiskSpace(in *model.DiskSpaceIn) (*model.DiskSpaceInfo, error) {
+	url := fmt.Sprintf("%s%s", as.addr, as._apiDiskspace)
+
+	out := &model.DiskSpaceInfo{}
+	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
+	r.Header(map[string]string{
+		"x-request-id": uuid.New().String(),
+		"content-type": "application/json",
+	})
+	r.Body(in)
+
+	httpCode, err := r.Send(out)
+	if err != nil {
+		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
+		return nil, fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
+	}
+
+	if httpCode != http.StatusOK {
+		return nil, fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
+	}
+
+	if out.Code != 0 {
+		asErr := xerr.NewAgentServerErr(out.Code, out.Msg)
+		return nil, fmt.Errorf("agent server error[code=%d,msg=%s],err=%w", out.Code, out.Msg, asErr)
+	}
+
+	return out, nil
 }
