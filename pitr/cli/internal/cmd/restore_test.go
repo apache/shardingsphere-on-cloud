@@ -109,7 +109,7 @@ var _ = Describe("test restore", func() {
 	})
 
 	It("check database if exists", func() {
-		monkey.Patch(getUserApproveInTerminal, func() error { return nil })
+		monkey.Patch(getUserApproveInTerminal, func(_ string) error { return nil })
 		proxy.EXPECT().ExportMetaData()
 		Expect(checkDatabaseExist(proxy, bak)).To(BeNil())
 	})
@@ -140,7 +140,7 @@ var _ = Describe("test restore", func() {
 		// test user abort
 		It("user abort", func() {
 			// exec getUserApproveInTerminal
-			Expect(getUserApproveInTerminal()).To(Equal(xerr.NewCliErr("User abort")))
+			Expect(getUserApproveInTerminal("")).To(Equal(xerr.NewCliErr("User abort")))
 		})
 		// TODO test user approve, how to patch os.Stdin?
 	})

@@ -117,7 +117,8 @@ func main() {
 
 	log = logging.Init(level)
 	pkg.Init(shell, pgData, log)
-	app = fiber.New()
+
+	SetupApp()
 
 	go func() {
 		if err := Serve(port); err != nil {
@@ -139,8 +140,9 @@ func main() {
 	log.Info("app has exited...")
 }
 
-// Serve run a http server on the specified port.
-func Serve(port string) error {
+func SetupApp() {
+	app = fiber.New()
+
 	app.Use(
 		middleware.Recover(logging.Log()),
 		middleware.UniformErrResp(logging.Log()),
@@ -162,12 +164,17 @@ func Serve(port string) error {
 		r.Post("/restore", handler.Restore)
 		r.Post("/show", handler.Show)
 		r.Post("/show/list", handler.ShowList)
+		r.Post("/diskspace", handler.DiskSpace)
 	})
 
 	// 404
 	app.Use(func(ctx *fiber.Ctx) error {
 		return responder.NotFound(ctx, "API not found")
 	})
+}
+
+// Serve run a http server on the specified port.
+func Serve(port string) error {
 
 	//return app.Listen(":18080")
 	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)

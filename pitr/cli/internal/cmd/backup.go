@@ -135,36 +135,49 @@ func backup() error {
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("export backup data failed, err:%s", err.Error()))
 	}
-
 	logging.Info(fmt.Sprintf("Export backup data success, backup filename: %s", filename))
 
-	// Step3. send backup command to agent-server.
+	// Step3. Check agent server status
+	logging.Info("Checking agent server status...")
+	if available := checkAgentServerStatus(lsBackup); !available {
+		err = xerr.NewCliErr("one or more agent server are not available.")
+		return err
+	}
+
+	// Step4. Show disk space
+	logging.Info("Checking disk space...")
+	err = checkDiskSpace(lsBackup)
+	if err != nil {
+		return xerr.NewCliErr(err.Error())
+	}
+
+	// Step5. send backup command to agent-server.
 	logging.Info("Starting backup ...")
 	err = execBackup(lsBackup)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("exec backup failed, err:%s", err.Error()))
 	}
 
-	// Step4. unlock cluster
+	// Step6. unlock cluster
 	logging.Info("Starting unlock cluster ...")
 	err = proxy.Unlock()
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("unlock cluster failed, err:%s", err.Error()))
 	}
 
-	// Step5. update backup file
+	// Step7. update backup file
 	logging.Info("Starting update backup file ...")
 	err = ls.WriteByJSON(filename, lsBackup)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("update backup file failed, err:%s", err.Error()))
 	}
 
-	// Step6. check agent server backup
+	// Step8. check agent server backup
 	logging.Info("Starting check backup status ...")
 	status := checkBackupStatus(lsBackup)
 	logging.Info(fmt.Sprintf("Backup result: %s", status))
 
-	// Step7. finished backup and update backup file
+	// Step9. finished backup and update backup file
 	logging.Info("Starting update backup file ...")
 	err = ls.WriteByJSON(filename, lsBackup)
 	if err != nil {
@@ -173,7 +186,6 @@ func backup() error {
 
 	logging.Info("Backup finished!")
 	return nil
-
 }
 
 func exportData(proxy pkg.IShardingSphereProxy, ls pkg.ILocalStorage) (lsBackup *model.LsBackup, err error) {
@@ -224,12 +236,6 @@ func execBackup(lsBackup *model.LsBackup) error {
 	dnCh := make(chan *model.DataNode, len(sNodes))
 	g := new(errgroup.Group)
 
-	logging.Info("Checking agent server status...")
-	available := checkAgentServerStatus(lsBackup)
-	if !available {
-		return xerr.NewCliErr("one or more agent server are not available.")
-	}
-
 	logging.Info("Starting send backup command to agent server...")
 
 	for _, node := range sNodes {
@@ -256,39 +262,6 @@ func execBackup(lsBackup *model.LsBackup) error {
 
 	lsBackup.SsBackup.Status = model.SsBackupStatusRunning
 	return nil
-}
-
-func checkAgentServerStatus(lsBackup *model.LsBackup) bool {
-
-	statusList := make([]*model.AgentServerStatus, 0)
-
-	// all agent server are available
-	available := true
-
-	for _, node := range lsBackup.SsBackup.StorageNodes {
-		sn := node
-		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
-		if err := as.CheckStatus(); err != nil {
-			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Status: "Unavailable"})
-			available = false
-		} else {
-			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Status: "Available"})
-		}
-	}
-
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-	t.SetTitle("Agent Server Status")
-	t.AppendHeader(table.Row{"#", "Agent Server IP", "Status"})
-
-	for i, s := range statusList {
-		t.AppendRow([]interface{}{i + 1, s.IP, s.Status})
-		t.AppendSeparator()
-	}
-
-	t.Render()
-
-	return available
 }
 
 func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.DataNode) error {
@@ -435,11 +408,4 @@ func doCheck(as pkg.IAgentServer, sn *model.StorageNode, backupID string, retrie
 	}
 
 	return backupInfo.Status, nil
-}
-
-func convertLocalhost(ip string) string {
-	if ip == "127.0.0.1" {
-		return Host
-	}
-	return ip
 }

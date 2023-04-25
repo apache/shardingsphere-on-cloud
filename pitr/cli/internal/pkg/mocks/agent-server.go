@@ -109,6 +109,21 @@ func (mr *MockIAgentServerMockRecorder) ShowDetail(in interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShowDetail", reflect.TypeOf((*MockIAgentServer)(nil).ShowDetail), in)
 }
 
+// ShowDiskSpace mocks base method.
+func (m *MockIAgentServer) ShowDiskSpace(in *model.DiskSpaceIn) (*model.DiskSpaceInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ShowDiskSpace", in)
+	ret0, _ := ret[0].(*model.DiskSpaceInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ShowDiskSpace indicates an expected call of ShowDiskSpace.
+func (mr *MockIAgentServerMockRecorder) ShowDiskSpace(in interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShowDiskSpace", reflect.TypeOf((*MockIAgentServer)(nil).ShowDiskSpace), in)
+}
+
 // ShowList mocks base method.
 func (m *MockIAgentServer) ShowList(in *model.ShowListIn) ([]model.BackupInfo, error) {
 	m.ctrl.T.Helper()

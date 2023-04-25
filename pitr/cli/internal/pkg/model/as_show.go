@@ -58,4 +58,21 @@ type (
 		Msg  string       `json:"msg" validate:"required"`
 		Data []BackupInfo `json:"data"`
 	}
+
+	DiskSpaceIn struct {
+		// DiskPath is the path of the disk
+		DiskPath string `json:"diskPath"`
+	}
+
+	DiskSpaceInfo struct {
+		Code int    `json:"code" validate:"required"`
+		Msg  string `json:"msg" validate:"required"`
+		Data string `json:"data"`
+	}
+
+	DiskSpaceStatus struct {
+		IP              string `json:"ip"`
+		Path            string `json:"path"`
+		DiskSpaceStatus string `json:"diskSpaceStatus"`
+	}
 )
