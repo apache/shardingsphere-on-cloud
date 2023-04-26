@@ -85,9 +85,9 @@ var _ = BeforeSuite(func() {
 		Client:     k8sManager.GetClient(),
 		Scheme:     k8sManager.GetScheme(),
 		Log:        logf.Log,
-		Deployment: deployment.NewDeployment(k8sManager.GetClient()),
-		Service:    service.NewService(k8sManager.GetClient()),
-		ConfigMap:  configmap.NewConfigMap(k8sManager.GetClient()),
+		Deployment: deployment.NewDeploymentClient(k8sManager.GetClient()),
+		Service:    service.NewServiceClient(k8sManager.GetClient()),
+		ConfigMap:  configmap.NewConfigMapClient(k8sManager.GetClient()),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

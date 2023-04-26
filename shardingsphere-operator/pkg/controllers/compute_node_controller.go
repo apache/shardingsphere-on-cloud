@@ -34,6 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -105,58 +106,56 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	deploy, found, err := r.getDeploymentByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
+	deploy, err := r.getDeploymentByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
 	if err != nil {
 		return err
 	}
-	if found {
+	if deploy != nil {
 		return r.updateDeployment(ctx, cn, deploy)
-
 	}
 	return r.createDeployment(ctx, cn)
 }
 
 func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	deploy := reconcile.NewDeployment(cn)
-	err := r.Create(ctx, deploy)
+	deploy := r.Deployment.Build(ctx, cn)
+	err := r.Deployment.Create(ctx, deploy)
 	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
 		return nil
 	}
-
 	return err
 }
 
 func (r *ComputeNodeReconciler) updateDeployment(ctx context.Context, cn *v1alpha1.ComputeNode, deploy *appsv1.Deployment) error {
-	exp := reconcile.UpdateDeployment(cn, deploy)
-	return r.Update(ctx, exp)
+	exp := r.Deployment.Build(ctx, cn)
+	exp.ObjectMeta = deploy.ObjectMeta
+	exp.ObjectMeta.ResourceVersion = ""
+	exp.Labels = deploy.Labels
+	exp.Annotations = deploy.Annotations
+	return r.Deployment.Update(ctx, exp)
 }
 
-func (r *ComputeNodeReconciler) getDeploymentByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*appsv1.Deployment, bool, error) {
+func (r *ComputeNodeReconciler) getDeploymentByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*appsv1.Deployment, error) {
 	dp, err := r.Deployment.GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	if dp == nil {
-		return nil, false, nil
-	}
-	return dp, true, nil
+	return dp, nil
 }
 
 func (r *ComputeNodeReconciler) reconcileService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	svc, found, err := r.getServiceByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
+	svc, err := r.getServiceByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
 	if err != nil {
 		return err
 	}
-	if found {
+	if svc != nil {
 		return r.updateService(ctx, cn, svc)
-
 	}
 	return r.createService(ctx, cn)
 }
 
 func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	svc := reconcile.NewService(cn)
-	err := r.Create(ctx, svc)
+	svc := r.Service.Build(ctx, cn)
+	err := r.Service.Create(ctx, svc)
 	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
 		return nil
 	}
@@ -164,33 +163,6 @@ func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.
 }
 
 func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, cur *corev1.Service) error {
-	// if cn.Spec.ServiceType == v1.ServiceTypeNodePort {
-	// 	for idx := range cur.Spec.Ports {
-	// 		for i := range cn.Spec.PortBindings {
-	// 			if cur.Spec.Ports[idx].Name == cn.Spec.PortBindings[i].Name {
-	// 				if cn.Spec.PortBindings[i].NodePort == 0 {
-	// 					cn.Spec.PortBindings[i].NodePort = cur.Spec.Ports[idx].NodePort
-	// 					if err := r.Update(ctx, cn); err != nil {
-	// 						return err
-	// 					}
-	// 				}
-	// 				break
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// if cn.Spec.ServiceType == v1.ServiceTypeClusterIP {
-	// 	for idx := range cn.Spec.PortBindings {
-	// 		if cn.Spec.PortBindings[idx].NodePort != 0 {
-	// 			cn.Spec.PortBindings[idx].NodePort = 0
-	// 			if err := r.Update(ctx, cn); err != nil {
-	// 				return err
-	// 			}
-	// 			break
-	// 		}
-	// 	}
-	// }
-
 	switch cn.Spec.ServiceType {
 	case corev1.ServiceTypeClusterIP:
 		updateServiceClusterIP(cn.Spec.PortBindings)
@@ -208,7 +180,13 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 		}
 	}
 
-	exp := reconcile.UpdateService(cn, cur)
+	exp := r.Service.Build(ctx, cn)
+	exp.ObjectMeta = cur.ObjectMeta
+	exp.Spec.ClusterIP = cur.Spec.ClusterIP
+	exp.Spec.ClusterIPs = cur.Spec.ClusterIPs
+	if cn.Spec.ServiceType == corev1.ServiceTypeNodePort {
+		exp.Spec.Ports = updateNodePorts(cn.Spec.PortBindings, cur.Spec.Ports)
+	}
 	return r.Update(ctx, exp)
 }
 
@@ -218,10 +196,6 @@ func updateServiceNodePort(portBindings []v1alpha1.PortBinding, svcports []corev
 			if svcports[idx].Name == portBindings[i].Name {
 				if portBindings[i].NodePort == 0 {
 					portBindings[i].NodePort = svcports[idx].NodePort
-					break
-					// if err := r.Update(ctx, cn); err != nil {
-					// 	return err
-					// }
 				}
 				break
 			}
@@ -233,28 +207,43 @@ func updateServiceClusterIP(portBindings []v1alpha1.PortBinding) {
 	for idx := range portBindings {
 		if portBindings[idx].NodePort != 0 {
 			portBindings[idx].NodePort = 0
-			// if err := r.Update(ctx, cn); err != nil {
-			// 	return err
-			// }
 			break
 		}
 	}
 }
 
-func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.Service, bool, error) {
+func updateNodePorts(portbindings []v1alpha1.PortBinding, svcports []corev1.ServicePort) []corev1.ServicePort {
+	ports := []corev1.ServicePort{}
+	for pb := range portbindings {
+		for sp := range svcports {
+			if portbindings[pb].Name == svcports[sp].Name {
+				port := corev1.ServicePort{
+					Name:       portbindings[pb].Name,
+					TargetPort: intstr.FromInt(int(portbindings[pb].ContainerPort)),
+					Port:       portbindings[pb].ServicePort,
+					Protocol:   portbindings[pb].Protocol,
+				}
+				if svcports[sp].NodePort != 0 {
+					port.NodePort = svcports[sp].NodePort
+				}
+				ports = append(ports, port)
+			}
+		}
+	}
+	return ports
+}
+
+func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.Service, error) {
 	svc, err := r.Service.GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	if svc == nil {
-		return nil, false, nil
-	}
-	return svc, true, nil
+	return svc, nil
 }
 
 func (r *ComputeNodeReconciler) createConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	cm := reconcile.NewCNConfigMap(cn)
-	err := r.Create(ctx, cm)
+	cm := r.ConfigMap.Build(ctx, cn)
+	err := r.ConfigMap.Create(ctx, cm)
 	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
 		return nil
 	}
@@ -266,25 +255,21 @@ func (r *ComputeNodeReconciler) updateConfigMap(ctx context.Context, cn *v1alpha
 	return r.Update(ctx, exp)
 }
 
-func (r *ComputeNodeReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.ConfigMap, bool, error) {
+func (r *ComputeNodeReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.ConfigMap, error) {
 	cm, err := r.ConfigMap.GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	if cm == nil {
-		return nil, false, nil
-	}
-	return cm, true, nil
+	return cm, nil
 }
 
 func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	cm, found, err := r.getConfigMapByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
+	cm, err := r.getConfigMapByNamespacedName(ctx, types.NamespacedName{Namespace: cn.Namespace, Name: cn.Name})
 	if err != nil {
 		return err
 	}
-	if found {
+	if cm != nil {
 		return r.updateConfigMap(ctx, cn, cm)
-
 	}
 	return r.createConfigMap(ctx, cn)
 }

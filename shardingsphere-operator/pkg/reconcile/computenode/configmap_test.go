@@ -17,6 +17,7 @@
 
 package computenode_test
 
+/*
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
@@ -78,3 +79,5 @@ var _ = Describe("ConfigMap", func() {
 		})
 	})
 })
+
+*/

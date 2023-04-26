@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package computenode
+package service
 
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -129,7 +129,6 @@ func DefaultService(meta metav1.Object, gvk schema.GroupVersionKind) *corev1.Ser
 }
 
 // UpdateService update Service
-/*
 func UpdateService(cn *v1alpha1.ComputeNode, svc *corev1.Service) *corev1.Service {
 	exp := NewService(cn)
 	exp.ObjectMeta = svc.ObjectMeta
@@ -141,8 +140,7 @@ func UpdateService(cn *v1alpha1.ComputeNode, svc *corev1.Service) *corev1.Servic
 
 	return exp
 }
-*/
-/*
+
 func updateNodePorts(portbindings []v1alpha1.PortBinding, svcports []corev1.ServicePort) []corev1.ServicePort {
 	ports := []corev1.ServicePort{}
 	for pb := range portbindings {
@@ -163,4 +161,3 @@ func updateNodePorts(portbindings []v1alpha1.PortBinding, svcports []corev1.Serv
 	}
 	return ports
 }
-*/

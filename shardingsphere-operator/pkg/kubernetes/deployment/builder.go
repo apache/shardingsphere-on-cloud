@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package computenode
-
-/*
+package deployment
 
 import (
 	"fmt"
 
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -52,12 +51,12 @@ const (
 	defaultAgentBinVersionEnvName         = "AGENT_BIN_VERSION"
 
 	downloadMysqlJarScript = `wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar;
-wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5;
-if [ $(md5sum /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5) ];
-then echo success;
-else echo failed;exit 1;fi;mv /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar /opt/shardingsphere-proxy/ext-lib`
+ wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5;
+ if [ $(md5sum /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5) ];
+ then echo success;
+ else echo failed;exit 1;fi;mv /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar /opt/shardingsphere-proxy/ext-lib`
 	downloadAgentJarScript = `wget https://archive.apache.org/dist/shardingsphere/${AGENT_BIN_VERSION}/apache-shardingsphere-${AGENT_BIN_VERSION}-shardingsphere-agent-bin.tar.gz;
-tar -zxvf apache-shardingsphere-${AGENT_BIN_VERSION}-shardingsphere-agent-bin.tar.gz -C /opt/shardingsphere-proxy/agent --strip-component 1;`
+ tar -zxvf apache-shardingsphere-${AGENT_BIN_VERSION}-shardingsphere-agent-bin.tar.gz -C /opt/shardingsphere-proxy/agent --strip-component 1;`
 )
 
 func relativeMySQLDriverMountName(v string) string {
@@ -523,7 +522,7 @@ func (d *deploymentBuilder) SetAgentBin(scb common.ContainerBuilder, cn *v1alpha
 	vbAgentConf := NewSharedVolumeAndMountBuilder().
 		SetVolumeMountSize(1).
 		SetName(defaultJavaAgentConfigVolumeName).
-		SetVolumeSourceConfigMap(cn.Name, corev1.KeyToPath{Key: ConfigDataKeyForAgent, Path: ConfigDataKeyForAgent}).
+		SetVolumeSourceConfigMap(cn.Name, corev1.KeyToPath{Key: configmap.ConfigDataKeyForAgent, Path: configmap.ConfigDataKeyForAgent}).
 		SetMountPath(0, defaultJavaAgentConfigVolumeMountPath)
 	vc, vmc := vbAgentConf.Build()
 	d.SetVolume(vc)
@@ -606,6 +605,7 @@ func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *appsv1.
 }
 
 // UpdateDeployment updates the deployment
+/*
 func UpdateDeployment(cn *v1alpha1.ComputeNode, cur *appsv1.Deployment) *appsv1.Deployment {
 	exp := &appsv1.Deployment{}
 	exp.ObjectMeta = cur.ObjectMeta

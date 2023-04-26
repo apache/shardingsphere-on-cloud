@@ -20,19 +20,21 @@ package deployment
 import (
 	"context"
 
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewDeployment creates a new Deployment
-func NewDeployment(c client.Client) Deployment {
+// NewDeploymentClient creates a new Deployment
+func NewDeploymentClient(c client.Client) Deployment {
 	return deploymentClient{
-		deploymentGetter: deploymentGetter{
+		builder: builder{},
+		getter: getter{
 			Client: c,
 		},
-		deploymentSetter: deploymentSetter{
+		setter: setter{
 			Client: c,
 		},
 	}
@@ -40,28 +42,30 @@ func NewDeployment(c client.Client) Deployment {
 
 // Deployment interface contains setter and getter
 type Deployment interface {
-	DeploymentGetter
-	DeploymentSetter
+	Builder
+	Getter
+	Setter
 }
 
 type deploymentClient struct {
-	deploymentGetter
-	deploymentSetter
+	builder
+	getter
+	setter
 }
 
-// DeploymentGetter get Deployment from different parameters
-type DeploymentGetter interface {
+// Getter get Deployment from different parameters
+type Getter interface {
 	GetByNamespacedName(context.Context, types.NamespacedName) (*appsv1.Deployment, error)
 }
 
-type deploymentGetter struct {
+type getter struct {
 	client.Client
 }
 
 // GetByNamespacedName returns Deployment from given namespaced name
-func (dg deploymentGetter) GetByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*appsv1.Deployment, error) {
+func (dg getter) GetByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*appsv1.Deployment, error) {
 	dp := &appsv1.Deployment{}
-	if err := dg.Get(ctx, namespacedName, dp); err != nil {
+	if err := dg.Client.Get(ctx, namespacedName, dp); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}
@@ -71,10 +75,34 @@ func (dg deploymentGetter) GetByNamespacedName(ctx context.Context, namespacedNa
 	}
 }
 
-// DeploymentMapGetter get Deployment from different parameters
-type DeploymentSetter interface {
+// Setter get Deployment from different parameters
+type Setter interface {
+	Create(context.Context, *appsv1.Deployment) error
+	Update(context.Context, *appsv1.Deployment) error
 }
 
-type deploymentSetter struct {
+type setter struct {
 	client.Client
+}
+
+// Create creates Deployment
+func (ds setter) Create(ctx context.Context, dp *appsv1.Deployment) error {
+	return ds.Client.Create(ctx, dp)
+}
+
+// Update updates Deployment
+func (ds setter) Update(ctx context.Context, dp *appsv1.Deployment) error {
+	return ds.Client.Update(ctx, dp)
+}
+
+// Builder build Deployment from given ComputeNode
+type Builder interface {
+	Build(context.Context, *v1alpha1.ComputeNode) *appsv1.Deployment
+}
+
+type builder struct{}
+
+// Build returns a new Deployment
+func (db builder) Build(ctx context.Context, cn *v1alpha1.ComputeNode) *appsv1.Deployment {
+	return NewDeployment(cn)
 }
