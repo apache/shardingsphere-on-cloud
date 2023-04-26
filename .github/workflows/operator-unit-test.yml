@@ -41,3 +41,19 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: ./shardingsphere-operator/cover.out
+      - name: "unit test"
+        run: |
+          cd pitr/agent
+          make test
+      - name: "Code coverage"
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./pitr/agent/cover.out
+      - name: "unit test"
+        run: |
+          cd pitr/cli
+          make test
+      - name: "Code coverage"
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./pitr/cli/cover.out
