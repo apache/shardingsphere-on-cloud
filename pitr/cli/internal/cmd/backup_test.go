@@ -153,9 +153,12 @@ var _ = Describe("Backup", func() {
 			}
 			as.EXPECT().Backup(gomock.Any()).Return("", nil)
 			dnCh := make(chan *model.DataNode, 10)
+
 			Expect(_execBackup(as, bak.SsBackup.StorageNodes[0], dnCh)).To(BeNil())
 			Expect(len(dnCh)).To(Equal(1))
+
 			as.EXPECT().Backup(gomock.Any()).Return("", xerr.NewCliErr("backup failed"))
+
 			Expect(_execBackup(as, bak.SsBackup.StorageNodes[0], dnCh)).ToNot(BeNil())
 			close(dnCh)
 			Expect(len(dnCh)).To(Equal(1))
@@ -208,7 +211,7 @@ var _ = Describe("Backup", func() {
 			monkey.UnpatchAll()
 		})
 
-		It("check error", func() {
+		It("check error 1", func() {
 			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout")).AnyTimes()
 			Expect(checkBackupStatus(lsbackup)).To(Equal(model.SsBackupStatusFailed))
 		})
@@ -393,6 +396,42 @@ var _ = Describe("test backup mock", func() {
 			mockIreq.EXPECT().Send(gomock.Any()).Return(500, nil)
 			mockIreq.EXPECT().Send(gomock.Any()).Return(200, nil).AnyTimes()
 			Expect(checkAgentServerStatus(ls)).To(BeFalse())
+		})
+	})
+
+	Context("test delete backup data", func() {
+		bak := &model.LsBackup{
+			Info: nil,
+			DnList: []*model.DataNode{
+				{
+					IP:   "test.delete.backup",
+					Port: 3306,
+				},
+			},
+			SsBackup: &model.SsBackup{
+				StorageNodes: []*model.StorageNode{
+					{
+						IP:   "test.delete.backup",
+						Port: 3306,
+					},
+				},
+			},
+		}
+		It("should delete failed", func() {
+			deleteBackupFiles(bak)
+		})
+
+		It("should delete success", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			as := mock_pkg.NewMockIAgentServer(ctrl)
+			monkey.Patch(pkg.NewAgentServer, func(addr string) pkg.IAgentServer {
+				return as
+			})
+
+			defer monkey.UnpatchAll()
+			defer ctrl.Finish()
+			as.EXPECT().DeleteBackup(gomock.Any()).Return(nil)
+			deleteBackupFiles(bak)
 		})
 	})
 })

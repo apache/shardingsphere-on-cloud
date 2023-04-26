@@ -76,10 +76,10 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 			Fail("Timeout[60s]")
 			return
 		Del:
-			err = og.delBackup(data, instance, backupID)
+			err = og.DelBackup(data, instance, backupID)
 			Expect(err).To(BeNil())
 
-			err = og.delBackup(data, instance, backupID)
+			err = og.DelBackup(data, instance, backupID)
 			Expect(errors.Is(err, cons.CmdOperateFailed)).To(BeTrue())
 		})
 	})

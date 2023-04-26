@@ -59,3 +59,25 @@ func Backup(ctx *fiber.Ctx) error {
 		ID: backupID,
 	})
 }
+
+func DeleteBackup(ctx *fiber.Ctx) error {
+	in := &view.DeleteBackupIn{}
+	if err := ctx.BodyParser(in); err != nil {
+		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
+	}
+
+	if err := in.Validate(); err != nil {
+		return fmt.Errorf("invalid parameter,err=%w", err)
+	}
+
+	if err := pkg.OG.Auth(in.Username, in.Password, in.DBName, in.DBPort); err != nil {
+		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
+		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
+	}
+
+	if err := pkg.OG.DelBackup(in.DnBackupPath, in.Instance, in.BackupID); err != nil {
+		return fmt.Errorf("delete backup failure,err=%w", err)
+	}
+
+	return responder.Success(ctx, "")
+}

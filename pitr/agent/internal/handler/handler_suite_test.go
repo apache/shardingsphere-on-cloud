@@ -18,18 +18,23 @@
 package handler_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/zap"
 )
 
-var app *fiber.App
+var (
+	app  *fiber.App
+	ctrl *gomock.Controller
+)
 
 func TestHandler(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -40,16 +45,16 @@ var _ = BeforeSuite(func() {
 	// init log
 	logging.Init(zap.DebugLevel)
 
+	Expect(os.Setenv("SHELL", "/bin/bash")).To(Succeed())
+
 	// init app
 	app = fiber.New()
 	app.Get("/ping", func(ctx *fiber.Ctx) error {
 		return responder.Success(ctx, "pong")
 	})
+
 	app.Route("/api", func(r fiber.Router) {
 		r.Post("/diskspace", handler.DiskSpace)
+		r.Delete("/backup", handler.DeleteBackup)
 	})
-})
-
-var _ = AfterSuite(func() {
-	_ = app.Shutdown()
 })

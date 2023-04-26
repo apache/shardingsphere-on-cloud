@@ -39,6 +39,23 @@ type (
 		Msg  string    `json:"msg" validate:"required"`
 		Data BackupOut `json:"data"`
 	}
+
+	DeleteBackupIn struct {
+		DBPort   uint16 `json:"db_port"`
+		DBName   string `json:"db_name"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+
+		DnBackupPath string `json:"dn_backup_path"`
+		BackupID     string `json:"backup_id"`
+		Instance     string `json:"instance"`
+	}
+
+	DeleteBackupOut struct {
+		Code int    `json:"code" validate:"required"`
+		Msg  string `json:"msg" validate:"required"`
+		Data string `json:"data"`
+	}
 )
 
 type AgentServerStatus struct {
@@ -47,8 +64,9 @@ type AgentServerStatus struct {
 	Status string `json:"status"`
 }
 
-type BackupResult struct {
+type DeleteBackupResult struct {
 	IP     string       `json:"ip"`
 	Port   uint16       `json:"port"`
 	Status BackupStatus `json:"status"`
+	Msg    string
 }
