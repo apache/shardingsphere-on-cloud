@@ -25,7 +25,6 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
-	reconcile "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -251,8 +250,12 @@ func (r *ComputeNodeReconciler) createConfigMap(ctx context.Context, cn *v1alpha
 }
 
 func (r *ComputeNodeReconciler) updateConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode, cm *corev1.ConfigMap) error {
-	exp := reconcile.UpdateConfigMap(cn, cm)
-	return r.Update(ctx, exp)
+	exp := r.ConfigMap.Build(ctx, cn)
+	exp.ObjectMeta = cm.ObjectMeta
+	exp.ObjectMeta.ResourceVersion = ""
+	exp.Labels = cm.Labels
+	exp.Annotations = cm.Annotations
+	return r.ConfigMap.Update(ctx, exp)
 }
 
 func (r *ComputeNodeReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.ConfigMap, error) {
