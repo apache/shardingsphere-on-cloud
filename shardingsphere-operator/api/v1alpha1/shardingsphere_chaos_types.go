@@ -82,133 +82,130 @@ const (
 // ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
 type ShardingSphereChaosStatus struct {
 	ChaosCondition ChaosCondition `json:"chaosCondition"`
-	Phase          Phase          `json:"phase"`
-	Result         []Result       `json:"result"`
+	Phase          ChaosPhase     `json:"phase"`
+	Results        []Result       `json:"results"`
 }
 
 // Result represents the result of the ShardingSphereChaos
 type Result struct {
 	Success bool   `json:"success"`
-	Detail  Detail `json:"details"`
+	Detail  Detail `json:"detail"`
 }
 
 type Detail struct {
-	Time metav1.Time `json:"time"`
-	Msg  string      `json:"message"`
+	Time    metav1.Time `json:"time"`
+	Message string      `json:"message"`
 }
 
-type Phase string
+type ChaosPhase string
 
 var (
-	PhaseBeforeExperiment Phase = "BeforeReq"
-	PhaseAfterExperiment  Phase = "AfterReq"
-	PhaseCreatingChaos    Phase = "Creating"
-	PhaseInChaos          Phase = "Injected"
-	PhaseRecoveredChaos   Phase = "Recovered"
+	BeforeExperiment ChaosPhase = "BeforeReq"
+	AfterExperiment  ChaosPhase = "AfterReq"
+	CreatedChaos     ChaosPhase = "Created"
+	InjectedChaos    ChaosPhase = "Injected"
+	RecoveredChaos   ChaosPhase = "Recovered"
 )
 
 // PodChaosAction Specify the action type of pod Chaos
 type PodChaosAction string
 
 var (
-	PodFailureAction    PodChaosAction = "podFailure"
-	ContainerKillAction PodChaosAction = "containerKill"
+	PodFailure    PodChaosAction = "PodFailure"
+	ContainerKill PodChaosAction = "ContainerKill"
 )
 
 // PodChaosSpec Fields that need to be configured for pod type chaos
 type PodChaosSpec struct {
 	PodSelector `json:"selector,omitempty"`
 	Action      PodChaosAction `json:"action"`
-	//+optional
-	PodActionParam PodActionParam `json:"params,omitempty"`
+
+	// +optional
+	Params PodChaosParams `json:"params,omitempty"`
 }
 
-// PodActionParam Optional parameters for pod type configuration
-type PodActionParam struct {
-	//+optional
-	PodFailure PodFailureActionParams `json:"podFailure,omitempty"`
-	//+optional
-	ContainerKill ContainerKillActionParams `json:"containerKill,omitempty"`
+// PodActionParams Optional parameters for pod type configuration
+type PodChaosParams struct {
+	// +optional
+	PodFailure *PodFailureParams `json:"podFailure,omitempty"`
+	// +optional
+	ContainerKill *ContainerKillParams `json:"containerKill,omitempty"`
+	// +optional
+	// FIXME
+	// PodKill *PodKillParams `json:"containerKill,omitempty"`
 }
 
-type PodFailureActionParams struct {
+type PodFailureParams struct {
 	// +optional
 	Duration string `json:"duration,omitempty"`
 }
 
-type ContainerKillActionParams struct {
+type ContainerKillParams struct {
 	// +optional
 	ContainerNames []string `json:"containerNames,omitempty"`
 }
 
 // NetworkChaosSpec Fields that need to be configured for network type chaos
 type NetworkChaosSpec struct {
-	Source PodSelector `json:",inline"`
+	Source PodSelector  `json:",inline"`
+	Target *PodSelector `json:"target,omitempty"`
 	// +optional
-	Duration *string `json:"duration,omitempty"`
-	//+optional
+	Action NetworkChaosAction `json:"action"`
+
+	// +optional
+	Duration string `json:"duration,omitempty"`
+	// +optional
 	Direction Direction `json:"direction,omitempty"`
 	// +optional
-	Target *PodSelector       `json:"target,omitempty"`
-	Action NetworkChaosAction `json:"action"`
-	// +optional
-	Network *NetworkParams `json:"params,omitempty"`
+	Params NetworkChaosParams `json:"params,omitempty"`
 }
 
 // NetworkParams Optional parameters for network type configuration
-type NetworkParams struct {
+type NetworkChaosParams struct {
 	// +optional
-	Delay *DelayActionParams `json:"delay,omitempty"`
+	Delay *DelayParams `json:"delay,omitempty"`
 	// +optional
-	Loss *LossActionParams `json:"loss,omitempty"`
+	Loss *LossParams `json:"loss,omitempty"`
 	// +optional
-	Duplicate *DuplicateActionParams `json:"duplicate,omitempty"`
+	Duplication *DuplicationParams `json:"duplicate,omitempty"`
 	// +optional
-	Corrupt *CorruptActionParams `json:"corrupt,omitempty"`
+	Corruption *CorruptionParams `json:"corrupt,omitempty"`
 }
 
-type DelayActionParams struct {
+type DelayParams struct {
 	// +optional
 	Latency string `json:"latency,omitempty"`
-	// +optional
-	Correlation string `json:"correlation,omitempty"`
 	// +optional
 	Jitter string `json:"jitter,omitempty"`
 }
 
-type LossActionParams struct {
+type LossParams struct {
 	// +optional
 	Loss string `json:"loss,omitempty"`
-	// +optional
-	Correlation string `json:"correlation,omitempty"`
 }
 
-type DuplicateActionParams struct {
+type DuplicationParams struct {
 	// +optional
-	Duplicate string `json:"duplicate,omitempty"`
-	// +optional
-	Correlation string `json:"correlation,omitempty"`
+	Duplication string `json:"duplicate,omitempty"`
 }
 
-type CorruptActionParams struct {
+type CorruptionParams struct {
 	// +optional
-	Corrupt string `json:"corrupt,omitempty"`
-	// +optional
-	Correlation string `json:"correlation,omitempty"`
+	Corruption string `json:"corrupt,omitempty"`
 }
 
-// NetworkChaosAction Specify the action type of network Chaos
+// NetworkChaosAction specify the action type of network Chaos
 type NetworkChaosAction string
 
 const (
-	DelayAction     NetworkChaosAction = "delay"
-	LossAction      NetworkChaosAction = "loss"
-	DuplicateAction NetworkChaosAction = "duplicate"
-	CorruptAction   NetworkChaosAction = "corrupt"
-	PartitionAction NetworkChaosAction = "partition"
+	Delay       NetworkChaosAction = "Delay"
+	Loss        NetworkChaosAction = "Loss"
+	Duplication NetworkChaosAction = "Duplication"
+	Corruption  NetworkChaosAction = "Corruption"
+	Partition   NetworkChaosAction = "Partition"
 )
 
-// Direction Specifies the direction of action of network chaos
+// Direction specifies the direction of action of network chaos
 type Direction string
 
 const (
@@ -217,7 +214,7 @@ const (
 	Both Direction = "both"
 )
 
-// PodSelector Used to select the target of the specified chaos
+// PodSelector used to select the target of the specified chaos
 type PodSelector struct {
 	// +optional
 	Namespaces []string `json:"namespaces,omitempty"`
@@ -230,7 +227,8 @@ type PodSelector struct {
 	// +optional
 	Pods map[string][]string `json:"pods,omitempty"`
 	// +optional
-	NodeSelectors       map[string]string                 `json:"nodeSelectors,omitempty"`
+	NodeSelectors map[string]string `json:"nodeSelectors,omitempty"`
+	// +optional
 	ExpressionSelectors []metav1.LabelSelectorRequirement `json:"expressionSelectors,omitempty"`
 }
 

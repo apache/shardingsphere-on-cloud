@@ -167,12 +167,12 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (Po
 		PodSelector: *psb.Build(),
 	}
 
-	if chao.Action == v1alpha1.PodFailureAction {
-		pcb.SetDuration(chao.PodActionParam.PodFailure.Duration)
+	if chao.Action == v1alpha1.PodFailure {
+		pcb.SetDuration(chao.Params.PodFailure.Duration)
 	}
 
-	if chao.Action == v1alpha1.ContainerKillAction {
-		containerSelector.ContainerNames = chao.PodActionParam.ContainerKill.ContainerNames
+	if chao.Action == v1alpha1.ContainerKill {
+		containerSelector.ContainerNames = chao.Params.ContainerKill.ContainerNames
 	}
 
 	pcb.SetContainerSelector(containerSelector)
@@ -195,7 +195,7 @@ func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereCha
 		ncb.SetAction(string(chao.Action))
 	}
 
-	ncb.SetDuration(*chao.Duration).SetDirection(string(chao.Direction))
+	ncb.SetDuration(chao.Duration).SetDirection(string(chao.Direction))
 
 	psb := NewPodSelectorBuilder()
 
@@ -232,32 +232,28 @@ func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereCha
 
 	tcParams := &chaosv1alpha1.TcParameter{}
 
-	if chao.Action == v1alpha1.DelayAction {
+	if chao.Action == v1alpha1.Delay {
 		tcParams.Delay = &chaosv1alpha1.DelaySpec{
-			Latency:     chao.Network.Delay.Latency,
-			Correlation: chao.Network.Delay.Correlation,
-			Jitter:      chao.Network.Delay.Jitter,
+			Latency: chao.Params.Delay.Latency,
+			Jitter:  chao.Params.Delay.Jitter,
 		}
 	}
 
-	if chao.Action == v1alpha1.CorruptAction {
+	if chao.Action == v1alpha1.Corruption {
 		tcParams.Corrupt = &chaosv1alpha1.CorruptSpec{
-			Corrupt:     chao.Network.Corrupt.Corrupt,
-			Correlation: chao.Network.Corrupt.Correlation,
+			Corrupt: chao.Params.Corruption.Corruption,
 		}
 	}
 
-	if chao.Action == v1alpha1.DuplicateAction {
+	if chao.Action == v1alpha1.Duplication {
 		tcParams.Duplicate = &chaosv1alpha1.DuplicateSpec{
-			Duplicate:   chao.Network.Duplicate.Duplicate,
-			Correlation: chao.Network.Duplicate.Correlation,
+			Duplicate: chao.Params.Duplication.Duplication,
 		}
 	}
 
-	if chao.Action == v1alpha1.LossAction {
+	if chao.Action == v1alpha1.Loss {
 		tcParams.Loss = &chaosv1alpha1.LossSpec{
-			Loss:        chao.Network.Loss.Loss,
-			Correlation: chao.Network.Loss.Correlation,
+			Loss: chao.Params.Loss.Loss,
 		}
 	}
 
@@ -459,11 +455,11 @@ func (p *podChaosBuilder) SetContainerSelector(selector *chaosv1alpha1.Container
 }
 
 func (p *podChaosBuilder) SetAction(action string) PodChaosBuilder {
-	if v1alpha1.PodChaosAction(action) == v1alpha1.PodFailureAction {
+	if v1alpha1.PodChaosAction(action) == v1alpha1.PodFailure {
 		p.podChaos.Spec.Action = chaosv1alpha1.PodFailureAction
 	}
 
-	if v1alpha1.PodChaosAction(action) == v1alpha1.ContainerKillAction {
+	if v1alpha1.PodChaosAction(action) == v1alpha1.ContainerKill {
 		p.podChaos.Spec.Action = chaosv1alpha1.ContainerKillAction
 	}
 
@@ -539,24 +535,24 @@ func (n *netWorkChaosBuilder) SetPodSelector(selector *chaosv1alpha1.PodSelector
 }
 
 func (n *netWorkChaosBuilder) SetAction(action string) NetworkChaosBuilder {
-
+	//FIXME
 	if chaosv1alpha1.NetworkChaosAction(action) == chaosv1alpha1.BandwidthAction {
 		n.netWorkChaos.Spec.Action = chaosv1alpha1.BandwidthAction
 	}
 
-	if v1alpha1.NetworkChaosAction(action) == v1alpha1.CorruptAction {
+	if v1alpha1.NetworkChaosAction(action) == v1alpha1.Corruption {
 		n.netWorkChaos.Spec.Action = chaosv1alpha1.CorruptAction
 	}
 
-	if v1alpha1.NetworkChaosAction(action) == v1alpha1.PartitionAction {
+	if v1alpha1.NetworkChaosAction(action) == v1alpha1.Partition {
 		n.netWorkChaos.Spec.Action = chaosv1alpha1.PartitionAction
 	}
 
-	if v1alpha1.NetworkChaosAction(action) == v1alpha1.LossAction {
+	if v1alpha1.NetworkChaosAction(action) == v1alpha1.Loss {
 		n.netWorkChaos.Spec.Action = chaosv1alpha1.LossAction
 	}
 
-	if v1alpha1.NetworkChaosAction(action) == v1alpha1.DuplicateAction {
+	if v1alpha1.NetworkChaosAction(action) == v1alpha1.Duplication {
 		n.netWorkChaos.Spec.Action = chaosv1alpha1.DuplicateAction
 	}
 

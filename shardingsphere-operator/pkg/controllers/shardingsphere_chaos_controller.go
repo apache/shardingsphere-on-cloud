@@ -132,8 +132,8 @@ func (r *ShardingSphereChaosReconciler) handleChaosChange(ctx context.Context, n
 		return err
 	}
 
-	if ssChaos.Status.Phase != sschaosv1alpha1.PhaseBeforeExperiment {
-		ssChaos.Status.Phase = sschaosv1alpha1.PhaseAfterExperiment
+	if ssChaos.Status.Phase != sschaosv1alpha1.BeforeExperiment {
+		ssChaos.Status.Phase = sschaosv1alpha1.AfterExperiment
 		if err := r.Status().Update(ctx, ssChaos); err != nil {
 			return err
 		}
@@ -150,7 +150,7 @@ func (r *ShardingSphereChaosReconciler) getRuntimeSSChaos(ctx context.Context, n
 func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssChao *sschaosv1alpha1.ShardingSphereChaos) error {
 	logger := r.Log.WithValues("reconcile chaos", ssChao.Name)
 
-	if ssChao.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment || ssChao.Status.Phase == "" {
+	if ssChao.Status.Phase == sschaosv1alpha1.BeforeExperiment || ssChao.Status.Phase == "" {
 		return nil
 	}
 
@@ -215,11 +215,11 @@ func (r *ShardingSphereChaosReconciler) reconcileJob(ctx context.Context, ssChao
 
 	var nowInjectRequirement reconcile.InjectRequirement
 	switch {
-	case ssChaos.Status.Phase == "" || ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment || ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment:
+	case ssChaos.Status.Phase == "" || ssChaos.Status.Phase == sschaosv1alpha1.BeforeExperiment || ssChaos.Status.Phase == sschaosv1alpha1.AfterExperiment:
 		nowInjectRequirement = reconcile.Experimental
-	case ssChaos.Status.Phase == sschaosv1alpha1.PhaseInChaos:
+	case ssChaos.Status.Phase == sschaosv1alpha1.InjectedChaos:
 		nowInjectRequirement = reconcile.Pressure
-	case ssChaos.Status.Phase == sschaosv1alpha1.PhaseRecoveredChaos:
+	case ssChaos.Status.Phase == sschaosv1alpha1.RecoveredChaos:
 		nowInjectRequirement = reconcile.Verify
 	}
 
@@ -258,8 +258,8 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, nam
 		return err
 	}
 
-	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment && rJob.Status.Succeeded == 1 {
-		ssChaos.Status.Phase = sschaosv1alpha1.PhaseAfterExperiment
+	if ssChaos.Status.Phase == sschaosv1alpha1.BeforeExperiment && rJob.Status.Succeeded == 1 {
+		ssChaos.Status.Phase = sschaosv1alpha1.AfterExperiment
 	}
 	jobConditions := rJob.Status.Conditions
 	condition := getJobCondition(jobConditions)
@@ -267,7 +267,7 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, nam
 	if condition == FailureJob {
 		r.Events.Event(ssChaos, "Warning", "failed", fmt.Sprintf("job: %s", rJob.Name))
 	}
-	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseRecoveredChaos {
+	if ssChaos.Status.Phase == sschaosv1alpha1.RecoveredChaos {
 		if err := r.updateRecoveredJob(ctx, ssChaos, rJob); err != nil {
 			r.Events.Event(ssChaos, "Warning", "getPodLog", err.Error())
 			return err
@@ -288,13 +288,13 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, nam
 
 func getRequirement(ssChaos *sschaosv1alpha1.ShardingSphereChaos) reconcile.InjectRequirement {
 	var jobName reconcile.InjectRequirement
-	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseBeforeExperiment || ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment {
+	if ssChaos.Status.Phase == sschaosv1alpha1.BeforeExperiment || ssChaos.Status.Phase == sschaosv1alpha1.AfterExperiment {
 		jobName = reconcile.Experimental
 	}
-	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseInChaos {
+	if ssChaos.Status.Phase == sschaosv1alpha1.InjectedChaos {
 		jobName = reconcile.Pressure
 	}
-	if ssChaos.Status.Phase == sschaosv1alpha1.PhaseRecoveredChaos {
+	if ssChaos.Status.Phase == sschaosv1alpha1.RecoveredChaos {
 		jobName = reconcile.Verify
 	}
 	return jobName
@@ -320,22 +320,22 @@ func getJobCondition(conditions []batchV1.JobCondition) JobCondition {
 
 func setDefault(ssChaos *sschaosv1alpha1.ShardingSphereChaos) {
 	if ssChaos.Status.Phase == "" {
-		ssChaos.Status.Phase = sschaosv1alpha1.PhaseBeforeExperiment
+		ssChaos.Status.Phase = sschaosv1alpha1.BeforeExperiment
 	}
-	if ssChaos.Status.Result == nil {
-		ssChaos.Status.Result = []sschaosv1alpha1.Result{}
+	if ssChaos.Status.Results == nil {
+		ssChaos.Status.Results = []sschaosv1alpha1.Result{}
 	}
 }
 
 func setRtStatus(rt *sschaosv1alpha1.ShardingSphereChaos, ssChaos *sschaosv1alpha1.ShardingSphereChaos) {
-	rt.Status.Result = []sschaosv1alpha1.Result{}
-	for i := range ssChaos.Status.Result {
-		r := &ssChaos.Status.Result[i]
-		rt.Status.Result = append(rt.Status.Result, sschaosv1alpha1.Result{
+	rt.Status.Results = []sschaosv1alpha1.Result{}
+	for i := range ssChaos.Status.Results {
+		r := &ssChaos.Status.Results[i]
+		rt.Status.Results = append(rt.Status.Results, sschaosv1alpha1.Result{
 			Success: r.Success,
 			Detail: sschaosv1alpha1.Detail{
-				Time: metav1.Time{Time: time.Now()},
-				Msg:  r.Detail.Msg,
+				Time:    metav1.Time{Time: time.Now()},
+				Message: r.Detail.Message,
 			},
 		})
 	}
@@ -349,9 +349,9 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 		return nil
 	}
 
-	for i := range ssChaos.Status.Result {
-		r := &ssChaos.Status.Result[i]
-		if strings.HasPrefix(r.Detail.Msg, VerifyJobCheck) {
+	for i := range ssChaos.Status.Results {
+		r := &ssChaos.Status.Results[i]
+		if strings.HasPrefix(r.Detail.Message, VerifyJobCheck) {
 			return nil
 		}
 	}
@@ -376,14 +376,14 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 		if ssChaos.Spec.Expect.Verify == "" || ssChaos.Spec.Expect.Verify == log {
 			result.Success = true
 			result.Detail = sschaosv1alpha1.Detail{
-				Time: metav1.Time{Time: time.Now()},
-				Msg:  fmt.Sprintf("%s: job succeeded", VerifyJobCheck),
+				Time:    metav1.Time{Time: time.Now()},
+				Message: fmt.Sprintf("%s: job succeeded", VerifyJobCheck),
 			}
 		} else {
 			result.Success = false
 			result.Detail = sschaosv1alpha1.Detail{
-				Time: metav1.Time{Time: time.Now()},
-				Msg:  fmt.Sprintf("%s: %s", VerifyJobCheck, log),
+				Time:    metav1.Time{Time: time.Now()},
+				Message: fmt.Sprintf("%s: %s", VerifyJobCheck, log),
 			}
 		}
 	}
@@ -395,12 +395,12 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 		}
 		result.Success = false
 		result.Detail = sschaosv1alpha1.Detail{
-			Time: metav1.Time{Time: time.Now()},
-			Msg:  fmt.Sprintf("%s: %s", VerifyJobCheck, log),
+			Time:    metav1.Time{Time: time.Now()},
+			Message: fmt.Sprintf("%s: %s", VerifyJobCheck, log),
 		}
 	}
 
-	ssChaos.Status.Result = updateResult(ssChaos.Status.Result, *result, VerifyJobCheck)
+	ssChaos.Status.Results = updateResult(ssChaos.Status.Results, *result, VerifyJobCheck)
 
 	return nil
 }
@@ -432,8 +432,8 @@ func isResultExist(rJob *batchV1.Job) bool {
 
 func updateResult(results []sschaosv1alpha1.Result, r sschaosv1alpha1.Result, check string) []sschaosv1alpha1.Result {
 	for i := range results {
-		msg := results[i].Detail.Msg
-		if strings.HasPrefix(msg, check) && strings.HasPrefix(r.Detail.Msg, check) {
+		msg := results[i].Detail.Message
+		if strings.HasPrefix(msg, check) && strings.HasPrefix(r.Detail.Message, check) {
 			results[i] = r
 			return results
 		}
@@ -457,17 +457,17 @@ func (r *ShardingSphereChaosReconciler) getPodLog(ctx context.Context, namespace
 }
 
 func (r *ShardingSphereChaosReconciler) updatePhaseStart(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos) error {
-	if ssChaos.Status.Phase != sschaosv1alpha1.PhaseBeforeExperiment {
+	if ssChaos.Status.Phase != sschaosv1alpha1.BeforeExperiment {
 		if err := r.updateChaosCondition(ctx, ssChaos); err != nil {
 			return err
 		}
 
-		if ssChaos.Status.ChaosCondition == sschaosv1alpha1.AllInjected && ssChaos.Status.Phase == sschaosv1alpha1.PhaseAfterExperiment {
-			ssChaos.Status.Phase = sschaosv1alpha1.PhaseInChaos
+		if ssChaos.Status.ChaosCondition == sschaosv1alpha1.AllInjected && ssChaos.Status.Phase == sschaosv1alpha1.AfterExperiment {
+			ssChaos.Status.Phase = sschaosv1alpha1.InjectedChaos
 		}
 
-		if ssChaos.Status.ChaosCondition == sschaosv1alpha1.AllRecovered && ssChaos.Status.Phase == sschaosv1alpha1.PhaseInChaos {
-			ssChaos.Status.Phase = sschaosv1alpha1.PhaseRecoveredChaos
+		if ssChaos.Status.ChaosCondition == sschaosv1alpha1.AllRecovered && ssChaos.Status.Phase == sschaosv1alpha1.InjectedChaos {
+			ssChaos.Status.Phase = sschaosv1alpha1.RecoveredChaos
 		}
 	}
 
