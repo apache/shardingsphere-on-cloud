@@ -352,7 +352,7 @@ type PodChaosBuilder interface {
 	SetAnnotations(map[string]string) PodChaosBuilder
 	SetContainerSelector(*chaosv1alpha1.ContainerSelector) PodChaosBuilder
 	SetAction(string) PodChaosBuilder
-	SetDuration(string) PodChaosBuilder
+	SetDuration(*string) PodChaosBuilder
 	SetGracePeriod(int64) PodChaosBuilder
 	Build() *chaosv1alpha1.PodChaos
 }
@@ -469,13 +469,13 @@ func (p *podChaosBuilder) SetAction(action string) PodChaosBuilder {
 	return p
 }
 
-func (p *podChaosBuilder) SetDuration(duration string) PodChaosBuilder {
-	if duration == "" {
+func (p *podChaosBuilder) SetDuration(duration *string) PodChaosBuilder {
+	if *duration == "" {
 		//todo: change to default
 		ret := "1m"
 		p.podChaos.Spec.Duration = &ret
 	} else {
-		p.podChaos.Spec.Duration = &duration
+		p.podChaos.Spec.Duration = duration
 	}
 	return p
 }
@@ -497,7 +497,7 @@ type NetworkChaosBuilder interface {
 	SetPodSelector(*chaosv1alpha1.PodSelector) NetworkChaosBuilder
 	SetAction(string) NetworkChaosBuilder
 	SetDevice(string) NetworkChaosBuilder
-	SetDuration(string) NetworkChaosBuilder
+	SetDuration(*string) NetworkChaosBuilder
 	SetDirection(string) NetworkChaosBuilder
 	SetTarget(*chaosv1alpha1.PodSelector) NetworkChaosBuilder
 	SetTargetDevice(string) NetworkChaosBuilder
@@ -564,8 +564,8 @@ func (n *netWorkChaosBuilder) SetDevice(device string) NetworkChaosBuilder {
 	return n
 }
 
-func (n *netWorkChaosBuilder) SetDuration(duration string) NetworkChaosBuilder {
-	n.netWorkChaos.Spec.Duration = &duration
+func (n *netWorkChaosBuilder) SetDuration(duration *string) NetworkChaosBuilder {
+	n.netWorkChaos.Spec.Duration = duration
 	return n
 }
 

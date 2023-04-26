@@ -39,6 +39,7 @@ import (
 )
 
 var _ = Describe("ShardingSphereChaos", func() {
+	var d = "5m"
 
 	Context("check related resource created by ShardingSphereChaos Controller", func() {
 		var (
@@ -94,7 +95,7 @@ var _ = Describe("ShardingSphereChaos", func() {
 							Action: v1alpha1.PodFailure,
 							Params: v1alpha1.PodChaosParams{
 								PodFailure: &v1alpha1.PodFailureParams{
-									Duration: "5m",
+									Duration: &d,
 								},
 							},
 						},
