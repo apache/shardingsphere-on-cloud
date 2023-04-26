@@ -19,6 +19,7 @@ package shardingspherechaos_test
 
 import (
 	"context"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
@@ -90,9 +91,9 @@ var _ = Describe("ShardingSphereChaos", func() {
 									"app.kubernetes.io/component": "zookeeper-new",
 								},
 							},
-							Action: v1alpha1.PodFailureAction,
-							PodActionParam: v1alpha1.PodActionParam{
-								PodFailure: v1alpha1.PodFailureActionParams{
+							Action: v1alpha1.PodFailure,
+							Params: v1alpha1.PodChaosParams{
+								PodFailure: &v1alpha1.PodFailureParams{
 									Duration: "5m",
 								},
 							},
