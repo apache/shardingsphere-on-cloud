@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -49,8 +50,6 @@ const (
 	ShardingSphereChaosControllerName = "shardingsphere-chaos-controller"
 	ssChaosDefaultEnqueueTime         = 10 * time.Second
 	VerifyJobCheck                    = "Verify"
-
-	ErrNoPod = "no pod in list"
 )
 
 type JobCondition string
@@ -60,6 +59,8 @@ var (
 	FailureJob  JobCondition = "failure"
 	SuspendJob  JobCondition = "suspend"
 	ActiveJob   JobCondition = "active"
+
+	ErrNoPod = errors.New("no pod in list")
 )
 
 // ShardingSphereChaosReconciler is a controller for the ShardingSphereChaos
@@ -153,8 +154,8 @@ func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, ssCh
 	}
 
 	namespaceName := types.NamespacedName{
-		Namespace: ssChao.Namespace, 
-		Name: ssChao.Name
+		Namespace: ssChao.Namespace,
+		Name:      ssChao.Name,
 	}
 
 	if ssChao.Spec.EmbedChaos.PodChaos != nil {
