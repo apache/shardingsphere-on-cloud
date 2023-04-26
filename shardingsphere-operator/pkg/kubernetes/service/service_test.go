@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-package computenode
+package service
 
-/*
 import (
 	"fmt"
 	"reflect"
@@ -264,5 +263,3 @@ func TestUpdateService(t *testing.T) {
 		t.Errorf("UpdateService() returned:\n %+v\n, expected:\n %+v\n", result, exp)
 	}
 }
-
-*/
