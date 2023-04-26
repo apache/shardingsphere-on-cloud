@@ -137,7 +137,7 @@ type PodChaosParams struct {
 
 type PodFailureParams struct {
 	// +optional
-	Duration string `json:"duration,omitempty"`
+	Duration *string `json:"duration,omitempty"`
 }
 
 type ContainerKillParams struct {
@@ -149,11 +149,12 @@ type ContainerKillParams struct {
 type NetworkChaosSpec struct {
 	Source PodSelector  `json:",inline"`
 	Target *PodSelector `json:"target,omitempty"`
+
 	// +optional
 	Action NetworkChaosAction `json:"action"`
 
 	// +optional
-	Duration string `json:"duration,omitempty"`
+	Duration *string `json:"duration,omitempty"`
 	// +optional
 	Direction Direction `json:"direction,omitempty"`
 	// +optional
