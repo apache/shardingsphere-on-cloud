@@ -17,6 +17,7 @@
 
 package shardingspherechaos
 
+/*
 import (
 	"context"
 
@@ -25,11 +26,13 @@ import (
 
 type ChaosHandler interface {
 	NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error)
-	NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error)
-	UpdateNetworkChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur NetworkChaos) error
-	UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur PodChaos) error
 	CreatePodChaos(ctx context.Context, podChao PodChaos) error
+	UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur PodChaos) error
+
+	NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error)
 	CreateNetworkChaos(ctx context.Context, networkChao NetworkChaos) error
+	UpdateNetworkChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur NetworkChaos) error
+
 	ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) v1alpha1.ChaosCondition
 }
 
@@ -43,3 +46,4 @@ type PodChaos interface {
 type NetworkChaos interface {
 	GenericChaos
 }
+*/
