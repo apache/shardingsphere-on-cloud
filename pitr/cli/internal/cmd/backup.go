@@ -103,21 +103,22 @@ func init() {
 // 7. Double check backups all finished
 func backup() error {
 	var err error
+	var lsBackup *model.LsBackup
 	proxy, err := pkg.NewShardingSphereProxy(Username, Password, pkg.DefaultDBName, Host, Port)
 	if err != nil {
-		return xerr.NewCliErr("create ss-proxy connect failed")
+		return xerr.NewCliErr("Create ss-proxy connect failed")
 	}
 
 	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())
 	if err != nil {
-		return xerr.NewCliErr("create local storage failed")
+		return xerr.NewCliErr("Create local storage failed")
 	}
 
 	defer func() {
 		if err != nil {
-			logging.Info("try to unlock cluster ...")
+			logging.Info("Try to unlock cluster ...")
 			if err := proxy.Unlock(); err != nil {
-				logging.Error(fmt.Sprintf("coz backup failed, try to unlock cluster, but still failed, err:%s", err.Error()))
+				logging.Error(fmt.Sprintf("Coz backup failed, try to unlock cluster, but still failed, err:%s", err.Error()))
 			}
 		}
 	}()
@@ -126,12 +127,12 @@ func backup() error {
 	logging.Info("Starting lock cluster ...")
 	err = proxy.LockForBackup()
 	if err != nil {
-		return xerr.NewCliErr("lock for backup failed")
+		return xerr.NewCliErr("Lock for backup failed")
 	}
 
 	// Step2. Get cluster info and save local backup info
 	logging.Info("Starting export metadata ...")
-	lsBackup, err := exportData(proxy, ls)
+	lsBackup, err = exportData(proxy, ls)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("export backup data failed, err:%s", err.Error()))
 	}
@@ -140,7 +141,7 @@ func backup() error {
 	// Step3. Check agent server status
 	logging.Info("Checking agent server status...")
 	if available := checkAgentServerStatus(lsBackup); !available {
-		err = xerr.NewCliErr("one or more agent server are not available.")
+		err = xerr.NewCliErr("One or more agent server are not available.")
 		return err
 	}
 
@@ -302,6 +303,11 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 		dnResult          = make([]*model.DataNode, 0)
 	)
 
+	if totalNum == 0 {
+		logging.Info("No data node need to backup")
+		return model.SsBackupStatusCanceled
+	}
+
 	for _, dn := range lsBackup.DnList {
 		dataNodeMap[dn.IP] = dn
 	}
@@ -318,9 +324,6 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 	// wait for all data node backup finished
 	time.Sleep(time.Millisecond * 100)
 	for pw.IsRenderInProgress() {
-		if pw.LengthActive() == 0 {
-			pw.Stop()
-		}
 		time.Sleep(time.Millisecond * 100)
 	}
 
