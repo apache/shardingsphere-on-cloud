@@ -37,16 +37,18 @@ const (
 	podSelectorValue     = "selector.chaos-mesh.org/value"
 	targetPodSelectMode  = "target-selector.chaos-mesh.org/mode"
 	targetPodSelectValue = "target-selector.chaos-mesh.org/value"
-	podAction            = "podchaos.chaos-mesh.org/action"
-	gracePeriod          = "podchaos.chaos-mesh.org/gracePeriod"
-	device               = "networkchaos.chaos-mesh.org/device"
-	targetDevice         = "networkchaos.chaos-mesh.org/targetDevice"
-	networkAction        = "networkchaos.chaos-mesh.org/action"
-	rate                 = "networkchaos.chaos-mesh.org/bandwidth:rate"
-	limit                = "networkchaos.chaos-mesh.org/bandwidth:limit"
-	buffer               = "networkchaos.chaos-mesh.org/bandwidth:buffer"
-	peakrate             = "networkchaos.chaos-mesh.org/bandwidth:peakrate"
-	minburst             = "networkchaos.chaos-mesh.org/bandwidth:minburst"
+
+	podAction   = "podchaos.chaos-mesh.org/action"
+	gracePeriod = "podchaos.chaos-mesh.org/gracePeriod"
+
+	networkAction = "networkchaos.chaos-mesh.org/action"
+	device        = "networkchaos.chaos-mesh.org/device"
+	targetDevice  = "networkchaos.chaos-mesh.org/targetDevice"
+	rate          = "networkchaos.chaos-mesh.org/bandwidth:rate"
+	limit         = "networkchaos.chaos-mesh.org/bandwidth:limit"
+	buffer        = "networkchaos.chaos-mesh.org/bandwidth:buffer"
+	peakrate      = "networkchaos.chaos-mesh.org/bandwidth:peakrate"
+	minburst      = "networkchaos.chaos-mesh.org/bandwidth:minburst"
 )
 
 var (

@@ -33,7 +33,7 @@ import (
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/go-logr/logr"
 	batchV1 "k8s.io/api/batch/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,8 +48,9 @@ import (
 
 const (
 	ShardingSphereChaosControllerName = "shardingsphere-chaos-controller"
-	ssChaosDefaultEnqueueTime         = 10 * time.Second
 	VerifyJobCheck                    = "Verify"
+
+	ssChaosDefaultEnqueueTime = 10 * time.Second
 )
 
 type JobCondition string
@@ -304,11 +305,11 @@ func getJobCondition(conditions []batchV1.JobCondition) JobCondition {
 	for i := range conditions {
 		p := &conditions[i]
 		switch {
-		case p.Type == batchV1.JobComplete && p.Status == v1.ConditionTrue:
+		case p.Type == batchV1.JobComplete && p.Status == corev1.ConditionTrue:
 			ret = CompleteJob
-		case p.Type == batchV1.JobFailed && p.Status == v1.ConditionTrue:
+		case p.Type == batchV1.JobFailed && p.Status == corev1.ConditionTrue:
 			ret = FailureJob
-		case p.Type == batchV1.JobSuspended && p.Status == v1.ConditionTrue:
+		case p.Type == batchV1.JobSuspended && p.Status == corev1.ConditionTrue:
 			ret = SuspendJob
 		case p.Type == batchV1.JobFailureTarget:
 			ret = FailureJob
@@ -355,7 +356,7 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 		}
 	}
 
-	logOpts := &v1.PodLogOptions{}
+	logOpts := &corev1.PodLogOptions{}
 	pod, err := r.getPodHaveLog(ctx, rJob)
 	if err != nil || pod == nil {
 		return err
@@ -404,15 +405,15 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 	return nil
 }
 
-func (r *ShardingSphereChaosReconciler) getPodHaveLog(ctx context.Context, rJob *batchV1.Job) (*v1.Pod, error) {
-	pods := &v1.PodList{}
+func (r *ShardingSphereChaosReconciler) getPodHaveLog(ctx context.Context, rJob *batchV1.Job) (*corev1.Pod, error) {
+	pods := &corev1.PodList{}
 	if err := r.List(ctx, pods, client.MatchingLabels{"controller-uid": rJob.Spec.Template.Labels["controller-uid"]}); err != nil {
 		return nil, err
 	}
 	if pods.Items == nil {
 		return nil, nil
 	}
-	var pod *v1.Pod
+	var pod *corev1.Pod
 	for i := range pods.Items {
 		pod = &pods.Items[i]
 		break
@@ -441,7 +442,7 @@ func updateResult(results []sschaosv1alpha1.Result, r sschaosv1alpha1.Result, ch
 	return results
 }
 
-func (r *ShardingSphereChaosReconciler) getPodLog(ctx context.Context, namespacedName types.NamespacedName, options *v1.PodLogOptions) (string, error) {
+func (r *ShardingSphereChaosReconciler) getPodLog(ctx context.Context, namespacedName types.NamespacedName, options *corev1.PodLogOptions) (string, error) {
 	req := r.ClientSet.CoreV1().Pods(namespacedName.Namespace).GetLogs(namespacedName.Name, options)
 	res := req.Do(ctx)
 	if res.Error() != nil {
@@ -511,7 +512,7 @@ func (r *ShardingSphereChaosReconciler) getPodChaosByNamespacedName(ctx context.
 	return pc, nil
 }
 
-func (r *ShardingSphereChaosReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*v1.ConfigMap, error) {
+func (r *ShardingSphereChaosReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.ConfigMap, error) {
 	config, err := r.ConfigMap.GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return nil, err
@@ -528,7 +529,7 @@ func (r *ShardingSphereChaosReconciler) getJobByNamespacedName(ctx context.Conte
 	return injectJob, nil
 }
 
-func (r *ShardingSphereChaosReconciler) updateConfigMap(ctx context.Context, chao *sschaosv1alpha1.ShardingSphereChaos, cur *v1.ConfigMap) error {
+func (r *ShardingSphereChaosReconciler) updateConfigMap(ctx context.Context, chao *sschaosv1alpha1.ShardingSphereChaos, cur *corev1.ConfigMap) error {
 	exp := reconcile.UpdateConfigMap(chao, cur)
 	if exp == nil {
 		return nil
@@ -593,7 +594,7 @@ func (r *ShardingSphereChaosReconciler) createJob(ctx context.Context, requireme
 		return err
 	}
 
-	podList := &v1.PodList{}
+	podList := &corev1.PodList{}
 	if err := retry.OnError(backoff, func(e error) bool {
 		return e != nil
 	}, func() error {
@@ -690,7 +691,7 @@ func (r *ShardingSphereChaosReconciler) SetupWithManager(mgr ctrl.Manager) error
 		For(&sschaosv1alpha1.ShardingSphereChaos{}).
 		Owns(&chaosv1alpha1.PodChaos{}).
 		Owns(&chaosv1alpha1.NetworkChaos{}).
-		Owns(&v1.ConfigMap{}).
+		Owns(&corev1.ConfigMap{}).
 		Owns(&batchV1.Job{}).
 		Complete(r)
 }
