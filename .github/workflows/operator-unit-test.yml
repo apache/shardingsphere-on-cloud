@@ -40,4 +40,4 @@ jobs:
       - name: "Code coverage"
         uses: codecov/codecov-action@v3
         with:
-          files: ./shardingsphere-operator/coverage.txt
+          files: ./shardingsphere-operator/cover.out
