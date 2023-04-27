@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package computenode
+package configmap
 
 import (
 	"encoding/json"

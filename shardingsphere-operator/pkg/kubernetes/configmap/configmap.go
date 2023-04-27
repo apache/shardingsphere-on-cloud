@@ -20,6 +20,7 @@ package configmap
 import (
 	"context"
 
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,12 +28,13 @@ import (
 )
 
 // NewConfigMap creates a new ConfigMap
-func NewConfigMap(c client.Client) ConfigMap {
+func NewConfigMapClient(c client.Client) ConfigMap {
 	return configmapClient{
-		configmapGetter: configmapGetter{
+		builder: builder{},
+		getter: getter{
 			Client: c,
 		},
-		configmapSetter: configmapSetter{
+		setter: setter{
 			Client: c,
 		},
 	}
@@ -40,30 +42,39 @@ func NewConfigMap(c client.Client) ConfigMap {
 
 // ConfigMap interface contains setter and getter
 type ConfigMap interface {
-	ConfigMapGetter
-	ConfigMapSetter
+	Builder
+	Getter
+	Setter
 }
 
-// ConfigMapGetter get ConfigMap from different parameters
-type ConfigMapGetter interface {
+// Getter get ConfigMap from different parameters
+type Getter interface {
 	GetByNamespacedName(context.Context, types.NamespacedName) (*corev1.ConfigMap, error)
 }
 
-// ConfigMapSetter set ConfigMap from different parameters
-type ConfigMapSetter interface {
+// Setter set ConfigMap from different parameters
+type Setter interface {
+	Create(context.Context, *corev1.ConfigMap) error
+	Update(context.Context, *corev1.ConfigMap) error
+}
+
+// Builder build ConfigMap from given ComputeNode
+type Builder interface {
+	Build(context.Context, *v1alpha1.ComputeNode) *corev1.ConfigMap
 }
 
 type configmapClient struct {
-	configmapGetter
-	configmapSetter
+	builder
+	getter
+	setter
 }
 
-type configmapGetter struct {
+type getter struct {
 	client.Client
 }
 
 // GetByNamespacedName returns ConfigMap from given namespaced name
-func (cg configmapGetter) GetByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.ConfigMap, error) {
+func (cg getter) GetByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.ConfigMap, error) {
 	cm := &corev1.ConfigMap{}
 	if err := cg.Get(ctx, namespacedName, cm); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -75,6 +86,23 @@ func (cg configmapGetter) GetByNamespacedName(ctx context.Context, namespacedNam
 	}
 }
 
-type configmapSetter struct {
+type setter struct {
 	client.Client
+}
+
+// Create creates ConfigMap
+func (cs setter) Create(ctx context.Context, cm *corev1.ConfigMap) error {
+	return cs.Client.Create(ctx, cm)
+}
+
+// Update updates ConfigMap
+func (cs setter) Update(ctx context.Context, cm *corev1.ConfigMap) error {
+	return cs.Client.Update(ctx, cm)
+}
+
+type builder struct{}
+
+// Build returns a ConfigMap
+func (b builder) Build(ctx context.Context, cn *v1alpha1.ComputeNode) *corev1.ConfigMap {
+	return NewCNConfigMap(cn)
 }

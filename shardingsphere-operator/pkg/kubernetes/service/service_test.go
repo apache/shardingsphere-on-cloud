@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package computenode
+package service
 
 import (
 	"fmt"
@@ -230,6 +230,7 @@ func Test_ComputeNodeUpdateService(t *testing.T) {
 }
 
 func TestUpdateService(t *testing.T) {
+	var ip = "127.0.0.1"
 	cn := &v1alpha1.ComputeNode{}
 	cn.Spec.Selector = &metav1.LabelSelector{MatchLabels: map[string]string{"key": "val"}}
 
@@ -238,7 +239,7 @@ func TestUpdateService(t *testing.T) {
 	cur.ObjectMeta = metav1.ObjectMeta{Name: "test-service", Namespace: "test-ns"}
 	cur.Labels = map[string]string{"key": "val"}
 	cur.Annotations = map[string]string{"anno": "val"}
-	cur.Spec = corev1.ServiceSpec{ClusterIP: "10.96.0.1", Ports: []corev1.ServicePort{{Name: "test-port", Port: 80}}}
+	cur.Spec = corev1.ServiceSpec{ClusterIP: ip, Ports: []corev1.ServicePort{{Name: "test-port", Port: 80}}}
 
 	exp := &corev1.Service{}
 	// Setting up some expected data for exp instance

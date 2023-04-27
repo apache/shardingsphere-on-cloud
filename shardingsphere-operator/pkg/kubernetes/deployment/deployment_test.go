@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package computenode
+package deployment
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -402,8 +403,8 @@ func Test_NewDeployment(t *testing.T) {
 											},
 											Items: []corev1.KeyToPath{
 												{
-													Key:  ConfigDataKeyForAgent,
-													Path: ConfigDataKeyForAgent,
+													Key:  configmap.ConfigDataKeyForAgent,
+													Path: configmap.ConfigDataKeyForAgent,
 												},
 											},
 										},
