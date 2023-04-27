@@ -143,6 +143,7 @@ func backup() error {
 	// Step3. Check agent server status
 	logging.Info("Checking agent server status...")
 	if available := checkAgentServerStatus(lsBackup); !available {
+		logging.Error("Cancel! One or more agent server are not available.")
 		err = xerr.NewCliErr("One or more agent server are not available.")
 		return err
 	}
@@ -179,6 +180,10 @@ func backup() error {
 	logging.Info("Starting check backup status ...")
 	status := checkBackupStatus(lsBackup)
 	logging.Info(fmt.Sprintf("Backup result: %s", status))
+	if status != model.SsBackupStatusCompleted && status != model.SsBackupStatusCanceled {
+		err = xerr.NewCliErr("Backup failed")
+		return err
+	}
 
 	// Step9. finished backup and update backup file
 	logging.Info("Starting update backup file ...")
@@ -437,7 +442,7 @@ func deleteBackupFiles(lsBackup *model.LsBackup) {
 		sn := sn
 		dn, ok := dataNodeMap[sn.IP]
 		if !ok {
-			logging.Error(fmt.Sprintf("data node %s:%d not found, SKIPPED!", sn.IP, sn.Port))
+			logging.Warn(fmt.Sprintf("SKIPPED! data node %s:%d not found in backup info.", sn.IP, sn.Port))
 			continue
 		}
 		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
@@ -447,8 +452,12 @@ func deleteBackupFiles(lsBackup *model.LsBackup) {
 
 	time.Sleep(time.Millisecond * 100)
 	for pw.IsRenderInProgress() {
+		if pw.LengthActive() == 0 {
+			pw.Stop()
+		}
 		time.Sleep(time.Millisecond * 100)
 	}
+
 	close(resultCh)
 
 	t := table.NewWriter()

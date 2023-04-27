@@ -383,18 +383,21 @@ var _ = Describe("test backup mock", func() {
 		})
 
 		It("agent server is not running", func() {
-			mockIreq.EXPECT().Send(gomock.Any()).Return(-1, errors.New("error")).AnyTimes()
+			mockIreq.EXPECT().Send(gomock.Any()).Return(errors.New("error")).AnyTimes()
+			mockIreq.EXPECT().Header(gomock.Any()).AnyTimes()
 			Expect(checkAgentServerStatus(ls)).To(BeFalse())
 		})
 
 		It("agent server are running", func() {
-			mockIreq.EXPECT().Send(gomock.Any()).Return(200, nil).AnyTimes()
+			mockIreq.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
+			mockIreq.EXPECT().Header(gomock.Any()).AnyTimes()
 			Expect(checkAgentServerStatus(ls)).To(BeTrue())
 		})
 
 		It("one agent server is not running", func() {
-			mockIreq.EXPECT().Send(gomock.Any()).Return(500, nil)
-			mockIreq.EXPECT().Send(gomock.Any()).Return(200, nil).AnyTimes()
+			mockIreq.EXPECT().Send(gomock.Any()).Return(errors.New("failed"))
+			mockIreq.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
+			mockIreq.EXPECT().Header(gomock.Any()).AnyTimes()
 			Expect(checkAgentServerStatus(ls)).To(BeFalse())
 		})
 	})

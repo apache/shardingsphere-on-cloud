@@ -126,7 +126,7 @@ var _ = Describe("test restore", func() {
 		RecordID = "backup-id"
 		proxy.EXPECT().ExportMetaData().Return(&model.ClusterInfo{}, nil)
 		proxy.EXPECT().ImportMetaData(gomock.Any()).Return(nil)
-		as.EXPECT().CheckStatus().Return(nil)
+		as.EXPECT().CheckStatus(gomock.Any()).Return(nil)
 		as.EXPECT().Restore(gomock.Any()).Return(nil)
 
 		Expect(restore()).To(BeNil())

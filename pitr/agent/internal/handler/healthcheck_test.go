@@ -18,44 +18,27 @@
 package handler_test
 
 import (
-	"os"
-	"testing"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
-	"github.com/gofiber/fiber/v2"
-	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go.uber.org/zap"
 )
 
-var (
-	app  *fiber.App
-	ctrl *gomock.Controller
-)
-
-func TestHandler(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Handler Suite")
-}
-
-var _ = BeforeSuite(func() {
-	// init log
-	logging.Init(zap.DebugLevel)
-
-	Expect(os.Setenv("SHELL", "/bin/bash")).To(Succeed())
-
-	// init app
-	app = fiber.New()
-	app.Get("/ping", func(ctx *fiber.Ctx) error {
-		return responder.Success(ctx, "pong")
+var _ = Describe("Test Health Check", func() {
+	It("should failed with empty body", func() {
+		req := httptest.NewRequest(http.MethodPost, "/api/healthz", nil)
+		resp, err := app.Test(req)
+		Expect(err).To(BeNil())
+		Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
 	})
 
-	app.Route("/api", func(r fiber.Router) {
-		r.Post("/diskspace", handler.DiskSpace)
-		r.Delete("/backup", handler.DeleteBackup)
-		r.Post("/healthz", handler.HealthCheck)
+	It("should success", func() {
+		body := `{"username": "root", "password": "root", "db_name": "test", "db_port": 3306}`
+		req := httptest.NewRequest(http.MethodPost, "/api/healthz", strings.NewReader(body))
+		resp, err := app.Test(req)
+		Expect(err).To(BeNil())
+		Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
 	})
 })

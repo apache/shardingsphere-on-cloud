@@ -15,47 +15,28 @@
  * limitations under the License.
  */
 
-package handler_test
+package handler
 
 import (
-	"os"
-	"testing"
+	"fmt"
 
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler"
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang/mock/gomock"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"go.uber.org/zap"
 )
 
-var (
-	app  *fiber.App
-	ctrl *gomock.Controller
-)
+func HealthCheck(ctx *fiber.Ctx) error {
+	in := &view.HealthCheckIn{}
+	if err := ctx.BodyParser(in); err != nil {
+		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
+	}
 
-func TestHandler(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Handler Suite")
+	if err := pkg.OG.Auth(in.Username, in.Password, in.DBName, in.DBPort); err != nil {
+		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
+		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
+	}
+
+	return responder.Success(ctx, "")
 }
-
-var _ = BeforeSuite(func() {
-	// init log
-	logging.Init(zap.DebugLevel)
-
-	Expect(os.Setenv("SHELL", "/bin/bash")).To(Succeed())
-
-	// init app
-	app = fiber.New()
-	app.Get("/ping", func(ctx *fiber.Ctx) error {
-		return responder.Success(ctx, "pong")
-	})
-
-	app.Route("/api", func(r fiber.Router) {
-		r.Post("/diskspace", handler.DiskSpace)
-		r.Delete("/backup", handler.DeleteBackup)
-		r.Post("/healthz", handler.HealthCheck)
-	})
-})

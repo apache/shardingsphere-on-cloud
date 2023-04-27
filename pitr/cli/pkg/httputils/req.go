@@ -26,6 +26,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type req struct {
@@ -41,7 +43,7 @@ type Ireq interface {
 	Header(h map[string]string)
 	Body(b any)
 	Query(m map[string]string)
-	Send(body any) (int, error)
+	Send(body any) error
 }
 
 func NewRequest(ctx context.Context, method, url string) Ireq {
@@ -68,7 +70,7 @@ func (r *req) Query(m map[string]string) {
 	r.query = m
 }
 
-func (r *req) Send(body any) (int, error) {
+func (r *req) Send(body any) error {
 	var (
 		bs  []byte
 		err error
@@ -77,17 +79,27 @@ func (r *req) Send(body any) (int, error) {
 	if r.body != nil {
 		bs, err = json.Marshal(r.body)
 		if err != nil {
-			return -1, fmt.Errorf("json.Marshal return err=%w", err)
+			return fmt.Errorf("json.Marshal return err=%w", err)
 		}
 	}
 
 	_req, err := http.NewRequestWithContext(r.ctx, r.method, r.url, bytes.NewReader(bs))
 	if err != nil {
-		return -1, fmt.Errorf("new request failure,err=%w", err)
+		return fmt.Errorf("new request failure,err=%w", err)
 	}
 
 	for k, v := range r.header {
 		_req.Header.Set(k, v)
+	}
+
+	// set default header
+	if r.method == http.MethodPost {
+		if _req.Header.Get("Content-Type") == "" {
+			_req.Header.Set("Content-Type", "application/json")
+		}
+		if _req.Header.Get("x-request-id") == "" {
+			_req.Header.Set("x-request-id", uuid.New().String())
+		}
 	}
 
 	for k, v := range r.query {
@@ -103,20 +115,24 @@ func (r *req) Send(body any) (int, error) {
 	c := &http.Client{Transport: tr}
 	resp, err := c.Do(_req)
 	if err != nil {
-		return -1, fmt.Errorf("http request err=%w", err)
+		return fmt.Errorf("http request err=%w", err)
 	}
 
 	defer resp.Body.Close()
 
 	all, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return -1, fmt.Errorf("invalid response,err=%w", err)
+		return fmt.Errorf("invalid response,err=%w", err)
 	}
 	if body != nil {
 		if err = json.Unmarshal(all, body); err != nil {
-			return -1, fmt.Errorf("json unmarshal return err=%w", err)
+			return fmt.Errorf("json unmarshal return err=%w", err)
 		}
 	}
 
-	return resp.StatusCode, nil
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("response status code is not 200, code=%d", resp.StatusCode)
+	}
+
+	return nil
 }
