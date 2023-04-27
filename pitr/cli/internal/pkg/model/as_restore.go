@@ -32,4 +32,10 @@ type (
 		Code int    `json:"code" validate:"required"`
 		Msg  string `json:"msg" validate:"required"`
 	}
+
+	RestoreResult struct {
+		IP     string `json:"ip"`
+		Port   uint16 `json:"port"`
+		Status string `json:"status"`
+	}
 )

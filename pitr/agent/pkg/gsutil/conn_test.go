@@ -22,15 +22,40 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	user     = "dba3"
+	password = "1234567890@ss"
+	dbName   = "test-db"
+)
+
 var _ = Describe("OpenGauss", func() {
 	Context("Connection", func() {
 		It("Open and ping", func() {
-			og, err := Open("dba3", "1234567890@ss", "school", uint16(5432))
+			Skip("Skip this test case, because it needs a real OpenGauss server.")
+			og, err := Open(user, password, dbName, uint16(5432))
 			Expect(err).To(BeNil())
 			Expect(og).NotTo(BeNil())
 
 			err = og.Ping()
 			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("check params", func() {
+		It("user is empty", func() {
+			og, err := Open("", password, dbName, uint16(5432))
+			Expect(err).NotTo(BeNil())
+			Expect(og).To(BeNil())
+		})
+		It("password is empty", func() {
+			og, err := Open(user, "", dbName, uint16(5432))
+			Expect(err).NotTo(BeNil())
+			Expect(og).To(BeNil())
+		})
+		It("database is empty", func() {
+			og, err := Open(user, password, "", uint16(5432))
+			Expect(err).NotTo(BeNil())
+			Expect(og).To(BeNil())
 		})
 	})
 })

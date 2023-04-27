@@ -1,10 +1,13 @@
 # ShardingSphere on Cloud
 
 [![GitHub release](https://img.shields.io/github/release/apache/shardingsphere-on-cloud.svg)](https://github.com/apache/shardingsphere-on-cloud/releases)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_shardingsphere-on-cloud&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=apache_shardingsphere-on-cloud)
+[![codecov](https://codecov.io/gh/apache/shardingsphere-on-cloud/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/shardingsphere-on-cloud)
+[![GoReport](https://goreportcard.com/badge/github.com/apache/shardingsphere-on-cloud/shardingsphere-operator)](https://goreportcard.com/badge/github.com/apache/shardingsphere-on-cloud/shardingsphere-operator)
+
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/ShardingSphere.svg?style=social&label=Follow%20%40ShardingSphere)](https://twitter.com/ShardingSphere)
 [![Slack](https://img.shields.io/badge/%20Slack-ShardingSphere%20Channel-blueviolet)](https://join.slack.com/t/apacheshardingsphere/shared_invite/zt-sbdde7ie-SjDqo9~I4rYcR18bq0SYTg)
-[![Gitter](https://badges.gitter.im/shardingsphere/shardingsphere.svg)](https://gitter.im/shardingsphere/Lobby)
 
 This repository collects scripts, tools, manifests and documentations, and provides a home for [Apache ShardingSphere](https://shardingsphere.apache.org/) on cloud solutions.
 

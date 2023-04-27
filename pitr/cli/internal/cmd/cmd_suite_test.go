@@ -15,12 +15,13 @@
 * limitations under the License.
  */
 
-package cmd_test
+package cmd
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -28,6 +29,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+var ctrl *gomock.Controller
 
 func initLog() {
 	prodConfig := zap.NewProductionConfig()

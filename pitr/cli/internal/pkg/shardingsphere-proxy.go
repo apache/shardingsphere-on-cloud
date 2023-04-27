@@ -126,7 +126,10 @@ func (ss *shardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
 		return nil, fmt.Errorf("json unmarshal return err=%s", err)
 	}
 
-	out.SnapshotInfo = nil
+	if out.SnapshotInfo != nil && out.SnapshotInfo.Csn == "" {
+		out.SnapshotInfo = nil
+	}
+
 	return &out, nil
 }
 

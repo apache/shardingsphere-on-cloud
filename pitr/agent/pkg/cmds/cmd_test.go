@@ -18,6 +18,9 @@
 package cmds
 
 import (
+	"os"
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -48,6 +51,22 @@ var _ = Describe("Commands", func() {
 			output, err := Exec(sh, "sleep 1;echo 10;sleep 1;echo 20;")
 			Expect(err).To(BeNil())
 			Expect(output).To(Equal("10\n20\n"))
+		})
+	})
+
+	Context("test loadArgs", func() {
+		It("test reload gs_probackup", func() {
+			newGS := "/bin/new/gs_probackup"
+			err := os.Setenv("gs_probackup", newGS)
+			Expect(err).To(BeNil())
+
+			defer os.Unsetenv("gs_probackup")
+
+			args := loadArgs("gs_probackup", "backup", "-B", "/tmp", "-b", "FULL", "-D", "/tmp")
+			Expect(args[0]).To(Equal(newGS))
+
+			args = loadArgs("gs_probackup backup -B /tmp -b FULL -D /tmp")
+			Expect(strings.HasPrefix(args[0], newGS)).To(Equal(true))
 		})
 	})
 })

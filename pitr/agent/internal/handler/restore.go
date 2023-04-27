@@ -63,11 +63,13 @@ func Restore(ctx *fiber.Ctx) (err error) {
 		}
 	}()
 
+	// move pgdata to temp
 	if err = pkg.OG.MvPgDataToTemp(); err != nil {
 		err = fmt.Errorf("pkg.OG.MvPgDataToTemp return err=%w", err)
 		return
 	}
 
+	// restore data from backup
 	if err = pkg.OG.Restore(in.DnBackupPath, in.Instance, in.DnBackupID); err != nil {
 		efmt := "pkg.OG.Restore failure[path=%s,instance=%s,backupID=%s],err=%w"
 		err = fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupID, err)
@@ -78,6 +80,7 @@ func Restore(ctx *fiber.Ctx) (err error) {
 		return
 	}
 
+	// clean temp
 	if err = pkg.OG.CleanPgDataTemp(); err != nil {
 		err = fmt.Errorf("pkg.OG.CleanPgDataTemp return err=%w", err)
 		return
@@ -88,9 +91,5 @@ func Restore(ctx *fiber.Ctx) (err error) {
 		return
 	}
 
-	if err = responder.Success(ctx, nil); err != nil {
-		err = fmt.Errorf("responder failure,err=%s,wrap=%w", err, cons.Internal)
-		return nil
-	}
-	return
+	return responder.Success(ctx, nil)
 }

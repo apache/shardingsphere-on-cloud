@@ -172,9 +172,10 @@ type EncryptColumnDefinition struct {
 	QueryWithCipherColumn         *QueryWithCipherColumn
 }
 
-func (encryptColumnDefinition *EncryptColumnDefinition) ToString() (sql string) {
+func (encryptColumnDefinition *EncryptColumnDefinition) ToString() string {
 	var (
 		plainColumnDefinition         string
+		cipherColumnDefinition        string
 		assistedQueryColumnDefinition string
 		likeQueryColumnDefinition     string
 		assistedQueryAlgorithm        string
@@ -183,12 +184,11 @@ func (encryptColumnDefinition *EncryptColumnDefinition) ToString() (sql string) 
 	)
 
 	if encryptColumnDefinition.PlainColumnDefinition != nil {
-		sql += encryptColumnDefinition.PlainColumnDefinition.ToString()
 		plainColumnDefinition = fmt.Sprintf(",%s", encryptColumnDefinition.PlainColumnDefinition.ToString())
 	}
 
 	if encryptColumnDefinition.CipherColumnDefinition != nil {
-		sql += encryptColumnDefinition.CipherColumnDefinition.ToString()
+		cipherColumnDefinition = encryptColumnDefinition.CipherColumnDefinition.ToString()
 	}
 
 	if encryptColumnDefinition.AssistedQueryColumnDefinition != nil {
@@ -214,7 +214,7 @@ func (encryptColumnDefinition *EncryptColumnDefinition) ToString() (sql string) 
 	return fmt.Sprintf("(%s%s,%s%s%s,%s%s%s%s)",
 		encryptColumnDefinition.ColumnDefinition.ToString(),
 		plainColumnDefinition,
-		encryptColumnDefinition.CipherColumnDefinition.ToString(),
+		cipherColumnDefinition,
 		assistedQueryColumnDefinition,
 		likeQueryColumnDefinition,
 		encryptColumnDefinition.EncryptAlgorithm.ToString(),
@@ -228,15 +228,13 @@ type ColumnDefinition struct {
 	DataType   *DataType
 }
 
-func (columnDefinition *ColumnDefinition) ToString() (sql string) {
+func (columnDefinition *ColumnDefinition) ToString() string {
 	var dataType string
 	if columnDefinition.DataType != nil {
 		dataType = fmt.Sprintf(",DATA_TYP=%s", columnDefinition.DataType.ToString())
 	}
 
-	sql = fmt.Sprintf("NAME=%s%s", columnDefinition.ColumnName.ToString(), dataType)
-
-	return
+	return fmt.Sprintf("NAME=%s%s", columnDefinition.ColumnName.ToString(), dataType)
 }
 
 type PlainColumnDefinition struct {
@@ -244,14 +242,19 @@ type PlainColumnDefinition struct {
 	DataType        *DataType
 }
 
-func (plainColumnDefinition *PlainColumnDefinition) ToString() (sql string) {
+func (plainColumnDefinition *PlainColumnDefinition) ToString() string {
+	var (
+		plainColumnName string
+		dataType        string
+	)
 	if plainColumnDefinition.PlainColumnName != nil {
-		sql += fmt.Sprintf("PLAIN=%s", plainColumnDefinition.PlainColumnName.ToString())
+		plainColumnName = fmt.Sprintf("PLAIN=%s", plainColumnDefinition.PlainColumnName.ToString())
 	}
+
 	if plainColumnDefinition.DataType != nil {
-		sql += plainColumnDefinition.DataType.ToString()
+		dataType = plainColumnDefinition.DataType.ToString()
 	}
-	return
+	return fmt.Sprintf("PLAIN = %s, PLAIN_DATA_TYPE = %s", plainColumnName, dataType)
 }
 
 type CipherColumnDefinition struct {
@@ -378,11 +381,11 @@ type Property struct {
 	Literal *Literal
 }
 
-func (property *Property) ToString() (sql string) {
+func (property *Property) ToString() string {
 	if property.Literal != nil {
-		sql = fmt.Sprintf("%s=%s", property.Key, property.Literal.ToString())
+		return fmt.Sprintf("%s=%s", property.Key, property.Literal.ToString())
 	}
-	return
+	return ""
 }
 
 type Literal struct {

@@ -45,6 +45,7 @@ type (
 		Init(backupPath string) error
 		AddInstance(backupPath, instance string) error
 		DelInstance(backupPath, instance string) error
+		DelBackup(backupPath, instance, backupID string) error
 		Start() error
 		Stop() error
 		Status() (string, error)
@@ -56,6 +57,8 @@ type (
 		CleanPgDataTemp() error
 	}
 )
+
+var _ IOpenGauss = (*openGauss)(nil)
 
 func NewOpenGauss(shell, pgData string, log logging.ILog) IOpenGauss {
 	dirs := strings.Split(pgData, "/")
@@ -146,7 +149,7 @@ func (og *openGauss) ShowBackup(backupPath, instanceName, backupID string) (*mod
 	return nil, fmt.Errorf("backupList[v=%+v],err=%w", list, cons.DataNotFound)
 }
 
-func (og *openGauss) delBackup(backupPath, instanceName, backupID string) error {
+func (og *openGauss) DelBackup(backupPath, instanceName, backupID string) error {
 	cmd := fmt.Sprintf(_delBackupFmt, backupPath, instanceName, backupID)
 	_, err := cmds.Exec(og.shell, cmd)
 	if err != nil {

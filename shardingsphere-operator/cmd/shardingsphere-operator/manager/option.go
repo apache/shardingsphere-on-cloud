@@ -120,9 +120,9 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Client:     mgr.GetClient(),
 			Scheme:     mgr.GetScheme(),
 			Log:        mgr.GetLogger(),
-			Deployment: deployment.NewDeployment(mgr.GetClient()),
-			Service:    service.NewService(mgr.GetClient()),
-			ConfigMap:  configmap.NewConfigMap(mgr.GetClient()),
+			Deployment: deployment.NewDeploymentClient(mgr.GetClient()),
+			Service:    service.NewServiceClient(mgr.GetClient()),
+			ConfigMap:  configmap.NewConfigMapClient(mgr.GetClient()),
 		}).SetupWithManager(mgr); err != nil {
 			logger.Error(err, "unable to create controller", "controller", "ComputeNode")
 			return err
@@ -151,7 +151,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Log:       mgr.GetLogger(),
 			Chaos:     chaos.NewChaos(mgr.GetClient()),
 			Job:       job.NewJob(mgr.GetClient()),
-			ConfigMap: configmap.NewConfigMap(mgr.GetClient()),
+			ConfigMap: configmap.NewConfigMapClient(mgr.GetClient()),
 			Events:    mgr.GetEventRecorderFor("shardingsphere-chaos-controller"),
 			ClientSet: clientset,
 		}).SetupWithManager(mgr); err != nil {

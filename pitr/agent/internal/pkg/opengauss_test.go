@@ -33,6 +33,7 @@ import (
 var _ = Describe("OpenGauss,requires opengauss environment", func() {
 	Context("AsyncBackup & ShowBackupDetail ", func() {
 		It("backup, show and delete", func() {
+			Skip("")
 			og := &openGauss{
 				shell:  "/bin/sh",
 				pgData: "/data/opengauss/3.1.1/data/single_node/",
@@ -75,16 +76,17 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 			Fail("Timeout[60s]")
 			return
 		Del:
-			err = og.delBackup(data, instance, backupID)
+			err = og.DelBackup(data, instance, backupID)
 			Expect(err).To(BeNil())
 
-			err = og.delBackup(data, instance, backupID)
+			err = og.DelBackup(data, instance, backupID)
 			Expect(errors.Is(err, cons.CmdOperateFailed)).To(BeTrue())
 		})
 	})
 
 	Context("Init and deinit", func() {
 		It("Init backup and clean up the env", func() {
+			Skip("")
 			og := &openGauss{
 				shell: "/bin/sh",
 				log:   log,
@@ -125,6 +127,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 
 	Context("AddInstance and DelInstance", func() {
 		It("instance:add and delete", func() {
+			Skip("")
 			og := &openGauss{
 				shell:  "/bin/sh",
 				pgData: "/data/opengauss/3.1.1/data/single_node/",
@@ -151,6 +154,7 @@ var _ = Describe("OpenGauss,requires opengauss environment", func() {
 
 	Context("Start and Stop", func() {
 		It("start and stop:may fail if no instance exists", func() {
+			Skip("")
 			og := &openGauss{
 				shell:  "/bin/sh",
 				pgData: "/data/opengauss/3.1.1/data/single_node/",

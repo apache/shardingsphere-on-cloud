@@ -31,7 +31,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -45,11 +45,12 @@ var (
 )
 
 var (
-	logLevel string
-	port     string
-	pgData   string
-	tlsCrt   string
-	tlsKey   string
+	logLevel      string
+	port          string
+	pgData        string
+	tlsCrt        string
+	tlsKey        string
+	envSourceFile string
 )
 
 func init() {
@@ -61,10 +62,19 @@ func init() {
 	flag.StringVar(&tlsKey, "tls-key", "", "Require:TLS key file path")
 
 	flag.StringVar(&pgData, "pgdata", "", "Optional:Get the value from cli flags or env")
+
+	flag.StringVar(&envSourceFile, "env-source-file", "", "Optional:env source file path")
 }
 
 func main() {
 	flag.Parse()
+
+	if envSourceFile != "" {
+		err := godotenv.Load(envSourceFile)
+		if err != nil {
+			panic(fmt.Errorf("load env source file error:%s", err.Error()))
+		}
+	}
 
 	shell := os.Getenv("SHELL")
 	if shell == "" {
@@ -82,7 +92,7 @@ func main() {
 		panic(fmt.Errorf("PGDATA:%s the database directory does not exist", pgData))
 	}
 
-	pgData := strings.Trim(pgData, " ")
+	pgData = strings.Trim(pgData, " ")
 	if strings.HasSuffix(pgData, "/") {
 		dirs := strings.Split(pgData, "/")
 		dirs = dirs[0 : len(dirs)-1]
@@ -105,20 +115,10 @@ func main() {
 		level = zapcore.DebugLevel
 	}
 
-	prodConfig := zap.NewProductionConfig()
-	prodConfig.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
-	prodConfig.Level = zap.NewAtomicLevelAt(level)
-	logger, err := prodConfig.Build(
-		zap.AddCallerSkip(1),
-		zap.AddStacktrace(zapcore.FatalLevel),
-	)
-	if err != nil {
-		panic(fmt.Errorf("an unknown error occurred in the zap-log"))
-	}
-
-	log = logging.Init(logger)
+	log = logging.Init(level)
 	pkg.Init(shell, pgData, log)
-	app = fiber.New()
+
+	SetupApp()
 
 	go func() {
 		if err := Serve(port); err != nil {
@@ -140,8 +140,9 @@ func main() {
 	log.Info("app has exited...")
 }
 
-// Serve run a http server on the specified port.
-func Serve(port string) error {
+func SetupApp() {
+	app = fiber.New()
+
 	app.Use(
 		middleware.Recover(logging.Log()),
 		middleware.UniformErrResp(logging.Log()),
@@ -160,16 +161,22 @@ func Serve(port string) error {
 		r.Use(middleware.RequestIDChecker())
 
 		r.Post("/backup", handler.Backup)
+		r.Delete("/backup", handler.DeleteBackup)
 		r.Post("/restore", handler.Restore)
 		r.Post("/show", handler.Show)
 		r.Post("/show/list", handler.ShowList)
+		r.Post("/diskspace", handler.DiskSpace)
 	})
 
 	// 404
 	app.Use(func(ctx *fiber.Ctx) error {
 		return responder.NotFound(ctx, "API not found")
 	})
+}
 
-	//	return app.Listen(":18080")
+// Serve run a http server on the specified port.
+func Serve(port string) error {
+
+	//return app.Listen(":18080")
 	return app.ListenTLS(fmt.Sprintf(":%s", port), tlsCrt, tlsKey)
 }

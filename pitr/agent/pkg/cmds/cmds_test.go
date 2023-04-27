@@ -20,11 +20,14 @@ package cmds
 import (
 	"testing"
 
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/zap"
 )
 
 func TestCmds(t *testing.T) {
+	logging.Init(zap.DebugLevel)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Cmds suits")
 }

@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package computenode_test
+package configmap_test
 
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -37,8 +37,8 @@ var _ = Describe("ConfigMap", func() {
 					"test_key": "test_value",
 				},
 				Annotations: map[string]string{
-					computenode.AnnoLogbackConfig:     "test_logback",
-					computenode.AnnoClusterRepoConfig: "test_cluster_repo_config",
+					configmap.AnnoLogbackConfig:     "test_logback",
+					configmap.AnnoClusterRepoConfig: "test_cluster_repo_config",
 				},
 			},
 		}
@@ -51,12 +51,12 @@ var _ = Describe("ConfigMap", func() {
 			"test_key": "test_value",
 		}
 		expect.Data = map[string]string{}
-		expect.Data[computenode.ConfigDataKeyForLogback] = "test_logback"
-		expect.Data[computenode.ConfigDataKeyForServer] = "test_cluster_repo_config"
+		expect.Data[configmap.ConfigDataKeyForLogback] = "test_logback"
+		expect.Data[configmap.ConfigDataKeyForServer] = "test_cluster_repo_config"
 	})
 
 	Context("Assert ObjectMeta", func() {
-		cm := computenode.NewCNConfigMap(cn)
+		cm := configmap.NewCNConfigMap(cn)
 		It("name should be equal", func() {
 			Expect(expect.Name).To(Equal(cm.Name))
 		})
@@ -69,12 +69,12 @@ var _ = Describe("ConfigMap", func() {
 	})
 
 	Context("Assert Default Spec Data", func() {
-		cm := computenode.NewCNConfigMap(cn)
+		cm := configmap.NewCNConfigMap(cn)
 		It("default logback should be equal", func() {
-			Expect(expect.Data[computenode.AnnoLogbackConfig]).To(Equal(cm.Data[computenode.AnnoLogbackConfig]))
+			Expect(expect.Data[configmap.AnnoLogbackConfig]).To(Equal(cm.Data[configmap.AnnoLogbackConfig]))
 		})
 		It("default cluster repo config should be equal", func() {
-			Expect(expect.Data[computenode.AnnoClusterRepoConfig]).To(Equal(cm.Data[computenode.AnnoClusterRepoConfig]))
+			Expect(expect.Data[configmap.AnnoClusterRepoConfig]).To(Equal(cm.Data[configmap.AnnoClusterRepoConfig]))
 		})
 	})
 })

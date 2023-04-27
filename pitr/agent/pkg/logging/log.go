@@ -17,7 +17,12 @@
 
 package logging
 
-import "go.uber.org/zap"
+import (
+	"fmt"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
 
 var l *ZapLogger
 
@@ -25,7 +30,17 @@ func Log() ILog {
 	return l
 }
 
-func Init(logger *zap.Logger) ILog {
+func Init(level zapcore.Level) ILog {
+	prodConfig := zap.NewProductionConfig()
+	prodConfig.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+	prodConfig.Level = zap.NewAtomicLevelAt(level)
+	logger, err := prodConfig.Build(
+		zap.AddCallerSkip(1),
+		zap.AddStacktrace(zapcore.FatalLevel),
+	)
+	if err != nil {
+		panic(fmt.Errorf("an unknown error occurred in the zap-log"))
+	}
 	l = &ZapLogger{logger: logger}
 	return l
 }

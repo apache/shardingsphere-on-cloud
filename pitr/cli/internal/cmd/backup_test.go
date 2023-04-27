@@ -18,6 +18,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 
 	"bou.ke/monkey"
@@ -25,15 +26,16 @@ import (
 	mock_pkg "github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/mocks"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils"
+	mock_httputils "github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils/mocks"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var ctrl *gomock.Controller
-
 var _ = Describe("Backup", func() {
-	Context("check status", func() {
+
+	Context("do check", func() {
 		var (
 			as *mock_pkg.MockIAgentServer
 			sn = &model.StorageNode{
@@ -49,24 +51,32 @@ var _ = Describe("Backup", func() {
 		})
 
 		It("agent server return err", func() {
-			as.EXPECT().ShowDetail(&model.ShowDetailIn{Instance: defaultInstance}).Return(nil, errors.New("timeout"))
-			Expect(checkStatus(as, sn, "", "", 0)).To(Equal(model.SsBackupStatusCheckError))
+			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout"))
+			status, err := doCheck(as, sn, "", 0)
+			Expect(err).To(HaveOccurred())
+			Expect(status).To(Equal(model.SsBackupStatusCheckError))
 		})
 
 		It("mock agent server and return failed status", func() {
-			as.EXPECT().ShowDetail(&model.ShowDetailIn{Instance: defaultInstance}).Return(&model.BackupInfo{Status: model.SsBackupStatusFailed}, nil)
-			Expect(checkStatus(as, sn, "", "", 0)).To(Equal(model.SsBackupStatusFailed))
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusFailed}, nil)
+			status, err := doCheck(as, sn, "", 0)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(status).To(Equal(model.SsBackupStatusFailed))
 		})
 
 		It("mock agent server and return completed status", func() {
-			as.EXPECT().ShowDetail(&model.ShowDetailIn{Instance: defaultInstance}).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil)
-			Expect(checkStatus(as, sn, "", "", 0)).To(Equal(model.SsBackupStatusCompleted))
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil)
+			status, err := doCheck(as, sn, "", 0)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(status).To(Equal(model.SsBackupStatusCompleted))
 		})
 
-		It("mock agent server and return timeout error first time and then retry 1 time return completed status", func() {
-			as.EXPECT().ShowDetail(&model.ShowDetailIn{Instance: defaultInstance}).Times(1).Return(nil, errors.New("timeout"))
-			as.EXPECT().ShowDetail(&model.ShowDetailIn{Instance: defaultInstance}).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil)
-			Expect(checkStatus(as, sn, "", "", 1)).To(Equal(model.SsBackupStatusCompleted))
+		It("mock agent server and return check err first time and then success", func() {
+			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout"))
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil)
+			status, err := doCheck(as, sn, "", 1)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(status).To(Equal(model.SsBackupStatusCompleted))
 		})
 	})
 
@@ -75,17 +85,15 @@ var _ = Describe("Backup", func() {
 			proxy *mock_pkg.MockIShardingSphereProxy
 			ls    *mock_pkg.MockILocalStorage
 		)
-
 		BeforeEach(func() {
 			ctrl = gomock.NewController(GinkgoT())
 			proxy = mock_pkg.NewMockIShardingSphereProxy(ctrl)
 			ls = mock_pkg.NewMockILocalStorage(ctrl)
-		})
 
+		})
 		AfterEach(func() {
 			ctrl.Finish()
 		})
-
 		It("export data", func() {
 			// mock proxy export metadata
 			proxy.EXPECT().ExportMetaData().Return(&model.ClusterInfo{}, nil)
@@ -101,16 +109,11 @@ var _ = Describe("Backup", func() {
 			Expect(bk.Info.CSN).To(Equal(""))
 		})
 	})
-	Context("exec backup", func() {
 
-		var as *mock_pkg.MockIAgentServer
-		bak := &model.LsBackup{
-			DnList: nil,
-			SsBackup: &model.SsBackup{
-				Status:       "Running",
-				StorageNodes: []*model.StorageNode{},
-			},
-		}
+	Context("exec backup", func() {
+		var (
+			as *mock_pkg.MockIAgentServer
+		)
 		BeforeEach(func() {
 			ctrl = gomock.NewController(GinkgoT())
 			as = mock_pkg.NewMockIAgentServer(ctrl)
@@ -118,6 +121,14 @@ var _ = Describe("Backup", func() {
 		AfterEach(func() {
 			ctrl.Finish()
 		})
+		bak := &model.LsBackup{
+			DnList: nil,
+			SsBackup: &model.SsBackup{
+				Status:       "Running",
+				StorageNodes: []*model.StorageNode{},
+			},
+		}
+
 		It("exec backup empty storage nodes", func() {
 			Expect(execBackup(bak)).To(BeNil())
 		})
@@ -142,9 +153,12 @@ var _ = Describe("Backup", func() {
 			}
 			as.EXPECT().Backup(gomock.Any()).Return("", nil)
 			dnCh := make(chan *model.DataNode, 10)
+
 			Expect(_execBackup(as, bak.SsBackup.StorageNodes[0], dnCh)).To(BeNil())
 			Expect(len(dnCh)).To(Equal(1))
+
 			as.EXPECT().Backup(gomock.Any()).Return("", xerr.NewCliErr("backup failed"))
+
 			Expect(_execBackup(as, bak.SsBackup.StorageNodes[0], dnCh)).ToNot(BeNil())
 			close(dnCh)
 			Expect(len(dnCh)).To(Equal(1))
@@ -152,22 +166,76 @@ var _ = Describe("Backup", func() {
 		})
 	})
 
-	Context("exec backup", func() {
-		It("exec backup", func() {
-			var (
-				as       *mock_pkg.MockIAgentServer
-				node     = &model.StorageNode{}
-				failSnCh = make(chan *model.StorageNode, 10)
-				dnCh     = make(chan *model.DataNode, 10)
-			)
+	Context("check backup status", func() {
+		var (
+			as       *mock_pkg.MockIAgentServer
+			lsbackup *model.LsBackup
+		)
+		BeforeEach(func() {
+			lsbackup = &model.LsBackup{
+				DnList: []*model.DataNode{
+					{
+						IP:   "127.0.0.1",
+						Port: 3306,
+					},
+					{
+						IP:   "127.0.0.2",
+						Port: 3307,
+					},
+				},
+				SsBackup: &model.SsBackup{
+					Status: "Running",
+					StorageNodes: []*model.StorageNode{
+						{
+							IP:   "127.0.0.1",
+							Port: 3306,
+						},
+						{
+							IP:   "127.0.0.2",
+							Port: 3307,
+						},
+					},
+				},
+				Info: &model.BackupMetaInfo{},
+			}
+
+			ctrl = gomock.NewController(GinkgoT())
 			as = mock_pkg.NewMockIAgentServer(ctrl)
 
-			defer close(dnCh)
-			defer ctrl.Finish()
-			as.EXPECT().Backup(gomock.Any()).Return("backup-id", nil)
-			Expect(_execBackup(as, node, dnCh)).To(BeNil())
-			Expect(len(failSnCh)).To(Equal(0))
-			Expect(len(dnCh)).To(Equal(1))
+			monkey.Patch(pkg.NewAgentServer, func(_ string) pkg.IAgentServer {
+				return as
+			})
+		})
+		AfterEach(func() {
+			ctrl.Finish()
+			monkey.UnpatchAll()
+		})
+
+		It("check error 1", func() {
+			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout")).AnyTimes()
+			Expect(checkBackupStatus(lsbackup)).To(Equal(model.SsBackupStatusFailed))
+		})
+
+		It("check error 2", func() {
+			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout")).Times(1)
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusFailed}, nil).AnyTimes()
+			Expect(checkBackupStatus(lsbackup)).To(Equal(model.SsBackupStatusFailed))
+		})
+
+		It("check error 3", func() {
+			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout")).Times(2)
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil).AnyTimes()
+			Expect(checkBackupStatus(lsbackup)).To(Equal(model.SsBackupStatusCompleted))
+		})
+
+		It("check failed", func() {
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusFailed}, nil).AnyTimes()
+			Expect(checkBackupStatus(lsbackup)).To(Equal(model.SsBackupStatusFailed))
+		})
+
+		It("check success", func() {
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil).AnyTimes()
+			Expect(checkBackupStatus(lsbackup)).To(Equal(model.SsBackupStatusCompleted))
 		})
 	})
 })
@@ -260,6 +328,9 @@ var _ = Describe("test backup mock", func() {
 			monkey.Patch(pkg.NewAgentServer, func(addr string) pkg.IAgentServer {
 				return as
 			})
+			monkey.Patch(getUserApproveInTerminal, func(_ string) error {
+				return nil
+			})
 		})
 		AfterEach(func() {
 			monkey.UnpatchAll()
@@ -274,6 +345,93 @@ var _ = Describe("test backup mock", func() {
 			ls.EXPECT().GenFilename(gomock.Any()).Return("filename")
 			ls.EXPECT().WriteByJSON(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 			Expect(backup()).To(BeNil())
+		})
+	})
+
+	Context("test check agent server status", func() {
+		var mockCtrl *gomock.Controller
+		var mockIreq *mock_httputils.MockIreq
+
+		ls := &model.LsBackup{
+			Info:   nil,
+			DnList: nil,
+			SsBackup: &model.SsBackup{
+				StorageNodes: []*model.StorageNode{
+					{
+						IP:   "127.0.0.1",
+						Port: 3306,
+					},
+					{
+						IP:   "127.0.0.2",
+						Port: 3307,
+					},
+				},
+			},
+		}
+		BeforeEach(func() {
+			mockCtrl = gomock.NewController(GinkgoT())
+			mockIreq = mock_httputils.NewMockIreq(mockCtrl)
+
+			monkey.Patch(httputils.NewRequest, func(ctx context.Context, method, url string) httputils.Ireq {
+				return mockIreq
+			})
+		})
+
+		AfterEach(func() {
+			monkey.UnpatchAll()
+			mockCtrl.Finish()
+		})
+
+		It("agent server is not running", func() {
+			mockIreq.EXPECT().Send(gomock.Any()).Return(-1, errors.New("error")).AnyTimes()
+			Expect(checkAgentServerStatus(ls)).To(BeFalse())
+		})
+
+		It("agent server are running", func() {
+			mockIreq.EXPECT().Send(gomock.Any()).Return(200, nil).AnyTimes()
+			Expect(checkAgentServerStatus(ls)).To(BeTrue())
+		})
+
+		It("one agent server is not running", func() {
+			mockIreq.EXPECT().Send(gomock.Any()).Return(500, nil)
+			mockIreq.EXPECT().Send(gomock.Any()).Return(200, nil).AnyTimes()
+			Expect(checkAgentServerStatus(ls)).To(BeFalse())
+		})
+	})
+
+	Context("test delete backup data", func() {
+		bak := &model.LsBackup{
+			Info: nil,
+			DnList: []*model.DataNode{
+				{
+					IP:   "test.delete.backup",
+					Port: 3306,
+				},
+			},
+			SsBackup: &model.SsBackup{
+				StorageNodes: []*model.StorageNode{
+					{
+						IP:   "test.delete.backup",
+						Port: 3306,
+					},
+				},
+			},
+		}
+		It("should delete failed", func() {
+			deleteBackupFiles(bak)
+		})
+
+		It("should delete success", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			as := mock_pkg.NewMockIAgentServer(ctrl)
+			monkey.Patch(pkg.NewAgentServer, func(addr string) pkg.IAgentServer {
+				return as
+			})
+
+			defer monkey.UnpatchAll()
+			defer ctrl.Finish()
+			as.EXPECT().DeleteBackup(gomock.Any()).Return(nil)
+			deleteBackupFiles(bak)
 		})
 	})
 })
