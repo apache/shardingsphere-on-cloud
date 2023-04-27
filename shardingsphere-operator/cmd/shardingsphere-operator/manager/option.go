@@ -32,6 +32,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
+	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/shardingspherechaos"
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -148,7 +149,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
 			Log:       mgr.GetLogger(),
-			Chaos:     chaos.NewChaos(mgr.GetClient()),
+			Chaos:     sschaos.NewChaos(mgr.GetClient()),
 			Job:       job.NewJob(mgr.GetClient()),
 			ConfigMap: configmap.NewConfigMapClient(mgr.GetClient()),
 			Events:    mgr.GetEventRecorderFor("shardingsphere-chaos-controller"),

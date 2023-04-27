@@ -91,11 +91,14 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 	logger.Info("start reconcile chaos")
 
 	//FIXME
+	// ErrChangedSpec will be returned in UpdatePodChaos(), and UpdateNetworkChaos(),
 	if err := r.reconcileChaos(ctx, ssChaos); err != nil {
-		if err == reconcile.ErrChangedSpec {
-			errHandle := r.handleChaosChange(ctx, req.NamespacedName)
-			return ctrl.Result{}, errHandle
-		}
+		/*
+			if err == reconcile.ErrChangedSpec {
+				errHandle := r.handleChaosChange(ctx, req.NamespacedName)
+				return ctrl.Result{}, errHandle
+			}
+		*/
 
 		logger.Error(err, "reconcile shardingspherechaos error")
 		//FIXME
@@ -160,6 +163,16 @@ func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, chao
 		}
 	}
 
+	// The phase will be updated after the chaos is updated successfully
+	/*
+		if chaos.Status.Phase != v1alpha1.BeforeExperiment {
+			chaos.Status.Phase = v1alpha1.AfterExperiment
+			if err := r.Status().Update(ctx, chaos); err != nil {
+				return err
+			}
+		}
+	*/
+
 	return nil
 }
 
@@ -208,7 +221,7 @@ func (r *ShardingSphereChaosReconciler) updatePodChaos(ctx context.Context, chao
 	}
 
 	r.Events.Event(chaos, "Normal", "applied", fmt.Sprintf("podChaos %s", "new changes updated"))
-	return reconcile.ErrChangedSpec
+	return nil
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileNetworkChaos(ctx context.Context, chaos *v1alpha1.ShardingSphereChaos, namespacedName types.NamespacedName) error {
@@ -692,7 +705,7 @@ func (r *ShardingSphereChaosReconciler) updateNetWorkChaos(ctx context.Context, 
 		return err
 	}
 	r.Events.Event(chaos, "Normal", "applied", fmt.Sprintf("networkChaos %s", "new changes updated"))
-	return reconcile.ErrChangedSpec
+	return nil
 }
 
 func (r *ShardingSphereChaosReconciler) createNetworkChaos(ctx context.Context, chaos *v1alpha1.ShardingSphereChaos) error {

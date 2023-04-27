@@ -23,7 +23,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
 
-	// "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
+	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/shardingspherechaos"
 	chaosV1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -70,7 +70,7 @@ var _ = Describe("ShardingSphereChaos", func() {
 				Client: fakeClient,
 				Scheme: scheme,
 				Log:    logf.Log,
-				Chaos:  chaos.NewChaos(fakeClient),
+				Chaos:  sschaos.NewChaos(fakeClient),
 			}
 			ctx = context.Background()
 			ssChaos = &v1alpha1.ShardingSphereChaos{
