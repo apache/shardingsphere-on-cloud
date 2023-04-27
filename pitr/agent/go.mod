@@ -6,6 +6,7 @@ require (
 	gitee.com/opengauss/openGauss-connector-go-pq v1.0.4
 	github.com/dlclark/regexp2 v1.8.0
 	github.com/gofiber/fiber/v2 v2.42.0
+	github.com/golang/mock v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/onsi/ginkgo/v2 v2.8.0
 	github.com/onsi/gomega v1.26.0
@@ -28,7 +29,7 @@ require (
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/savsgio/dictpool v0.0.0-20221023140959-7bf2e61cea94 // indirect
 	github.com/savsgio/gotils v0.0.0-20220530130905-52f3993e8d6d // indirect
-	github.com/stretchr/testify v1.8.1 // indirect
+	github.com/stretchr/testify v1.8.2 // indirect
 	github.com/tinylib/msgp v1.1.6 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
@@ -36,10 +37,10 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/crypto v0.7.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect

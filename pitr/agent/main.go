@@ -161,6 +161,7 @@ func SetupApp() {
 		r.Use(middleware.RequestIDChecker())
 
 		r.Post("/backup", handler.Backup)
+		r.Delete("/backup", handler.DeleteBackup)
 		r.Post("/restore", handler.Restore)
 		r.Post("/show", handler.Show)
 		r.Post("/show/list", handler.ShowList)

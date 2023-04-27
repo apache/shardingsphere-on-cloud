@@ -116,10 +116,12 @@ func backup() error {
 
 	defer func() {
 		if err != nil {
-			logging.Info("Try to unlock cluster ...")
+			logging.Warn("Try to unlock cluster ...")
 			if err := proxy.Unlock(); err != nil {
 				logging.Error(fmt.Sprintf("Coz backup failed, try to unlock cluster, but still failed, err:%s", err.Error()))
 			}
+			logging.Warn("Try to delete backup data ...")
+			deleteBackupFiles(lsBackup)
 		}
 	}()
 
@@ -358,11 +360,11 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, dn *model.DataNode, dnCh chan *model.DataNode, pw progress.Writer) {
 	var (
 		// mark check status is done, time ticker should break.
-		done = make(chan bool)
+		done = make(chan struct{})
 		// time ticker, try to doCheck request every 2 seconds.
 		ticker = time.Tick(time.Second * 2)
 		// progress bar.
-		tracker = progress.Tracker{Message: fmt.Sprintf("Checking backup status  # %s:%d", sn.IP, AgentPort), Total: 0, Units: progress.UnitsDefault}
+		tracker = progress.Tracker{Message: fmt.Sprintf("Checking backup status  # %s:%d", sn.IP, sn.Port), Total: 0, Units: progress.UnitsDefault}
 	)
 
 	pw.AppendTracker(&tracker)
@@ -378,14 +380,14 @@ func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, dn *model.DataNode,
 				dn.Status = status
 				dn.EndTime = time.Now().Unix()
 				dnCh <- dn
-				done <- true
+				done <- struct{}{}
 			}
 			if status == model.SsBackupStatusCompleted || status == model.SsBackupStatusFailed {
 				tracker.MarkAsDone()
 				dn.Status = status
 				dn.EndTime = time.Now().Unix()
 				dnCh <- dn
-				done <- true
+				done <- struct{}{}
 			}
 		}
 	}
@@ -411,4 +413,92 @@ func doCheck(as pkg.IAgentServer, sn *model.StorageNode, backupID string, retrie
 	}
 
 	return backupInfo.Status, nil
+}
+
+func deleteBackupFiles(lsBackup *model.LsBackup) {
+	var (
+		dataNodeMap = make(map[string]*model.DataNode)
+		totalNum    = len(lsBackup.SsBackup.StorageNodes)
+		resultCh    = make(chan *model.DeleteBackupResult, totalNum)
+	)
+	for _, dn := range lsBackup.DnList {
+		dataNodeMap[dn.IP] = dn
+	}
+
+	if totalNum == 0 {
+		logging.Info("No data node need to delete backup files")
+		return
+	}
+
+	pw := prettyoutput.NewPW(totalNum)
+	go pw.Render()
+
+	for _, sn := range lsBackup.SsBackup.StorageNodes {
+		sn := sn
+		dn, ok := dataNodeMap[sn.IP]
+		if !ok {
+			logging.Error(fmt.Sprintf("data node %s:%d not found, SKIPPED!", sn.IP, sn.Port))
+			continue
+		}
+		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
+
+		go doDelete(as, sn, dn, resultCh, pw)
+	}
+
+	time.Sleep(time.Millisecond * 100)
+	for pw.IsRenderInProgress() {
+		time.Sleep(time.Millisecond * 100)
+	}
+	close(resultCh)
+
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.SetTitle("Delete Backup Files Result")
+	t.AppendHeader(table.Row{"#", "Node IP", "Node Port", "Result", "Message"})
+	t.SetColumnConfigs([]table.ColumnConfig{{Number: 5, WidthMax: 50}})
+
+	idx := 0
+	for result := range resultCh {
+		idx++
+		t.AppendRow([]interface{}{idx, result.IP, result.Port, result.Status, result.Msg})
+		t.AppendSeparator()
+	}
+
+	t.Render()
+
+	logging.Info("Delete backup files finished")
+}
+
+func doDelete(as pkg.IAgentServer, sn *model.StorageNode, dn *model.DataNode, resultCh chan *model.DeleteBackupResult, pw progress.Writer) {
+	var (
+		tracker = progress.Tracker{Message: fmt.Sprintf("Deleting backup files  # %s:%d", sn.IP, sn.Port), Total: 0, Units: progress.UnitsDefault}
+	)
+
+	pw.AppendTracker(&tracker)
+
+	in := &model.DeleteBackupIn{
+		DBPort:       sn.Port,
+		DBName:       sn.Database,
+		Username:     sn.Username,
+		Password:     sn.Password,
+		DnBackupPath: BackupPath,
+		BackupID:     dn.BackupID,
+		Instance:     defaultInstance,
+	}
+
+	r := &model.DeleteBackupResult{
+		IP:   sn.IP,
+		Port: sn.Port,
+	}
+
+	if err := as.DeleteBackup(in); err != nil {
+		r.Status = model.SsBackupStatusFailed
+		r.Msg = err.Error()
+		resultCh <- r
+		tracker.MarkAsErrored()
+	} else {
+		tracker.MarkAsDone()
+		r.Status = model.SsBackupStatusCompleted
+		resultCh <- r
+	}
 }

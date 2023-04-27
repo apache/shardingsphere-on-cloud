@@ -17,7 +17,9 @@
 
 package view
 
-import "github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+import (
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+)
 
 type (
 	BackupIn struct {
@@ -34,6 +36,17 @@ type (
 
 	BackupOut struct {
 		ID string `json:"backup_id"`
+	}
+
+	DeleteBackupIn struct {
+		DBPort   uint16 `json:"db_port"`
+		DBName   string `json:"db_name"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+
+		DnBackupPath string `json:"dn_backup_path"`
+		Instance     string `json:"instance"`
+		BackupID     string `json:"backup_id"`
 	}
 )
 
@@ -72,6 +85,42 @@ func (in *BackupIn) Validate() error {
 
 	if in.DnBackupMode != cons.DBBackModeFull && in.DnBackupMode != cons.DBBackModePTrack {
 		return cons.InvalidDnBackupMode
+	}
+
+	if in.Instance == "" {
+		return cons.MissingInstance
+	}
+	return nil
+}
+
+// nolint:dupl
+func (in *DeleteBackupIn) Validate() error {
+	if in == nil {
+		return cons.Internal
+	}
+
+	if in.DBPort == 0 {
+		return cons.InvalidDBPort
+	}
+
+	if in.DBName == "" {
+		return cons.MissingDBName
+	}
+
+	if in.Username == "" {
+		return cons.MissingUsername
+	}
+
+	if in.Password == "" {
+		return cons.MissingPassword
+	}
+
+	if in.DnBackupPath == "" {
+		return cons.MissingDnBackupPath
+	}
+
+	if in.BackupID == "" {
+		return cons.MissingBackupID
 	}
 
 	if in.Instance == "" {

@@ -128,6 +128,7 @@ var _ = Describe("test restore", func() {
 		proxy.EXPECT().ImportMetaData(gomock.Any()).Return(nil)
 		as.EXPECT().CheckStatus().Return(nil)
 		as.EXPECT().Restore(gomock.Any()).Return(nil)
+
 		Expect(restore()).To(BeNil())
 	})
 

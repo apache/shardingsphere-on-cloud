@@ -20,7 +20,6 @@ package handler_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -37,7 +36,6 @@ var _ = Describe("Disk Space", func() {
 	})
 
 	It("DiskSpace", func() {
-		Expect(os.Setenv("SHELL", "/bin/bash")).To(Succeed())
 		requestBody := `{"diskPath": "/tmp"}`
 		req := httptest.NewRequest(http.MethodPost, "/api/diskspace", strings.NewReader(requestBody))
 		req.Header.Set("Content-Type", "application/json")

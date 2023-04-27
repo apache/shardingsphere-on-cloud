@@ -41,6 +41,7 @@ type agentServer struct {
 type IAgentServer interface {
 	CheckStatus() error
 	Backup(in *model.BackupIn) (string, error)
+	DeleteBackup(in *model.DeleteBackupIn) error
 	Restore(in *model.RestoreIn) error
 	ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, error)
 	ShowList(in *model.ShowListIn) ([]model.BackupInfo, error)
@@ -105,6 +106,7 @@ func (as *agentServer) Backup(in *model.BackupIn) (string, error) {
 	return out.Data.ID, nil
 }
 
+// nolint:dupl
 func (as *agentServer) Restore(in *model.RestoreIn) error {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiRestore)
 
@@ -216,4 +218,34 @@ func (as *agentServer) ShowDiskSpace(in *model.DiskSpaceIn) (*model.DiskSpaceInf
 	}
 
 	return out, nil
+}
+
+// nolint:dupl
+func (as *agentServer) DeleteBackup(in *model.DeleteBackupIn) error {
+	url := fmt.Sprintf("%s%s", as.addr, as._apiBackup)
+
+	out := &model.DeleteBackupOut{}
+	r := httputils.NewRequest(context.Background(), http.MethodDelete, url)
+	r.Header(map[string]string{
+		"x-request-id": uuid.New().String(),
+		"content-type": "application/json",
+	})
+	r.Body(in)
+
+	httpCode, err := r.Send(out)
+	if err != nil {
+		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
+		return fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
+	}
+
+	if httpCode != http.StatusOK {
+		return fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
+	}
+
+	if out.Code != 0 {
+		asErr := xerr.NewAgentServerErr(out.Code, out.Msg)
+		return fmt.Errorf("agent server error[code=%d,msg=%s],err=%w", out.Code, out.Msg, asErr)
+	}
+
+	return nil
 }
