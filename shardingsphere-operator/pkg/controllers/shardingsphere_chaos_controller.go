@@ -336,6 +336,7 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, nam
 	return r.Status().Update(ctx, rt)
 }
 
+/*
 func (r *ShardingSphereChaosReconciler) handleChaosChange(ctx context.Context, name types.NamespacedName) error {
 	ssChaos, err := r.getRuntimeChaos(ctx, name)
 	if err != nil {
@@ -350,6 +351,7 @@ func (r *ShardingSphereChaosReconciler) handleChaosChange(ctx context.Context, n
 	}
 	return nil
 }
+*/
 
 func getRequirement(ssChaos *v1alpha1.ShardingSphereChaos) reconcile.InjectRequirement {
 	var jobName reconcile.InjectRequirement
@@ -693,7 +695,7 @@ func (r *ShardingSphereChaosReconciler) createJob(ctx context.Context, requireme
 
 func (r *ShardingSphereChaosReconciler) updateNetWorkChaos(ctx context.Context, chaos *v1alpha1.ShardingSphereChaos, netWorkChaos sschaos.NetworkChaos) error {
 	networkChaos := r.Chaos.NewNetworkChaos(ctx, chaos)
-	//TODO: add update prodecure
+	//TODO: add update procedure
 
 	err := r.Chaos.UpdateNetworkChaos(ctx, networkChaos)
 	if err != nil {
