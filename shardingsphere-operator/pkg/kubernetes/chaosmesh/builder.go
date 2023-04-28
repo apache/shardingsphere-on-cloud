@@ -15,21 +15,18 @@
  * limitations under the License.
  */
 
-package shardingspherechaos
+package chaosmesh
 
 import (
 	"context"
 	"errors"
-	"reflect"
 	"strconv"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -57,15 +54,9 @@ var (
 	ErrChangedSpec = errors.New("change spec")
 )
 
-type chaosMeshHandler struct {
-	r client.Client
-}
+type GenericChaos interface{}
 
-func NewChaosMeshHandler(r client.Client) ChaosHandler {
-	return &chaosMeshHandler{r}
-}
-
-func (c *chaosMeshHandler) ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) v1alpha1.ChaosCondition {
+func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) v1alpha1.ChaosCondition {
 	var status chaosv1alpha1.ChaosStatus
 	if ssChaos.Spec.EmbedChaos.PodChaos != nil {
 		if podChao, ok := chaos.(*chaosv1alpha1.PodChaos); ok && podChao != nil {
@@ -109,31 +100,7 @@ func judgeCondition(condition map[chaosv1alpha1.ChaosConditionType]bool, phase c
 	return v1alpha1.Unknown
 }
 
-func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, chao PodChaos) error {
-	podChao, ok := chao.(*chaosv1alpha1.PodChaos)
-	if !ok {
-		return ErrConvert
-	}
-	if err := c.r.Create(ctx, podChao); err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
-	}
-
-	return nil
-}
-
-func (c *chaosMeshHandler) CreateNetworkChaos(ctx context.Context, chao NetworkChaos) error {
-	networkChao, ok := chao.(*chaosv1alpha1.NetworkChaos)
-	if !ok {
-		return ErrConvert
-	}
-	if err := c.r.Create(ctx, networkChao); err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
-	}
-
-	return nil
-}
-
-func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
+func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	pcb := NewPodChaosBuilder()
 	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 
@@ -178,13 +145,16 @@ func (c *chaosMeshHandler) NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (Po
 	pcb.SetContainerSelector(containerSelector)
 	podChao := pcb.Build()
 
-	if err := ctrl.SetControllerReference(ssChao, podChao, c.r.Scheme()); err != nil {
-		return nil, err
-	}
+	// FIXME
+	/*
+		if err := ctrl.SetControllerReference(ssChao, podChao, c.r.Scheme()); err != nil {
+			return nil, err
+		}
+	*/
 	return podChao, nil
 }
 
-func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error) {
+func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error) {
 	ncb := NewNetworkChaosBuilder()
 	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 	chao := ssChao.Spec.NetworkChaos
@@ -280,69 +250,13 @@ func (c *chaosMeshHandler) NewNetworkPodChaos(ssChao *v1alpha1.ShardingSphereCha
 	ncb.SetTcParameter(*tcParams)
 
 	networkChao := ncb.Build()
-	if err := ctrl.SetControllerReference(ssChao, networkChao, c.r.Scheme()); err != nil {
-		return nil, err
-	}
+	// FIXME
+	/*
+		if err := ctrl.SetControllerReference(ssChao, networkChao, c.r.Scheme()); err != nil {
+			return nil, err
+		}
+	*/
 	return networkChao, nil
-}
-
-func (c *chaosMeshHandler) UpdateNetworkChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur NetworkChaos) error {
-	networkChao, err := c.NewNetworkPodChaos(ssChaos)
-	if err != nil {
-		return err
-	}
-
-	reExp, ok := networkChao.(*chaosv1alpha1.NetworkChaos)
-	if !ok {
-		return ErrConvert
-	}
-	reCur, ok := cur.(*chaosv1alpha1.NetworkChaos)
-	if !ok {
-		return ErrConvert
-	}
-	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
-	if isEqual {
-		return ErrNotChanged
-	}
-
-	if err := c.r.Create(ctx, reCur); err != nil {
-		return err
-	}
-
-	if err := c.r.Update(ctx, reExp); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *chaosMeshHandler) UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur PodChaos) error {
-	podChao, err := c.NewPodChaos(ssChaos)
-	if err != nil {
-		return err
-	}
-	reExp, ok := (podChao).(*chaosv1alpha1.PodChaos)
-	if !ok {
-		return ErrConvert
-	}
-	reCur, ok := cur.(*chaosv1alpha1.PodChaos)
-	if !ok {
-		return ErrConvert
-	}
-	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
-	if isEqual {
-		return ErrNotChanged
-	}
-
-	if err := c.r.Delete(ctx, reCur); err != nil {
-		return err
-	}
-
-	if err := c.CreatePodChaos(ctx, reExp); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 type PodChaosBuilder interface {
@@ -352,7 +266,7 @@ type PodChaosBuilder interface {
 	SetAnnotations(map[string]string) PodChaosBuilder
 	SetContainerSelector(*chaosv1alpha1.ContainerSelector) PodChaosBuilder
 	SetAction(string) PodChaosBuilder
-	SetDuration(string) PodChaosBuilder
+	SetDuration(*string) PodChaosBuilder
 	SetGracePeriod(int64) PodChaosBuilder
 	Build() *chaosv1alpha1.PodChaos
 }
@@ -469,13 +383,13 @@ func (p *podChaosBuilder) SetAction(action string) PodChaosBuilder {
 	return p
 }
 
-func (p *podChaosBuilder) SetDuration(duration string) PodChaosBuilder {
-	if duration == "" {
+func (p *podChaosBuilder) SetDuration(duration *string) PodChaosBuilder {
+	if *duration == "" {
 		//todo: change to default
 		ret := "1m"
 		p.podChaos.Spec.Duration = &ret
 	} else {
-		p.podChaos.Spec.Duration = &duration
+		p.podChaos.Spec.Duration = duration
 	}
 	return p
 }
@@ -497,7 +411,7 @@ type NetworkChaosBuilder interface {
 	SetPodSelector(*chaosv1alpha1.PodSelector) NetworkChaosBuilder
 	SetAction(string) NetworkChaosBuilder
 	SetDevice(string) NetworkChaosBuilder
-	SetDuration(string) NetworkChaosBuilder
+	SetDuration(*string) NetworkChaosBuilder
 	SetDirection(string) NetworkChaosBuilder
 	SetTarget(*chaosv1alpha1.PodSelector) NetworkChaosBuilder
 	SetTargetDevice(string) NetworkChaosBuilder
@@ -564,8 +478,8 @@ func (n *netWorkChaosBuilder) SetDevice(device string) NetworkChaosBuilder {
 	return n
 }
 
-func (n *netWorkChaosBuilder) SetDuration(duration string) NetworkChaosBuilder {
-	n.netWorkChaos.Spec.Duration = &duration
+func (n *netWorkChaosBuilder) SetDuration(duration *string) NetworkChaosBuilder {
+	n.netWorkChaos.Spec.Duration = duration
 	return n
 }
 

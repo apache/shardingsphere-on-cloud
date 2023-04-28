@@ -25,11 +25,11 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/job"
 
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
 	batchV1 "k8s.io/api/batch/v1"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
+	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
@@ -149,7 +149,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
 			Log:       mgr.GetLogger(),
-			Chaos:     chaos.NewChaos(mgr.GetClient()),
+			Chaos:     sschaos.NewChaos(mgr.GetClient()),
 			Job:       job.NewJob(mgr.GetClient()),
 			ConfigMap: configmap.NewConfigMapClient(mgr.GetClient()),
 			Events:    mgr.GetEventRecorderFor("shardingsphere-chaos-controller"),
