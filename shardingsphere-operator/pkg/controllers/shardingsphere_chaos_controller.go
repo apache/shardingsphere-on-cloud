@@ -479,15 +479,6 @@ func (r *ShardingSphereChaosReconciler) getPodHaveLog(ctx context.Context, rJob 
 	return pod, nil
 }
 
-func isResultExist(rJob *batchV1.Job) bool {
-	for _, cmd := range rJob.Spec.Template.Spec.Containers[0].Args {
-		if strings.Contains(cmd, string(reconcile.Verify)) {
-			return true
-		}
-	}
-	return false
-}
-
 func updateResult(results []v1alpha1.Result, r v1alpha1.Result, check string) []v1alpha1.Result {
 	for i := range results {
 		msg := results[i].Detail.Message
