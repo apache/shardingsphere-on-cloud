@@ -51,14 +51,16 @@ type Expect struct {
 	Verify string `json:"verify,omitempty"`
 }
 
+type Script string
+
 // JobSpec specifies the config of job to create
 type JobSpec struct {
 	// +optional
-	Experimental string `json:"experimental,omitempty"`
+	Experimental Script `json:"experimental,omitempty"`
 	// +optional
-	Pressure string `json:"pressure,omitempty"`
+	Pressure Script `json:"pressure,omitempty"`
 	// +optional
-	Verify string `json:"verify,omitempty"`
+	Verify Script `json:"verify,omitempty"`
 }
 
 type EmbedChaos struct {

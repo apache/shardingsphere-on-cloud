@@ -43,12 +43,12 @@ var (
 var DefaultFileMode int32 = 493
 
 const (
-	completions             = "jobs.batch/completions"
-	activeDeadlineSeconds   = "jobs.batch/activeDeadlineSeconds"
-	parallelism             = "job.batch/parallelism"
-	backoffLimit            = "job.batch/backoffLimit"
-	ttlSecondsAfterFinished = "job.batch/ttlSecondsAfterFinished"
-	suspend                 = "job.batch/suspend"
+	AnnoJobCompletions             = "jobs.batch/completions"
+	AnnoJobActiveDeadlineSeconds   = "jobs.batch/activeDeadlineSeconds"
+	AnnoJobParallelism             = "job.batch/parallelism"
+	AnnoJobBackoffLimit            = "job.batch/backoffLimit"
+	AnnoJobTTLSecondsAfterFinished = "job.batch/ttlSecondsAfterFinished"
+	AnnoJobSuspend                 = "job.batch/suspend"
 )
 
 type InjectRequirement string
@@ -68,7 +68,7 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 	jbd := NewJobBuilder()
 	jbd.SetNamespace(ssChaos.Namespace).SetLabels(ssChaos.Labels).SetName(MakeJobName(ssChaos.Name, requirement))
 
-	if v, ok := ssChaos.Annotations[completions]; ok {
+	if v, ok := ssChaos.Annotations[AnnoJobCompletions]; ok {
 		value, err := MustInt32(v)
 		if err != nil {
 			return nil, err
@@ -76,7 +76,7 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 		jbd.SetCompletions(value)
 	}
 
-	if v, ok := ssChaos.Annotations[activeDeadlineSeconds]; ok {
+	if v, ok := ssChaos.Annotations[AnnoJobActiveDeadlineSeconds]; ok {
 		value, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
 			return nil, err
@@ -84,7 +84,7 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 		jbd.SetActiveDeadlineSeconds(value)
 	}
 
-	if v, ok := ssChaos.Annotations[parallelism]; ok {
+	if v, ok := ssChaos.Annotations[AnnoJobParallelism]; ok {
 		value, err := MustInt32(v)
 		if err != nil {
 			return nil, err
@@ -92,7 +92,7 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 		jbd.SetParallelism(value)
 	}
 
-	if v, ok := ssChaos.Annotations[backoffLimit]; ok {
+	if v, ok := ssChaos.Annotations[AnnoJobBackoffLimit]; ok {
 		value, err := MustInt32(v)
 		if err != nil {
 			return nil, err
@@ -100,7 +100,7 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 		jbd.SetBackoffLimit(value)
 	}
 
-	if v, ok := ssChaos.Annotations[ttlSecondsAfterFinished]; ok {
+	if v, ok := ssChaos.Annotations[AnnoJobTTLSecondsAfterFinished]; ok {
 		value, err := MustInt32(v)
 		if err != nil {
 			return nil, err
@@ -108,7 +108,7 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 		jbd.SetTTLSecondsAfterFinished(value)
 	}
 
-	if v, ok := ssChaos.Annotations[suspend]; ok {
+	if v, ok := ssChaos.Annotations[AnnoJobSuspend]; ok {
 		if v == "true" {
 			jbd.SetSuspend(true)
 		}
@@ -126,15 +126,19 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 	jbd.SetVolumes(v)
 
 	vm := &corev1.VolumeMount{Name: DefaultConfigName, MountPath: DefaultWorkPath}
+
 	cbd := common.NewContainerBuilder()
 	cbd.SetImage(DefaultImageName)
 	cbd.SetName(DefaultContainerName)
 	cbd.SetVolumeMount(vm)
 	cbd.SetCommand([]string{"sh", "-c"})
+
 	container := cbd.Build()
 	container.Args = NewCmds(requirement)
 	jbd.SetContainers(container)
+
 	rjob := jbd.Build()
+
 	return rjob, nil
 }
 

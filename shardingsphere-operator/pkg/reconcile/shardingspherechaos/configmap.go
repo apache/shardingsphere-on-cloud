@@ -22,7 +22,7 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,11 +36,10 @@ const (
 	DefaultConfigMapName = "ssChaos-configmap"
 )
 
-func NewSSConfigMap(chaos *v1alpha1.ShardingSphereChaos) *v1.ConfigMap {
+// NewSSConfigMap returns a new ConfigMap
+func NewSSConfigMap(chaos *v1alpha1.ShardingSphereChaos) *corev1.ConfigMap {
 	cmb := NewSSConfigMapBuilder()
-
 	cmb.SetName(chaos.Name).SetNamespace(chaos.Namespace).SetLabels(chaos.Labels)
-
 	cmb.SetExperimental(chaos.Spec.InjectJob.Experimental).SetPressure(chaos.Spec.InjectJob.Pressure).SetVerify(chaos.Spec.InjectJob.Verify)
 
 	return cmb.Build()
@@ -49,42 +48,48 @@ func NewSSConfigMap(chaos *v1alpha1.ShardingSphereChaos) *v1.ConfigMap {
 // SSConfigMapBuilder is a builder for ConfigMap by ComputeNode
 type SSConfigMapBuilder interface {
 	common.ConfigMapBuilder
-	SetExperimental(string) SSConfigMapBuilder
-	SetPressure(string) SSConfigMapBuilder
-	SetVerify(string) SSConfigMapBuilder
+
+	SetExperimental(v1alpha1.Script) SSConfigMapBuilder
+	SetPressure(v1alpha1.Script) SSConfigMapBuilder
+	SetVerify(v1alpha1.Script) SSConfigMapBuilder
 }
 
 type configmapBuilder struct {
 	common.ConfigMapBuilder
-	configmap *v1.ConfigMap
+	configmap *corev1.ConfigMap
 }
 
+// NewSSConfigMapBuilder returns a new SSConfigMapBuilder
 func NewSSConfigMapBuilder() SSConfigMapBuilder {
 	configMap := defaultConfigMap()
+
 	return &configmapBuilder{
 		common.NewCommonConfigMapBuilder(configMap),
 		configMap,
 	}
 }
 
-func (c *configmapBuilder) SetExperimental(cmd string) SSConfigMapBuilder {
-	c.configmap.Data[configExperimental] = cmd
+// SetExperimental sets the experimental command
+func (c *configmapBuilder) SetExperimental(s v1alpha1.Script) SSConfigMapBuilder {
+	c.configmap.Data[configExperimental] = string(s)
 	return c
 }
 
-func (c *configmapBuilder) SetPressure(cmd string) SSConfigMapBuilder {
-	c.configmap.Data[configPressure] = cmd
+// SetPressure sets the pressure command
+func (c *configmapBuilder) SetPressure(s v1alpha1.Script) SSConfigMapBuilder {
+	c.configmap.Data[configPressure] = string(s)
 	return c
 }
 
-func (c *configmapBuilder) SetVerify(cmd string) SSConfigMapBuilder {
-	c.configmap.Data[configVerify] = cmd
+// SetVerify sets the verify scripts
+func (c *configmapBuilder) SetVerify(s v1alpha1.Script) SSConfigMapBuilder {
+	c.configmap.Data[configVerify] = string(s)
 	return c
 }
 
 // defaultConfigMap returns a ConfigMap filling with default expected values
-func defaultConfigMap() *v1.ConfigMap {
-	return &v1.ConfigMap{
+func defaultConfigMap() *corev1.ConfigMap {
+	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      DefaultConfigMapName,
 			Namespace: "default",
@@ -94,8 +99,9 @@ func defaultConfigMap() *v1.ConfigMap {
 	}
 }
 
-func UpdateConfigMap(ssChaos *v1alpha1.ShardingSphereChaos, cur *v1.ConfigMap) *v1.ConfigMap {
-	exp := &v1.ConfigMap{}
+// UpdateConfigMap returns a new ConfigMap
+func UpdateConfigMap(ssChaos *v1alpha1.ShardingSphereChaos, cur *corev1.ConfigMap) *corev1.ConfigMap {
+	exp := &corev1.ConfigMap{}
 	exp.ObjectMeta = cur.ObjectMeta
 	exp.Labels = cur.Labels
 	exp.Annotations = cur.Annotations
