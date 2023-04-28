@@ -391,8 +391,18 @@ func (r *ShardingSphereChaosReconciler) setDefaultStatus(chaos *v1alpha1.Shardin
 	}
 }
 
+func isRecoveredJobType(rJob *batchV1.Job, requirement reconcile.InjectRequirement) bool {
+	for i := range rJob.Spec.Template.Spec.Containers[0].Args {
+		r := rJob.Spec.Template.Spec.Containers[0].Args[i]
+		if strings.Contains(r, string(requirement)) {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, rJob *batchV1.Job) error {
-	if isResultExist(rJob) {
+	if !isRecoveredJobType(rJob, reconcile.Verify) {
 		return nil
 	}
 
@@ -433,6 +443,7 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 				Message: fmt.Sprintf("%s: %s", VerifyJobCheck, log),
 			}
 		}
+		ssChaos.Status.Results = updateResult(ssChaos.Status.Results, *result, VerifyJobCheck)
 	}
 
 	if condition == FailureJob {
@@ -445,15 +456,15 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 			Time:    metav1.Time{Time: time.Now()},
 			Message: fmt.Sprintf("%s: %s", VerifyJobCheck, log),
 		}
+		ssChaos.Status.Results = updateResult(ssChaos.Status.Results, *result, VerifyJobCheck)
 	}
-
-	ssChaos.Status.Results = updateResult(ssChaos.Status.Results, *result, VerifyJobCheck)
 
 	return nil
 }
 
 func (r *ShardingSphereChaosReconciler) getPodHaveLog(ctx context.Context, rJob *batchV1.Job) (*corev1.Pod, error) {
 	pods := &corev1.PodList{}
+
 	if err := r.List(ctx, pods, client.MatchingLabels{"controller-uid": rJob.Spec.Template.Labels["controller-uid"]}); err != nil {
 		return nil, err
 	}
