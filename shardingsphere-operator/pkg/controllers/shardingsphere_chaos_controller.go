@@ -443,7 +443,7 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 				Message: fmt.Sprintf("%s: %s", VerifyJobCheck, log),
 			}
 		}
-		ssChaos.Status.Result = updateResult(ssChaos.Status.Result, *result, VerifyJobCheck)
+		ssChaos.Status.Results = updateResult(ssChaos.Status.Results, *result, VerifyJobCheck)
 	}
 
 	if condition == FailureJob {
@@ -456,7 +456,7 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 			Time:    metav1.Time{Time: time.Now()},
 			Message: fmt.Sprintf("%s: %s", VerifyJobCheck, log),
 		}
-		ssChaos.Status.Result = updateResult(ssChaos.Status.Result, *result, VerifyJobCheck)
+		ssChaos.Status.Results = updateResult(ssChaos.Status.Results, *result, VerifyJobCheck)
 	}
 
 	return nil
