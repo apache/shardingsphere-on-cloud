@@ -22,7 +22,8 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaos"
+
+	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh"
 	chaosV1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -39,6 +40,7 @@ import (
 )
 
 var _ = Describe("ShardingSphereChaos", func() {
+	var d = "5m"
 
 	Context("check related resource created by ShardingSphereChaos Controller", func() {
 		var (
@@ -68,7 +70,7 @@ var _ = Describe("ShardingSphereChaos", func() {
 				Client: fakeClient,
 				Scheme: scheme,
 				Log:    logf.Log,
-				Chaos:  chaos.NewChaos(fakeClient),
+				Chaos:  sschaos.NewChaos(fakeClient),
 			}
 			ctx = context.Background()
 			ssChaos = &v1alpha1.ShardingSphereChaos{
@@ -94,7 +96,7 @@ var _ = Describe("ShardingSphereChaos", func() {
 							Action: v1alpha1.PodFailure,
 							Params: v1alpha1.PodChaosParams{
 								PodFailure: &v1alpha1.PodFailureParams{
-									Duration: "5m",
+									Duration: &d,
 								},
 							},
 						},

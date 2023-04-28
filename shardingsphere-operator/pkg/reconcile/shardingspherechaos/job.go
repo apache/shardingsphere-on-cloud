@@ -54,18 +54,19 @@ const (
 type InjectRequirement string
 
 var (
+	//FIXME: pick another name for experimental
 	Experimental InjectRequirement = "experimental"
 	Pressure     InjectRequirement = "pressure"
 	Verify       InjectRequirement = "verify"
 )
 
-func SetJobNamespaceName(name string, requirement InjectRequirement) string {
+func MakeJobName(name string, requirement InjectRequirement) string {
 	return fmt.Sprintf("%s-%s", name, string(requirement))
 }
 
 func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement) (*v1.Job, error) {
 	jbd := NewJobBuilder()
-	jbd.SetNamespace(ssChaos.Namespace).SetLabels(ssChaos.Labels).SetName(SetJobNamespaceName(ssChaos.Name, requirement))
+	jbd.SetNamespace(ssChaos.Namespace).SetLabels(ssChaos.Labels).SetName(MakeJobName(ssChaos.Name, requirement))
 
 	if v, ok := ssChaos.Annotations[completions]; ok {
 		value, err := MustInt32(v)
