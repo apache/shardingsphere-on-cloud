@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package shardingspherechaos
+package chaosmesh
 
 import (
 	"context"
@@ -67,11 +67,11 @@ type Getter interface {
 
 // Setter set Chaos from different parameters
 type Setter interface {
-	CreatePodChaos(context.Context, PodChaos) error
-	UpdatePodChaos(context.Context, PodChaos) error
+	CreatePodChaos(context.Context, *v1alpha1.ShardingSphereChaos) error
+	UpdatePodChaos(context.Context, PodChaos, *v1alpha1.ShardingSphereChaos) error
 
-	CreateNetworkChaos(context.Context, NetworkChaos) error
-	UpdateNetworkChaos(context.Context, NetworkChaos) error
+	CreateNetworkChaos(context.Context, *v1alpha1.ShardingSphereChaos) error
+	UpdateNetworkChaos(context.Context, NetworkChaos, *v1alpha1.ShardingSphereChaos) error
 }
 
 type getter struct {
@@ -123,21 +123,33 @@ type setter struct {
 }
 
 // CreatePodChaos creates a new pod chaos
-func (cs setter) CreatePodChaos(ctx context.Context, podChaos PodChaos) error {
-	return cs.Client.Create(ctx, podChaos.(*chaosmeshapi.PodChaos))
+func (cs setter) CreatePodChaos(ctx context.Context, sschaos *v1alpha1.ShardingSphereChaos) error {
+	pc, _ := NewPodChaos(sschaos)
+	return cs.Client.Create(ctx, pc.(*chaosmeshapi.PodChaos))
 }
 
 // UpdatePodChaos updates a pod chaos
-func (cs setter) UpdatePodChaos(ctx context.Context, podChaos PodChaos) error {
-	return cs.Client.Update(ctx, podChaos.(*chaosmeshapi.PodChaos))
+func (cs setter) UpdatePodChaos(ctx context.Context, podChaos PodChaos, sschaos *v1alpha1.ShardingSphereChaos) error {
+	pc, _ := NewPodChaos(sschaos)
+	s := pc.(*chaosmeshapi.PodChaos)
+	t := podChaos.(*chaosmeshapi.PodChaos)
+	t.Spec = s.Spec
+
+	return cs.Client.Update(ctx, t)
 }
 
 // CreateNetworkChaos creates a new network chaos
-func (cs setter) CreateNetworkChaos(ctx context.Context, networkChaos NetworkChaos) error {
-	return cs.Client.Create(ctx, networkChaos.(*chaosmeshapi.NetworkChaos))
+func (cs setter) CreateNetworkChaos(ctx context.Context, sschaos *v1alpha1.ShardingSphereChaos) error {
+	nc, _ := NewNetworkChaos(sschaos)
+	return cs.Client.Create(ctx, nc.(*chaosmeshapi.NetworkChaos))
 }
 
 // UpdateNetworkChaos updates a network chaos
-func (cs setter) UpdateNetworkChaos(ctx context.Context, networkChaos NetworkChaos) error {
-	return cs.Client.Update(ctx, networkChaos.(*chaosmeshapi.NetworkChaos))
+func (cs setter) UpdateNetworkChaos(ctx context.Context, networkChaos NetworkChaos, sschaos *v1alpha1.ShardingSphereChaos) error {
+	pc, _ := NewNetworkChaos(sschaos)
+	s := pc.(*chaosmeshapi.NetworkChaos)
+	t := networkChaos.(*chaosmeshapi.NetworkChaos)
+	t.Spec = s.Spec
+
+	return cs.Client.Update(ctx, t)
 }

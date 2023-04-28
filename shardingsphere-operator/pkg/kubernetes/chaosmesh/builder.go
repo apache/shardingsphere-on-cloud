@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package shardingspherechaos
+package chaosmesh
 
 import (
 	"context"
@@ -53,16 +53,6 @@ var (
 	ErrNotChanged  = errors.New("object not changed")
 	ErrChangedSpec = errors.New("change spec")
 )
-
-/*
-type chaosMeshHandler struct {
-	r client.Client
-}
-
-func NewChaosMeshHandler(r client.Client) ChaosHandler {
-	return &chaosMeshHandler{r}
-}
-*/
 
 type GenericChaos interface{}
 
@@ -109,32 +99,6 @@ func judgeCondition(condition map[chaosv1alpha1.ChaosConditionType]bool, phase c
 
 	return v1alpha1.Unknown
 }
-
-/*
-func (c *chaosMeshHandler) CreatePodChaos(ctx context.Context, chao PodChaos) error {
-	podChao, ok := chao.(*chaosv1alpha1.PodChaos)
-	if !ok {
-		return ErrConvert
-	}
-	if err := c.r.Create(ctx, podChao); err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
-	}
-
-	return nil
-}
-
-func (c *chaosMeshHandler) CreateNetworkChaos(ctx context.Context, chao NetworkChaos) error {
-	networkChao, ok := chao.(*chaosv1alpha1.NetworkChaos)
-	if !ok {
-		return ErrConvert
-	}
-	if err := c.r.Create(ctx, networkChao); err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
-	}
-
-	return nil
-}
-*/
 
 func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	pcb := NewPodChaosBuilder()
@@ -294,67 +258,6 @@ func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error)
 	*/
 	return networkChao, nil
 }
-
-/*
-func (c *chaosMeshHandler) UpdateNetworkChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur NetworkChaos) error {
-	networkChao, err := c.NewNetworkPodChaos(ssChaos)
-	if err != nil {
-		return err
-	}
-
-	reExp, ok := networkChao.(*chaosv1alpha1.NetworkChaos)
-	if !ok {
-		return ErrConvert
-	}
-	reCur, ok := cur.(*chaosv1alpha1.NetworkChaos)
-	if !ok {
-		return ErrConvert
-	}
-	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
-	if isEqual {
-		return ErrNotChanged
-	}
-
-	if err := c.r.Create(ctx, reCur); err != nil {
-		return err
-	}
-
-	if err := c.r.Update(ctx, reExp); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *chaosMeshHandler) UpdatePodChaos(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, cur PodChaos) error {
-	podChao, err := c.NewPodChaos(ssChaos)
-	if err != nil {
-		return err
-	}
-	reExp, ok := (podChao).(*chaosv1alpha1.PodChaos)
-	if !ok {
-		return ErrConvert
-	}
-	reCur, ok := cur.(*chaosv1alpha1.PodChaos)
-	if !ok {
-		return ErrConvert
-	}
-	isEqual := reflect.DeepEqual(reExp.Spec, reCur.Spec)
-	if isEqual {
-		return ErrNotChanged
-	}
-
-	if err := c.r.Delete(ctx, reCur); err != nil {
-		return err
-	}
-
-	if err := c.CreatePodChaos(ctx, reExp); err != nil {
-		return err
-	}
-
-	return nil
-}
-*/
 
 type PodChaosBuilder interface {
 	SetNamespace(string) PodChaosBuilder
@@ -719,4 +622,4 @@ func DefaultNetworkChaos() *chaosv1alpha1.NetworkChaos {
 			Direction: "to",
 		},
 	}
-} // // //
+}
