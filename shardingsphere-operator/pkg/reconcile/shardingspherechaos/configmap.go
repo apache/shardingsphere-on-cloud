@@ -18,8 +18,6 @@
 package shardingspherechaos
 
 import (
-	"reflect"
-
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
 	corev1 "k8s.io/api/core/v1"
@@ -106,9 +104,6 @@ func UpdateConfigMap(ssChaos *v1alpha1.ShardingSphereChaos, cur *corev1.ConfigMa
 	exp.Labels = cur.Labels
 	exp.Annotations = cur.Annotations
 	now := NewSSConfigMap(ssChaos)
-	if reflect.DeepEqual(now.Data, cur.Data) {
-		return nil
-	}
 	exp.Data = now.Data
 	return exp
 }
