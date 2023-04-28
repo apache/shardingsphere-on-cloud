@@ -401,7 +401,7 @@ func isRecoveredJobType(rJob *batchV1.Job, requirement reconcile.InjectRequireme
 	return false
 }
 
-func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, ssChaos *sschaosv1alpha1.ShardingSphereChaos, rJob *batchV1.Job) error {
+func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, rJob *batchV1.Job) error {
 	if !isRecoveredJobType(rJob, reconcile.Verify) {
 		return nil
 	}
