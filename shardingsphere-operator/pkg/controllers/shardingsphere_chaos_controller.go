@@ -462,16 +462,6 @@ func (r *ShardingSphereChaosReconciler) updateRecoveredJob(ctx context.Context, 
 	return nil
 }
 
-func  (rJob *batchV1.Job, requirement reconcile.InjectRequirement) bool {
-	for i := range rJob.Spec.Template.Spec.Containers[0].Args {
-		r := rJob.Spec.Template.Spec.Containers[0].Args[i]
-		if strings.Contains(r, string(requirement)) {
-			return true
-		}
-	}
-	return false
-}
-
 func (r *ShardingSphereChaosReconciler) getPodHaveLog(ctx context.Context, rJob *batchV1.Job) (*corev1.Pod, error) {
 	pods := &corev1.PodList{}
 
