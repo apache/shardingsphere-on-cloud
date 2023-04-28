@@ -124,15 +124,27 @@ type setter struct {
 
 // CreatePodChaos creates a new pod chaos
 func (cs setter) CreatePodChaos(ctx context.Context, sschaos *v1alpha1.ShardingSphereChaos) error {
-	pc, _ := NewPodChaos(sschaos)
+	pc, err := NewPodChaos(sschaos)
+	if err != nil {
+		return err
+	}
 	return cs.Client.Create(ctx, pc.(*chaosmeshapi.PodChaos))
 }
 
 // UpdatePodChaos updates a pod chaos
 func (cs setter) UpdatePodChaos(ctx context.Context, podChaos PodChaos, sschaos *v1alpha1.ShardingSphereChaos) error {
-	pc, _ := NewPodChaos(sschaos)
-	s := pc.(*chaosmeshapi.PodChaos)
-	t := podChaos.(*chaosmeshapi.PodChaos)
+	pc, err := NewPodChaos(sschaos)
+	if err != nil {
+		return err
+	}
+	s, ok := pc.(*chaosmeshapi.PodChaos)
+	if !ok {
+		return ErrConvert
+	}
+	t, ok := podChaos.(*chaosmeshapi.PodChaos)
+	if !ok {
+		return ErrConvert
+	}
 	t.Spec = s.Spec
 
 	return cs.Client.Update(ctx, t)
@@ -140,15 +152,27 @@ func (cs setter) UpdatePodChaos(ctx context.Context, podChaos PodChaos, sschaos 
 
 // CreateNetworkChaos creates a new network chaos
 func (cs setter) CreateNetworkChaos(ctx context.Context, sschaos *v1alpha1.ShardingSphereChaos) error {
-	nc, _ := NewNetworkChaos(sschaos)
+	nc, err := NewNetworkChaos(sschaos)
+	if err != nil {
+		return err
+	}
 	return cs.Client.Create(ctx, nc.(*chaosmeshapi.NetworkChaos))
 }
 
 // UpdateNetworkChaos updates a network chaos
 func (cs setter) UpdateNetworkChaos(ctx context.Context, networkChaos NetworkChaos, sschaos *v1alpha1.ShardingSphereChaos) error {
-	pc, _ := NewNetworkChaos(sschaos)
-	s := pc.(*chaosmeshapi.NetworkChaos)
-	t := networkChaos.(*chaosmeshapi.NetworkChaos)
+	pc, err := NewNetworkChaos(sschaos)
+	if err != nil {
+		return err
+	}
+	s, ok := pc.(*chaosmeshapi.NetworkChaos)
+	if !ok {
+		return ErrConvert
+	}
+	t, ok := networkChaos.(*chaosmeshapi.NetworkChaos)
+	if !ok {
+		return ErrConvert
+	}
 	t.Spec = s.Spec
 
 	return cs.Client.Update(ctx, t)
