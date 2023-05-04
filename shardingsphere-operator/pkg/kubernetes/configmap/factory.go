@@ -18,8 +18,6 @@
 package configmap
 
 import (
-	"fmt"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -30,19 +28,16 @@ type ConfigMapFactory interface {
 
 func NewConfigMapFactory(obj runtime.Object) ConfigMapFactory {
 	return &configmapFactory{
-		// gvk: gvk,
 		obj: obj,
 	}
 }
 
 type configmapFactory struct {
-	// gvk schema.GroupVersionKind
 	obj runtime.Object
 }
 
 func (c *configmapFactory) NewConfigMapBuilder() ConfigMapBuilder {
 	gvk := c.obj.GetObjectKind().GroupVersionKind()
-	fmt.Printf("g: %s, k: %s, v: %s\n", gvk.Group, gvk.Kind, gvk.Version)
 
 	if gvk.Group == "shardingsphere.apache.org" {
 		if gvk.Kind == "ComputeNode" && gvk.Version == "v1alpha1" {

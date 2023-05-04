@@ -60,7 +60,6 @@ type Setter interface {
 
 // Builder build ConfigMap from given ComputeNode
 type Builder interface {
-	// Build(context.Context, *v1alpha1.ComputeNode) *corev1.ConfigMap
 	Build(context.Context, runtime.Object) *corev1.ConfigMap
 }
 
@@ -107,7 +106,3 @@ type builder struct{}
 func (b builder) Build(ctx context.Context, obj runtime.Object) *corev1.ConfigMap {
 	return NewConfigMap(obj)
 }
-
-// func (b builder) Build(ctx context.Context, cn *v1alpha1.ComputeNode) *corev1.ConfigMap {
-// 	return NewComputeNodeConfigMap(cn)
-// }
