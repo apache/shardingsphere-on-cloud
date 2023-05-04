@@ -77,6 +77,20 @@ func (mr *MockIOpenGaussMockRecorder) Auth(user, password, dbName, dbPort interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Auth", reflect.TypeOf((*MockIOpenGauss)(nil).Auth), user, password, dbName, dbPort)
 }
 
+// CheckSchema mocks base method.
+func (m *MockIOpenGauss) CheckSchema(user, password, dbName string, dbPort uint16, schema string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckSchema", user, password, dbName, dbPort, schema)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckSchema indicates an expected call of CheckSchema.
+func (mr *MockIOpenGaussMockRecorder) CheckSchema(user, password, dbName, dbPort, schema interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckSchema", reflect.TypeOf((*MockIOpenGauss)(nil).CheckSchema), user, password, dbName, dbPort, schema)
+}
+
 // CleanPgDataTemp mocks base method.
 func (m *MockIOpenGauss) CleanPgDataTemp() error {
 	m.ctrl.T.Helper()
