@@ -18,15 +18,20 @@
 package configmap_test
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
+	"gopkg.in/yaml.v2"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("ConfigMap", func() {
+var _ = Describe("Default ConfigMap", func() {
 	var (
 		expect = &corev1.ConfigMap{}
 		cn     = &v1alpha1.ComputeNode{
@@ -35,10 +40,6 @@ var _ = Describe("ConfigMap", func() {
 				Namespace: "test_namespace",
 				Labels: map[string]string{
 					"test_key": "test_value",
-				},
-				Annotations: map[string]string{
-					configmap.AnnoLogbackConfig:     "test_logback",
-					configmap.AnnoClusterRepoConfig: "test_cluster_repo_config",
 				},
 			},
 		}
@@ -51,12 +52,15 @@ var _ = Describe("ConfigMap", func() {
 			"test_key": "test_value",
 		}
 		expect.Data = map[string]string{}
-		expect.Data[configmap.ConfigDataKeyForLogback] = "test_logback"
-		expect.Data[configmap.ConfigDataKeyForServer] = "test_cluster_repo_config"
+		expect.Data[configmap.ConfigDataKeyForLogback] = configmap.DefaultLogback
+		expect.Data[configmap.ConfigDataKeyForServer] = configmap.DefaultServerConfig
+		expect.Data[configmap.ConfigDataKeyForAgent] = ""
 	})
 
 	Context("Assert ObjectMeta", func() {
-		cm := configmap.NewCNConfigMap(cn)
+		c := configmap.NewConfigMapClient(nil)
+		cm := c.Build(context.TODO(), cn)
+
 		It("name should be equal", func() {
 			Expect(expect.Name).To(Equal(cm.Name))
 		})
@@ -69,12 +73,283 @@ var _ = Describe("ConfigMap", func() {
 	})
 
 	Context("Assert Default Spec Data", func() {
-		cm := configmap.NewCNConfigMap(cn)
-		It("default logback should be equal", func() {
-			Expect(expect.Data[configmap.AnnoLogbackConfig]).To(Equal(cm.Data[configmap.AnnoLogbackConfig]))
+		c := configmap.NewConfigMapClient(nil)
+		cm := c.Build(context.TODO(), cn)
+
+		It("default server config should be equal", func() {
+			Expect(expect.Data[configmap.ConfigDataKeyForServer]).To(Equal(cm.Data[configmap.ConfigDataKeyForServer]))
 		})
-		It("default cluster repo config should be equal", func() {
-			Expect(expect.Data[configmap.AnnoClusterRepoConfig]).To(Equal(cm.Data[configmap.AnnoClusterRepoConfig]))
+		It("default logback should be equal", func() {
+			Expect(expect.Data[configmap.ConfigDataKeyForLogback]).To(Equal(cm.Data[configmap.ConfigDataKeyForLogback]))
+		})
+		It("default agent config should be equal", func() {
+			Expect(expect.Data[configmap.ConfigDataKeyForAgent]).To(Equal(cm.Data[configmap.ConfigDataKeyForAgent]))
+		})
+	})
+})
+
+var _ = Describe("Standalone Server Config", func() {
+	var (
+		expect = &v1alpha1.ServerConfig{}
+		cn     = &v1alpha1.ComputeNode{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test_name",
+				Namespace: "test_namespace",
+				Labels: map[string]string{
+					"test_key": "test_value",
+				},
+			},
+			Spec: v1alpha1.ComputeNodeSpec{
+				Bootstrap: v1alpha1.BootstrapConfig{
+					ServerConfig: v1alpha1.ServerConfig{
+						Authority: v1alpha1.ComputeNodeAuthority{
+							Users: []v1alpha1.ComputeNodeUser{
+								{
+									User:     "test_user@%",
+									Password: "test_password",
+								},
+							},
+							Privilege: v1alpha1.ComputeNodePrivilege{
+								Type: v1alpha1.AllPermitted,
+							},
+						},
+						Mode: v1alpha1.ComputeNodeServerMode{
+							Type: v1alpha1.ModeTypeStandalone,
+						},
+						Props: v1alpha1.Properties{
+							"test_prop_key": "test_prop_value",
+						},
+					},
+				},
+			},
+		}
+	)
+
+	BeforeEach(func() {
+		c := configmap.NewConfigMapClient(nil)
+		cm := c.Build(context.TODO(), cn)
+
+		err := yaml.Unmarshal([]byte(cm.Data[configmap.ConfigDataKeyForServer]), &expect)
+		if err != nil {
+			fmt.Printf("Err: %s\n", err)
+		}
+	})
+
+	Context("Assert Service Config Data", func() {
+		It("server config authority should be equal", func() {
+			Expect(expect.Authority).To(Equal(cn.Spec.Bootstrap.ServerConfig.Authority))
+		})
+		It("server config mode should be equal", func() {
+			Expect(expect.Mode).To(Equal(cn.Spec.Bootstrap.ServerConfig.Mode))
+		})
+		It("server config props should be equal", func() {
+			Expect(expect.Props).To(Equal(cn.Spec.Bootstrap.ServerConfig.Props))
+		})
+	})
+})
+
+var _ = Describe("Cluster Server Config", func() {
+	var (
+		expect = &v1alpha1.ServerConfig{}
+		cn     = &v1alpha1.ComputeNode{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test_name",
+				Namespace: "test_namespace",
+				Labels: map[string]string{
+					"test_key": "test_value",
+				},
+			},
+			Spec: v1alpha1.ComputeNodeSpec{
+				Bootstrap: v1alpha1.BootstrapConfig{
+					ServerConfig: v1alpha1.ServerConfig{
+						Authority: v1alpha1.ComputeNodeAuthority{
+							Users: []v1alpha1.ComputeNodeUser{
+								{
+									User:     "test_user@%",
+									Password: "test_password",
+								},
+							},
+							Privilege: v1alpha1.ComputeNodePrivilege{
+								Type: v1alpha1.AllPermitted,
+							},
+						},
+						Mode: v1alpha1.ComputeNodeServerMode{
+							Type: v1alpha1.ModeTypeCluster,
+							Repository: v1alpha1.Repository{
+								Type: "Zookeeper",
+								Props: v1alpha1.Properties{
+									"test_repo_key": "test_repo_value",
+								},
+							},
+						},
+						Props: v1alpha1.Properties{
+							"test_prop_key": "test_prop_value",
+						},
+					},
+				},
+			},
+		}
+	)
+
+	BeforeEach(func() {
+		c := configmap.NewConfigMapClient(nil)
+		cm := c.Build(context.TODO(), cn)
+
+		err := yaml.Unmarshal([]byte(cm.Data[configmap.ConfigDataKeyForServer]), &expect)
+		if err != nil {
+			fmt.Printf("Err: %s\n", err)
+		}
+	})
+
+	Context("Assert Service Config Data", func() {
+		It("server config authority should be equal", func() {
+			Expect(expect.Authority).To(Equal(cn.Spec.Bootstrap.ServerConfig.Authority))
+		})
+		It("server config mode should be equal", func() {
+			Expect(expect.Mode).To(Equal(cn.Spec.Bootstrap.ServerConfig.Mode))
+		})
+		It("server config props should be equal", func() {
+			Expect(expect.Props).To(Equal(cn.Spec.Bootstrap.ServerConfig.Props))
+		})
+	})
+})
+
+var _ = Describe("Logback Config", func() {
+	var (
+		expect = ""
+		cn     = &v1alpha1.ComputeNode{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test_name",
+				Namespace: "test_namespace",
+				Labels: map[string]string{
+					"test_key": "test_value",
+				},
+			},
+			Spec: v1alpha1.ComputeNodeSpec{
+				Bootstrap: v1alpha1.BootstrapConfig{
+					LogbackConfig: configmap.DefaultLogback,
+				},
+			},
+		}
+	)
+
+	BeforeEach(func() {
+		expect = configmap.DefaultLogback
+	})
+
+	Context("Assert Logback Config Data", func() {
+		c := configmap.NewConfigMapClient(nil)
+		cm := c.Build(context.TODO(), cn)
+		It("Logback config should be equal", func() {
+			Expect(expect).To(Equal(cm.Data[configmap.ConfigDataKeyForLogback]))
+		})
+	})
+})
+
+var _ = Describe("Agent Config", func() {
+	var (
+		expect = &v1alpha1.AgentConfig{
+			Plugins: v1alpha1.AgentPlugin{
+				Logging: &v1alpha1.PluginLogging{
+					File: v1alpha1.LoggingFile{
+						Props: v1alpha1.Properties{
+							"test_logging_key": "test_logging_value",
+						},
+					},
+				},
+				Metrics: &v1alpha1.PluginMetrics{
+					Prometheus: v1alpha1.Prometheus{
+						Host: "test_host",
+						Port: 1234,
+						Props: v1alpha1.Properties{
+							"test_metrics_key": "test_metrics_value",
+						},
+					},
+				},
+				Tracing: &v1alpha1.PluginTracing{
+					OpenTracing: v1alpha1.OpenTracing{
+						Props: v1alpha1.Properties{
+							"test_opentracing_key": "test_opentracing_value",
+						},
+					},
+					OpenTelemetry: v1alpha1.OpenTelemetry{
+						Props: v1alpha1.Properties{
+							"test_opentelemetry_key": "test_opentelemetry_value",
+						},
+					},
+				},
+			},
+		}
+
+		cn = &v1alpha1.ComputeNode{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test_name",
+				Namespace: "test_namespace",
+				Labels: map[string]string{
+					"test_key": "test_value",
+				},
+			},
+			Spec: v1alpha1.ComputeNodeSpec{
+				Bootstrap: v1alpha1.BootstrapConfig{
+					AgentConfig: v1alpha1.AgentConfig{
+						Plugins: v1alpha1.AgentPlugin{
+							Logging: &v1alpha1.PluginLogging{
+								File: v1alpha1.LoggingFile{
+									Props: v1alpha1.Properties{
+										"test_logging_key": "test_logging_value",
+									},
+								},
+							},
+							Metrics: &v1alpha1.PluginMetrics{
+								Prometheus: v1alpha1.Prometheus{
+									Host: "test_host",
+									Port: 1234,
+									Props: v1alpha1.Properties{
+										"test_metrics_key": "test_metrics_value",
+									},
+								},
+							},
+							Tracing: &v1alpha1.PluginTracing{
+								OpenTracing: v1alpha1.OpenTracing{
+									Props: v1alpha1.Properties{
+										"test_opentracing_key": "test_opentracing_value",
+									},
+								},
+								OpenTelemetry: v1alpha1.OpenTelemetry{
+									Props: v1alpha1.Properties{
+										"test_opentelemetry_key": "test_opentelemetry_value",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	)
+
+	BeforeEach(func() {
+		c := configmap.NewConfigMapClient(nil)
+		cm := c.Build(context.TODO(), cn)
+
+		err := yaml.Unmarshal([]byte(cm.Data[configmap.ConfigDataKeyForServer]), &expect)
+		if err != nil {
+			fmt.Printf("Err: %s\n", err)
+		}
+	})
+
+	Context("Assert Agent Config Data", func() {
+		It("agent config plugins should be equal", func() {
+			Expect(expect.Plugins).To(Equal(cn.Spec.Bootstrap.AgentConfig.Plugins))
+		})
+		It("agent config logging should be equal", func() {
+			Expect(expect.Plugins.Logging).To(Equal(cn.Spec.Bootstrap.AgentConfig.Plugins.Logging))
+		})
+		It("agent config metrics should be equal", func() {
+			Expect(expect.Plugins.Metrics).To(Equal(cn.Spec.Bootstrap.AgentConfig.Plugins.Metrics))
+		})
+		It("agent config tracing should be equal", func() {
+			Expect(expect.Plugins.Tracing).To(Equal(cn.Spec.Bootstrap.AgentConfig.Plugins.Tracing))
 		})
 	})
 })
