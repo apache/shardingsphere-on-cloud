@@ -38,8 +38,6 @@ const (
 	// ConfigDataKeyForAgent refers to the configuration file name of agent
 	ConfigDataKeyForAgent = "agent.yaml"
 
-	// AnnoClusterRepoConfig refers to the content of cluster repo config in server config
-	AnnoClusterRepoConfig = "computenode.shardingsphere.org/server-config-mode-cluster"
 	// AnnoClusterRepoConfig refers to the content of logback.xml
 	AnnoLogbackConfig = "computenode.shardingsphere.org/logback"
 )
@@ -49,9 +47,7 @@ func NewCNConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	builder := NewConfigMapBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
 	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabels(cn.Labels).SetAnnotations(cn.Annotations)
 
-	cluster := cn.Annotations[AnnoClusterRepoConfig]
 	logback := cn.Annotations[AnnoLogbackConfig]
-
 	if len(logback) > 0 {
 		builder.SetLogback(logback)
 	} else {
@@ -61,10 +57,8 @@ func NewCNConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	// NOTE: ShardingSphere Proxy 5.3.0 needs a server.yaml no matter if it is empty
 	if !reflect.DeepEqual(cn.Spec.Bootstrap.ServerConfig, v1alpha1.ServerConfig{}) {
 		servconf := cn.Spec.Bootstrap.ServerConfig.DeepCopy()
-		if y, err := updateConfigMapServerConf(cluster, servconf, cn); err == nil {
-			builder.SetServerConfig(y)
-		} else {
-			return &v1.ConfigMap{}
+		if y, err := yaml.Marshal(servconf); err == nil {
+			builder.SetServerConfig(string(y))
 		}
 	} else {
 		builder.SetServerConfig(DefaultServerConfig)
