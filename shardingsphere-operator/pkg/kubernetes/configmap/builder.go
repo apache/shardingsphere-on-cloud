@@ -67,7 +67,7 @@ func NewCNConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 			return &v1.ConfigMap{}
 		}
 	} else {
-		builder.SetServerConfig("# Empty file is needed")
+		builder.SetServerConfig(DefaultServerConfig)
 	}
 
 	// load java agent config to configmap if needed
@@ -158,7 +158,8 @@ func UpdateConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1.ConfigMap 
 }
 
 // DefaultLogback contains the default logback config
-const DefaultLogback = `<?xml version="1.0"?>
+const (
+	DefaultLogback = `<?xml version="1.0"?>
 <configuration>
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -190,3 +191,5 @@ const DefaultLogback = `<?xml version="1.0"?>
     </root>
 </configuration> 
 `
+	DefaultServerConfig = "# Empty file is needed"
+)
