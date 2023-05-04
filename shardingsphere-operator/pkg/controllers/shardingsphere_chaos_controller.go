@@ -560,16 +560,27 @@ func (r *ShardingSphereChaosReconciler) getConfigMapByNamespacedName(ctx context
 	return config, nil
 }
 
-func (r *ShardingSphereChaosReconciler) updateConfigMap(ctx context.Context, chao *v1alpha1.ShardingSphereChaos, cur *corev1.ConfigMap) error {
-	exp := reconcile.UpdateConfigMap(chao, cur)
-	return r.Update(ctx, exp)
+func (r *ShardingSphereChaosReconciler) updateConfigMap(ctx context.Context, chaos *v1alpha1.ShardingSphereChaos, cur *corev1.ConfigMap) error {
+	// exp := reconcile.UpdateShardingSphereChaosConfigMap(chao, cur)
+	exp := r.ConfigMap.Build(ctx, chaos)
+	exp.ObjectMeta = cur.ObjectMeta
+	exp.ObjectMeta.ResourceVersion = ""
+	exp.Labels = cur.Labels
+	exp.Annotations = cur.Annotations
+	return r.ConfigMap.Update(ctx, exp)
+
+	// return r.Update(ctx, exp)
 }
 
 func (r *ShardingSphereChaosReconciler) createConfigMap(ctx context.Context, chaos *v1alpha1.ShardingSphereChaos) error {
-	cm := reconcile.NewSSConfigMap(chaos)
-	if err := ctrl.SetControllerReference(chaos, cm, r.Scheme); err != nil {
-		return err
-	}
+	/*
+		cm := reconcile.NewSSConfigMap(chaos)
+		if err := ctrl.SetControllerReference(chaos, cm, r.Scheme); err != nil {
+			return err
+		}
+	*/
+
+	cm := r.ConfigMap.Build(ctx, chaos)
 
 	err := r.Create(ctx, cm)
 	if err != nil && apierrors.IsAlreadyExists(err) {

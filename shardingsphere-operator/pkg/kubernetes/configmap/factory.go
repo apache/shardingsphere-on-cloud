@@ -15,40 +15,48 @@
  * limitations under the License.
  */
 
-package common
-
-/*
+package configmap
 
 import (
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type ConfigMapFactory interface {
-	NewConfigMapBuilderFromGVK(gvk schema.GroupVersionKind) ConfigMapBuilder
+	NewConfigMapBuilder() ConfigMapBuilder
 }
 
-type configmapFactory struct{}
+func NewConfigMapFactory(obj runtime.Object) ConfigMapFactory {
+	return &configmapFactory{
+		// gvk: gvk,
+		obj: obj,
+	}
+}
 
-func (c configmapFactory) NewConfigMapBuilderFromGVK(gvk schema.GroupVersionKind) ConfigMapBuilder {
+type configmapFactory struct {
+	// gvk schema.GroupVersionKind
+	obj runtime.Object
+}
+
+func (c *configmapFactory) NewConfigMapBuilder() ConfigMapBuilder {
+	gvk := c.obj.GetObjectKind().GroupVersionKind()
+
 	if gvk.Group == "shardingsphere.apache.org" {
 		if gvk.Kind == "ComputeNode" && gvk.Version == "v1alpha1" {
-			return &commonConfigMapBuilder{}
+			return &computeNodeConfigMapBuilder{
+				obj: c.obj,
+			}
+		}
+
+		if gvk.Kind == "ShardingSphereChaos" && gvk.Version == "v1alpha1" {
+			return &shardingsphereChaosConfigMapBuilder{
+				obj: c.obj,
+			}
 		}
 	}
 
-		// if gvk.Group == "shardingsphere.apache.org" && gvk.Kind == "ShardingSphereChaos" && gvk.Version == "v1alpha1" {
-		// 	return shardingsphereChaosConfigMapBuilder{}
-		// }
-
-	return nil
+	return &configMapBuilder{}
 }
-
-// type computeNodeConfigMapBuilder struct{}
-
-// func (c computeNodeConfigMapFactory) NewConfigMapBuilderFromGVK()
-
-// type shardingsphereChaosConfigMapFactory struct{}
 
 // ConfigMapBuilder generic configmap interface
 type ConfigMapBuilder interface {
@@ -56,46 +64,56 @@ type ConfigMapBuilder interface {
 	SetNamespace(namespace string) ConfigMapBuilder
 	SetLabels(labels map[string]string) ConfigMapBuilder
 	SetAnnotations(annos map[string]string) ConfigMapBuilder
+	SetBinaryData(binaryData map[string][]byte) ConfigMapBuilder
+	SetData(data map[string]string) ConfigMapBuilder
 	Build() *v1.ConfigMap
 }
 
-// commonConfigMapBuilder common configmap implementation
-type commonConfigMapBuilder struct {
+// configMapBuilder common configmap implementation
+type configMapBuilder struct {
 	configmap *v1.ConfigMap
 }
 
-// NewCommonConfigMapBuilder Create a new common configmap builder
-func NewCommonConfigMapBuilder(configmap *v1.ConfigMap) ConfigMapBuilder {
-	return &commonConfigMapBuilder{configmap}
+// NewConfigMapBuilder Create a new common configmap builder
+func NewConfigMapBuilder(configmap *v1.ConfigMap) ConfigMapBuilder {
+	return &configMapBuilder{configmap}
 }
 
 // SetName set the ConfigMap name
-func (c *commonConfigMapBuilder) SetName(name string) ConfigMapBuilder {
+func (c *configMapBuilder) SetName(name string) ConfigMapBuilder {
 	c.configmap.Name = name
 	return c
 }
 
 // SetNamespace set the ConfigMap namespace
-func (c *commonConfigMapBuilder) SetNamespace(namespace string) ConfigMapBuilder {
+func (c *configMapBuilder) SetNamespace(namespace string) ConfigMapBuilder {
 	c.configmap.Namespace = namespace
 	return c
 }
 
 // SetLabels set the ConfigMap labels
-func (c *commonConfigMapBuilder) SetLabels(labels map[string]string) ConfigMapBuilder {
+func (c *configMapBuilder) SetLabels(labels map[string]string) ConfigMapBuilder {
 	c.configmap.Labels = labels
 	return c
 }
 
 // SetAnnotations set the ConfigMap annotations
-func (c *commonConfigMapBuilder) SetAnnotations(annos map[string]string) ConfigMapBuilder {
+func (c *configMapBuilder) SetAnnotations(annos map[string]string) ConfigMapBuilder {
 	c.configmap.Annotations = annos
 	return c
 }
 
-// Build returns a ConfigMap
-func (c *commonConfigMapBuilder) Build() *v1.ConfigMap {
-	return c.configmap
+func (c *configMapBuilder) SetData(data map[string]string) ConfigMapBuilder {
+	c.configmap.Data = data
+	return c
 }
 
-*/
+func (c *configMapBuilder) SetBinaryData(binary map[string][]byte) ConfigMapBuilder {
+	c.configmap.BinaryData = binary
+	return c
+}
+
+// Build returns a ConfigMap
+func (c *configMapBuilder) Build() *v1.ConfigMap {
+	return c.configmap
+}

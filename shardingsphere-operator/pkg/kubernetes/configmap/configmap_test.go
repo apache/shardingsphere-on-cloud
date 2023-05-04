@@ -88,6 +88,13 @@ var _ = Describe("Default ConfigMap", func() {
 	})
 
 	Context("Assert Update Spec Data", func() {
+		cn.ObjectMeta = metav1.ObjectMeta{
+			Name:      "test_name",
+			Namespace: "test_namespace",
+			Labels: map[string]string{
+				"test_key": "test_value",
+			},
+		}
 		cn.Spec.Bootstrap = v1alpha1.BootstrapConfig{
 			ServerConfig: v1alpha1.ServerConfig{
 				Authority: v1alpha1.ComputeNodeAuthority{
@@ -118,7 +125,7 @@ var _ = Describe("Default ConfigMap", func() {
 
 		c := configmap.NewConfigMapClient(nil)
 		cm := c.Build(context.TODO(), cn)
-		cm = configmap.UpdateConfigMap(cn, cm)
+		cm = configmap.UpdateComputeNodeConfigMap(cn, cm)
 		cfg := &v1alpha1.ServerConfig{}
 		err := yaml.Unmarshal([]byte(cm.Data[configmap.ConfigDataKeyForServer]), &cfg)
 		if err != nil {

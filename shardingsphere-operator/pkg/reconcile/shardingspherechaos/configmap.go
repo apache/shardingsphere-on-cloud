@@ -17,13 +17,6 @@
 
 package shardingspherechaos
 
-import (
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
 const (
 	configExperimental = "experimental.sh"
 	configPressure     = "pressure.sh"
@@ -34,6 +27,7 @@ const (
 	DefaultConfigMapName = "ssChaos-configmap"
 )
 
+/*
 // NewSSConfigMap returns a new ConfigMap
 func NewSSConfigMap(chaos *v1alpha1.ShardingSphereChaos) *corev1.ConfigMap {
 	cmb := NewSSConfigMapBuilder()
@@ -107,3 +101,4 @@ func UpdateConfigMap(ssChaos *v1alpha1.ShardingSphereChaos, cur *corev1.ConfigMa
 	exp.Data = now.Data
 	return exp
 }
+*/

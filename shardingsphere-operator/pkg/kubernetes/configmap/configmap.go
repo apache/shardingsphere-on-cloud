@@ -20,10 +20,9 @@ package configmap
 import (
 	"context"
 
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -61,7 +60,8 @@ type Setter interface {
 
 // Builder build ConfigMap from given ComputeNode
 type Builder interface {
-	Build(context.Context, *v1alpha1.ComputeNode) *corev1.ConfigMap
+	// Build(context.Context, *v1alpha1.ComputeNode) *corev1.ConfigMap
+	Build(context.Context, runtime.Object) *corev1.ConfigMap
 }
 
 type configmapClient struct {
@@ -104,6 +104,15 @@ func (cs setter) Update(ctx context.Context, cm *corev1.ConfigMap) error {
 type builder struct{}
 
 // Build returns a ConfigMap
-func (b builder) Build(ctx context.Context, cn *v1alpha1.ComputeNode) *corev1.ConfigMap {
-	return NewConfigMap(cn)
+func (b builder) Build(ctx context.Context, obj runtime.Object) *corev1.ConfigMap {
+	// gvk := obj.GetObjectKind().GroupVersionKind()
+	// if gvk.Kind == "ComputeNode" {
+	// 	cn := obj
+	// 	return NewComputeNodeConfigMap(cn)
+	// }
+	return NewConfigMap(obj)
 }
+
+// func (b builder) Build(ctx context.Context, cn *v1alpha1.ComputeNode) *corev1.ConfigMap {
+// 	return NewComputeNodeConfigMap(cn)
+// }
