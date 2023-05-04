@@ -25,21 +25,21 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils"
-	"github.com/google/uuid"
 )
 
 type agentServer struct {
 	addr string
 
-	_apiBackup     string
-	_apiRestore    string
-	_apiShowDetail string
-	_apiShowList   string
-	_apiDiskspace  string
+	_apiBackup      string
+	_apiRestore     string
+	_apiShowDetail  string
+	_apiShowList    string
+	_apiDiskspace   string
+	_apiHealthCheck string
 }
 
 type IAgentServer interface {
-	CheckStatus() error
+	CheckStatus(in *model.HealthCheckIn) error
 	Backup(in *model.BackupIn) (string, error)
 	DeleteBackup(in *model.DeleteBackupIn) error
 	Restore(in *model.RestoreIn) error
@@ -54,26 +54,25 @@ func NewAgentServer(addr string) IAgentServer {
 	return &agentServer{
 		addr: addr,
 
-		_apiBackup:     "/api/backup",
-		_apiRestore:    "/api/restore",
-		_apiShowDetail: "/api/show",
-		_apiShowList:   "/api/show/list",
-		_apiDiskspace:  "/api/diskspace",
+		_apiBackup:      "/api/backup",
+		_apiRestore:     "/api/restore",
+		_apiShowDetail:  "/api/show",
+		_apiShowList:    "/api/show/list",
+		_apiDiskspace:   "/api/diskspace",
+		_apiHealthCheck: "/api/healthz",
 	}
 }
 
 // CheckStatus check agent server is alive
-func (as *agentServer) CheckStatus() error {
-	url := fmt.Sprintf("%s/%s", as.addr, "ping")
-	r := httputils.NewRequest(context.Background(), http.MethodGet, url)
-	httpCode, err := r.Send(nil)
-	if err != nil {
-		efmt := "httputils.NewRequest[url=%s] return err=%s,wrap=%w"
-		return fmt.Errorf(efmt, url, err, xerr.NewCliErr(xerr.Unknown))
+func (as *agentServer) CheckStatus(in *model.HealthCheckIn) error {
+	url := fmt.Sprintf("%s%s", as.addr, as._apiHealthCheck)
+
+	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
+
+	if err := r.Send(in); err != nil {
+		return xerr.NewUnknownErr(url, in, nil, err)
 	}
-	if httpCode != http.StatusOK {
-		return fmt.Errorf("httpCode=%d", httpCode)
-	}
+
 	return nil
 }
 
@@ -82,25 +81,14 @@ func (as *agentServer) Backup(in *model.BackupIn) (string, error) {
 
 	out := &model.BackupOutResp{}
 	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
-	r.Header(map[string]string{
-		"x-request-id": uuid.New().String(),
-		"content-type": "application/json",
-	})
 	r.Body(in)
 
-	httpCode, err := r.Send(out)
-	if err != nil {
-		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
-		return "", fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
-	}
-
-	if httpCode != http.StatusOK {
-		return "", fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
+	if err := r.Send(out); err != nil {
+		return "", xerr.NewUnknownErr(url, in, out, err)
 	}
 
 	if out.Code != 0 {
-		asErr := xerr.NewAgentServerErr(out.Code, out.Msg)
-		return "", fmt.Errorf("agent server error[code=%d,msg=%s],err=%w", out.Code, out.Msg, asErr)
+		return "", xerr.NewAgentServerErr(out.Code, out.Msg)
 	}
 
 	return out.Data.ID, nil
@@ -112,24 +100,14 @@ func (as *agentServer) Restore(in *model.RestoreIn) error {
 
 	out := &model.RestoreResp{}
 	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
-	r.Header(map[string]string{
-		"x-request-id": uuid.New().String(),
-		"content-type": "application/json",
-	})
 	r.Body(in)
-	httpCode, err := r.Send(out)
-	if err != nil {
-		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
-		return fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
-	}
 
-	if httpCode != http.StatusOK {
-		return fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
+	if err := r.Send(out); err != nil {
+		return xerr.NewUnknownErr(url, in, out, err)
 	}
 
 	if out.Code != 0 {
-		asErr := xerr.NewAgentServerErr(out.Code, out.Msg)
-		return fmt.Errorf("agent server error[code=%d,msg=%s],err=%w", out.Code, out.Msg, asErr)
+		return xerr.NewAgentServerErr(out.Code, out.Msg)
 	}
 
 	return nil
@@ -140,24 +118,14 @@ func (as *agentServer) ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, er
 
 	out := &model.BackupDetailResp{}
 	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
-	r.Header(map[string]string{
-		"x-request-id": uuid.New().String(),
-		"content-type": "application/json",
-	})
 	r.Body(in)
-	httpCode, err := r.Send(out)
-	if err != nil {
-		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
-		return nil, fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
-	}
 
-	if httpCode != http.StatusOK {
-		return nil, fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
+	if err := r.Send(out); err != nil {
+		return nil, xerr.NewUnknownErr(url, in, out, err)
 	}
 
 	if out.Code != 0 {
-		asErr := xerr.NewAgentServerErr(out.Code, out.Msg)
-		return nil, fmt.Errorf("agent server error[code=%d,msg=%s],err=%w", out.Code, out.Msg, asErr)
+		return nil, xerr.NewAgentServerErr(out.Code, out.Msg)
 	}
 
 	return &out.Data, nil
@@ -168,24 +136,14 @@ func (as *agentServer) ShowList(in *model.ShowListIn) ([]model.BackupInfo, error
 
 	out := &model.BackupListResp{}
 	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
-	r.Header(map[string]string{
-		"x-request-id": uuid.New().String(),
-		"content-type": "application/json",
-	})
 	r.Body(in)
-	httpCode, err := r.Send(out)
-	if err != nil {
-		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
-		return nil, fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
-	}
 
-	if httpCode != http.StatusOK {
-		return nil, fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
+	if err := r.Send(out); err != nil {
+		return nil, xerr.NewUnknownErr(url, in, out, err)
 	}
 
 	if out.Code != 0 {
-		asErr := xerr.NewAgentServerErr(out.Code, out.Msg)
-		return nil, fmt.Errorf("agent server error[code=%d,msg=%s],err=%w", out.Code, out.Msg, asErr)
+		return nil, xerr.NewAgentServerErr(out.Code, out.Msg)
 	}
 
 	return out.Data, nil
@@ -196,25 +154,14 @@ func (as *agentServer) ShowDiskSpace(in *model.DiskSpaceIn) (*model.DiskSpaceInf
 
 	out := &model.DiskSpaceInfo{}
 	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
-	r.Header(map[string]string{
-		"x-request-id": uuid.New().String(),
-		"content-type": "application/json",
-	})
 	r.Body(in)
 
-	httpCode, err := r.Send(out)
-	if err != nil {
-		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
-		return nil, fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
-	}
-
-	if httpCode != http.StatusOK {
-		return nil, fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
+	if err := r.Send(out); err != nil {
+		return nil, xerr.NewUnknownErr(url, in, out, err)
 	}
 
 	if out.Code != 0 {
-		asErr := xerr.NewAgentServerErr(out.Code, out.Msg)
-		return nil, fmt.Errorf("agent server error[code=%d,msg=%s],err=%w", out.Code, out.Msg, asErr)
+		return nil, xerr.NewAgentServerErr(out.Code, out.Msg)
 	}
 
 	return out, nil
@@ -226,25 +173,14 @@ func (as *agentServer) DeleteBackup(in *model.DeleteBackupIn) error {
 
 	out := &model.DeleteBackupOut{}
 	r := httputils.NewRequest(context.Background(), http.MethodDelete, url)
-	r.Header(map[string]string{
-		"x-request-id": uuid.New().String(),
-		"content-type": "application/json",
-	})
 	r.Body(in)
 
-	httpCode, err := r.Send(out)
-	if err != nil {
-		efmt := "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
-		return fmt.Errorf(efmt, url, in, out, err, xerr.NewCliErr(xerr.Unknown))
-	}
-
-	if httpCode != http.StatusOK {
-		return fmt.Errorf("unknown http status[code=%d],err=%w", httpCode, xerr.NewCliErr(xerr.InvalidHTTPStatus))
+	if err := r.Send(out); err != nil {
+		return xerr.NewUnknownErr(url, in, out, err)
 	}
 
 	if out.Code != 0 {
-		asErr := xerr.NewAgentServerErr(out.Code, out.Msg)
-		return fmt.Errorf("agent server error[code=%d,msg=%s],err=%w", out.Code, out.Msg, asErr)
+		return xerr.NewAgentServerErr(out.Code, out.Msg)
 	}
 
 	return nil

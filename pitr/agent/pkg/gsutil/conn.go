@@ -66,5 +66,5 @@ func (og *OpenGauss) Ping() error {
 		efmt := "db ping fail[user=%s,pwLen=%d,dbName=%s],err=%s,wrap=%w"
 		return fmt.Errorf(efmt, og.user, og.pwLen, og.dbName, err, cons.DBConnectionFailed)
 	}
-	return nil
+	return og.db.Close()
 }

@@ -50,17 +50,17 @@ func (mr *MockIAgentServerMockRecorder) Backup(in interface{}) *gomock.Call {
 }
 
 // CheckStatus mocks base method.
-func (m *MockIAgentServer) CheckStatus() error {
+func (m *MockIAgentServer) CheckStatus(in *model.HealthCheckIn) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckStatus")
+	ret := m.ctrl.Call(m, "CheckStatus", in)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CheckStatus indicates an expected call of CheckStatus.
-func (mr *MockIAgentServerMockRecorder) CheckStatus() *gomock.Call {
+func (mr *MockIAgentServerMockRecorder) CheckStatus(in interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckStatus", reflect.TypeOf((*MockIAgentServer)(nil).CheckStatus))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckStatus", reflect.TypeOf((*MockIAgentServer)(nil).CheckStatus), in)
 }
 
 // DeleteBackup mocks base method.

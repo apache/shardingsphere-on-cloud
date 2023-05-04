@@ -132,7 +132,6 @@ var _ = Describe("AgentServer", func() {
 		as = NewAgentServer("http://agent-server:18080")
 		ctrl = gomock.NewController(GinkgoT())
 		req = mock_httputils.NewMockIreq(ctrl)
-		req.EXPECT().Header(gomock.Any())
 		req.EXPECT().Body(gomock.Any())
 		monkey.Patch(httputils.NewRequest, func(c context.Context, method, url string) httputils.Ireq {
 			return req
@@ -145,7 +144,7 @@ var _ = Describe("AgentServer", func() {
 
 	Context("backup", func() {
 		It("backup failed", func() {
-			req.EXPECT().Send(gomock.Any()).Return(-1, fmt.Errorf("error"))
+			req.EXPECT().Send(gomock.Any()).Return(fmt.Errorf("error"))
 			_, err := as.Backup(&model.BackupIn{})
 			Expect(err).ShouldNot(BeNil())
 		})
@@ -153,7 +152,7 @@ var _ = Describe("AgentServer", func() {
 		It("backup success", func() {
 			req.EXPECT().Send(gomock.Any()).Do(func(i *model.BackupOutResp) {
 				i.Data.ID = "backup-id"
-			}).Return(200, nil)
+			}).Return(nil)
 			as := NewAgentServer("http://agent-server:18080")
 			resp, err := as.Backup(&model.BackupIn{})
 			Expect(err).Should(BeNil())
@@ -163,13 +162,13 @@ var _ = Describe("AgentServer", func() {
 
 	Context("restore", func() {
 		It("restore failed", func() {
-			req.EXPECT().Send(gomock.Any()).Return(-1, fmt.Errorf("error"))
+			req.EXPECT().Send(gomock.Any()).Return(fmt.Errorf("error"))
 			err := as.Restore(&model.RestoreIn{})
 			Expect(err).ShouldNot(BeNil())
 		})
 		// restore success
 		It("restore success", func() {
-			req.EXPECT().Send(gomock.Any()).Return(200, nil)
+			req.EXPECT().Send(gomock.Any()).Return(nil)
 			err := as.Restore(&model.RestoreIn{})
 			Expect(err).Should(BeNil())
 		})
@@ -178,7 +177,7 @@ var _ = Describe("AgentServer", func() {
 
 	Context("show detail", func() {
 		It("show detail failed", func() {
-			req.EXPECT().Send(gomock.Any()).Return(-1, fmt.Errorf("error"))
+			req.EXPECT().Send(gomock.Any()).Return(fmt.Errorf("error"))
 			_, err := as.ShowDetail(&model.ShowDetailIn{})
 			Expect(err).ShouldNot(BeNil())
 		})
@@ -186,7 +185,7 @@ var _ = Describe("AgentServer", func() {
 		It("show detail success", func() {
 			req.EXPECT().Send(gomock.Any()).Do(func(i *model.BackupDetailResp) {
 				i.Data = model.BackupInfo{}
-			}).Return(200, nil)
+			}).Return(nil)
 			resp, err := as.ShowDetail(&model.ShowDetailIn{})
 			Expect(err).Should(BeNil())
 			Expect(resp).Should(Equal(&model.BackupInfo{}))
@@ -195,7 +194,7 @@ var _ = Describe("AgentServer", func() {
 
 	Context("show list", func() {
 		It("show list failed", func() {
-			req.EXPECT().Send(gomock.Any()).Return(-1, fmt.Errorf("error"))
+			req.EXPECT().Send(gomock.Any()).Return(fmt.Errorf("error"))
 			_, err := as.ShowList(&model.ShowListIn{})
 			Expect(err).ShouldNot(BeNil())
 		})
@@ -203,7 +202,7 @@ var _ = Describe("AgentServer", func() {
 		It("show list success", func() {
 			req.EXPECT().Send(gomock.Any()).Do(func(i *model.BackupListResp) {
 				i.Data = []model.BackupInfo{}
-			}).Return(200, nil)
+			}).Return(nil)
 			resp, err := as.ShowList(&model.ShowListIn{})
 			Expect(err).Should(BeNil())
 			Expect(resp).Should(Equal([]model.BackupInfo{}))

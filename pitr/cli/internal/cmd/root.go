@@ -93,10 +93,20 @@ func checkAgentServerStatus(lsBackup *model.LsBackup) bool {
 	// all agent server are available
 	available := true
 
+	// IMPORTANT: we don't support multiple agent server run on the same host
+	asMap := make(map[string]bool)
+	asDuplicate := false
+
 	for _, node := range lsBackup.SsBackup.StorageNodes {
 		sn := node
 		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
-		if err := as.CheckStatus(); err != nil {
+		in := &model.HealthCheckIn{
+			DBPort:   sn.Port,
+			DBName:   convertLocalhost(sn.IP),
+			Username: sn.Username,
+			Password: sn.Password,
+		}
+		if err := as.CheckStatus(in); err != nil {
 			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Port: sn.Port, Status: "Unavailable"})
 			available = false
 		} else {
@@ -115,6 +125,19 @@ func checkAgentServerStatus(lsBackup *model.LsBackup) bool {
 	}
 
 	t.Render()
+
+	for _, node := range lsBackup.SsBackup.StorageNodes {
+		if _, ok := asMap[node.IP]; ok {
+			asDuplicate = true
+			break
+		}
+		asMap[node.IP] = true
+	}
+
+	if asDuplicate {
+		logging.Error("IMPORTANT!: we don't support multiple agent server run on the same host.\n")
+		return false
+	}
 
 	return available
 }

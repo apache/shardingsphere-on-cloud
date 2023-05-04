@@ -273,7 +273,7 @@ func Test_NewDeployment(t *testing.T) {
 						"k1": "v1",
 					},
 					Annotations: map[string]string{
-						"anno1": "value1",
+						defaultAnnotationJavaAgentEnabled: "true",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{

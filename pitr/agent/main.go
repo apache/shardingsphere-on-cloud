@@ -149,6 +149,7 @@ func SetupApp() {
 	)
 
 	app.Get("/ping", func(ctx *fiber.Ctx) error {
+
 		return responder.Success(ctx, "pong")
 	})
 
@@ -160,6 +161,7 @@ func SetupApp() {
 	app.Route("/api", func(r fiber.Router) {
 		r.Use(middleware.RequestIDChecker())
 
+		r.Post("/healthz", handler.HealthCheck)
 		r.Post("/backup", handler.Backup)
 		r.Delete("/backup", handler.DeleteBackup)
 		r.Post("/restore", handler.Restore)

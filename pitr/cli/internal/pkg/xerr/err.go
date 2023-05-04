@@ -24,6 +24,8 @@ type err struct {
 }
 
 const (
+	postErrFmt = "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
+
 	Unknown           = "Unknown error"
 	InvalidHTTPStatus = "Invalid http status"
 	NotFound          = "Not found"
@@ -37,6 +39,10 @@ func NewCliErr(msg string) error {
 	return &err{
 		msg: msg,
 	}
+}
+
+func NewUnknownErr(url string, in, out interface{}, err error) error {
+	return fmt.Errorf(postErrFmt, url, in, out, err, NewCliErr(Unknown))
 }
 
 func NewAgentServerErr(code int, msg string) error {
