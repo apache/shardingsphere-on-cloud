@@ -68,3 +68,11 @@ func (og *OpenGauss) Ping() error {
 	}
 	return og.db.Close()
 }
+
+func (og *OpenGauss) CheckSchema(s string) error {
+	_, err := og.db.Exec(s)
+	if err != nil {
+		return err
+	}
+	return og.db.Close()
+}

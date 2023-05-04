@@ -52,6 +52,7 @@ type (
 		Restore(backupPath, instance, backupID string) error
 		ShowBackupList(backupPath, instanceName string) ([]*model.Backup, error)
 		Auth(user, password, dbName string, dbPort uint16) error
+		CheckSchema(user, password, dbName string, dbPort uint16, schema string) error
 		MvTempToPgData() error
 		MvPgDataToTemp() error
 		CleanPgDataTemp() error
@@ -362,6 +363,7 @@ func (og *openGauss) Auth(user, password, dbName string, dbPort uint16) error {
 	if err := _og.Ping(); err != nil {
 		return fmt.Errorf("ping openGauss fail[user=%s,pw length=%d,dbName=%s],err=%w", user, len(password), dbName, err)
 	}
+
 	return nil
 }
 
@@ -398,6 +400,18 @@ func (og *openGauss) CleanPgDataTemp() error {
 	}
 	if err != nil {
 		return fmt.Errorf("cmds.Exec[shell=%s,cmd=%s] return err=%w", og.shell, cmd, err)
+	}
+	return nil
+}
+
+func (og *openGauss) CheckSchema(user, password, dbName string, dbPort uint16, schema string) error {
+	_og, err := gsutil.Open(user, password, dbName, dbPort)
+	if err != nil {
+		return fmt.Errorf("gsutil.Open failure,err=%w", err)
+	}
+
+	if err := _og.CheckSchema(schema); err != nil {
+		return fmt.Errorf("check openGauss schema fail[user=%s,dbName=%s, schema=%s],err=%w", user, dbName, schema, err)
 	}
 	return nil
 }

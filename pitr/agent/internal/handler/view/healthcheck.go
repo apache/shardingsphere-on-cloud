@@ -22,4 +22,5 @@ type HealthCheckIn struct {
 	DBName   string `json:"db_name"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Schema   string `json:"schema"`
 }

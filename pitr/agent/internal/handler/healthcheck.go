@@ -38,5 +38,12 @@ func HealthCheck(ctx *fiber.Ctx) error {
 		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
 	}
 
+	// check schema if needed
+	if in.Schema != "" {
+		if err := pkg.OG.CheckSchema(in.Username, in.Password, in.DBName, in.DBPort, in.Schema); err != nil {
+			return fmt.Errorf("pkg.OG.CheckSchema return err=%s,wrap=%w", err, err)
+		}
+	}
+
 	return responder.Success(ctx, "")
 }
