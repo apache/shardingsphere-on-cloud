@@ -70,7 +70,8 @@ type ComputeNodeUser struct {
 
 // ComputeNodeAuth  is used to set up initial user to login compute node, and authority data of storage node.
 type ComputeNodeAuthority struct {
-	Users []ComputeNodeUser `json:"users"`
+	// +optional
+	Users []ComputeNodeUser `json:"users,omitempty" yaml:"users,omitempty"`
 	// +optional
 	Privilege ComputeNodePrivilege `json:"privilege,omitempty" yaml:"privilege,omitempty"`
 }
@@ -103,13 +104,16 @@ const (
 type ComputeNodeServerMode struct {
 	// +optional
 	Repository Repository `json:"repository,omitempty" yaml:"repository,omitempty"`
-	Type       ModeType   `json:"type"`
+	// +optional
+	Type ModeType `json:"type,omitempty" yaml:"type,omitempty"`
 }
 
 // ServerConfig defines the bootstrap config for a ShardingSphere Proxy
 type ServerConfig struct {
-	Authority ComputeNodeAuthority  `json:"authority"`
-	Mode      ComputeNodeServerMode `json:"mode"`
+	// +optional
+	Authority ComputeNodeAuthority `json:"authority,omitempty" yaml:"authority,omitempty"`
+	// +optional
+	Mode ComputeNodeServerMode `json:"mode,omitempty" yaml:"mode,omitempty"`
 	// +optional
 	Props Properties `json:"props,omitempty" yaml:"props,omitempty"`
 }
