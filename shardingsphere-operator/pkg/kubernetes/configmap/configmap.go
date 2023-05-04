@@ -21,13 +21,14 @@ import (
 	"context"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewConfigMap creates a new ConfigMap
+// NewConfigMapClient returns a new ConfigMap client
 func NewConfigMapClient(c client.Client) ConfigMap {
 	return configmapClient{
 		builder: builder{},
@@ -104,5 +105,5 @@ type builder struct{}
 
 // Build returns a ConfigMap
 func (b builder) Build(ctx context.Context, cn *v1alpha1.ComputeNode) *corev1.ConfigMap {
-	return NewCNConfigMap(cn)
+	return NewConfigMap(cn)
 }

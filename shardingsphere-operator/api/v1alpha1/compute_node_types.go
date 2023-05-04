@@ -70,9 +70,10 @@ type ComputeNodeUser struct {
 
 // ComputeNodeAuth  is used to set up initial user to login compute node, and authority data of storage node.
 type ComputeNodeAuthority struct {
-	Users []ComputeNodeUser `json:"users"`
 	// +optional
-	Privilege ComputeNodePrivilege `json:"privilege"`
+	Users []ComputeNodeUser `json:"users,omitempty" yaml:"users,omitempty"`
+	// +optional
+	Privilege ComputeNodePrivilege `json:"privilege,omitempty" yaml:"privilege,omitempty"`
 }
 
 type RepositoryType string
@@ -89,8 +90,7 @@ type Repository struct {
 	Type RepositoryType `json:"type"`
 	// properties of metadata repository
 	// +optional
-	// Props ComputeNodeClusterProps `json:"props,omitempty"`
-	Props Properties `json:"props,omitempty"`
+	Props Properties `json:"props,omitempty" yaml:"props,omitempty"`
 }
 
 type ModeType string
@@ -103,17 +103,19 @@ const (
 // ComputeNodeServerMode is the mode for ShardingSphere Proxy
 type ComputeNodeServerMode struct {
 	// +optional
-	Repository Repository `json:"repository"`
-	Type       ModeType   `json:"type"`
+	Repository Repository `json:"repository,omitempty" yaml:"repository,omitempty"`
+	// +optional
+	Type ModeType `json:"type,omitempty" yaml:"type,omitempty"`
 }
 
 // ServerConfig defines the bootstrap config for a ShardingSphere Proxy
 type ServerConfig struct {
-	Authority ComputeNodeAuthority  `json:"authority"`
-	Mode      ComputeNodeServerMode `json:"mode"`
-	//+optional
-	// Props *ComputeNodeProps `json:"props,omitempty"`
-	Props Properties `json:"props,omitempty"`
+	// +optional
+	Authority ComputeNodeAuthority `json:"authority,omitempty" yaml:"authority,omitempty"`
+	// +optional
+	Mode ComputeNodeServerMode `json:"mode,omitempty" yaml:"mode,omitempty"`
+	// +optional
+	Props Properties `json:"props,omitempty" yaml:"props,omitempty"`
 }
 
 // LogbackConfig contains contents of the expected logback.xml
@@ -128,7 +130,7 @@ type LoggingFile struct {
 
 // PluginLogging defines the plugin for logging
 type PluginLogging struct {
-	File LoggingFile `json:"file,omitempty" yaml:"File"`
+	File LoggingFile `json:"file,omitempty" yaml:"File,omitempty"`
 }
 
 type Prometheus struct {
@@ -139,7 +141,7 @@ type Prometheus struct {
 
 // PluginMetrics defines the plugin for metrics
 type PluginMetrics struct {
-	Prometheus Prometheus `json:"prometheus,omitempty" yaml:"Prometheus"`
+	Prometheus Prometheus `json:"prometheus,omitempty" yaml:"Prometheus,omitempty"`
 }
 
 type OpenTelemetry struct {
@@ -153,9 +155,9 @@ type OpenTracing struct {
 // PluginTracing defines the plugin for tracing
 type PluginTracing struct {
 	// +optional
-	OpenTracing OpenTracing `json:"openTracing,omitempty" yaml:"OpenTracing"`
+	OpenTracing OpenTracing `json:"openTracing,omitempty" yaml:"OpenTracing,omitempty"`
 	// +optional
-	OpenTelemetry OpenTelemetry `json:"openTelemetry,omitempty" yaml:"OpenTelemetry"`
+	OpenTelemetry OpenTelemetry `json:"openTelemetry,omitempty" yaml:"OpenTelemetry,omitempty"`
 }
 
 // AgentPlugin defines a set of plugins for ShardingSphere Agent
@@ -170,7 +172,7 @@ type AgentPlugin struct {
 
 // AgentConfig defines the config for ShardingSphere-Agent, renderred as agent.yaml
 type AgentConfig struct {
-	Plugins AgentPlugin `json:"plugins,omitempty"`
+	Plugins AgentPlugin `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 
 // ServiceType defines the Service in Kubernetes of ShardingSphere-Proxy
