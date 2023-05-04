@@ -18,7 +18,6 @@
 package configmap
 
 import (
-	"encoding/json"
 	"reflect"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
@@ -40,6 +39,42 @@ const (
 
 	// AnnoClusterRepoConfig refers to the content of logback.xml
 	AnnoLogbackConfig = "computenode.shardingsphere.org/logback"
+
+	// DefaultLogback contains the default logback config
+	DefaultLogback = `<?xml version="1.0"?>
+<configuration>
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="sqlConsole" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{database}] [%X{user}] [%X{host}] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <logger name="ShardingSphere-SQL" level="info" additivity="false">
+        <appender-ref ref="sqlConsole" />
+    </logger>
+    <logger name="org.apache.shardingsphere" level="info" additivity="false">
+        <appender-ref ref="console" />
+    </logger>
+    
+    <logger name="com.zaxxer.hikari" level="error" />
+    
+    <logger name="com.atomikos" level="error" />
+    
+    <logger name="io.netty" level="error" />
+    
+    <root>
+        <level value="info" />
+        <appender-ref ref="console" />
+    </root>
+</configuration> 
+`
+	// DefaultServerConfig contains the default server config
+	DefaultServerConfig = "# Empty file is needed"
 )
 
 // NewConfigMap returns a new ConfigMap
@@ -75,14 +110,16 @@ func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	return builder.Build()
 }
 
-func updateConfigMapServerConf(cluster string, servconf *v1alpha1.ServerConfig, cn *v1alpha1.ComputeNode) (string, error) {
-	if cn.Spec.Bootstrap.ServerConfig.Mode.Type == v1alpha1.ModeTypeCluster && len(cluster) > 0 {
-		if err := json.Unmarshal([]byte(cluster), &servconf.Mode.Repository); err != nil {
-			return "", err
-		}
-	}
-	y, err := yaml.Marshal(servconf)
-	return string(y), err
+// TODO: check if changed first, then decide if need to respawn the Pods
+// UpdateConfigMap returns a new ConfigMap
+func UpdateConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1.ConfigMap {
+	exp := &v1.ConfigMap{}
+	exp.ObjectMeta = cur.ObjectMeta
+	exp.ObjectMeta.ResourceVersion = ""
+	exp.Labels = cur.Labels
+	exp.Annotations = cur.Annotations
+	exp.Data = NewConfigMap(cn).Data
+	return exp
 }
 
 // CNConfigMapBuilder is a builder for ConfigMap by ComputeNode
@@ -139,51 +176,3 @@ func DefaultConfigMap(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Confi
 		Data: map[string]string{},
 	}
 }
-
-// FIXME: check if changed first, then decide if need to respawn the Pods
-func UpdateConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1.ConfigMap {
-	exp := &v1.ConfigMap{}
-	exp.ObjectMeta = cur.ObjectMeta
-	exp.ObjectMeta.ResourceVersion = ""
-	exp.Labels = cur.Labels
-	exp.Annotations = cur.Annotations
-	exp.Data = NewConfigMap(cn).Data
-	return exp
-}
-
-// DefaultLogback contains the default logback config
-const (
-	DefaultLogback = `<?xml version="1.0"?>
-<configuration>
-    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-    <appender name="sqlConsole" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{database}] [%X{user}] [%X{host}] %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-    
-    <logger name="ShardingSphere-SQL" level="info" additivity="false">
-        <appender-ref ref="sqlConsole" />
-    </logger>
-    <logger name="org.apache.shardingsphere" level="info" additivity="false">
-        <appender-ref ref="console" />
-    </logger>
-    
-    <logger name="com.zaxxer.hikari" level="error" />
-    
-    <logger name="com.atomikos" level="error" />
-    
-    <logger name="io.netty" level="error" />
-    
-    <root>
-        <level value="info" />
-        <appender-ref ref="console" />
-    </root>
-</configuration> 
-`
-	DefaultServerConfig = "# Empty file is needed"
-)
