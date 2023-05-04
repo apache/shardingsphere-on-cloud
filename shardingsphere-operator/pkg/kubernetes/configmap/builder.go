@@ -42,8 +42,8 @@ const (
 	AnnoLogbackConfig = "computenode.shardingsphere.org/logback"
 )
 
-// NewCNConfigMap returns a new ConfigMap
-func NewCNConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
+// NewConfigMap returns a new ConfigMap
+func NewConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
 	builder := NewConfigMapBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
 	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabels(cn.Labels).SetAnnotations(cn.Annotations)
 
@@ -147,7 +147,7 @@ func UpdateConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1.ConfigMap 
 	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = cur.Labels
 	exp.Annotations = cur.Annotations
-	exp.Data = NewCNConfigMap(cn).Data
+	exp.Data = NewConfigMap(cn).Data
 	return exp
 }
 
