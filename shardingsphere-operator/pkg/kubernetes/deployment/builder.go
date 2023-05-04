@@ -450,13 +450,17 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 }
 
 func setProbes(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) {
-	if cn.Spec.Probes != nil && cn.Spec.Probes.LivenessProbe != nil {
+	if cn.Spec.Probes == nil {
+		return
+	}
+
+	if cn.Spec.Probes.LivenessProbe != nil {
 		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
 	}
-	if cn.Spec.Probes != nil && cn.Spec.Probes.ReadinessProbe != nil {
+	if cn.Spec.Probes.ReadinessProbe != nil {
 		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
 	}
-	if cn.Spec.Probes != nil && cn.Spec.Probes.StartupProbe != nil {
+	if cn.Spec.Probes.StartupProbe != nil {
 		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
 	}
 }
@@ -603,16 +607,3 @@ func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *appsv1.
 		},
 	}
 }
-
-// UpdateDeployment updates the deployment
-/*
-func UpdateDeployment(cn *v1alpha1.ComputeNode, cur *appsv1.Deployment) *appsv1.Deployment {
-	exp := &appsv1.Deployment{}
-	exp.ObjectMeta = cur.ObjectMeta
-	exp.ObjectMeta.ResourceVersion = ""
-	exp.Labels = cur.Labels
-	exp.Annotations = cur.Annotations
-	exp.Spec = NewDeployment(cn).Spec
-	return exp
-}
-*/
