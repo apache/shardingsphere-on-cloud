@@ -206,7 +206,6 @@ var _ = Describe("Standalone Server Config", func() {
 		if err != nil {
 			fmt.Printf("Err: %s\n", err)
 		}
-
 		It("server config authority should be equal", func() {
 			Expect(expect.Authority).To(Equal(cn.Spec.Bootstrap.ServerConfig.Authority))
 		})
