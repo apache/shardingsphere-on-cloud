@@ -18,6 +18,8 @@
 package configmap
 
 import (
+	"fmt"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -40,22 +42,31 @@ type configmapFactory struct {
 
 func (c *configmapFactory) NewConfigMapBuilder() ConfigMapBuilder {
 	gvk := c.obj.GetObjectKind().GroupVersionKind()
+	fmt.Printf("g: %s, k: %s, v: %s\n", gvk.Group, gvk.Kind, gvk.Version)
 
 	if gvk.Group == "shardingsphere.apache.org" {
 		if gvk.Kind == "ComputeNode" && gvk.Version == "v1alpha1" {
 			return &computeNodeConfigMapBuilder{
 				obj: c.obj,
+				configMapBuilder: configMapBuilder{
+					configmap: &v1.ConfigMap{},
+				},
 			}
 		}
 
 		if gvk.Kind == "ShardingSphereChaos" && gvk.Version == "v1alpha1" {
 			return &shardingsphereChaosConfigMapBuilder{
 				obj: c.obj,
+				configMapBuilder: configMapBuilder{
+					configmap: &v1.ConfigMap{},
+				},
 			}
 		}
 	}
 
-	return &configMapBuilder{}
+	return &configMapBuilder{
+		configmap: &v1.ConfigMap{},
+	}
 }
 
 // ConfigMapBuilder generic configmap interface
@@ -104,11 +115,17 @@ func (c *configMapBuilder) SetAnnotations(annos map[string]string) ConfigMapBuil
 }
 
 func (c *configMapBuilder) SetData(data map[string]string) ConfigMapBuilder {
+	if c.configmap.Data == nil {
+		c.configmap.Data = map[string]string{}
+	}
 	c.configmap.Data = data
 	return c
 }
 
 func (c *configMapBuilder) SetBinaryData(binary map[string][]byte) ConfigMapBuilder {
+	if c.configmap.BinaryData == nil {
+		c.configmap.BinaryData = map[string][]byte{}
+	}
 	c.configmap.BinaryData = binary
 	return c
 }

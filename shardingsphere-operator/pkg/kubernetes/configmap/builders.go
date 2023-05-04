@@ -23,7 +23,6 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -78,8 +77,8 @@ const (
 )
 
 // DefaultConfigMap returns a ConfigMap filling with default expected values
-func DefaultConfigMap(meta metav1.Object, gvk schema.GroupVersionKind) *v1.ConfigMap {
-	return &v1.ConfigMap{
+func DefaultConfigMap(meta metav1.Object, gvk schema.GroupVersionKind) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "shardingsphere-proxy",
 			Namespace: "default",
@@ -92,98 +91,17 @@ func DefaultConfigMap(meta metav1.Object, gvk schema.GroupVersionKind) *v1.Confi
 	}
 }
 
-func NewConfigMap(obj runtime.Object) *v1.ConfigMap {
+// NewConfigMap returns a new ConfigMap
+func NewConfigMap(obj runtime.Object) *corev1.ConfigMap {
 	factory := NewConfigMapFactory(obj)
 	builder := factory.NewConfigMapBuilder()
 	return builder.Build()
-	/*
-	   cn := obj.(*v1alpha1.ComputeNode)
-
-	   builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabels(cn.Labels).SetAnnotations(cn.Annotations)
-
-	   data := map[string]string{}
-
-	   logback := cn.Annotations[AnnoLogbackConfig]
-
-	   	if len(logback) > 0 {
-	   		data[ConfigDataKeyForLogback] = logback
-	   	} else {
-
-	   		data[ConfigDataKeyForLogback] = DefaultLogback
-	   	}
-
-	   // NOTE: ShardingSphere Proxy 5.3.0 needs a server.yaml no matter if it is empty
-
-	   	if !reflect.DeepEqual(cn.Spec.Bootstrap.ServerConfig, v1alpha1.ServerConfig{}) {
-	   		servconf := cn.Spec.Bootstrap.ServerConfig.DeepCopy()
-	   		if y, err := yaml.Marshal(servconf); err == nil {
-	   			data[ConfigDataKeyForServer] = string(y)
-	   		}
-	   	} else {
-
-	   		data[ConfigDataKeyForServer] = DefaultServerConfig
-	   	}
-
-	   // load java agent config to configmap if needed
-
-	   	if !reflect.DeepEqual(cn.Spec.Bootstrap.AgentConfig, v1alpha1.AgentConfig{}) {
-	   		agentConf := cn.Spec.Bootstrap.AgentConfig.DeepCopy()
-	   		if y, err := yaml.Marshal(agentConf); err == nil {
-	   			data[ConfigDataKeyForAgent] = string(y)
-	   		}
-	   	}
-
-	   builder.SetData(data)
-
-	   return builder.Build()
-	*/
 }
-
-// NewConfigMap returns a new ConfigMap
-// FIXME
-/*
-func NewComputeNodeConfigMap(cn *v1alpha1.ComputeNode) *v1.ConfigMap {
-	factory := NewConfigMapFactory(cn.GetObjectKind().GroupVersionKind())
-	builder := factory.NewConfigMapBuilder()
-	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabels(cn.Labels).SetAnnotations(cn.Annotations)
-
-	data := map[string]string{}
-
-	logback := cn.Annotations[AnnoLogbackConfig]
-	if len(logback) > 0 {
-		data[ConfigDataKeyForLogback] = logback
-	} else {
-		data[ConfigDataKeyForLogback] = DefaultLogback
-	}
-
-	// NOTE: ShardingSphere Proxy 5.3.0 needs a server.yaml no matter if it is empty
-	if !reflect.DeepEqual(cn.Spec.Bootstrap.ServerConfig, v1alpha1.ServerConfig{}) {
-		servconf := cn.Spec.Bootstrap.ServerConfig.DeepCopy()
-		if y, err := yaml.Marshal(servconf); err == nil {
-			data[ConfigDataKeyForServer] = string(y)
-		}
-	} else {
-		data[ConfigDataKeyForServer] = DefaultServerConfig
-	}
-
-	// load java agent config to configmap if needed
-	if !reflect.DeepEqual(cn.Spec.Bootstrap.AgentConfig, v1alpha1.AgentConfig{}) {
-		agentConf := cn.Spec.Bootstrap.AgentConfig.DeepCopy()
-		if y, err := yaml.Marshal(agentConf); err == nil {
-			data[ConfigDataKeyForAgent] = string(y)
-		}
-	}
-
-	builder.SetData(data)
-
-	return builder.Build()
-}
-*/
 
 // TODO: check if changed first, then decide if need to respawn the Pods
 // UpdateConfigMap returns a new ConfigMap
-func UpdateComputeNodeConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1.ConfigMap {
-	exp := &v1.ConfigMap{}
+func UpdateComputeNodeConfigMap(cn *v1alpha1.ComputeNode, cur *corev1.ConfigMap) *corev1.ConfigMap {
+	exp := &corev1.ConfigMap{}
 	exp.ObjectMeta = cur.ObjectMeta
 	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = cur.Labels
@@ -192,38 +110,17 @@ func UpdateComputeNodeConfigMap(cn *v1alpha1.ComputeNode, cur *v1.ConfigMap) *v1
 	return exp
 }
 
-/*
-// CNConfigMapBuilder is a builder for ConfigMap by ComputeNode
-type CNConfigMapBuilder interface {
-	common.ConfigMapBuilder
-	SetLogback(logback string) CNConfigMapBuilder
-	SetServerConfig(serverConfig string) CNConfigMapBuilder
-	SetAgentConfig(agentConfig string) CNConfigMapBuilder
-}
-
-type configmapBuilder struct {
-	common.ConfigMapBuilder
-	configmap *v1.ConfigMap
-}
-*/
-
 type computeNodeConfigMapBuilder struct {
 	configMapBuilder
 	obj runtime.Object
 }
 
-// NewConfigMapBuilder returns a CNConfigMapBuilder
-/*
-func NewConfigMapBuilder(meta metav1.Object, gvk schema.GroupVersionKind) CNConfigMapBuilder {
-	configmap := DefaultConfigMap(meta, gvk)
-	return &configmapBuilder{
-		common.NewCommonConfigMapBuilder(configmap),
-		configmap,
-	}
-}
-*/
-
+// SetData sets the data of ConfigMap
 func (c *computeNodeConfigMapBuilder) SetData(data map[string]string) ConfigMapBuilder {
+	if c.configmap.Data == nil {
+		c.configmap.Data = map[string]string{}
+	}
+
 	if val, ok := data[ConfigDataKeyForServer]; ok {
 		c.configmap.Data[ConfigDataKeyForServer] = val
 	}
@@ -239,7 +136,11 @@ func (c *computeNodeConfigMapBuilder) SetData(data map[string]string) ConfigMapB
 	return c
 }
 
+// SetBinaryData sets the binary data of ConfigMap
 func (c *computeNodeConfigMapBuilder) SetBinaryData(binary map[string][]byte) ConfigMapBuilder {
+	if c.configmap.BinaryData == nil {
+		c.configmap.BinaryData = map[string][]byte{}
+	}
 	if val, ok := binary[ConfigDataKeyForServer]; ok {
 		c.configmap.BinaryData[ConfigDataKeyForServer] = val
 	}
@@ -255,8 +156,15 @@ func (c *computeNodeConfigMapBuilder) SetBinaryData(binary map[string][]byte) Co
 	return c
 }
 
-func (c *computeNodeConfigMapBuilder) Build() *v1.ConfigMap {
-	cn := c.obj.(*v1alpha1.ComputeNode)
+// Build builds the ConfigMap
+func (c *computeNodeConfigMapBuilder) Build() *corev1.ConfigMap {
+	var (
+		cn *v1alpha1.ComputeNode
+		ok bool
+	)
+	if cn, ok = c.obj.(*v1alpha1.ComputeNode); !ok {
+		return nil
+	}
 	c.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabels(cn.Labels).SetAnnotations(cn.Annotations)
 
 	data := map[string]string{}
@@ -290,32 +198,16 @@ func (c *computeNodeConfigMapBuilder) Build() *v1.ConfigMap {
 	return c.configmap
 }
 
-/*
-// SetLogback set the ConfigMap data logback
-func (c *computeNodeConfigMapBuilder) SetLogback(logback string) ConfigMapBuilder {
-	c.configmap.Data[ConfigDataKeyForLogback] = logback
-	return c
-}
-
-// SetServerConfig set the ConfigMap data server config
-func (c *computeNodeConfigMapBuilder) SetServerConfig(serviceConfig string) ConfigMapBuilder {
-	c.configmap.Data[ConfigDataKeyForServer] = serviceConfig
-	return c
-}
-
-// SetAgentConfig set the ConfigMap data agent config
-func (c *computeNodeConfigMapBuilder) SetAgentConfig(agentConfig string) ConfigMapBuilder {
-	c.configmap.Data[ConfigDataKeyForAgent] = agentConfig
-	return c
-}
-*/
-
 type shardingsphereChaosConfigMapBuilder struct {
 	configMapBuilder
 	obj runtime.Object
 }
 
+// SetData sets the data of ConfigMap
 func (c *shardingsphereChaosConfigMapBuilder) SetData(data map[string]string) ConfigMapBuilder {
+	if c.configmap.Data == nil {
+		c.configmap.Data = map[string]string{}
+	}
 	if val, ok := data[configExperimental]; ok {
 		c.configmap.Data[configExperimental] = val
 	}
@@ -331,7 +223,11 @@ func (c *shardingsphereChaosConfigMapBuilder) SetData(data map[string]string) Co
 	return c
 }
 
+// SetBinaryData sets the binary data of ConfigMap
 func (c *shardingsphereChaosConfigMapBuilder) SetBinaryData(binary map[string][]byte) ConfigMapBuilder {
+	if c.configmap.BinaryData == nil {
+		c.configmap.BinaryData = map[string][]byte{}
+	}
 	if val, ok := binary[configExperimental]; ok {
 		c.configmap.BinaryData[configExperimental] = val
 	}
@@ -347,8 +243,15 @@ func (c *shardingsphereChaosConfigMapBuilder) SetBinaryData(binary map[string][]
 	return c
 }
 
-func (c *shardingsphereChaosConfigMapBuilder) Build() *v1.ConfigMap {
-	chaos := c.obj.(*v1alpha1.ShardingSphereChaos)
+// Build builds the ConfigMap
+func (c *shardingsphereChaosConfigMapBuilder) Build() *corev1.ConfigMap {
+	var (
+		chaos *v1alpha1.ShardingSphereChaos
+		ok    bool
+	)
+	if chaos, ok = c.obj.(*v1alpha1.ShardingSphereChaos); !ok {
+		return nil
+	}
 	c.SetName(chaos.Name).SetNamespace(chaos.Namespace).SetLabels(chaos.Labels).SetAnnotations(chaos.Annotations)
 
 	data := map[string]string{}
@@ -368,91 +271,9 @@ const (
 )
 
 const (
+	// DefaultConfigMapName is the data key name
 	DefaultConfigMapName = "ssChaos-configmap"
 )
-
-/*
-// NewSSConfigMap returns a new ConfigMap
-func NewShardingSphereChaosConfigMap(chaos *v1alpha1.ShardingSphereChaos) *corev1.ConfigMap {
-	// cmb := NewSSConfigMapBuilder()
-	factory := NewConfigMapFactory(chaos.GetObjectKind().GroupVersionKind())
-	cmb := factory.NewConfigMapBuilder()
-
-	cmb.SetName(chaos.Name).SetNamespace(chaos.Namespace).SetLabels(chaos.Labels).SetAnnotations(chaos.Annotations)
-	// cmb.SetExperimental(chaos.Spec.InjectJob.Experimental).SetPressure(chaos.Spec.InjectJob.Pressure).SetVerify(chaos.Spec.InjectJob.Verify)
-
-	data := map[string]string{}
-	data[configExperimental] = string(chaos.Spec.InjectJob.Experimental)
-	data[configPressure] = string(chaos.Spec.InjectJob.Pressure)
-	data[configVerify] = string(chaos.Spec.InjectJob.Verify)
-
-	cmb.SetData(data)
-
-	return cmb.Build()
-}
-*/
-
-/*
-// SSConfigMapBuilder is a builder for ConfigMap by ComputeNode
-type SSConfigMapBuilder interface {
-	common.ConfigMapBuilder
-
-	SetExperimental(v1alpha1.Script) SSConfigMapBuilder
-	SetPressure(v1alpha1.Script) SSConfigMapBuilder
-	SetVerify(v1alpha1.Script) SSConfigMapBuilder
-}
-
-type configmapBuilder struct {
-	common.ConfigMapBuilder
-	configmap *corev1.ConfigMap
-}
-*/
-
-/*
-// NewSSConfigMapBuilder returns a new SSConfigMapBuilder
-func NewSSConfigMapBuilder() SSConfigMapBuilder {
-	configMap := defaultConfigMap()
-
-	return &configmapBuilder{
-		common.NewCommonConfigMapBuilder(configMap),
-		configMap,
-	}
-}
-*/
-
-/*
-// SetExperimental sets the experimental command
-func (c *configmapBuilder) SetExperimental(s v1alpha1.Script) SSConfigMapBuilder {
-	c.configmap.Data[configExperimental] = string(s)
-	return c
-}
-
-// SetPressure sets the pressure command
-func (c *configmapBuilder) SetPressure(s v1alpha1.Script) SSConfigMapBuilder {
-	c.configmap.Data[configPressure] = string(s)
-	return c
-}
-
-// SetVerify sets the verify scripts
-func (c *configmapBuilder) SetVerify(s v1alpha1.Script) SSConfigMapBuilder {
-	c.configmap.Data[configVerify] = string(s)
-	return c
-}
-*/
-
-// defaultConfigMap returns a ConfigMap filling with default expected values
-/*
-func defaultConfigMap() *corev1.ConfigMap {
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      DefaultConfigMapName,
-			Namespace: "default",
-			Labels:    map[string]string{},
-		},
-		Data: map[string]string{},
-	}
-}
-*/
 
 // UpdateConfigMap returns a new ConfigMap
 func UpdateShardingSphereChaosConfigMap(ssChaos *v1alpha1.ShardingSphereChaos, cur *corev1.ConfigMap) *corev1.ConfigMap {

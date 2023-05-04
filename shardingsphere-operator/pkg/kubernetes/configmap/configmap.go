@@ -105,11 +105,6 @@ type builder struct{}
 
 // Build returns a ConfigMap
 func (b builder) Build(ctx context.Context, obj runtime.Object) *corev1.ConfigMap {
-	// gvk := obj.GetObjectKind().GroupVersionKind()
-	// if gvk.Kind == "ComputeNode" {
-	// 	cn := obj
-	// 	return NewComputeNodeConfigMap(cn)
-	// }
 	return NewConfigMap(obj)
 }
 
