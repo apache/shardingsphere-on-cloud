@@ -22,7 +22,8 @@ on:
     branches: [ main ]
     paths:
       - 'shardingsphere-operator/**'
-      - '.github/workflows/operator-unit-test.yml'
+      - 'pitr/**'
+      - '.github/workflows/unit-test.yml'
 jobs:
   operator:
     runs-on: ubuntu-latest
@@ -33,15 +34,15 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '^1.18.1'
-      - name: "unit test"
+      - name: "shardingsphere operator test"
         run: |
           cd shardingsphere-operator
           make test
-      - name: "unit test"
+      - name: "pitr agent test"
         run: |
           cd pitr/agent
           make test
-      - name: "unit test"
+      - name: "pitr cli test"
         run: |
           cd pitr/cli
           make test
@@ -50,7 +51,7 @@ jobs:
           cat ./shardingsphere-operator/cover.out >> cover.out
           cat ./pitr/cli/cover.out >> cover.out
           cat ./pitr/agent/cover.out >> cover.out
-      - name: "Code coverage"
+      - name: "code coverage"
         uses: codecov/codecov-action@v3
         with:
           files: ./cover.out
