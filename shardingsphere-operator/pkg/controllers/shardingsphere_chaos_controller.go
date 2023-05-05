@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
@@ -48,6 +50,7 @@ import (
 const (
 	ShardingSphereChaosControllerName = "shardingsphere-chaos-controller"
 	VerifyJobCheck                    = "Verify"
+	SSChaosFinalizeName               = "shardingsphere.apache.org/finalizer"
 )
 
 type JobCondition string
@@ -80,6 +83,7 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 	logger := r.Log.WithValues(ShardingSphereChaosControllerName, req.NamespacedName)
 
 	ssChaos, err := r.getRuntimeChaos(ctx, req.NamespacedName)
+
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
@@ -89,8 +93,8 @@ func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	if !ssChaos.ObjectMeta.DeletionTimestamp.IsZero() {
-		return ctrl.Result{}, nil
+	if err := r.finalize(ctx, ssChaos); err != nil {
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	logger.Info("start reconcile chaos")
@@ -123,6 +127,58 @@ func (r *ShardingSphereChaosReconciler) getRuntimeChaos(ctx context.Context, nam
 	var rt = &v1alpha1.ShardingSphereChaos{}
 	err := r.Get(ctx, name, rt)
 	return rt, err
+}
+
+// nolint:nestif
+func (r *ShardingSphereChaosReconciler) finalize(ctx context.Context, chao *v1alpha1.ShardingSphereChaos) error {
+	if chao.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !controllerutil.ContainsFinalizer(chao, SSChaosFinalizeName) {
+			controllerutil.AddFinalizer(chao, SSChaosFinalizeName)
+			if err := r.Update(ctx, chao); err != nil {
+				return err
+			}
+		}
+	} else if controllerutil.ContainsFinalizer(chao, SSChaosFinalizeName) {
+		if err := r.deleteExternalResources(ctx, chao); err != nil {
+			return err
+		}
+
+		controllerutil.RemoveFinalizer(chao, SSChaosFinalizeName)
+		if err := r.Update(ctx, chao); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *ShardingSphereChaosReconciler) deleteExternalResources(ctx context.Context, chao *v1alpha1.ShardingSphereChaos) error {
+	nameSpacedName := types.NamespacedName{Namespace: chao.Namespace, Name: chao.Name}
+	if chao.Spec.EmbedChaos.PodChaos != nil {
+		podchao, err := r.getPodChaosByNamespacedName(ctx, nameSpacedName)
+		if err != nil {
+			return err
+		}
+		if podchao != nil {
+			if err := r.Chaos.DeletePodChaos(ctx, podchao); err != nil {
+				return err
+			}
+		}
+	}
+
+	if chao.Spec.EmbedChaos.NetworkChaos != nil {
+		networkchao, err := r.getNetworkChaosByNamespacedName(ctx, nameSpacedName)
+		if err != nil {
+			return err
+		}
+		if networkchao != nil {
+			if err := r.Chaos.DeleteNetworkChaos(ctx, networkchao); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileChaos(ctx context.Context, chaos *v1alpha1.ShardingSphereChaos) error {
@@ -189,7 +245,6 @@ func (r *ShardingSphereChaosReconciler) updatePodChaos(ctx context.Context, chao
 		return err
 	}
 
-	r.Events.Event(chaos, "Normal", "applied", fmt.Sprintf("podChaos %s", "new changes updated"))
 	return nil
 }
 
@@ -210,7 +265,7 @@ func (r *ShardingSphereChaosReconciler) updateNetWorkChaos(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	r.Events.Event(chaos, "Normal", "applied", fmt.Sprintf("networkChaos %s", "new changes updated"))
+
 	return nil
 }
 
@@ -283,6 +338,17 @@ func (r *ShardingSphereChaosReconciler) reconcileJob(ctx context.Context, chaos 
 }
 
 func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, chaos *v1alpha1.ShardingSphereChaos) error {
+	namespacedName := types.NamespacedName{
+		Name:      chaos.Name,
+		Namespace: chaos.Namespace,
+	}
+	chaos, err := r.getRuntimeChaos(ctx, namespacedName)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
 	r.setDefaultStatus(chaos)
 
 	req := getInjectRequirement(chaos)
@@ -312,10 +378,7 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, cha
 	}
 
 	// sts := setRtStatus(chaos)
-	rt, err := r.getRuntimeChaos(ctx, types.NamespacedName{
-		Name:      chaos.Name,
-		Namespace: chaos.Namespace,
-	})
+	rt, err := r.getRuntimeChaos(ctx, namespacedName)
 	if err != nil {
 		return err
 	}
@@ -600,7 +663,6 @@ func (r *ShardingSphereChaosReconciler) updateJob(ctx context.Context, requireme
 		if err := r.Delete(ctx, cur); err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
-		// r.Events.Event(chao, "Normal", "Updated", "job Updated")
 	}
 	return nil
 }
@@ -676,6 +738,8 @@ func (r *ShardingSphereChaosReconciler) createJob(ctx context.Context, requireme
 			return err
 		}
 	}
+
+	r.Events.Event(chao, "Normal", "Created", fmt.Sprintf("%s job created", requirement))
 	return nil
 }
 

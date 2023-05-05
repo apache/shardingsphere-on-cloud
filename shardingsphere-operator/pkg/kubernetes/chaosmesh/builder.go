@@ -145,12 +145,6 @@ func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	pcb.SetContainerSelector(containerSelector)
 	podChao := pcb.Build()
 
-	// FIXME
-	/*
-		if err := ctrl.SetControllerReference(ssChao, podChao, c.r.Scheme()); err != nil {
-			return nil, err
-		}
-	*/
 	return podChao, nil
 }
 
@@ -250,12 +244,7 @@ func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error)
 	ncb.SetTcParameter(*tcParams)
 
 	networkChao := ncb.Build()
-	// FIXME
-	/*
-		if err := ctrl.SetControllerReference(ssChao, networkChao, c.r.Scheme()); err != nil {
-			return nil, err
-		}
-	*/
+
 	return networkChao, nil
 }
 
