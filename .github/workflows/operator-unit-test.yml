@@ -37,23 +37,20 @@ jobs:
         run: |
           cd shardingsphere-operator
           make test
-      - name: "Code coverage"
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./shardingsphere-operator/cover.out
       - name: "unit test"
         run: |
           cd pitr/agent
           make test
-      - name: "Code coverage"
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./pitr/agent/cover.out
       - name: "unit test"
         run: |
           cd pitr/cli
           make test
+      - name: "aggregate reports"
+        run: |
+          cat ./shardingsphere-operator/cover.out >> cover.out
+          cat ./pitr/cli/cover.out >> cover.out
+          cat ./pitr/agent/cover.out >> cover.out
       - name: "Code coverage"
         uses: codecov/codecov-action@v3
         with:
-          files: ./pitr/cli/cover.out
+          files: ./cover.out
