@@ -19,6 +19,7 @@ package chaosmesh
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	chaosmeshapi "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
@@ -69,9 +70,11 @@ type Getter interface {
 type Setter interface {
 	CreatePodChaos(context.Context, *v1alpha1.ShardingSphereChaos) error
 	UpdatePodChaos(context.Context, PodChaos, *v1alpha1.ShardingSphereChaos) error
+	DeletePodChaos(context.Context, PodChaos) error
 
 	CreateNetworkChaos(context.Context, *v1alpha1.ShardingSphereChaos) error
 	UpdateNetworkChaos(context.Context, NetworkChaos, *v1alpha1.ShardingSphereChaos) error
+	DeleteNetworkChaos(context.Context, NetworkChaos) error
 }
 
 type getter struct {
@@ -145,9 +148,25 @@ func (cs setter) UpdatePodChaos(ctx context.Context, podChaos PodChaos, sschaos 
 	if !ok {
 		return ErrConvert
 	}
+	if reflect.DeepEqual(s.Spec, t.Spec) {
+		return nil
+	}
 	t.Spec = s.Spec
 
 	return cs.Client.Update(ctx, t)
+}
+
+// DeletePodChaos deletes a pod chaos
+func (cs setter) DeletePodChaos(ctx context.Context, chao PodChaos) error {
+	podChao, ok := chao.(*chaosmeshapi.PodChaos)
+	if !ok {
+		return ErrConvert
+	}
+	if err := cs.Client.Delete(ctx, podChao); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CreateNetworkChaos creates a new network chaos
@@ -173,7 +192,22 @@ func (cs setter) UpdateNetworkChaos(ctx context.Context, networkChaos NetworkCha
 	if !ok {
 		return ErrConvert
 	}
+	if reflect.DeepEqual(s.Spec, t.Spec) {
+		return nil
+	}
 	t.Spec = s.Spec
 
 	return cs.Client.Update(ctx, t)
+}
+
+func (cs setter) DeleteNetworkChaos(ctx context.Context, chao NetworkChaos) error {
+	networkChaos, ok := chao.(*chaosmeshapi.NetworkChaos)
+	if !ok {
+		return ErrConvert
+	}
+	if err := cs.Client.Delete(ctx, networkChaos); err != nil {
+		return err
+	}
+
+	return nil
 }
