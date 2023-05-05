@@ -22,10 +22,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// ConfigMapFactory generic configmap factory interface
 type ConfigMapFactory interface {
 	NewConfigMapBuilder() ConfigMapBuilder
 }
 
+// NewConfigMapFactory Create a new common configmap factory
 func NewConfigMapFactory(obj runtime.Object) ConfigMapFactory {
 	return &configmapFactory{
 		obj: obj,
@@ -36,6 +38,7 @@ type configmapFactory struct {
 	obj runtime.Object
 }
 
+// NewConfigMapBuilder Create a new common configmap builder
 func (c *configmapFactory) NewConfigMapBuilder() ConfigMapBuilder {
 	gvk := c.obj.GetObjectKind().GroupVersionKind()
 
@@ -75,7 +78,6 @@ type ConfigMapBuilder interface {
 	Build() *v1.ConfigMap
 }
 
-// configMapBuilder common configmap implementation
 type configMapBuilder struct {
 	configmap *v1.ConfigMap
 }
@@ -109,6 +111,7 @@ func (c *configMapBuilder) SetAnnotations(annos map[string]string) ConfigMapBuil
 	return c
 }
 
+// SetData set the ConfigMap data
 func (c *configMapBuilder) SetData(data map[string]string) ConfigMapBuilder {
 	if c.configmap.Data == nil {
 		c.configmap.Data = map[string]string{}
@@ -117,6 +120,7 @@ func (c *configMapBuilder) SetData(data map[string]string) ConfigMapBuilder {
 	return c
 }
 
+// SetBinaryData set the ConfigMap binary data
 func (c *configMapBuilder) SetBinaryData(binary map[string][]byte) ConfigMapBuilder {
 	if c.configmap.BinaryData == nil {
 		c.configmap.BinaryData = map[string][]byte{}

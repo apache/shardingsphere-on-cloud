@@ -17,19 +17,13 @@
 package shardingspherechaos_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 func TestShardingSphereChaos(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "ShardingSphereChaos Suite")
 }
-
-//func installChaosMesh() {
-//	var (
-//		installCmd = "curl -sSL https://mirrors.chaos-mesh.org/v2.5.1/install.sh | bash -s -- --docker-mirror"
-//	)
-//
-//}
