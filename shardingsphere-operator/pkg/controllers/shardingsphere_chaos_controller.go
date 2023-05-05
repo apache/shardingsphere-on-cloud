@@ -295,7 +295,6 @@ func (r *ShardingSphereChaosReconciler) reconcileConfigMap(ctx context.Context, 
 			fmt.Printf("update configmap error: %s\n", err)
 			return err
 		}
-		// return r.updateConfigMap(ctx, chaos, cm)
 	}
 
 	if err = r.createConfigMap(ctx, chaos); err != nil {
@@ -377,7 +376,6 @@ func (r *ShardingSphereChaosReconciler) reconcileStatus(ctx context.Context, cha
 		return err
 	}
 
-	// sts := setRtStatus(chaos)
 	rt, err := r.getRuntimeChaos(ctx, namespacedName)
 	if err != nil {
 		return err
@@ -401,7 +399,6 @@ func (r *ShardingSphereChaosReconciler) setDefaultStatus(chaos *v1alpha1.Shardin
 // * AfterExperiment: it has been finished, could start a new experiment
 // * InjectChaos: it has been started, could start some pressure
 // * recoveredChaos: it has been recovered, could start to verify
-
 func getInjectRequirement(ssChaos *v1alpha1.ShardingSphereChaos) reconcile.InjectRequirement {
 	var jobName reconcile.InjectRequirement
 
@@ -631,18 +628,9 @@ func (r *ShardingSphereChaosReconciler) updateConfigMap(ctx context.Context, cha
 	exp.Labels = cur.Labels
 	exp.Annotations = cur.Annotations
 	return r.ConfigMap.Update(ctx, exp)
-
-	// return r.Update(ctx, exp)
 }
 
 func (r *ShardingSphereChaosReconciler) createConfigMap(ctx context.Context, chaos *v1alpha1.ShardingSphereChaos) error {
-	/*
-		cm := reconcile.NewSSConfigMap(chaos)
-		if err := ctrl.SetControllerReference(chaos, cm, r.Scheme); err != nil {
-			return err
-		}
-	*/
-
 	cm := r.ConfigMap.Build(ctx, chaos)
 
 	err := r.Create(ctx, cm)
