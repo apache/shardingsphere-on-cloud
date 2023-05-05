@@ -17,7 +17,38 @@
 
 package common
 
-import v1 "k8s.io/api/core/v1"
+/*
+
+import (
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+type ConfigMapFactory interface {
+	NewConfigMapBuilderFromGVK(gvk schema.GroupVersionKind) ConfigMapBuilder
+}
+
+type configmapFactory struct{}
+
+func (c configmapFactory) NewConfigMapBuilderFromGVK(gvk schema.GroupVersionKind) ConfigMapBuilder {
+	if gvk.Group == "shardingsphere.apache.org" {
+		if gvk.Kind == "ComputeNode" && gvk.Version == "v1alpha1" {
+			return &commonConfigMapBuilder{}
+		}
+	}
+
+		// if gvk.Group == "shardingsphere.apache.org" && gvk.Kind == "ShardingSphereChaos" && gvk.Version == "v1alpha1" {
+		// 	return shardingsphereChaosConfigMapBuilder{}
+		// }
+
+	return nil
+}
+
+// type computeNodeConfigMapBuilder struct{}
+
+// func (c computeNodeConfigMapFactory) NewConfigMapBuilderFromGVK()
+
+// type shardingsphereChaosConfigMapFactory struct{}
 
 // ConfigMapBuilder generic configmap interface
 type ConfigMapBuilder interface {
@@ -66,3 +97,5 @@ func (c *commonConfigMapBuilder) SetAnnotations(annos map[string]string) ConfigM
 func (c *commonConfigMapBuilder) Build() *v1.ConfigMap {
 	return c.configmap
 }
+
+*/

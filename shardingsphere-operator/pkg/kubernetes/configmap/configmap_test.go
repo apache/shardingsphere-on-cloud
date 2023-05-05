@@ -35,6 +35,10 @@ var _ = Describe("Default ConfigMap", func() {
 	var (
 		expect = &corev1.ConfigMap{}
 		cn     = &v1alpha1.ComputeNode{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ComputeNode",
+				APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test_name",
 				Namespace: "test_namespace",
@@ -60,6 +64,7 @@ var _ = Describe("Default ConfigMap", func() {
 	Context("Assert ObjectMeta", func() {
 		c := configmap.NewConfigMapClient(nil)
 		cm := c.Build(context.TODO(), cn)
+		fmt.Printf("cm: %#v\n", cm)
 
 		It("name should be equal", func() {
 			Expect(expect.Name).To(Equal(cm.Name))
@@ -88,6 +93,20 @@ var _ = Describe("Default ConfigMap", func() {
 	})
 
 	Context("Assert Update Spec Data", func() {
+		cn.TypeMeta = metav1.TypeMeta{
+			Kind:       "ComputeNode",
+			APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
+		}
+		cn.ObjectMeta = metav1.ObjectMeta{
+			Name:      "test_name",
+			Namespace: "test_namespace",
+			Labels: map[string]string{
+				"test_key": "test_value",
+			},
+			Annotations: map[string]string{
+				"test_anno_key": "test_anno_value",
+			},
+		}
 		cn.Spec.Bootstrap = v1alpha1.BootstrapConfig{
 			ServerConfig: v1alpha1.ServerConfig{
 				Authority: v1alpha1.ComputeNodeAuthority{
@@ -118,7 +137,7 @@ var _ = Describe("Default ConfigMap", func() {
 
 		c := configmap.NewConfigMapClient(nil)
 		cm := c.Build(context.TODO(), cn)
-		cm = configmap.UpdateConfigMap(cn, cm)
+		cm = configmap.UpdateComputeNodeConfigMap(cn, cm)
 		cfg := &v1alpha1.ServerConfig{}
 		err := yaml.Unmarshal([]byte(cm.Data[configmap.ConfigDataKeyForServer]), &cfg)
 		if err != nil {
@@ -142,6 +161,10 @@ var _ = Describe("Default ConfigMap", func() {
 var _ = Describe("Standalone Server Config", func() {
 	Context("Assert Simple Service Config Data", func() {
 		cn := &v1alpha1.ComputeNode{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ComputeNode",
+				APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
+			},
 			Spec: v1alpha1.ComputeNodeSpec{
 				Bootstrap: v1alpha1.BootstrapConfig{
 					ServerConfig: v1alpha1.ServerConfig{
@@ -174,6 +197,10 @@ var _ = Describe("Standalone Server Config", func() {
 
 	Context("Assert Full Service Config Data", func() {
 		cn := &v1alpha1.ComputeNode{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ComputeNode",
+				APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
+			},
 			Spec: v1alpha1.ComputeNodeSpec{
 				Bootstrap: v1alpha1.BootstrapConfig{
 					ServerConfig: v1alpha1.ServerConfig{
@@ -206,7 +233,6 @@ var _ = Describe("Standalone Server Config", func() {
 		if err != nil {
 			fmt.Printf("Err: %s\n", err)
 		}
-
 		It("server config authority should be equal", func() {
 			Expect(expect.Authority).To(Equal(cn.Spec.Bootstrap.ServerConfig.Authority))
 		})
@@ -223,6 +249,10 @@ var _ = Describe("Cluster Server Config", func() {
 	var (
 		expect = &v1alpha1.ServerConfig{}
 		cn     = &v1alpha1.ComputeNode{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ComputeNode",
+				APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test_name",
 				Namespace: "test_namespace",
@@ -290,6 +320,10 @@ var _ = Describe("Logback Config", func() {
 		var (
 			expect = ""
 			cn     = &v1alpha1.ComputeNode{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ComputeNode",
+					APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						configmap.AnnoLogbackConfig: "test_logback_value",
@@ -316,6 +350,10 @@ var _ = Describe("Logback Config", func() {
 		var (
 			expect = ""
 			cn     = &v1alpha1.ComputeNode{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ComputeNode",
+					APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test_name",
 					Namespace: "test_namespace",
@@ -346,6 +384,10 @@ var _ = Describe("Agent Config", func() {
 		var (
 			expect = &v1alpha1.AgentConfig{}
 			cn     = &v1alpha1.ComputeNode{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ComputeNode",
+					APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test_name",
 					Namespace: "test_namespace",
@@ -394,6 +436,8 @@ var _ = Describe("Agent Config", func() {
 
 		c := configmap.NewConfigMapClient(nil)
 		cm := c.Build(context.TODO(), cn)
+
+		fmt.Printf("cm: %s\n", cm.Data[configmap.ConfigDataKeyForAgent])
 
 		err := yaml.Unmarshal([]byte(cm.Data[configmap.ConfigDataKeyForAgent]), &expect)
 		if err != nil {
