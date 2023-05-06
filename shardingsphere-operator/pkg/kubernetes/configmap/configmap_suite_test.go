@@ -40,7 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-func TestComputeNode(t *testing.T) {
+func TestConfigMap(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "ComputeNode Suite")
 }

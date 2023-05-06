@@ -19,6 +19,7 @@ package configmap
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,7 +30,7 @@ import (
 
 // NewConfigMapClient returns a new ConfigMap client
 func NewConfigMapClient(c client.Client) ConfigMap {
-	return configmapClient{
+	cm := &configmapClient{
 		builder: builder{},
 		getter: getter{
 			Client: c,
@@ -38,6 +39,9 @@ func NewConfigMapClient(c client.Client) ConfigMap {
 			Client: c,
 		},
 	}
+	fmt.Printf("new %p, %p\n", cm, c)
+
+	return cm
 }
 
 // ConfigMap interface contains setter and getter
