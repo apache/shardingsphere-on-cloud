@@ -155,26 +155,46 @@ func (r *ShardingSphereChaosReconciler) finalize(ctx context.Context, chao *v1al
 func (r *ShardingSphereChaosReconciler) deleteExternalResources(ctx context.Context, chao *v1alpha1.ShardingSphereChaos) error {
 	nameSpacedName := types.NamespacedName{Namespace: chao.Namespace, Name: chao.Name}
 	if chao.Spec.EmbedChaos.PodChaos != nil {
-		podchao, err := r.getPodChaosByNamespacedName(ctx, nameSpacedName)
-		if err != nil {
+		if err := r.deletePodChaos(ctx, nameSpacedName); err != nil {
 			return err
 		}
-		if podchao != nil {
-			if err := r.Chaos.DeletePodChaos(ctx, podchao); err != nil {
-				return err
-			}
-		}
+
+		return nil
 	}
 
 	if chao.Spec.EmbedChaos.NetworkChaos != nil {
-		networkchao, err := r.getNetworkChaosByNamespacedName(ctx, nameSpacedName)
-		if err != nil {
+		if err := r.deleteNetworkChaos(ctx, nameSpacedName); err != nil {
 			return err
 		}
-		if networkchao != nil {
-			if err := r.Chaos.DeleteNetworkChaos(ctx, networkchao); err != nil {
-				return err
-			}
+
+		return nil
+	}
+
+	return nil
+}
+
+func (r *ShardingSphereChaosReconciler) deletePodChaos(ctx context.Context, namespacedName types.NamespacedName) error {
+	podchao, err := r.getPodChaosByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return err
+	}
+	if podchao != nil {
+		if err := r.Chaos.DeletePodChaos(ctx, podchao); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *ShardingSphereChaosReconciler) deleteNetworkChaos(ctx context.Context, namespacedName types.NamespacedName) error {
+	networkchao, err := r.getNetworkChaosByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return err
+	}
+	if networkchao != nil {
+		if err := r.Chaos.DeleteNetworkChaos(ctx, networkchao); err != nil {
+			return err
 		}
 	}
 

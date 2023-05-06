@@ -6,6 +6,7 @@ require (
 	github.com/antlr/antlr4 v0.0.0-20181218183524-be58ebffde8e
 	github.com/chaos-mesh/chaos-mesh/api v0.0.0-20230410023700-25a841a23cd2
 	github.com/go-logr/logr v1.2.3
+	github.com/golang/mock v1.6.0
 	github.com/onsi/ginkgo/v2 v2.8.0
 	github.com/onsi/gomega v1.26.0
 	github.com/prometheus/client_golang v1.14.0
