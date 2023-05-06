@@ -19,13 +19,14 @@ package shardingspherechaos_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	_ "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"math/rand"
 	"time"
 )
 
@@ -35,7 +36,7 @@ var _ = Describe("ShardingSphereChaos", func() {
 	Context("check related resource created by ShardingSphereChaos Controller", func() {
 		var (
 			ssChaos   *v1alpha1.ShardingSphereChaos
-			name      = "test.sschaos"
+			name      = fmt.Sprintf("%s-%d", "test.sschaos-", rand.Int31())
 			namespace = "default"
 			ctx       = context.Background()
 		)
@@ -70,11 +71,11 @@ var _ = Describe("ShardingSphereChaos", func() {
 					},
 				},
 			}
-			Expect(k8sClient.Create(ctx, ssChaos)).To(Succeed())
+			Expect(k8sClient.Create(ctx, ssChaos)).To(BeNil())
 		})
 
 		AfterEach(func() {
-			Expect(k8sClient.Delete(ctx, ssChaos)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil())
 		})
 
 		It("should create configmap", func() {

@@ -21,13 +21,14 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/cmd/shardingsphere-operator/manager"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
-	mockChaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh/mock"
+	mockChaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh/mocks"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/job"
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 	batchV1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -75,8 +76,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	Expect(err).NotTo(HaveOccurred())
-
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(chaosv1alpha1.AddToScheme(scheme))
@@ -93,7 +92,6 @@ var _ = BeforeSuite(func() {
 	opt.Scheme = scheme
 	k8sManager, err := ctrl.NewManager(cfg, opt.Options)
 
-	Expect(err).ToNot(HaveOccurred())
 	Expect(err).ToNot(HaveOccurred())
 	clientset, err := clientset.NewForConfig(k8sManager.GetConfig())
 	Expect(err).ToNot(HaveOccurred())
@@ -112,14 +110,18 @@ var _ = BeforeSuite(func() {
 	//+kubebuilder:scaffold:scheme
 	go func() {
 		defer GinkgoRecover()
-		err = k8sManager.Start(ctx)
+		err = k8sManager.Start(ctrl.SetupSignalHandler())
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
+		gexec.KillAndWait(4 * time.Second)
+
+		// Teardown the test environment once controller is fnished.
+		// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
+		// kube-apiserver to return
+		err := testEnv.Stop()
+		Expect(err).ToNot(HaveOccurred())
 	}()
 })
 
 var _ = AfterSuite(func() {
 	cancel()
-	By("tearing down the test environment")
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
 })
