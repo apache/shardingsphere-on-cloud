@@ -68,7 +68,7 @@ type ComputeNodeUser struct {
 	Password string `json:"password"`
 }
 
-// ComputeNodeAuth  is used to set up initial user to login compute node, and authority data of storage node.
+// ComputeNodeAuthority  is used to set up initial user to login compute node, and authority data of storage node.
 type ComputeNodeAuthority struct {
 	// +optional
 	Users []ComputeNodeUser `json:"users,omitempty" yaml:"users,omitempty"`

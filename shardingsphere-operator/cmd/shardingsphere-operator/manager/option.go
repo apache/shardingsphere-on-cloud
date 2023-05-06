@@ -28,14 +28,18 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/job"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
-
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	"github.com/database-mesh/golang-sdk/aws"
+	"github.com/database-mesh/golang-sdk/aws/client/rds"
+	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	"go.uber.org/zap/zapcore"
 	batchV1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientset "k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -50,6 +54,7 @@ func init() {
 	utilruntime.Must(chaosv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	utilruntime.Must(batchV1.AddToScheme(scheme))
+	utilruntime.Must(dbmeshv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -60,7 +65,13 @@ type Options struct {
 	ZapOptions   zap.Options
 }
 
-// ParseOptionsFromFlags parses options from flags
+var (
+	AwsAccessKeyID     string
+	AwsSecretAccessKey string
+	AwsRegion          string
+)
+
+// ParseOptionsFromCmdFlags parses options from flags
 func ParseOptionsFromCmdFlags() *Options {
 	// Declare and initialize the options struct
 	opt := &Options{
@@ -82,6 +93,10 @@ func ParseOptionsFromCmdFlags() *Options {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&opt.FeatureGates, "feature-gates", "ShardingSphereChaos=true", "A set of key=value pairs that describe feature gates for alpha/experimental features.")
+	// aws client options
+	flag.StringVar(&AwsAccessKeyID, "aws-access-key-id", "", "The AWS access key ID.")
+	flag.StringVar(&AwsSecretAccessKey, "aws-secret-key", "", "The AWS secret access key.")
+	flag.StringVar(&AwsRegion, "aws-region", "", "The AWS region.")
 
 	opt.ZapOptions.BindFlags(flag.CommandLine)
 	flag.Parse()
@@ -129,11 +144,28 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 		return nil
 	},
 	"StorageNode": func(mgr manager.Manager) error {
-		if err := (&controllers.StorageNodeReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-			Log:    mgr.GetLogger(),
-		}).SetupWithManager(mgr); err != nil {
+		eventBroadcaster := record.NewBroadcaster()
+		recorder := eventBroadcaster.NewRecorder(
+			mgr.GetScheme(),
+			corev1.EventSource{
+				Component: controllers.StorageNodeControllerName,
+			},
+		)
+
+		reconciler := &controllers.StorageNodeReconciler{
+			Client:   mgr.GetClient(),
+			Scheme:   mgr.GetScheme(),
+			Log:      mgr.GetLogger(),
+			Recorder: recorder,
+		}
+
+		// init aws client if aws credentials are provided
+		if AwsRegion != "" && AwsAccessKeyID != "" && AwsSecretAccessKey != "" {
+			sess := aws.NewSessions().SetCredential(AwsRegion, AwsAccessKeyID, AwsSecretAccessKey).Build()
+			reconciler.AwsRDS = rds.NewService(sess[AwsRegion])
+		}
+
+		if err := reconciler.SetupWithManager(mgr); err != nil {
 			logger.Error(err, "unable to create controller", "controller", "StorageNode")
 			return err
 		}
