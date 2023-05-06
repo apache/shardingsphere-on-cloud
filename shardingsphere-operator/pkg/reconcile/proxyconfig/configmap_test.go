@@ -22,6 +22,7 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_ToYAML(t *testing.T) {
@@ -116,4 +117,43 @@ props:
 		act := toYaml(c.proxyCfg)
 		assert.Equal(t, c.exp, act, c.message)
 	}
+}
+
+func TestConfigMap_ConstructCascadingConfigMap(t *testing.T) {
+	pc := &v1alpha1.ShardingSphereProxyServerConfig{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
+		Spec: v1alpha1.ProxyConfigSpec{
+			ClusterConfig: v1alpha1.ClusterConfig{
+				Type: "Cluster",
+				Repository: v1alpha1.RepositoryConfig{
+					Type: "Zookeeper",
+					Props: v1alpha1.ClusterProps{
+						Namespace: "governance_ns",
+					},
+				},
+			},
+			Authority: v1alpha1.Auth{
+				Users: []v1alpha1.User{
+					{
+						User:     "root@%",
+						Password: "root",
+					},
+				},
+				Privilege: &v1alpha1.Privilege{
+					Type: "ALL_PERMITTED",
+				},
+			},
+			Props: &v1alpha1.Props{
+				KernelExecutorSize: 16,
+			},
+		},
+	}
+
+	s := toYaml(pc)
+
+	cm := ConstructCascadingConfigmap(pc)
+	assert.Equal(t, "test", cm.Name, "name should be equal")
+	assert.Equal(t, "test", cm.Namespace, "namespace should be equal")
+	assert.Equal(t, s, cm.Data["server.yaml"], "server.yaml should be equal")
+	assert.Equal(t, defaultLogback, cm.Data["logback.xml"], "logback.xml should be equal")
 }
