@@ -19,24 +19,15 @@ package shardingspherechaos_test
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
-
-	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh"
-	chaosV1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"k8s.io/apimachinery/pkg/types"
+	"math/rand"
+	"time"
 )
 
 var _ = Describe("ShardingSphereChaos", func() {
@@ -44,35 +35,12 @@ var _ = Describe("ShardingSphereChaos", func() {
 
 	Context("check related resource created by ShardingSphereChaos Controller", func() {
 		var (
-			fakeClient client.Client
-			reconciler *controllers.ShardingSphereChaosReconciler
-			ssChaos    *v1alpha1.ShardingSphereChaos
-			ctx        context.Context
-			name       = "test.sschaos"
-			namespace  = "default"
-			req        = reconcile.Request{
-				NamespacedName: client.ObjectKey{
-					Namespace: name,
-					Name:      namespace,
-				},
-			}
+			ssChaos   *v1alpha1.ShardingSphereChaos
+			name      = fmt.Sprintf("%s-%d", "test.sschaos-", rand.Int31())
+			namespace = "default"
+			ctx       = context.Background()
 		)
 		BeforeEach(func() {
-			scheme := runtime.NewScheme()
-			Expect(corev1.AddToScheme(scheme)).To(Succeed())
-			Expect(appsv1.AddToScheme(scheme)).To(Succeed())
-			Expect(batchv1.AddToScheme(scheme)).To(Succeed())
-			Expect(chaosV1alpha1.AddToScheme(scheme)).To(Succeed())
-			Expect(v1alpha1.AddToScheme(scheme)).To(Succeed())
-			fakeClient = fake.NewClientBuilder().WithScheme(scheme).Build()
-			logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-			reconciler = &controllers.ShardingSphereChaosReconciler{
-				Client: fakeClient,
-				Scheme: scheme,
-				Log:    logf.Log,
-				Chaos:  sschaos.NewChaos(fakeClient),
-			}
-			ctx = context.Background()
 			ssChaos = &v1alpha1.ShardingSphereChaos{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      name,
@@ -103,24 +71,21 @@ var _ = Describe("ShardingSphereChaos", func() {
 					},
 				},
 			}
-			Expect(fakeClient.Create(ctx, ssChaos)).To(Succeed())
-			_, err := reconciler.Reconcile(context.Background(), req)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(k8sClient.Create(ctx, ssChaos)).To(BeNil())
 		})
 
 		AfterEach(func() {
-			Expect(fakeClient.Delete(ctx, ssChaos)).To(Succeed())
-			_, err := reconciler.Reconcile(context.Background(), req)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil())
 		})
 
-		//It("should create podChaos", func() {
-		//	var podChaos chaosV1alpha1.PodChaos
-		//	nameSpacedName := types.NamespacedName{Namespace: ssChaos.Namespace, Name: ssChaos.Name}
-		//	Eventually(func() bool {
-		//		return Expect(fakeClient.Get(ctx, nameSpacedName, &podChaos)).To(Succeed())
-		//	}, time.Second*10, time.Millisecond*250).Should(BeTrue())
-		//})
+		It("should create configmap", func() {
+			configmap := &corev1.ConfigMap{}
+			namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, namespacedName, configmap)
+				return err == nil
+			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
+		})
 
 	})
 
