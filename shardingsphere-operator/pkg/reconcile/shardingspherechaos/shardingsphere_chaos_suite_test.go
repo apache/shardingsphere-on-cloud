@@ -86,7 +86,8 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	os.Args = append(os.Args, "--metrics-bind-address=:9081")
+	os.Args = append(os.Args, "--metrics-bind-address=:9082")
+	os.Args = append(os.Args, "--health-probe-bind-address=:9083")
 
 	opt := manager.ParseOptionsFromCmdFlags()
 	opt.Scheme = scheme
