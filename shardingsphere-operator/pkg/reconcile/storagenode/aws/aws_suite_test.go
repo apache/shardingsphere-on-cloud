@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
-package shardingspherechaos
+package aws_test
 
-const (
-	configExperimental = "experimental.sh"
-	configPressure     = "pressure.sh"
-	configVerify       = "verify.sh"
+import (
+	"testing"
 
-	DefaultConfigMapName = "ssChaos-configmap"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
+
+func TestAws(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Aws Suite")
+}
