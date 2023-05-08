@@ -19,6 +19,7 @@ package configmap_test
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -40,9 +41,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-func TestComputeNode(t *testing.T) {
+func TestConfigMap(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "ComputeNode Suite")
+	RunSpecs(t, "ConfigMap Suite")
 }
 
 var (
@@ -74,6 +75,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	fmt.Printf("before: %p\n", k8sClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 

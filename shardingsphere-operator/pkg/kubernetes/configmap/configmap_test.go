@@ -29,6 +29,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var _ = Describe("Default ConfigMap", func() {
@@ -64,7 +65,6 @@ var _ = Describe("Default ConfigMap", func() {
 	Context("Assert ObjectMeta", func() {
 		c := configmap.NewConfigMapClient(nil)
 		cm := c.Build(context.TODO(), cn)
-		fmt.Printf("cm: %#v\n", cm)
 
 		It("name should be equal", func() {
 			Expect(expect.Name).To(Equal(cm.Name))
@@ -437,8 +437,6 @@ var _ = Describe("Agent Config", func() {
 		c := configmap.NewConfigMapClient(nil)
 		cm := c.Build(context.TODO(), cn)
 
-		fmt.Printf("cm: %s\n", cm.Data[configmap.ConfigDataKeyForAgent])
-
 		err := yaml.Unmarshal([]byte(cm.Data[configmap.ConfigDataKeyForAgent]), &expect)
 		if err != nil {
 			fmt.Printf("Err: %s\n", err)
@@ -455,6 +453,81 @@ var _ = Describe("Agent Config", func() {
 		})
 		It("agent config tracing should be equal", func() {
 			Expect(expect.Plugins.Tracing).To(Equal(cn.Spec.Bootstrap.AgentConfig.Plugins.Tracing))
+		})
+	})
+})
+
+var _ = Describe("GetNamespacedByName", func() {
+	Context("Assert Get ConfigMap ", func() {
+		var (
+			cn = &v1alpha1.ComputeNode{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ComputeNode",
+					APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					Labels: map[string]string{
+						"test_key": "test_value",
+					},
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					Bootstrap: v1alpha1.BootstrapConfig{
+						AgentConfig: v1alpha1.AgentConfig{
+							Plugins: v1alpha1.AgentPlugin{
+								Logging: &v1alpha1.PluginLogging{
+									File: v1alpha1.LoggingFile{
+										Props: v1alpha1.Properties{
+											"test_logging_key": "test_logging_value",
+										},
+									},
+								},
+								Metrics: &v1alpha1.PluginMetrics{
+									Prometheus: v1alpha1.Prometheus{
+										Host: "test_host",
+										Port: 1234,
+										Props: v1alpha1.Properties{
+											"test_metrics_key": "test_metrics_value",
+										},
+									},
+								},
+								Tracing: &v1alpha1.PluginTracing{
+									OpenTracing: v1alpha1.OpenTracing{
+										Props: v1alpha1.Properties{
+											"test_opentracing_key": "test_opentracing_value",
+										},
+									},
+									OpenTelemetry: v1alpha1.OpenTelemetry{
+										Props: v1alpha1.Properties{
+											"test_opentelemetry_key": "test_opentelemetry_value",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+		)
+
+		It("get configmap should be equal", func() {
+			c := configmap.NewConfigMapClient(k8sClient)
+
+			cm := c.Build(context.TODO(), cn)
+			err := c.Create(context.TODO(), cm)
+			Expect(err).To(BeNil())
+
+			expect, err := c.GetByNamespacedName(context.TODO(), types.NamespacedName{
+				Name:      cn.Name,
+				Namespace: cn.Namespace,
+			})
+			Expect(expect).To(Not(BeNil()))
+
+			Expect(err).To(BeNil())
+			Expect(expect.Name).To(Equal(cm.Name))
+			Expect(expect.Namespace).To(Equal(cm.Namespace))
+			Expect(expect.Data).To(Equal(cm.Data))
 		})
 	})
 })

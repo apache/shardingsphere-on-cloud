@@ -29,7 +29,7 @@ import (
 
 // NewConfigMapClient returns a new ConfigMap client
 func NewConfigMapClient(c client.Client) ConfigMap {
-	return configmapClient{
+	return &configmapClient{
 		builder: builder{},
 		getter: getter{
 			Client: c,

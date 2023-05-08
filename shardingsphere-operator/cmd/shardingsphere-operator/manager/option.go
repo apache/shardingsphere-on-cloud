@@ -28,6 +28,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/job"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
+
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/database-mesh/golang-sdk/aws"
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
@@ -46,10 +47,11 @@ import (
 )
 
 var (
-	scheme = runtime.NewScheme()
+	scheme *runtime.Scheme
 )
 
 func init() {
+	scheme = runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(chaosv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))

@@ -27,6 +27,9 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/cmd/shardingsphere-operator/manager"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 	dbmesh_aws "github.com/database-mesh/golang-sdk/aws"
 	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
@@ -113,6 +116,16 @@ var _ = BeforeSuite(func() {
 		Log:      ctrl.Log.WithName("controllers").WithName("StorageNode"),
 		Recorder: k8sManager.GetEventRecorderFor("StorageNode"),
 		AwsRDS:   dbmesh_rds.NewService(sess["AwsRegion"]),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = (&controllers.ComputeNodeReconciler{
+		Client:     k8sManager.GetClient(),
+		Scheme:     k8sManager.GetScheme(),
+		Log:        logf.Log.WithName("controllers").WithName("ComputeNode"),
+		Deployment: deployment.NewDeploymentClient(k8sManager.GetClient()),
+		Service:    service.NewServiceClient(k8sManager.GetClient()),
+		ConfigMap:  configmap.NewConfigMapClient(k8sManager.GetClient()),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
