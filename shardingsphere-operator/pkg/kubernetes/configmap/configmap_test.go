@@ -65,7 +65,6 @@ var _ = Describe("Default ConfigMap", func() {
 	Context("Assert ObjectMeta", func() {
 		c := configmap.NewConfigMapClient(nil)
 		cm := c.Build(context.TODO(), cn)
-		fmt.Printf("cm: %#v\n", cm)
 
 		It("name should be equal", func() {
 			Expect(expect.Name).To(Equal(cm.Name))
@@ -438,8 +437,6 @@ var _ = Describe("Agent Config", func() {
 		c := configmap.NewConfigMapClient(nil)
 		cm := c.Build(context.TODO(), cn)
 
-		fmt.Printf("cm: %s\n", cm.Data[configmap.ConfigDataKeyForAgent])
-
 		err := yaml.Unmarshal([]byte(cm.Data[configmap.ConfigDataKeyForAgent]), &expect)
 		if err != nil {
 			fmt.Printf("Err: %s\n", err)
@@ -469,8 +466,8 @@ var _ = Describe("GetNamespacedByName", func() {
 					APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test_name",
-					Namespace: "test_namespace",
+					Name:      "test",
+					Namespace: "default",
 					Labels: map[string]string{
 						"test_key": "test_value",
 					},
@@ -514,30 +511,23 @@ var _ = Describe("GetNamespacedByName", func() {
 			}
 		)
 
-		c := configmap.NewConfigMapClient(k8sClient)
-		fmt.Printf("c: %p\n", &c)
-		fmt.Printf("client: %p\n", &k8sClient)
+		It("get configmap should be equal", func() {
+			c := configmap.NewConfigMapClient(k8sClient)
 
-		cm := c.Build(context.TODO(), cn)
+			cm := c.Build(context.TODO(), cn)
+			err := c.Create(context.TODO(), cm)
+			Expect(err).To(BeNil())
 
-		err := c.Create(context.TODO(), cm)
-		It("error should not be nil", func() {
-			Expect(err).ToNot(BeNil())
-		})
+			expect, err := c.GetByNamespacedName(context.TODO(), types.NamespacedName{
+				Name:      cn.Name,
+				Namespace: cn.Namespace,
+			})
+			Expect(expect).To(Not(BeNil()))
 
-		expect, err := c.GetByNamespacedName(context.TODO(), types.NamespacedName{
-			Name:      cn.Name,
-			Namespace: cn.Namespace,
-		})
-		It("error should not be nil", func() {
-			Expect(err).ToNot(BeNil())
-		})
-
-		It("should be equal", func() {
+			Expect(err).To(BeNil())
 			Expect(expect.Name).To(Equal(cm.Name))
 			Expect(expect.Namespace).To(Equal(cm.Namespace))
 			Expect(expect.Data).To(Equal(cm.Data))
-			// Expect(expect.BinaryData).To(Equal(cm.BinaryData))
 		})
 	})
 })
