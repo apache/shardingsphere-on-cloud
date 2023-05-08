@@ -88,19 +88,8 @@ func (r *req) Send(body any) error {
 		return fmt.Errorf("new request failure,err=%w", err)
 	}
 
-	for k, v := range r.header {
-		_req.Header.Set(k, v)
-	}
-
-	// set default header
-	if r.method == http.MethodPost {
-		if _req.Header.Get("Content-Type") == "" {
-			_req.Header.Set("Content-Type", "application/json")
-		}
-		if _req.Header.Get("x-request-id") == "" {
-			_req.Header.Set("x-request-id", uuid.New().String())
-		}
-	}
+	// set header
+	_req = r.setReqHeader(_req)
 
 	for k, v := range r.query {
 		values := _req.URL.Query()
@@ -135,4 +124,21 @@ func (r *req) Send(body any) error {
 	}
 
 	return nil
+}
+
+func (r *req) setReqHeader(req *http.Request) *http.Request {
+	for k, v := range r.header {
+		req.Header.Set(k, v)
+	}
+
+	// set default header if method is post
+	if r.method == http.MethodPost {
+		if req.Header.Get("Content-Type") == "" {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		if req.Header.Get("x-request-id") == "" {
+			req.Header.Set("x-request-id", uuid.New().String())
+		}
+	}
+	return req
 }
