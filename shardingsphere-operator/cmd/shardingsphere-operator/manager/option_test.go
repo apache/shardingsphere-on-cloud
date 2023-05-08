@@ -36,7 +36,7 @@ func Test_ParseFeatureGates(t *testing.T) {
 		{
 			desc: "Returns correct handlers if feature gates are provided",
 			opts: Options{
-				FeatureGates: "ComputeNode=true,Cluster=false,StorageNode=false",
+				FeatureGates: "ComputeNode=true,ShardingSphereChaos=false,StorageNode=false",
 			},
 			expectedLen: 1,
 		},
