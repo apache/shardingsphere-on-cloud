@@ -51,20 +51,19 @@ const (
 	AnnoJobSuspend                 = "job.batch/suspend"
 )
 
-type InjectRequirement string
+type JobType string
 
 var (
 	//FIXME: pick another name for experimental
-	Experimental InjectRequirement = "experimental"
-	Pressure     InjectRequirement = "pressure"
-	Verify       InjectRequirement = "verify"
+	InSteady JobType = "steady"
+	InChaos  JobType = "chaos"
 )
 
-func MakeJobName(name string, requirement InjectRequirement) string {
+func MakeJobName(name string, requirement JobType) string {
 	return fmt.Sprintf("%s-%s", name, string(requirement))
 }
 
-func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement) (*v1.Job, error) {
+func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement JobType) (*v1.Job, error) {
 	jbd := NewJobBuilder()
 	jbd.SetNamespace(ssChaos.Namespace).SetLabels(ssChaos.Labels).SetName(MakeJobName(ssChaos.Name, requirement))
 
@@ -142,16 +141,13 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement
 	return rjob, nil
 }
 
-func NewCmds(requirement InjectRequirement) []string {
+func NewCmds(requirement JobType) []string {
 	var cmds []string
-	if requirement == Experimental {
+	if requirement == InSteady {
 		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultWorkPath, configExperimental))
 	}
-	if requirement == Pressure {
+	if requirement == InChaos {
 		cmds = append(cmds, fmt.Sprintf("%s/%s;%s/%s", DefaultWorkPath, configPressure, DefaultWorkPath, configExperimental))
-	}
-	if requirement == Verify {
-		cmds = append(cmds, fmt.Sprintf("%s/%s", DefaultWorkPath, configVerify))
 	}
 	return cmds
 }
@@ -164,7 +160,7 @@ func MustInt32(s string) (int32, error) {
 	return int32(v), nil
 }
 
-func IsJobChanged(ssChaos *v1alpha1.ShardingSphereChaos, requirement InjectRequirement, cur *v1.Job) (bool, error) {
+func IsJobChanged(ssChaos *v1alpha1.ShardingSphereChaos, requirement JobType, cur *v1.Job) (bool, error) {
 	now, err := NewJob(ssChaos, requirement)
 	if err != nil {
 		return false, err
