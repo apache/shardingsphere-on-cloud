@@ -19,6 +19,7 @@ package aws
 
 import (
 	"context"
+	"errors"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
@@ -32,12 +33,17 @@ func (c *RdsClient) CreateAuroraCluster(ctx context.Context, node *v1alpha1.Stor
 }
 
 func (c *RdsClient) GetAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode) (cluster *rds.DescCluster, err error) {
+	identifier, ok := node.Annotations[dbmeshv1alpha1.AnnotationsClusterIdentifier]
+	if !ok {
+		return nil, errors.New("cluster identifier is empty")
+	}
 	if node.Status.Cluster.Properties == nil || node.Status.Cluster.Properties["clusterIdentifier"] == "" {
 		// cluster not created
 		return nil, nil
 	}
 
 	aurora := c.Aurora()
+	aurora.SetDBClusterIdentifier(identifier)
 	return aurora.Describe(ctx)
 }
 

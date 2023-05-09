@@ -36,6 +36,7 @@ type IRdsClient interface {
 
 	CreateInstance(ctx context.Context, node *v1alpha1.StorageNode, params map[string]string) error
 	GetInstance(ctx context.Context, node *v1alpha1.StorageNode) (instance *rds.DescInstance, err error)
+	GetInstanceByIdentifier(ctx context.Context, identifier string) (*rds.DescInstance, error)
 	DeleteInstance(ctx context.Context, node *v1alpha1.StorageNode, databaseClass *dbmeshv1alpha1.DatabaseClass) error
 
 	CreateAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, params map[string]string) error
