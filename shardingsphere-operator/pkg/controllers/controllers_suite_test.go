@@ -23,6 +23,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/cmd/shardingsphere-operator/manager"
@@ -30,6 +31,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
+
 	dbmesh_aws "github.com/database-mesh/golang-sdk/aws"
 	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
@@ -50,6 +52,7 @@ var (
 	testEnv   *envtest.Environment
 	ctx       context.Context
 	cancel    context.CancelFunc
+	err       error
 )
 
 func TestControllers(t *testing.T) {
@@ -83,9 +86,11 @@ var _ = BeforeSuite(func() {
 			filepath.Join("..", "..", "config", "crd", "bases"),
 		},
 		ErrorIfCRDPathMissing: true,
+		CRDInstallOptions: envtest.CRDInstallOptions{
+			MaxTime: 60 * time.Second,
+		},
 	}
 
-	var err error
 	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
@@ -101,13 +106,10 @@ var _ = BeforeSuite(func() {
 
 	// set metrics bind address to :9081, diff from default metric port:8080 and health check port:8081 to avoid conflict port when running tests
 	os.Args = append(os.Args, "--metrics-bind-address=:9081")
-
 	opt := manager.ParseOptionsFromCmdFlags()
 
 	k8sManager, err := ctrl.NewManager(cfg, opt.Options)
-
 	Expect(err).ToNot(HaveOccurred())
-
 	// print k8sManager Options
 	sess := dbmesh_aws.NewSessions().SetCredential("AwsRegion", "AwsAccessKeyID", "AwsSecretAccessKey").Build()
 	err = (&controllers.StorageNodeReconciler{
@@ -128,6 +130,22 @@ var _ = BeforeSuite(func() {
 		ConfigMap:  configmap.NewConfigMapClient(k8sManager.GetClient()),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
+	/*
+
+		ctl := gomock.NewController(GinkgoT())
+		clientset, err := clientset.NewForConfig(k8sManager.GetConfig())
+		err = (&controllers.ShardingSphereChaosReconciler{
+			Client:    k8sManager.GetClient(),
+			Scheme:    k8sManager.GetScheme(),
+			Log:       logf.Log,
+			Chaos:     mockChaos.NewMockChaos(ctl),
+			Job:       job.NewJob(k8sManager.GetClient()),
+			ConfigMap: configmap.NewConfigMapClient(k8sManager.GetClient()),
+			Events:    k8sManager.GetEventRecorderFor("shardingsphere-chaos-controller"),
+			ClientSet: clientset,
+		}).SetupWithManager(k8sManager)
+		Expect(err).ToNot(HaveOccurred())
+	*/
 
 	go func() {
 		defer GinkgoRecover()
@@ -141,5 +159,4 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment for controllers")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
-
 })

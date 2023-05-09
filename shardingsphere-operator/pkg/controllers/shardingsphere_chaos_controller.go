@@ -67,8 +67,8 @@ type ShardingSphereChaosReconciler struct {
 
 	Scheme    *runtime.Scheme
 	Log       logr.Logger
-	ClientSet *clientset.Clientset
 	Events    record.EventRecorder
+	ClientSet *clientset.Clientset
 
 	Chaos     sschaos.Chaos
 	Job       job.Job

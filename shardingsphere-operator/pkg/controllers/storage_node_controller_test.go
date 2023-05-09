@@ -86,10 +86,10 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 				Status: v1alpha1.StorageNodeStatus{},
 			}
 
-			Expect(fakeClient.Create(context.Background(), storageNode)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
 			sn := &v1alpha1.StorageNode{}
-			Expect(fakeClient.Get(context.Background(), client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, sn)).Should(Succeed())
-			Expect(fakeClient.Delete(context.Background(), storageNode)).Should(Succeed())
+			Expect(fakeClient.Get(ctx, client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, sn)).Should(Succeed())
+			Expect(fakeClient.Delete(ctx, storageNode)).Should(Succeed())
 		})
 	})
 
@@ -105,16 +105,16 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 				},
 				Status: v1alpha1.StorageNodeStatus{},
 			}
-			Expect(fakeClient.Create(context.Background(), storageNode)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
 			req := ctrl.Request{
 				NamespacedName: client.ObjectKey{
 					Name:      "test-storage-node",
 					Namespace: "test-namespace",
 				},
 			}
-			_, err := reconciler.Reconcile(context.Background(), req)
+			_, err := reconciler.Reconcile(ctx, req)
 			Expect(client.IgnoreNotFound(err)).Should(Succeed())
-			Expect(fakeClient.Delete(context.Background(), storageNode)).Should(Succeed())
+			Expect(fakeClient.Delete(ctx, storageNode)).Should(Succeed())
 		})
 	})
 
@@ -138,7 +138,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					Provisioner: dbmeshv1alpha1.ProvisionerAWSRDSInstance,
 				},
 			}
-			Expect(fakeClient.Create(context.Background(), dbClass)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, dbClass)).Should(Succeed())
 
 			// create storageNode
 			storageNode := &v1alpha1.StorageNode{
@@ -151,7 +151,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 				},
 			}
 
-			Expect(fakeClient.Create(context.Background(), storageNode)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
 		})
 
 		AfterEach(func() {
@@ -177,11 +177,11 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 
 			// mock aws rds client
 			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(rdsInstance, nil).AnyTimes()
-			_, err := reconciler.Reconcile(context.Background(), req)
+			_, err := reconciler.Reconcile(ctx, req)
 			Expect(err).To(BeNil())
 
 			newSN := &v1alpha1.StorageNode{}
-			Expect(fakeClient.Get(context.Background(), client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, newSN)).Should(Succeed())
+			Expect(fakeClient.Get(ctx, client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, newSN)).Should(Succeed())
 			Expect(newSN.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseNotReady))
 			Expect(newSN.Status.Instances).To(HaveLen(1))
 			Expect(newSN.Status.Instances[0].Status).To(Equal("creating"))
@@ -205,11 +205,11 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 
 			// mock aws rds client
 			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(rdsInstance, nil)
-			_, err := reconciler.Reconcile(context.Background(), req)
+			_, err := reconciler.Reconcile(ctx, req)
 			Expect(err).To(BeNil())
 
 			newSN := &v1alpha1.StorageNode{}
-			Expect(fakeClient.Get(context.Background(), client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, newSN)).Should(Succeed())
+			Expect(fakeClient.Get(ctx, client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, newSN)).Should(Succeed())
 
 			Expect(newSN.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseReady))
 			Expect(newSN.Status.Instances).To(HaveLen(1))
@@ -235,17 +235,17 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			// mock aws rds client, get instance
 			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(rdsInstance, nil).AnyTimes()
 			// reconcile storage node, add instance and set status to ready
-			_, err := reconciler.Reconcile(context.Background(), req)
+			_, err := reconciler.Reconcile(ctx, req)
 			Expect(err).To(BeNil())
 
 			// delete storage node
 			sn := &v1alpha1.StorageNode{}
-			Expect(fakeClient.Get(context.Background(), client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, sn)).Should(Succeed())
-			Expect(fakeClient.Delete(context.Background(), sn)).Should(Succeed())
+			Expect(fakeClient.Get(ctx, client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, sn)).Should(Succeed())
+			Expect(fakeClient.Delete(ctx, sn)).Should(Succeed())
 
 			// mock aws rds client, delete instance
 			mockAws.EXPECT().DeleteInstance(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-			_, err = reconciler.Reconcile(context.Background(), req)
+			_, err = reconciler.Reconcile(ctx, req)
 			Expect(err).To(BeNil())
 		})
 	})
@@ -273,13 +273,13 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 			},
 		}
 
-		Expect(k8sClient.Create(context.Background(), databaseClass)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, databaseClass)).Should(Succeed())
 	})
 
 	AfterEach(func() {
 		databaseClass := &dbmeshv1alpha1.DatabaseClass{}
-		Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: databaseClassName}, databaseClass)).Should(Succeed())
-		Expect(k8sClient.Delete(context.Background(), databaseClass)).Should(Succeed())
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: databaseClassName}, databaseClass)).Should(Succeed())
+		Expect(k8sClient.Delete(ctx, databaseClass)).Should(Succeed())
 	})
 
 	Context("reconcile storageNode", func() {
@@ -323,17 +323,17 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 			}
 
 			// create resource
-			Expect(k8sClient.Create(context.Background(), node)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 
 			// check storage node status
 			Eventually(func() v1alpha1.StorageNodePhaseStatus {
 				newSN := &v1alpha1.StorageNode{}
-				Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
+				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
 				return newSN.Status.Phase
 			}, 10*time.Second, 1*time.Second).Should(Equal(v1alpha1.StorageNodePhaseReady))
 
 			// delete resource
-			Expect(k8sClient.Delete(context.Background(), node)).Should(Succeed())
+			Expect(k8sClient.Delete(ctx, node)).Should(Succeed())
 		})
 
 		Context("reconcile storageNode with Creating instance", func() {
@@ -374,17 +374,17 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 				}
 
 				// create resource
-				Expect(k8sClient.Create(context.Background(), node)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 
 				// check storage node status
 				Eventually(func() v1alpha1.StorageNodePhaseStatus {
 					newSN := &v1alpha1.StorageNode{}
-					Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
+					Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
 					return newSN.Status.Phase
 				}, 10*time.Second, 1*time.Second).Should(Equal(v1alpha1.StorageNodePhaseNotReady))
 
 				// delete resource
-				Expect(k8sClient.Delete(context.Background(), node)).Should(Succeed())
+				Expect(k8sClient.Delete(ctx, node)).Should(Succeed())
 			})
 		})
 	})
