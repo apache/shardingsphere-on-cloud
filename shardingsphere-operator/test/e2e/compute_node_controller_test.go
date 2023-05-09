@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package controllers_test
+package e2e
 
 import (
 	"fmt"

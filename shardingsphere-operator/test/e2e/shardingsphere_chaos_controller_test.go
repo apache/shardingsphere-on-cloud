@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package controllers_test
+package e2e
 
 /*
 import (
@@ -26,8 +26,9 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"math/rand"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var _ = Describe("ShardingSphereChaos", func() {
@@ -38,8 +39,6 @@ var _ = Describe("ShardingSphereChaos", func() {
 			ssChaos   *v1alpha1.ShardingSphereChaos
 			name      = fmt.Sprintf("%s-%d", "test.sschaos-", rand.Int31())
 			namespace = "default"
-			// ctx       = context.Background()
-			// ctx = context.TODO()
 		)
 		BeforeEach(func() {
 			ssChaos = &v1alpha1.ShardingSphereChaos{
@@ -79,17 +78,16 @@ var _ = Describe("ShardingSphereChaos", func() {
 			Expect(k8sClient.Delete(ctx, ssChaos)).To(BeNil())
 		})
 
-		//It("should create configmap", func() {
-		//	configmap := &corev1.ConfigMap{}
-		//	namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
-		//	Eventually(func() bool {
-		//		err := k8sClient.Get(ctx, namespacedName, configmap)
-		//		return err == nil
-		//	}, time.Second*10, time.Millisecond*250).Should(BeTrue())
-		//})
+		It("should create configmap", func() {
+			configmap := &corev1.ConfigMap{}
+			namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, namespacedName, configmap)
+				return err == nil
+			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
+		})
 
 	})
 
 })
-
 */
