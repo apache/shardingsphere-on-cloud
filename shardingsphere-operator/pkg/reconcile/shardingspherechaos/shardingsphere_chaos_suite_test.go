@@ -96,11 +96,12 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	clientset, err := clientset.NewForConfig(k8sManager.GetConfig())
 	Expect(err).ToNot(HaveOccurred())
+	mockChaosMesh := mockChaos.NewMockChaos(ctl)
 	err = (&controllers.ShardingSphereChaosReconciler{
 		Client:    k8sManager.GetClient(),
 		Scheme:    k8sManager.GetScheme(),
 		Log:       logf.Log,
-		Chaos:     mockChaos.NewMockChaos(ctl),
+		Chaos:     mockChaosMesh,
 		Job:       job.NewJob(k8sManager.GetClient()),
 		ConfigMap: configmap.NewConfigMapClient(k8sManager.GetClient()),
 		Events:    k8sManager.GetEventRecorderFor("shardingsphere-chaos-controller"),

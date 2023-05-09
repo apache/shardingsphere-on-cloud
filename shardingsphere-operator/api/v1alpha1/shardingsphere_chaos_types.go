@@ -85,28 +85,31 @@ const (
 type ShardingSphereChaosStatus struct {
 	ChaosCondition ChaosCondition `json:"chaosCondition"`
 	Phase          ChaosPhase     `json:"phase"`
-	Results        []Result       `json:"results"`
+	Result         Result         `json:"result"`
 }
 
 // Result represents the result of the ShardingSphereChaos
 type Result struct {
-	Success bool   `json:"success"`
-	Detail  Detail `json:"detail"`
+	Steady Msg `json:"steady"`
+	Chaos  Msg `json:"chaos"`
 }
 
-type Detail struct {
-	Time    metav1.Time `json:"time"`
-	Message string      `json:"message"`
+type Metrics string
+
+type Msg struct {
+	Metrics        Metrics `json:"metrics"`
+	Result         string  `json:"result"`
+	Duration       string  `json:"duration"`
+	FailureDetails string  `json:"failureDetails"`
 }
 
 type ChaosPhase string
 
 var (
-	BeforeExperiment ChaosPhase = "BeforeReq"
-	AfterExperiment  ChaosPhase = "AfterReq"
-	CreatedChaos     ChaosPhase = "Created"
-	InjectedChaos    ChaosPhase = "Injected"
-	RecoveredChaos   ChaosPhase = "Recovered"
+	BeforeSteady ChaosPhase = "BeforeSteady"
+	AfterSteady  ChaosPhase = "AfterSteady"
+	BeforeChaos  ChaosPhase = "BeforeChaos"
+	AfterChaos   ChaosPhase = "AfterChaos"
 )
 
 // PodChaosAction Specify the action type of pod Chaos
