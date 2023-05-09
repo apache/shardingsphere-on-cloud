@@ -16,7 +16,7 @@
  *
  */
 
-package controllers_test
+package e2e
 
 import (
 	"context"

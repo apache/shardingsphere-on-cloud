@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package controllers_test
+package e2e
 
 import (
 	"context"
@@ -130,8 +130,8 @@ var _ = BeforeSuite(func() {
 		ConfigMap:  configmap.NewConfigMapClient(k8sManager.GetClient()),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
-	/*
 
+	/*
 		ctl := gomock.NewController(GinkgoT())
 		clientset, err := clientset.NewForConfig(k8sManager.GetConfig())
 		err = (&controllers.ShardingSphereChaosReconciler{

@@ -32,7 +32,6 @@ charts/apache-shardingsphere-proxy-charts/charts/
 !charts/apache-shardingsphere-proxy-charts/charts/governance/
 charts/apache-shardingsphere-operator-charts/charts/
 **/Chart.lock
-test
 certs
 shardingsphere-operator/vendor/
 pitr/agent/agent
