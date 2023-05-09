@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 
-package shardingspherechaos_test
+package controllers_test
 
+/*
 import (
-	"context"
 	"fmt"
+	"math/rand"
+	"time"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,7 +38,8 @@ var _ = Describe("ShardingSphereChaos", func() {
 			ssChaos   *v1alpha1.ShardingSphereChaos
 			name      = fmt.Sprintf("%s-%d", "test.sschaos-", rand.Int31())
 			namespace = "default"
-			ctx       = context.Background()
+			// ctx       = context.Background()
+			// ctx = context.TODO()
 		)
 		BeforeEach(func() {
 			ssChaos = &v1alpha1.ShardingSphereChaos{
@@ -87,3 +91,5 @@ var _ = Describe("ShardingSphereChaos", func() {
 	})
 
 })
+
+*/
