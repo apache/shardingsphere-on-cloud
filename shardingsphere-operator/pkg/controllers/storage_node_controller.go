@@ -99,11 +99,7 @@ func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// update status
-	desiredState, err := r.computeDesiredState(node.Status, databaseClass.Spec.Provisioner)
-	if err != nil {
-		logger.Error(err, fmt.Sprintf("unable to compute desired state for StorageNode [%s:%s]", node.GetNamespace(), node.GetName()))
-		return ctrl.Result{Requeue: true}, err
-	}
+	desiredState := computeDesiredState(node.Status)
 
 	if !reflect.DeepEqual(node.Status, desiredState) {
 		node.Status = desiredState
@@ -202,7 +198,7 @@ func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.Sto
 }
 
 // nolint:gocritic,gocognit
-func (r *StorageNodeReconciler) computeDesiredState(status v1alpha1.StorageNodeStatus, provisioner string) (v1alpha1.StorageNodeStatus, error) {
+func computeDesiredState(status v1alpha1.StorageNodeStatus) v1alpha1.StorageNodeStatus {
 	// Initialize a new status object based on the current state
 	desiredState := status
 
@@ -274,7 +270,7 @@ func (r *StorageNodeReconciler) computeDesiredState(status v1alpha1.StorageNodeS
 
 	desiredState.Conditions = newSNConditions
 
-	return desiredState, nil
+	return desiredState
 }
 
 // allInstancesReady returns true if all instances are ready, false otherwise
