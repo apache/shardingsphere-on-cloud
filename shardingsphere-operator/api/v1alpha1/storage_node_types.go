@@ -25,8 +25,10 @@ import (
 type StorageNodePhaseStatus string
 
 const (
-	StorageNodePhaseReady    StorageNodePhaseStatus = "Ready"
-	StorageNodePhaseNotReady StorageNodePhaseStatus = "NotReady"
+	StorageNodePhaseReady          StorageNodePhaseStatus = "Ready"
+	StorageNodePhaseNotReady       StorageNodePhaseStatus = "NotReady"
+	StorageNodePhaseDeleting       StorageNodePhaseStatus = "Deleting"
+	StorageNodePhaseDeleteComplete StorageNodePhaseStatus = "DeleteComplete"
 )
 
 type StorageNodeConditionType string
@@ -135,6 +137,20 @@ type StorageNodeStatus struct {
 	// Instance contains the current status of the StorageNode instance
 	Instances []InstanceStatus `json:"instances,omitempty"`
 }
+
+const (
+	StorageNodeInstanceStatusAvailable = "available"
+	StorageNodeInstanceStatusBackingup = "backingup"
+	StorageNodeInstanceStatusCreating  = "creating"
+	StorageNodeInstanceStatusDeleting  = "deleting"
+	StorageNodeInstanceStatusFailed    = "failed"
+	StorageNodeInstanceStatusModifying = "modifying"
+	StorageNodeInstanceStatusRebooting = "rebooting"
+	StorageNodeInstanceStatusRenaming  = "renaming"
+	StorageNodeInstanceStatusStarting  = "starting"
+	StorageNodeInstanceStatusStopped   = "stopped"
+	StorageNodeInstanceStatusStopping  = "stopping"
+)
 
 // AddCondition adds the given condition to the StorageNodeConditions.
 func (c *StorageNodeConditions) AddCondition(condition *StorageNodeCondition) {
