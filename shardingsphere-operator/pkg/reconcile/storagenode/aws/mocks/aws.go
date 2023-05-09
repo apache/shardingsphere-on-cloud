@@ -151,6 +151,21 @@ func (mr *MockIRdsClientMockRecorder) GetInstance(ctx, node interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstance", reflect.TypeOf((*MockIRdsClient)(nil).GetInstance), ctx, node)
 }
 
+// GetInstanceByIdentifier mocks base method.
+func (m *MockIRdsClient) GetInstanceByIdentifier(ctx context.Context, identifier string) (*rds.DescInstance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInstanceByIdentifier", ctx, identifier)
+	ret0, _ := ret[0].(*rds.DescInstance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInstanceByIdentifier indicates an expected call of GetInstanceByIdentifier.
+func (mr *MockIRdsClientMockRecorder) GetInstanceByIdentifier(ctx, identifier interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceByIdentifier", reflect.TypeOf((*MockIRdsClient)(nil).GetInstanceByIdentifier), ctx, identifier)
+}
+
 // Instance mocks base method.
 func (m *MockIRdsClient) Instance() rds.Instance {
 	m.ctrl.T.Helper()
