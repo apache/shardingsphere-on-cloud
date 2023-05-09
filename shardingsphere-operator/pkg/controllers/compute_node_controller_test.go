@@ -18,9 +18,11 @@
 package controllers_test
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -30,92 +32,92 @@ import (
 )
 
 /*
-func Test_GetReadyProxyInstances(t *testing.T) {
-	// create sample PodList
-	podlist := v1.PodList{
-		Items: []v1.Pod{
-			{
-				Status: v1.PodStatus{
-					Phase: v1.PodRunning,
-					Conditions: []v1.PodCondition{
-						{
-							Type:   v1.PodReady,
-							Status: v1.ConditionTrue,
+	func Test_GetReadyProxyInstances(t *testing.T) {
+		// create sample PodList
+		podlist := v1.PodList{
+			Items: []v1.Pod{
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodReady,
+								Status: v1.ConditionTrue,
+							},
+						},
+						ContainerStatuses: []v1.ContainerStatus{
+							{
+								Name:  "shardingsphere-proxy",
+								Ready: true,
+							},
 						},
 					},
-					ContainerStatuses: []v1.ContainerStatus{
-						{
-							Name:  "shardingsphere-proxy",
-							Ready: true,
+				},
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodReady,
+								Status: v1.ConditionTrue,
+							},
+						},
+						ContainerStatuses: []v1.ContainerStatus{
+							{
+								Name:  "another-container",
+								Ready: true,
+							},
+						},
+					},
+				},
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodReady,
+								Status: v1.ConditionFalse,
+							},
+						},
+						ContainerStatuses: []v1.ContainerStatus{
+							{
+								Name:  "shardingsphere-proxy",
+								Ready: false,
+							},
+						},
+					},
+				},
+				{
+					Status: v1.PodStatus{
+						Phase: v1.PodPending,
+						Conditions: []v1.PodCondition{
+							{
+								Type:   v1.PodReady,
+								Status: v1.ConditionTrue,
+							},
+						},
+						ContainerStatuses: []v1.ContainerStatus{
+							{
+								Name:  "shardingsphere-proxy",
+								Ready: true,
+							},
 						},
 					},
 				},
 			},
-			{
-				Status: v1.PodStatus{
-					Phase: v1.PodRunning,
-					Conditions: []v1.PodCondition{
-						{
-							Type:   v1.PodReady,
-							Status: v1.ConditionTrue,
-						},
-					},
-					ContainerStatuses: []v1.ContainerStatus{
-						{
-							Name:  "another-container",
-							Ready: true,
-						},
-					},
-				},
-			},
-			{
-				Status: v1.PodStatus{
-					Phase: v1.PodRunning,
-					Conditions: []v1.PodCondition{
-						{
-							Type:   v1.PodReady,
-							Status: v1.ConditionFalse,
-						},
-					},
-					ContainerStatuses: []v1.ContainerStatus{
-						{
-							Name:  "shardingsphere-proxy",
-							Ready: false,
-						},
-					},
-				},
-			},
-			{
-				Status: v1.PodStatus{
-					Phase: v1.PodPending,
-					Conditions: []v1.PodCondition{
-						{
-							Type:   v1.PodReady,
-							Status: v1.ConditionTrue,
-						},
-					},
-					ContainerStatuses: []v1.ContainerStatus{
-						{
-							Name:  "shardingsphere-proxy",
-							Ready: true,
-						},
-					},
-				},
-			},
-		},
+		}
+
+		// expected result is 1 because only one pod has a ready shardingsphere-proxy container
+		expected := int32(1)
+
+		// call the function to get the actual result
+		actual := getReadyProxyInstances(&podlist)
+
+		// compare the expected and actual results
+		if actual != expected {
+			t.Errorf("getReadyInstances returned %d, expected %d", actual, expected)
+		}
 	}
-
-	// expected result is 1 because only one pod has a ready shardingsphere-proxy container
-	expected := int32(1)
-
-	// call the function to get the actual result
-	actual := getReadyProxyInstances(&podlist)
-
-	// compare the expected and actual results
-	if actual != expected {
-		t.Errorf("getReadyInstances returned %d, expected %d", actual, expected)
-	}
-}
 */
 
 var _ = Describe("ComputeNodeController", func() {
@@ -524,4 +526,79 @@ var _ = Describe("ComputeNodeController", func() {
 		})
 	})
 
+})
+
+var _ = Describe("GetNamespacedByName", func() {
+	Context("Assert Get ConfigMap ", func() {
+		var (
+			cn = &v1alpha1.ComputeNode{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ComputeNode",
+					APIVersion: fmt.Sprintf("%s/%s", v1alpha1.GroupVersion.Group, v1alpha1.GroupVersion.Version),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					Labels: map[string]string{
+						"test_key": "test_value",
+					},
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					Bootstrap: v1alpha1.BootstrapConfig{
+						AgentConfig: v1alpha1.AgentConfig{
+							Plugins: v1alpha1.AgentPlugin{
+								Logging: &v1alpha1.PluginLogging{
+									File: v1alpha1.LoggingFile{
+										Props: v1alpha1.Properties{
+											"test_logging_key": "test_logging_value",
+										},
+									},
+								},
+								Metrics: &v1alpha1.PluginMetrics{
+									Prometheus: v1alpha1.Prometheus{
+										Host: "test_host",
+										Port: 1234,
+										Props: v1alpha1.Properties{
+											"test_metrics_key": "test_metrics_value",
+										},
+									},
+								},
+								Tracing: &v1alpha1.PluginTracing{
+									OpenTracing: v1alpha1.OpenTracing{
+										Props: v1alpha1.Properties{
+											"test_opentracing_key": "test_opentracing_value",
+										},
+									},
+									OpenTelemetry: v1alpha1.OpenTelemetry{
+										Props: v1alpha1.Properties{
+											"test_opentelemetry_key": "test_opentelemetry_value",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+		)
+
+		It("get configmap should be equal", func() {
+			c := configmap.NewConfigMapClient(k8sClient)
+
+			cm := c.Build(ctx, cn)
+			err := c.Create(ctx, cm)
+			Expect(err).To(BeNil())
+
+			expect, err := c.GetByNamespacedName(ctx, types.NamespacedName{
+				Name:      cn.Name,
+				Namespace: cn.Namespace,
+			})
+			Expect(expect).To(Not(BeNil()))
+
+			Expect(err).To(BeNil())
+			Expect(expect.Name).To(Equal(cm.Name))
+			Expect(expect.Namespace).To(Equal(cm.Namespace))
+			Expect(expect.Data).To(Equal(cm.Data))
+		})
+	})
 })
