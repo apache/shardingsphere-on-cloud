@@ -52,7 +52,11 @@ fmt: ## Run go fmt against code.
 	go fmt ./...
 
 .PHONY: test
-test: manifests generate fmt envtest ## Run tests.
+test: fmt ## Run tests.
+	go test $(shell go list ./... | grep -v 'e2e') -gcflags=-l -coverprofile cover.out
+
+.PHONY: e2e
+e2e: manifests generate fmt envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -gcflags=-l ./... -coverprofile cover.out
 
 .PHONY: clean
