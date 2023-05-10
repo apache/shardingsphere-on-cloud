@@ -21,6 +21,8 @@ import (
 	"flag"
 	"strings"
 
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/pressure"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
 	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh"
@@ -179,14 +181,15 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			return err
 		}
 		if err := (&controllers.ShardingSphereChaosReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Log:       mgr.GetLogger(),
-			Chaos:     sschaos.NewChaos(mgr.GetClient()),
-			Job:       job.NewJob(mgr.GetClient()),
-			ConfigMap: configmap.NewConfigMapClient(mgr.GetClient()),
-			Events:    mgr.GetEventRecorderFor("shardingsphere-chaos-controller"),
-			ClientSet: clientset,
+			Client:       mgr.GetClient(),
+			Scheme:       mgr.GetScheme(),
+			Log:          mgr.GetLogger(),
+			Chaos:        sschaos.NewChaos(mgr.GetClient()),
+			Job:          job.NewJob(mgr.GetClient()),
+			ExecRecorder: make([]*pressure.Pressure, 0),
+			ConfigMap:    configmap.NewConfigMapClient(mgr.GetClient()),
+			Events:       mgr.GetEventRecorderFor("shardingsphere-chaos-controller"),
+			ClientSet:    clientset,
 		}).SetupWithManager(mgr); err != nil {
 			logger.Error(err, "unable to create controller", "controller", "ShardingSphereChaos")
 			return err
