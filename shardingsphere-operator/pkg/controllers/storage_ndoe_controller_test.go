@@ -22,9 +22,11 @@ import (
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
 	mock_aws "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws/mocks"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/shardingsphere"
+	mock_shardingsphere "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/shardingsphere/mocks"
 
 	"bou.ke/monkey"
 	dbmesh_aws "github.com/database-mesh/golang-sdk/aws"
@@ -33,6 +35,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -56,6 +60,7 @@ var (
 	reconciler *StorageNodeReconciler
 	mockCtrl   *gomock.Controller
 	mockAws    *mock_aws.MockIRdsClient
+	mockSS     *mock_shardingsphere.MockIServer
 )
 
 func fakeStorageNodeReconciler() {
@@ -64,6 +69,7 @@ func fakeStorageNodeReconciler() {
 	scheme := runtime.NewScheme()
 	Expect(dbmeshv1alpha1.AddToScheme(scheme)).To(Succeed())
 	Expect(v1alpha1.AddToScheme(scheme)).To(Succeed())
+	Expect(corev1.AddToScheme(scheme)).To(Succeed())
 	fakeClient = fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	sess := dbmesh_aws.NewSessions().SetCredential("AwsRegion", "AwsAccessKeyID", "AwsSecretAccessKey").Build()
@@ -72,6 +78,7 @@ func fakeStorageNodeReconciler() {
 		Log:      logf.Log,
 		Recorder: record.NewFakeRecorder(100),
 		AwsRDS:   dbmesh_rds.NewService(sess["AwsRegion"]),
+		Service:  service.NewServiceClient(fakeClient),
 	}
 }
 
@@ -378,6 +385,115 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			finalSN := &v1alpha1.StorageNode{}
 			err = fakeClient.Get(ctx, client.ObjectKey{Name: deletedCompletedStorageNodeName, Namespace: defaultTestNamespace}, finalSN)
 			Expect(apierrors.IsNotFound(err)).To(BeTrue())
+		})
+	})
+
+	Context("Test register storage node", func() {
+		BeforeEach(func() {
+			mockCtrl = gomock.NewController(GinkgoT())
+			mockSS = mock_shardingsphere.NewMockIServer(mockCtrl)
+			monkey.Patch(shardingsphere.NewServer, func(_, _ string, _ uint, _, _ string) (shardingsphere.IServer, error) {
+				return mockSS, nil
+			})
+		})
+		AfterEach(func() {
+			mockCtrl.Finish()
+		})
+		It("should be successful when storage node is not registered", func() {
+			nodeName := "test register storage node"
+			cnName := "test-compute-node"
+			req := ctrl.Request{
+				NamespacedName: client.ObjectKey{
+					Name:      nodeName,
+					Namespace: defaultTestNamespace,
+				},
+			}
+			storageNode := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      nodeName,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						AnnotationKeyRegisterStorageUnitEnabled: "true",
+						AnnotationKeyDatabaseName:               "sharding_db",
+						AnnotationKeyComputeNodeNamespace:       defaultTestNamespace,
+						AnnotationKeyComputeNodeName:            cnName,
+					},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					DatabaseClassName: defaultTestDBClass,
+				},
+			}
+			ins := &dbmesh_rds.DescInstance{
+				DBInstanceIdentifier: "ins-test-register-storage-node",
+				DBInstanceStatus:     v1alpha1.StorageNodeInstanceStatusAvailable,
+				Endpoint: dbmesh_rds.Endpoint{
+					Address: "127.0.0.1",
+					Port:    3306,
+				},
+			}
+			cn := &v1alpha1.ComputeNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      cnName,
+					Namespace: defaultTestNamespace,
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					Bootstrap: v1alpha1.BootstrapConfig{
+						ServerConfig: v1alpha1.ServerConfig{
+							Authority: v1alpha1.ComputeNodeAuthority{
+								Users: []v1alpha1.ComputeNodeUser{
+									{
+										User:     "root@%",
+										Password: "root",
+									},
+								},
+								Privilege: v1alpha1.ComputeNodePrivilege{
+									Type: v1alpha1.AllPermitted,
+								},
+							},
+							Props: map[string]string{
+								ShardingSphereProtocolType: "MySQL",
+							},
+						},
+					},
+				},
+			}
+
+			svc := &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      cnName,
+					Namespace: defaultTestNamespace,
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{
+							Name: "shardingsphere-proxy",
+							Port: 3306,
+						},
+					},
+					ClusterIP: "127.0.0.1",
+					Type:      corev1.ServiceTypeClusterIP,
+				},
+			}
+
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, cn)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, svc)).Should(Succeed())
+
+			// mock aws rds client, get available instance
+			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(ins, nil)
+			// mock shardingsphere create database
+			mockSS.EXPECT().CreateDatabase(gomock.Any()).Return(nil)
+			// mock shardingsphere register storage unit
+			mockSS.EXPECT().RegisterStorageUnit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			// mock shardingsphere close connection
+			mockSS.EXPECT().Close()
+
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+
+			registeredSN := &v1alpha1.StorageNode{}
+			Expect(fakeClient.Get(ctx, client.ObjectKey{Name: defaultTestStorageNode, Namespace: defaultTestNamespace}, registeredSN)).Should(Succeed())
+			// TODO update storage node register status
 		})
 	})
 })

@@ -151,6 +151,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Scheme:   mgr.GetScheme(),
 			Log:      mgr.GetLogger(),
 			Recorder: mgr.GetEventRecorderFor(controllers.StorageNodeControllerName),
+			Service:  service.NewServiceClient(mgr.GetClient()),
 		}
 
 		// init aws client if aws credentials are provided
