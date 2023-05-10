@@ -19,16 +19,21 @@ package aws
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
+	"math/big"
+	"regexp"
 	"strconv"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
+	"github.com/database-mesh/golang-sdk/pkg/random"
 )
 
-func validCreateInstanceParams(node *v1alpha1.StorageNode, params map[string]string) error {
+// nolint:gocognit
+func validCreateInstanceParams(node *v1alpha1.StorageNode, paramsptr *map[string]string) error {
 	requiredParams := map[string]string{
 		"engine":             "engine is empty",
 		"engineVersion":      "engine version is empty",
@@ -37,11 +42,24 @@ func validCreateInstanceParams(node *v1alpha1.StorageNode, params map[string]str
 		"masterUserPassword": "master user password is empty",
 		"allocatedStorage":   "allocated storage is empty",
 	}
+	params := *paramsptr
 
 	for k, v := range requiredParams {
 		if val, ok := params[k]; !ok || val == "" {
-			return errors.New(v)
+			if k == "masterUserPassword" || k == "masterUsername" {
+				generator := generate(k)
+				params[k] = generator
+			} else {
+				return errors.New(v)
+			}
 		}
+	}
+	if username, ok := params["masterUsername"]; ok {
+		validatedUsername, err := validateusername(username)
+		if err != nil {
+			return err
+		}
+		params["masterUsername"] = validatedUsername
 	}
 
 	// validate instance identifier.
@@ -52,16 +70,59 @@ func validCreateInstanceParams(node *v1alpha1.StorageNode, params map[string]str
 	// TODO set options to generate password and write back to storage node annos.
 	// TODO set options to set master username by user.
 	// validate master user password length. must be greater than 8. from aws doc.
-	if len(params["masterUserPassword"]) < 8 {
+	lp := len(params["masterUserPassword"])
+	if lp < 8 || lp > 41 {
 		return errors.New("master user password length should be greater than 8")
+	} else {
+		node.Annotations[dbmeshv1alpha1.AnnotationsMasterUserPassword] = params["masterUserPassword"]
 	}
 
 	return nil
 }
 
+func validateusername(str string) (string, error) {
+	if l := len(str); l > 16 {
+		return "", errors.New("username length should be less than 16")
+	}
+
+	pattern := "^[a-zA-Z0-9_-]+$"
+	matched, err := regexp.MatchString(pattern, str)
+	if err != nil {
+		return "", fmt.Errorf("validateusername error: %s", err.Error())
+	}
+	if !matched {
+		return "", errors.New("username contains invalid characters")
+	}
+	str = regexp.MustCompile(`_{2,}`).ReplaceAllString(str, "_")
+	str = regexp.MustCompile(`-{2,}`).ReplaceAllString(str, "-")
+	return str, nil
+}
+
+func generate(gentype string) string {
+	switch gentype {
+	case "masterUsername":
+		nBig, err := rand.Int(rand.Reader, big.NewInt(int64(16)))
+		if err != nil {
+			return ""
+		}
+		length := int(nBig.Int64()) + 1
+		return random.StringN(length)
+	case "masterUserPassword":
+		nBig, err := rand.Int(rand.Reader, big.NewInt(int64(34)))
+		if err != nil {
+			return ""
+		}
+		length := int(nBig.Int64()) + 8
+		chars := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%^&*()_+-={}[]:;?"
+		return random.StringCustom(length, []byte(chars))
+	default:
+		return ""
+	}
+}
+
 func (c *RdsClient) CreateInstance(ctx context.Context, node *v1alpha1.StorageNode, params map[string]string) error {
 	// validate params
-	if err := validCreateInstanceParams(node, params); err != nil {
+	if err := validCreateInstanceParams(node, &params); err != nil {
 		return err
 	}
 
@@ -86,6 +147,12 @@ func (c *RdsClient) GetInstance(ctx context.Context, node *v1alpha1.StorageNode)
 	if !ok {
 		return nil, errors.New("instance identifier is empty")
 	}
+	instance := c.Instance()
+	instance.SetDBInstanceIdentifier(identifier)
+	return instance.Describe(ctx)
+}
+
+func (c *RdsClient) GetInstanceByIdentifier(ctx context.Context, identifier string) (*rds.DescInstance, error) {
 	instance := c.Instance()
 	instance.SetDBInstanceIdentifier(identifier)
 	return instance.Describe(ctx)
@@ -116,11 +183,23 @@ func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNo
 	if err != nil {
 		return err
 	}
-	if ins == nil || ins.DBInstanceStatus == "deleting" {
+	if ins == nil || ins.DBInstanceStatus == v1alpha1.StorageNodeInstanceStatusDeleting {
 		return nil
 	}
 
-	instance.SetDeleteAutomateBackups(true)
-	instance.SetSkipFinalSnapshot(true)
+	var isDeleteBackup, isSkipFinalSnapshot bool
+	switch databaseClass.Spec.ReclaimPolicy {
+	case dbmeshv1alpha1.DatabaseReclaimDeleteWithFinalSnapshot:
+		isDeleteBackup, isSkipFinalSnapshot = true, false
+	case dbmeshv1alpha1.DatabaseReclaimDelete:
+		isDeleteBackup, isSkipFinalSnapshot = true, true
+	case dbmeshv1alpha1.DatabaseReclaimRetain:
+		isDeleteBackup, isSkipFinalSnapshot = false, true
+	}
+	instance.SetDeleteAutomateBackups(isDeleteBackup)
+	instance.SetSkipFinalSnapshot(isSkipFinalSnapshot)
+
+	// instance.SetDeleteAutomateBackups(true)
+	// instance.SetSkipFinalSnapshot(true)
 	return instance.Delete(ctx)
 }

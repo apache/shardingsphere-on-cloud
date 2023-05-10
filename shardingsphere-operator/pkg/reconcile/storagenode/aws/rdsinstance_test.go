@@ -35,19 +35,31 @@ var _ = Describe("validCreateInstanceParams", func() {
 				Annotations: map[string]string{},
 			},
 		}
+		params := map[string]string{
+			"instanceClass":      "db.t3.micro",
+			"engine":             "mysql",
+			"engineVersion":      "5.7",
+			"masterUsername":     "root",
+			"masterUserPassword": "root123456",
+			"allocatedStorage":   "20",
+		}
 
 		It("should return true", func() {
-			params := map[string]string{
-				"instanceClass":      "db.t3.micro",
-				"engine":             "mysql",
-				"engineVersion":      "5.7",
-				"masterUsername":     "root",
-				"masterUserPassword": "root123456",
-				"allocatedStorage":   "20",
-			}
 
 			node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier] = "test-instance"
-			Expect(validCreateInstanceParams(node, params)).To(BeNil())
+			Expect(validCreateInstanceParams(node, &params)).To(BeNil())
+			Expect(node.Annotations[dbmeshv1alpha1.AnnotationsMasterUserPassword]).To(Equal("root123456"))
+		})
+		It("should return username contains invalid characters", func() {
+			params["masterUsername"] = "@masterUser"
+			node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier] = "test-instance"
+			Expect(validCreateInstanceParams(node, &params)).To(MatchError(ContainSubstring("username contains invalid characters")))
+		})
+		It("should handle multiple characters correctly", func() {
+			params["masterUsername"] = "test__test--"
+			node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier] = "test-instance"
+			Expect(validCreateInstanceParams(node, &params)).To(BeNil())
+			Expect(params["masterUsername"]).To(Equal("test_test-"))
 		})
 	})
 })
