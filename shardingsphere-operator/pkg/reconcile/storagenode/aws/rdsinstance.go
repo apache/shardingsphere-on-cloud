@@ -187,16 +187,16 @@ func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNo
 		return nil
 	}
 
-	var isBackup, isSkipFinalSnapshot bool
+	var isDeleteBackup, isSkipFinalSnapshot bool
 	switch databaseClass.Spec.ReclaimPolicy {
 	case dbmeshv1alpha1.DatabaseReclaimDeleteWithFinalSnapshot:
-		isBackup, isSkipFinalSnapshot = true, false
+		isDeleteBackup, isSkipFinalSnapshot = true, false
 	case dbmeshv1alpha1.DatabaseReclaimDelete:
-		isBackup, isSkipFinalSnapshot = true, true
+		isDeleteBackup, isSkipFinalSnapshot = true, true
 	case dbmeshv1alpha1.DatabaseReclaimRetain:
-		isBackup, isSkipFinalSnapshot = false, true
+		isDeleteBackup, isSkipFinalSnapshot = false, true
 	}
-	instance.SetDeleteAutomateBackups(isBackup)
+	instance.SetDeleteAutomateBackups(isDeleteBackup)
 	instance.SetSkipFinalSnapshot(isSkipFinalSnapshot)
 
 	// instance.SetDeleteAutomateBackups(true)
