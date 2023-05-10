@@ -115,7 +115,7 @@ $(LOCALBIN):
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
-CHECK_LINT?= $(LOCALBIN)/setup-golangci-lint
+CHECK_LINT?= $(LOCALBIN)/golangci-lint
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v4.5.7
@@ -137,10 +137,11 @@ envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
-.PHONY: check
-check: check-lint 
+.PHONY: lint
+lint: check-lint
+	GOBIN=$(LOCALBIN) CGO_ENABLED=0 golangci-lint run -v --timeout=5m ./...
 
 .PHONY: check-lint
 check-lint: $(CHECK_LINT) ## Download golangci-lint-setup locally if necessary.
 $(CHECK_LINT): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) CGO_ENABLED=0 golangci-lint run -v
+	GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest

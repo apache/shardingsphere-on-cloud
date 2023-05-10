@@ -6,9 +6,9 @@ require (
 	bou.ke/monkey v1.0.2
 	github.com/antlr/antlr4 v0.0.0-20181218183524-be58ebffde8e
 	github.com/chaos-mesh/chaos-mesh/api v0.0.0-20230410023700-25a841a23cd2
-	github.com/golang/mock v1.6.0
 	github.com/database-mesh/golang-sdk v0.0.0-20230420101548-53265cd9883a
 	github.com/go-logr/logr v1.2.4
+	github.com/golang/mock v1.6.0
 	github.com/onsi/ginkgo/v2 v2.8.0
 	github.com/onsi/gomega v1.26.0
 	github.com/prometheus/client_golang v1.14.0

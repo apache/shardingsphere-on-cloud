@@ -19,14 +19,12 @@ package e2e
 
 import (
 	"context"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/cmd/shardingsphere-operator/manager"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
@@ -104,11 +102,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	// set metrics bind address to :9081, diff from default metric port:8080 and health check port:8081 to avoid conflict port when running tests
-	os.Args = append(os.Args, "--metrics-bind-address=:9081")
-	opt := manager.ParseOptionsFromCmdFlags()
-
-	k8sManager, err := ctrl.NewManager(cfg, opt.Options)
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{})
 	Expect(err).ToNot(HaveOccurred())
 	// print k8sManager Options
 	sess := dbmesh_aws.NewSessions().SetCredential("AwsRegion", "AwsAccessKeyID", "AwsSecretAccessKey").Build()
