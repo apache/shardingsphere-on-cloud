@@ -183,6 +183,7 @@ func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNo
 	if err != nil {
 		return err
 	}
+
 	if ins == nil || ins.DBInstanceStatus == v1alpha1.StorageNodeInstanceStatusDeleting {
 		return nil
 	}
@@ -196,10 +197,9 @@ func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNo
 	case dbmeshv1alpha1.DatabaseReclaimRetain:
 		isDeleteBackup, isSkipFinalSnapshot = false, true
 	}
+
 	instance.SetDeleteAutomateBackups(isDeleteBackup)
 	instance.SetSkipFinalSnapshot(isSkipFinalSnapshot)
 
-	// instance.SetDeleteAutomateBackups(true)
-	// instance.SetSkipFinalSnapshot(true)
 	return instance.Delete(ctx)
 }
