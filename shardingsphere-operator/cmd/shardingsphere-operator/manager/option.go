@@ -37,12 +37,10 @@ import (
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	"go.uber.org/zap/zapcore"
 	batchV1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientset "k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -148,19 +146,11 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 		return nil
 	},
 	"StorageNode": func(mgr manager.Manager) error {
-		eventBroadcaster := record.NewBroadcaster()
-		recorder := eventBroadcaster.NewRecorder(
-			mgr.GetScheme(),
-			corev1.EventSource{
-				Component: controllers.StorageNodeControllerName,
-			},
-		)
-
 		reconciler := &controllers.StorageNodeReconciler{
 			Client:   mgr.GetClient(),
 			Scheme:   mgr.GetScheme(),
 			Log:      mgr.GetLogger(),
-			Recorder: recorder,
+			Recorder: mgr.GetEventRecorderFor(controllers.StorageNodeControllerName),
 		}
 
 		// init aws client if aws credentials are provided

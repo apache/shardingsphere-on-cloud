@@ -140,7 +140,7 @@ type StorageNodeStatus struct {
 
 const (
 	StorageNodeInstanceStatusAvailable = "available"
-	StorageNodeInstanceStatusBackingup = "backingup"
+	StorageNodeInstanceStatusBackingUp = "backing-up"
 	StorageNodeInstanceStatusCreating  = "creating"
 	StorageNodeInstanceStatusDeleting  = "deleting"
 	StorageNodeInstanceStatusFailed    = "failed"
@@ -150,6 +150,8 @@ const (
 	StorageNodeInstanceStatusStarting  = "starting"
 	StorageNodeInstanceStatusStopped   = "stopped"
 	StorageNodeInstanceStatusStopping  = "stopping"
+
+	StorageNodeInstanceStatusReady = "Ready"
 )
 
 // AddCondition adds the given condition to the StorageNodeConditions.

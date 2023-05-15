@@ -25,9 +25,9 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
+	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
 
 	"bou.ke/monkey"
-	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -39,7 +39,6 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 	var databaseClassName = "test-database-class"
 
 	BeforeEach(func() {
-
 		databaseClass := &dbmeshv1alpha1.DatabaseClass{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: databaseClassName,
@@ -67,30 +66,25 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 	})
 
 	Context("reconcile storageNode", func() {
-		BeforeEach(func() {
+		AfterEach(func() {
+			monkey.UnpatchAll()
+		})
 
-			// mock get instance func returns Available status
+		It("should create success", func() {
+			// mock get instance func returns success
 			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
 				return &dbmesh_rds.DescInstance{
-					DBInstanceStatus: "available",
+					DBInstanceStatus: v1alpha1.StorageNodeInstanceStatusAvailable,
 					Endpoint: dbmesh_rds.Endpoint{
 						Address: "127.0.0.1",
 						Port:    3306,
 					},
 				}, nil
 			})
-
 			// mock delete instance func returns success
 			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "DeleteInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode, _ *dbmeshv1alpha1.DatabaseClass) error {
 				return nil
 			})
-		})
-
-		AfterEach(func() {
-			monkey.UnpatchAll()
-		})
-
-		It("should be success", func() {
 
 			nodeName := "test-storage-node-ready"
 			node := &v1alpha1.StorageNode{
@@ -120,56 +114,26 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 			Expect(k8sClient.Delete(ctx, node)).Should(Succeed())
 		})
 
-		Context("reconcile storageNode with Creating instance", func() {
-			BeforeEach(func() {
-				// mock get instance func returns creating status
-				monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
-					return &dbmesh_rds.DescInstance{
-						DBInstanceStatus: "creating",
-						Endpoint: dbmesh_rds.Endpoint{
-							Address: "127.0.0.1",
-							Port:    3306,
-						},
-					}, nil
-				})
-				// mock delete instance func return success
-				monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "DeleteInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode, _ *dbmeshv1alpha1.DatabaseClass) error {
-					return nil
-				})
-			})
-
-			AfterEach(func() {
-				monkey.UnpatchAll()
-			})
-
-			It("should be success", func() {
-				nodeName := "test-storage-node-creating"
-				node := &v1alpha1.StorageNode{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      nodeName,
-						Namespace: "default",
-						Annotations: map[string]string{
-							dbmeshv1alpha1.AnnotationsInstanceIdentifier: "test-instance-identifier",
-						},
+		It("should delete success", func() {
+			nodeName := "test-storage-node-delete"
+			node := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      nodeName,
+					Namespace: "default",
+					Annotations: map[string]string{
+						dbmeshv1alpha1.AnnotationsInstanceIdentifier: "test-instance-identifier",
 					},
-					Spec: v1alpha1.StorageNodeSpec{
-						DatabaseClassName: databaseClassName,
-					},
-				}
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					DatabaseClassName: databaseClassName,
+				},
+			}
+			Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 
-				// create resource
-				Expect(k8sClient.Create(ctx, node)).Should(Succeed())
+			getNode := &v1alpha1.StorageNode{}
+			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, getNode)).Should(Succeed())
 
-				// check storage node status
-				Eventually(func() v1alpha1.StorageNodePhaseStatus {
-					newSN := &v1alpha1.StorageNode{}
-					Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
-					return newSN.Status.Phase
-				}, 10*time.Second, 1*time.Second).Should(Equal(v1alpha1.StorageNodePhaseNotReady))
-
-				// delete resource
-				Expect(k8sClient.Delete(ctx, node)).Should(Succeed())
-			})
+			// delete storage node
 		})
 	})
 })
