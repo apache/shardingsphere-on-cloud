@@ -19,6 +19,7 @@ package pkg
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -122,7 +123,11 @@ func (ss *shardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
 	}
 
 	var out model.ClusterInfo
-	if err = json.Unmarshal([]byte(data), &out); err != nil {
+	rawDecodedText, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, fmt.Errorf("base64 decode return err=%s", err)
+	}
+	if err = json.Unmarshal(rawDecodedText, &out); err != nil {
 		return nil, fmt.Errorf("json unmarshal return err=%s", err)
 	}
 
@@ -203,7 +208,7 @@ func (ss *shardingSphereProxy) ImportMetaData(in *model.ClusterInfo) error {
 		return xerr.NewCliErr(fmt.Sprintf("json marshal,invalid data[in=%+v]", in))
 	}
 
-	_, err = ss.db.Exec(fmt.Sprintf(`IMPORT METADATA '%s';`, marshal))
+	_, err = ss.db.Exec(fmt.Sprintf(`IMPORT METADATA '%s';`, base64.StdEncoding.EncodeToString(marshal)))
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("import metadata failure,err=%s", err))
 	}
