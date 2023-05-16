@@ -75,17 +75,17 @@ func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	node := &v1alpha1.StorageNode{}
 	if err := r.Get(ctx, req.NamespacedName, node); err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			r.Log.Info(fmt.Sprintf("StorageNode [%s:%s] is not exist", req.Namespace, req.Name))
+			r.Log.Info(fmt.Sprintf("StorageNode %s/%s is not exist", req.Namespace, req.Name))
 			return ctrl.Result{}, nil
 		}
-		r.Log.Error(err, fmt.Sprintf("unable to fetch StorageNode [%s:%s]", req.Namespace, req.Name))
+		r.Log.Error(err, fmt.Sprintf("unable to fetch StorageNode %s/%s", req.Namespace, req.Name))
 		return ctrl.Result{Requeue: true}, err
 	}
 
 	// Get databaseClass with storageNode.Spec.DatabaseClassName
 	databaseClass, err := r.getDatabaseClass(ctx, node)
 	if err != nil {
-		r.Log.Error(err, fmt.Sprintf("unable to fetch DatabaseClass [%s]", node.Spec.DatabaseClassName))
+		r.Log.Error(err, fmt.Sprintf("unable to fetch DatabaseClass %s", node.Spec.DatabaseClassName))
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -132,7 +132,7 @@ func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 			return ctrl.Result{}, nil
 		default:
-			r.Recorder.Event(node, corev1.EventTypeWarning, fmt.Sprintf("Delete [%s:%s] Failed", node.GetNamespace(), node.GetName()), "StorageNode is not in a valid phase")
+			r.Recorder.Event(node, corev1.EventTypeWarning, fmt.Sprintf("Delete %s/%s Failed", node.GetNamespace(), node.GetName()), "StorageNode is not in a valid phase")
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 		}
 	}
@@ -145,16 +145,16 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1
 	switch dbClass.Spec.Provisioner {
 	case dbmeshv1alpha1.ProvisionerAWSRDSInstance:
 		if err := r.reconcileAwsRdsInstance(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
-			r.Log.Error(err, fmt.Sprintf("unable to reconcile AWS RDS Instance [%s:%s], err:%s", node.GetNamespace(), node.GetName(), err.Error()))
-			r.Recorder.Event(node, corev1.EventTypeWarning, fmt.Sprintf("Reconcile [%s:%s] Failed", node.GetNamespace(), node.GetName()), err.Error())
+			r.Log.Error(err, fmt.Sprintf("unable to reconcile AWS RDS Instance %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
+			r.Recorder.Event(node, corev1.EventTypeWarning, fmt.Sprintf("Reconcile %s/%s Failed", node.GetNamespace(), node.GetName()), err.Error())
 		}
 	case dbmeshv1alpha1.ProvisionerAWSAurora:
 		if err := r.reconcileAwsAurora(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
-			r.Recorder.Event(node, corev1.EventTypeWarning, fmt.Sprintf("Reconcile [%s:%s] Failed", node.GetNamespace(), node.GetName()), err.Error())
+			r.Recorder.Event(node, corev1.EventTypeWarning, fmt.Sprintf("Reconcile %s/%s Failed", node.GetNamespace(), node.GetName()), err.Error())
 		}
 	default:
-		r.Recorder.Event(node, corev1.EventTypeWarning, "UnsupportedDatabaseProvisioner", fmt.Sprintf("unsupported database provisioner [%s]", dbClass.Spec.Provisioner))
-		r.Log.Error(nil, fmt.Sprintf("unsupported database provisioner [%s]", dbClass.Spec.Provisioner))
+		r.Recorder.Event(node, corev1.EventTypeWarning, "UnsupportedDatabaseProvisioner", fmt.Sprintf("unsupported database provisioner %s", dbClass.Spec.Provisioner))
+		r.Log.Error(nil, fmt.Sprintf("unsupported database provisioner %s", dbClass.Spec.Provisioner))
 	}
 
 	// update status
@@ -164,14 +164,14 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1
 		node.Status = desiredState
 		err := r.Status().Update(ctx, node)
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("unable to update StorageNode [%s:%s]", node.GetNamespace(), node.GetName()))
+			r.Log.Error(err, fmt.Sprintf("unable to update StorageNode %s/%s", node.GetNamespace(), node.GetName()))
 			return ctrl.Result{Requeue: true}, err
 		}
 	}
 
 	// register storage unit if needed.
 	if err := r.registerStorageUnit(ctx, node); err != nil {
-		r.Log.Error(err, fmt.Sprintf("unable to register storage unit [%s:%s]", node.GetNamespace(), node.GetName()))
+		r.Log.Error(err, fmt.Sprintf("unable to register storage unit %s/%s", node.GetNamespace(), node.GetName()))
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -187,8 +187,8 @@ func (r *StorageNodeReconciler) getDatabaseClass(ctx context.Context, node *v1al
 	databaseClass = &dbmeshv1alpha1.DatabaseClass{}
 
 	if err := r.Get(ctx, client.ObjectKey{Name: node.Spec.DatabaseClassName}, databaseClass); err != nil {
-		r.Log.Error(err, fmt.Sprintf("unable to fetch DatabaseClass [%s]", node.Spec.DatabaseClassName))
-		r.Recorder.Event(node, corev1.EventTypeWarning, "DatabaseClassNotFound", fmt.Sprintf("DatabaseClass [%s] not found", node.Spec.DatabaseClassName))
+		r.Log.Error(err, fmt.Sprintf("unable to fetch DatabaseClass %s", node.Spec.DatabaseClassName))
+		r.Recorder.Event(node, corev1.EventTypeWarning, "DatabaseClassNotFound", fmt.Sprintf("DatabaseClass %s not found", node.Spec.DatabaseClassName))
 		return nil, err
 	}
 
@@ -358,7 +358,7 @@ func (r *StorageNodeReconciler) reconcileAwsAurora(ctx context.Context, client a
 	}
 	node.Status.Cluster = newStatus
 	if err := r.Status().Update(ctx, node); err != nil {
-		r.Log.Error(err, fmt.Sprintf("Failed to update cluster status for node [%s:%s]", node.GetNamespace(), node.GetName()))
+		r.Log.Error(err, fmt.Sprintf("Failed to update cluster status for node %s/%s", node.GetNamespace(), node.GetName()))
 	}
 	r.Recorder.Eventf(node, corev1.EventTypeNormal, "Reconcile", "Reconciled Aurora cluster %s, status is %s", aurora.DBClusterIdentifier, aurora.Status)
 
@@ -410,7 +410,7 @@ func (r *StorageNodeReconciler) deleteDatabaseCluster(ctx context.Context, node 
 			return err
 		}
 	default:
-		return fmt.Errorf("unsupported database provisioner [%s]", databaseClass.Spec.Provisioner)
+		return fmt.Errorf("unsupported database provisioner %s", databaseClass.Spec.Provisioner)
 	}
 	return nil
 }
@@ -422,21 +422,21 @@ func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client
 	}
 
 	if instance == nil {
-		r.Log.Info(fmt.Sprintf("instance [%s] is not found", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
+		r.Log.Info(fmt.Sprintf("instance %s is not found", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
 		return nil
 	}
 
 	if instance.DBInstanceStatus == v1alpha1.StorageNodeInstanceStatusDeleting {
-		r.Log.Info(fmt.Sprintf("instance [%s] is deleting", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
+		r.Log.Info(fmt.Sprintf("instance %s is deleting", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
 		return nil
 	}
 
 	if err := client.DeleteInstance(ctx, node, databaseClass); err != nil {
-		r.Recorder.Eventf(node, corev1.EventTypeWarning, "DeleteFailed", "Failed to delete instance [%s]: %s", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier], err.Error())
+		r.Recorder.Eventf(node, corev1.EventTypeWarning, "DeleteFailed", "Failed to delete instance %s: %s", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier], err.Error())
 		return err
 	}
 
-	r.Recorder.Event(node, corev1.EventTypeNormal, "Deleting", fmt.Sprintf("instance [%s] is deleting", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
+	r.Recorder.Event(node, corev1.EventTypeNormal, "Deleting", fmt.Sprintf("instance %s is deleting", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
 
 	// update instance status
 	if err := updateAWSRDSInstanceStatus(node, instance); err != nil {
@@ -499,7 +499,7 @@ func validateComputeNodeAnnotations(node *v1alpha1.StorageNode) error {
 
 	for _, anno := range requiredAnnos {
 		if v, ok := node.Annotations[anno]; !ok || v == "" {
-			return fmt.Errorf("annotation [%s] is required", anno)
+			return fmt.Errorf("annotation %s is required", anno)
 		}
 	}
 
@@ -530,7 +530,7 @@ func (r *StorageNodeReconciler) getShardingsphereServer(ctx context.Context, nod
 	driver = strings.ToLower(driver)
 
 	if len(serverConf.Authority.Users) == 0 {
-		return nil, fmt.Errorf("no user in compute node [%s]", cn.Namespace+"/"+cn.Name)
+		return nil, fmt.Errorf("no user in compute node %s/%s", cn.Namespace, cn.Name)
 	}
 
 	username = serverConf.Authority.Users[0].User
