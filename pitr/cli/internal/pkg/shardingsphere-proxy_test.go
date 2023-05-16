@@ -18,12 +18,74 @@
 package pkg
 
 import (
+	"bou.ke/monkey"
+	"database/sql"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/gsutil"
+	"regexp"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+var _ = Describe("Test ShardingSphere Proxy With Sqlmock", func() {
+	var (
+		db     *sql.DB
+		dbmock sqlmock.Sqlmock
+		err    error
+		proxy  IShardingSphereProxy
+
+		clusterInfo = &model.ClusterInfo{
+			SnapshotInfo: &model.SnapshotInfo{
+				Csn:        "100",
+				CreateTime: "2023-05-16 18:12:20",
+			},
+			MetaData: model.MetaData{
+				Databases: map[string]string{
+					"sharding_db": "sharding_db",
+				},
+			},
+		}
+	)
+	BeforeEach(func() {
+		db, dbmock, err = sqlmock.New()
+		Expect(err).ShouldNot(HaveOccurred())
+		Expect(db).ShouldNot(BeNil())
+		Expect(dbmock).ShouldNot(BeNil())
+		monkey.Patch(gsutil.Open, func(_, _, _, _ string, _ uint16) (*sql.DB, error) {
+			return db, nil
+		})
+
+		proxy, err = NewShardingSphereProxy("root", "root", "opengauss", "localhost", 13308)
+		Expect(err).To(BeNil())
+	})
+	AfterEach(func() {
+		db.Close()
+	})
+
+	It("export metadata", func() {
+		data, err := json.Marshal(clusterInfo)
+		Expect(err).To(BeNil())
+		encodedData := base64.StdEncoding.EncodeToString(data)
+
+		dbmock.ExpectQuery(regexp.QuoteMeta("EXPORT METADATA;")).WillReturnRows(sqlmock.NewRows([]string{"id", "create_time", "data"}).AddRow("id", "2023-05-16", encodedData))
+		clusterInfo, err := proxy.ExportMetaData()
+		Expect(err).To(BeNil())
+		Expect(clusterInfo).NotTo(BeNil())
+		Expect(clusterInfo.SnapshotInfo.Csn).To(Equal("100"))
+	})
+
+	It("import metadata", func() {
+		dbmock.ExpectExec(regexp.QuoteMeta("IMPORT METADATA")).WillReturnResult(sqlmock.NewResult(1, 1))
+		Expect(proxy.ImportMetaData(clusterInfo)).To(BeNil())
+	})
+
+})
 
 var _ = Describe("IShardingSphereProxy", func() {
 	Context("NewShardingSphereProxy", func() {

@@ -5,6 +5,7 @@ go 1.20
 require (
 	bou.ke/monkey v1.0.2
 	gitee.com/opengauss/openGauss-connector-go-pq v1.0.4
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
