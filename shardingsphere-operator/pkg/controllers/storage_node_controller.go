@@ -21,9 +21,12 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/shardingsphere"
 
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
@@ -31,6 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/strings/slices"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,6 +44,13 @@ import (
 const (
 	StorageNodeControllerName = "storage-node-controller"
 	FinalizerName             = "shardingsphere.apache.org/finalizer"
+
+	AnnotationKeyRegisterStorageUnitEnabled = "shardingsphere.apache.org/register-storage-unit-enabled"
+	AnnotationKeyComputeNodeNamespace       = "shardingsphere.apache.org/compute-node-namespace"
+	AnnotationKeyComputeNodeName            = "shardingsphere.apache.org/compute-node-name"
+	AnnotationKeyDatabaseName               = "shardingsphere.apache.org/database-name"
+
+	ShardingSphereProtocolType = "proxy-frontend-database-protocol-type"
 )
 
 // StorageNodeReconciler is a controller for storage nodes
@@ -49,6 +60,8 @@ type StorageNodeReconciler struct {
 	Log      logr.Logger
 	Recorder record.EventRecorder
 	AwsRDS   rds.RDS
+
+	Service service.Service
 }
 
 // Reconcile handles main function of this controller
@@ -156,10 +169,21 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1
 		}
 	}
 
+	// register storage unit if needed.
+	if err := r.registerStorageUnit(ctx, node); err != nil {
+		r.Log.Error(err, fmt.Sprintf("unable to register storage unit [%s:%s]", node.GetNamespace(), node.GetName()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 }
 
 func (r *StorageNodeReconciler) getDatabaseClass(ctx context.Context, node *v1alpha1.StorageNode) (databaseClass *dbmeshv1alpha1.DatabaseClass, err error) {
+	if node.Spec.DatabaseClassName == "" {
+		r.Recorder.Event(node, corev1.EventTypeWarning, "DatabaseClassNameIsNil", "DatabaseClassName is nil")
+		return nil, fmt.Errorf("DatabaseClassName is nil")
+	}
+
 	databaseClass = &dbmeshv1alpha1.DatabaseClass{}
 
 	if err := r.Get(ctx, client.ObjectKey{Name: node.Spec.DatabaseClassName}, databaseClass); err != nil {
@@ -422,9 +446,123 @@ func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client
 	return nil
 }
 
+// registerStorageUnit
+func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v1alpha1.StorageNode) error {
+	// if register storage unit is not enabled, return
+	if node.Annotations[AnnotationKeyRegisterStorageUnitEnabled] != "true" {
+		return nil
+	}
+	// if node is not ready, return
+	if node.Status.Phase != v1alpha1.StorageNodePhaseReady {
+		return nil
+	}
+
+	if err := validateComputeNodeAnnotations(node); err != nil {
+		return err
+	}
+
+	dbName := node.Annotations[AnnotationKeyDatabaseName]
+
+	ssServer, err := r.getShardingsphereServer(ctx, node)
+	if err != nil {
+		return fmt.Errorf("getShardingsphereServer failed: %w", err)
+	}
+
+	defer ssServer.Close()
+
+	if err := ssServer.CreateDatabase(dbName); err != nil {
+		return fmt.Errorf("create database failed: %w", err)
+	}
+
+	// TODO add cluster
+
+	ins := node.Status.Instances[0]
+	host := ins.Endpoint.Address
+	port := ins.Endpoint.Port
+	username := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUsername]
+	password := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUserPassword]
+
+	// TODO how to set ds name?
+	if err := ssServer.RegisterStorageUnit("ds_0", host, uint(port), dbName, username, password); err != nil {
+		return fmt.Errorf("register storage node failed: %w", err)
+	}
+
+	return nil
+}
+
+func validateComputeNodeAnnotations(node *v1alpha1.StorageNode) error {
+	requiredAnnos := []string{
+		AnnotationKeyDatabaseName,
+		AnnotationKeyComputeNodeNamespace,
+		AnnotationKeyComputeNodeName,
+	}
+
+	for _, anno := range requiredAnnos {
+		if v, ok := node.Annotations[anno]; !ok || v == "" {
+			return fmt.Errorf("annotation [%s] is required", anno)
+		}
+	}
+
+	return nil
+}
+
+func (r *StorageNodeReconciler) getShardingsphereServer(ctx context.Context, node *v1alpha1.StorageNode) (shardingsphere.IServer, error) {
+	var (
+		driver, host, username, password string
+		port                             uint
+	)
+
+	// get compute node
+	cn := &v1alpha1.ComputeNode{}
+	if err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      node.Annotations[AnnotationKeyComputeNodeName],
+		Namespace: node.Annotations[AnnotationKeyComputeNodeNamespace],
+	}, cn); err != nil {
+		return nil, fmt.Errorf("get compute node failed: %w", err)
+	}
+
+	serverConf := cn.Spec.Bootstrap.ServerConfig
+
+	driver, ok := serverConf.Props[ShardingSphereProtocolType]
+	if !ok || driver == "" {
+		driver = "mysql"
+	}
+	driver = strings.ToLower(driver)
+
+	if len(serverConf.Authority.Users) == 0 {
+		return nil, fmt.Errorf("no user in compute node [%s]", cn.Namespace+"/"+cn.Name)
+	}
+
+	username = serverConf.Authority.Users[0].User
+	password = serverConf.Authority.Users[0].Password
+
+	// get service of compute node
+	svc, err := r.Service.GetByNamespacedName(ctx, types.NamespacedName{
+		Name:      node.Annotations[AnnotationKeyComputeNodeName],
+		Namespace: node.Annotations[AnnotationKeyComputeNodeNamespace],
+	})
+
+	if err != nil || svc == nil {
+		return nil, fmt.Errorf("get service failed: %w", err)
+	}
+
+	host = fmt.Sprintf("%s.%s", svc.Name, svc.Namespace)
+
+	port = uint(svc.Spec.Ports[0].Port)
+
+	ssServer, err := shardingsphere.NewServer(driver, host, port, username, password)
+	if err != nil {
+		return nil, fmt.Errorf("new shardingsphere server failed: %w", err)
+	}
+
+	return ssServer, nil
+}
+
 // SetupWithManager sets up the controller with the Manager
 func (r *StorageNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.StorageNode{}).
+		Owns(&v1alpha1.ComputeNode{}).
+		Owns(&corev1.Service{}).
 		Complete(r)
 }

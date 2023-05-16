@@ -134,6 +134,12 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, getNode)).Should(Succeed())
 
 			// delete storage node
+			Expect(k8sClient.Delete(ctx, getNode)).Should(Succeed())
+			Eventually(func() bool {
+				newSN := &v1alpha1.StorageNode{}
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)
+				return err != nil
+			}, 10*time.Second, 1*time.Second).Should(BeTrue())
 		})
 	})
 })
