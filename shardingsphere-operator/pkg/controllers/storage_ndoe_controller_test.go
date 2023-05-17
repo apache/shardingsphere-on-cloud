@@ -211,7 +211,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			Expect(fakeClient.Get(ctx, client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, newSN)).Should(Succeed())
 			Expect(newSN.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseNotReady))
 			Expect(newSN.Status.Instances).To(HaveLen(1))
-			Expect(newSN.Status.Instances[0].Status).To(Equal(dbmesh_rds.DBInstanceStatusCreating))
+			Expect(newSN.Status.Instances[0].Status).To(Equal(string(dbmesh_rds.DBInstanceStatusCreating)))
 		})
 
 		It("should reconcile successfully with Available Instance", func() {
@@ -240,7 +240,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 
 			Expect(newSN.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseReady))
 			Expect(newSN.Status.Instances).To(HaveLen(1))
-			Expect(newSN.Status.Instances[0].Status).To(Equal(dbmesh_rds.DBInstanceStatusReady))
+			Expect(newSN.Status.Instances[0].Status).To(Equal(string(dbmesh_rds.DBInstanceStatusReady)))
 		})
 	})
 
