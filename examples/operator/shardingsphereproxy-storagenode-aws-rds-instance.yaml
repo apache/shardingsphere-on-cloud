@@ -38,5 +38,13 @@ metadata:
   name: storage-node-example-1
   annotations:
     databaseclass.database-mesh.io/instance-identifier: "storage-node-example-1"
+    "databaseclass.database-mesh.io/instance-db-name": "test_db"
+
+    # annos about register storage unit
+    shardingsphere.apache.org/register-storage-unit-enabled: "false" # set ture if you want to test auto register storage unit.
+    shardingsphere.apache.org/logic-database-name: "sharding_db"
+    "shardingsphere.apache.org/compute-node-namespace": "default"
+    "shardingsphere.apache.org/compute-node-name": "shardingsphere-operator-shardingsphere-proxy"
+
 spec:
   databaseClassName: "aws-rds-instance-mysql-5.7"
