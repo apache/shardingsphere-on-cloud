@@ -74,7 +74,7 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 			// mock get instance func returns success
 			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
 				return &dbmesh_rds.DescInstance{
-					DBInstanceStatus: v1alpha1.StorageNodeInstanceStatusAvailable,
+					DBInstanceStatus: dbmesh_rds.DBInstanceStatusAvailable,
 					Endpoint: dbmesh_rds.Endpoint{
 						Address: "127.0.0.1",
 						Port:    3306,

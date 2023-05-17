@@ -219,7 +219,7 @@ func computeDesiredState(status v1alpha1.StorageNodeStatus) v1alpha1.StorageNode
 
 	for idx := range status.Instances {
 		ins := &status.Instances[idx]
-		if ins.Status == v1alpha1.StorageNodeInstanceStatusDeleting {
+		if ins.Status == string(rds.DBInstanceStatusDeleting) {
 			desiredState.Phase = v1alpha1.StorageNodePhaseDeleting
 		}
 	}
@@ -322,8 +322,8 @@ func updateAWSRDSInstanceStatus(node *v1alpha1.StorageNode, instance *rds.DescIn
 	instances := make([]v1alpha1.InstanceStatus, 0)
 
 	status := instance.DBInstanceStatus
-	if status == v1alpha1.StorageNodeInstanceStatusAvailable {
-		status = v1alpha1.StorageNodeInstanceStatusReady
+	if status == rds.DBInstanceStatusAvailable {
+		status = rds.DBInstanceStatusReady
 	}
 
 	instances = append(instances, v1alpha1.InstanceStatus{
@@ -331,7 +331,7 @@ func updateAWSRDSInstanceStatus(node *v1alpha1.StorageNode, instance *rds.DescIn
 			Address: instance.Endpoint.Address,
 			Port:    instance.Endpoint.Port,
 		},
-		Status: status,
+		Status: string(status),
 	})
 
 	node.Status.Instances = instances
@@ -426,7 +426,7 @@ func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client
 		return nil
 	}
 
-	if instance.DBInstanceStatus == v1alpha1.StorageNodeInstanceStatusDeleting {
+	if instance.DBInstanceStatus == rds.DBInstanceStatusDeleting {
 		r.Log.Info(fmt.Sprintf("instance %s is deleting", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
 		return nil
 	}

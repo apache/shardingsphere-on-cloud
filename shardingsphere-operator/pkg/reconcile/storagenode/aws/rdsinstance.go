@@ -184,7 +184,7 @@ func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNo
 		return err
 	}
 
-	if ins == nil || ins.DBInstanceStatus == v1alpha1.StorageNodeInstanceStatusDeleting {
+	if ins == nil || ins.DBInstanceStatus == rds.DBInstanceStatusDeleting {
 		return nil
 	}
 

@@ -7,7 +7,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/antlr/antlr4 v0.0.0-20181218183524-be58ebffde8e
 	github.com/chaos-mesh/chaos-mesh/api v0.0.0-20230410023700-25a841a23cd2
-	github.com/database-mesh/golang-sdk v0.0.0-20230420101548-53265cd9883a
+	github.com/database-mesh/golang-sdk v0.0.0-20230516054805-7327e50f039f
 	github.com/go-logr/logr v1.2.4
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0

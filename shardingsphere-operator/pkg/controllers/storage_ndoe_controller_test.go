@@ -194,7 +194,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			}
 
 			rdsInstance := &dbmesh_rds.DescInstance{
-				DBInstanceStatus: v1alpha1.StorageNodeInstanceStatusCreating,
+				DBInstanceStatus: dbmesh_rds.DBInstanceStatusCreating,
 				Endpoint: dbmesh_rds.Endpoint{
 					Address: "127.0.0.1",
 					Port:    3306,
@@ -211,7 +211,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			Expect(fakeClient.Get(ctx, client.ObjectKey{Name: "test-storage-node", Namespace: "test-namespace"}, newSN)).Should(Succeed())
 			Expect(newSN.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseNotReady))
 			Expect(newSN.Status.Instances).To(HaveLen(1))
-			Expect(newSN.Status.Instances[0].Status).To(Equal(v1alpha1.StorageNodeInstanceStatusCreating))
+			Expect(newSN.Status.Instances[0].Status).To(Equal(dbmesh_rds.DBInstanceStatusCreating))
 		})
 
 		It("should reconcile successfully with Available Instance", func() {
@@ -223,7 +223,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			}
 
 			rdsInstance := &dbmesh_rds.DescInstance{
-				DBInstanceStatus: v1alpha1.StorageNodeInstanceStatusAvailable,
+				DBInstanceStatus: dbmesh_rds.DBInstanceStatusAvailable,
 				Endpoint: dbmesh_rds.Endpoint{
 					Address: "127.0.0.1",
 					Port:    3306,
@@ -240,7 +240,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 
 			Expect(newSN.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseReady))
 			Expect(newSN.Status.Instances).To(HaveLen(1))
-			Expect(newSN.Status.Instances[0].Status).To(Equal(v1alpha1.StorageNodeInstanceStatusReady))
+			Expect(newSN.Status.Instances[0].Status).To(Equal(dbmesh_rds.DBInstanceStatusReady))
 		})
 	})
 
@@ -248,7 +248,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 		var (
 			rdsInstanceAvailable = dbmesh_rds.DescInstance{
 				DBInstanceIdentifier: defaultTestInstanceIdentifier,
-				DBInstanceStatus:     v1alpha1.StorageNodeInstanceStatusAvailable,
+				DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
 				Endpoint: dbmesh_rds.Endpoint{
 					Address: "127.0.0.1",
 					Port:    3306,
@@ -256,7 +256,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			}
 			instanceInDeleting = dbmesh_rds.DescInstance{
 				DBInstanceIdentifier: defaultTestInstanceIdentifier,
-				DBInstanceStatus:     v1alpha1.StorageNodeInstanceStatusDeleting,
+				DBInstanceStatus:     dbmesh_rds.DBInstanceStatusDeleting,
 				Endpoint: dbmesh_rds.Endpoint{
 					Address: "127.0.0.1",
 					Port:    3306,
@@ -333,7 +333,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					Phase: v1alpha1.StorageNodePhaseDeleting,
 					Instances: []v1alpha1.InstanceStatus{
 						{
-							Status: v1alpha1.StorageNodeInstanceStatusDeleting,
+							Status: string(dbmesh_rds.DBInstanceStatusDeleting),
 							Endpoint: v1alpha1.Endpoint{
 								Address: "127.0.0.1",
 								Port:    3306,
@@ -425,7 +425,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			}
 			ins := &dbmesh_rds.DescInstance{
 				DBInstanceIdentifier: "ins-test-register-storage-node",
-				DBInstanceStatus:     v1alpha1.StorageNodeInstanceStatusAvailable,
+				DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
 				Endpoint: dbmesh_rds.Endpoint{
 					Address: "127.0.0.1",
 					Port:    3306,

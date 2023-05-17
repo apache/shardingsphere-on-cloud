@@ -138,22 +138,6 @@ type StorageNodeStatus struct {
 	Instances []InstanceStatus `json:"instances,omitempty"`
 }
 
-const (
-	StorageNodeInstanceStatusAvailable = "available"
-	StorageNodeInstanceStatusBackingUp = "backing-up"
-	StorageNodeInstanceStatusCreating  = "creating"
-	StorageNodeInstanceStatusDeleting  = "deleting"
-	StorageNodeInstanceStatusFailed    = "failed"
-	StorageNodeInstanceStatusModifying = "modifying"
-	StorageNodeInstanceStatusRebooting = "rebooting"
-	StorageNodeInstanceStatusRenaming  = "renaming"
-	StorageNodeInstanceStatusStarting  = "starting"
-	StorageNodeInstanceStatusStopped   = "stopped"
-	StorageNodeInstanceStatusStopping  = "stopping"
-
-	StorageNodeInstanceStatusReady = "Ready"
-)
-
 // AddCondition adds the given condition to the StorageNodeConditions.
 func (c *StorageNodeConditions) AddCondition(condition *StorageNodeCondition) {
 	*c = append(*c, condition)

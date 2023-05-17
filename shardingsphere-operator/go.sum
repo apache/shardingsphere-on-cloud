@@ -60,6 +60,8 @@ github.com/cncf/xds/go v0.0.0-20210312221358-fbca930ec8ed/go.mod h1:eXthEFrGJvWH
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/database-mesh/golang-sdk v0.0.0-20230420101548-53265cd9883a h1:DkGqsSh0KgR3bRuk3DKtbVG5nOe6RIea1oikjbGDGIY=
 github.com/database-mesh/golang-sdk v0.0.0-20230420101548-53265cd9883a/go.mod h1:yUEdo+aGdROl9oC7A1GeDB9/ubUtV2k73uLL+qC3PC4=
+github.com/database-mesh/golang-sdk v0.0.0-20230516054805-7327e50f039f h1:F6bdiOSTeefZl7EgIwlub/EqgGnNunY7PQ+Opj2cXWk=
+github.com/database-mesh/golang-sdk v0.0.0-20230516054805-7327e50f039f/go.mod h1:yUEdo+aGdROl9oC7A1GeDB9/ubUtV2k73uLL+qC3PC4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
