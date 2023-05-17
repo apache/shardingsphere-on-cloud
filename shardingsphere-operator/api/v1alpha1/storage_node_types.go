@@ -39,6 +39,8 @@ const (
 	StorageNodeConditionTypeAvailable StorageNodeConditionType = "Available"
 	// StorageNodeConditionTypeClusterReady means the cluster is ready, does not mean the instances are all ready.
 	StorageNodeConditionTypeClusterReady StorageNodeConditionType = "ClusterReady"
+	// StorageNodeConditionTypeRegistered means the storage node is registered to the cluster.
+	StorageNodeConditionTypeRegistered StorageNodeConditionType = "Registered"
 )
 
 type StorageNodeConditions []*StorageNodeCondition
@@ -85,6 +87,7 @@ type Endpoint struct {
 }
 
 // +kubebuilder:object:root=true
+
 // StorageNodeList contains a list of StorageNode
 type StorageNodeList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -93,8 +96,12 @@ type StorageNodeList struct {
 }
 
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
+// +kubebuilder:printcolumn:JSONPath=".status.Cluster.Status",name=ClusterStatus,type=string
+// +kubebuilder:printcolumn:JSONPath=".status.Registered",name=Registered,type=boolean,priority=1
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+
 // StorageNode is the Schema for the ShardingSphere storage unit
 type StorageNode struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -134,8 +141,12 @@ type StorageNodeStatus struct {
 	// +optional
 	Cluster ClusterStatus `json:"cluster,omitempty"`
 
-	// Instance contains the current status of the StorageNode instance
+	// Instances contains the current status of the StorageNode instance
 	Instances []InstanceStatus `json:"instances,omitempty"`
+
+	// Registered indicates whether the StorageNode has been registered to shardingsphere
+	// +optional
+	Registered bool `json:"registered,omitempty"`
 }
 
 // AddCondition adds the given condition to the StorageNodeConditions.

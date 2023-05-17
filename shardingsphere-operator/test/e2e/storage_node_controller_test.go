@@ -13,21 +13,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package e2e
 
 import (
 	"context"
+	"database/sql"
+	"github.com/DATA-DOG/go-sqlmock"
 	"reflect"
+	"regexp"
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
-	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
 
 	"bou.ke/monkey"
+	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -140,6 +143,115 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 				err := k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)
 				return err != nil
 			}, 10*time.Second, 1*time.Second).Should(BeTrue())
+		})
+
+		It("should register storage unit success", func() {
+			// mock mysql
+			db, dbmock, err := sqlmock.New()
+			Expect(err).Should(Succeed())
+			Expect(dbmock).ShouldNot(BeNil())
+			defer db.Close()
+
+			// mock rds DescribeDBInstances func returns success
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
+				return &dbmesh_rds.DescInstance{
+					DBInstanceStatus: v1alpha1.StorageNodeInstanceStatusAvailable,
+					Endpoint: dbmesh_rds.Endpoint{
+						Address: "127.0.0.1",
+						Port:    3306,
+					},
+				}, nil
+			})
+			monkey.Patch(sql.Open, func(_ string, _ string) (*sql.DB, error) {
+				return db, nil
+			})
+
+			cn := &v1alpha1.ComputeNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-compute-node",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "test-app",
+					},
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app": "test-app",
+						},
+					},
+					PortBindings: []v1alpha1.PortBinding{
+						{
+							Name:          "http",
+							ContainerPort: 3307,
+							Protocol:      "TCP",
+							ServicePort:   3307,
+						},
+					},
+					Bootstrap: v1alpha1.BootstrapConfig{
+						ServerConfig: v1alpha1.ServerConfig{
+							Authority: v1alpha1.ComputeNodeAuthority{
+								Users: []v1alpha1.ComputeNodeUser{
+									{
+										User:     "test-user",
+										Password: "test-password",
+									},
+								},
+								Privilege: v1alpha1.ComputeNodePrivilege{
+									Type: v1alpha1.AllPermitted,
+								},
+							},
+							Props: map[string]string{
+								"proxy-frontend-database-protocol-type": "MySQL",
+							},
+							Mode: v1alpha1.ComputeNodeServerMode{
+								Repository: v1alpha1.Repository{
+									Type:  "ZooKeeper",
+									Props: nil,
+								},
+								Type: "Zookeeper",
+							},
+						},
+					},
+				},
+			}
+
+			nodeName := "test-storage-node-register"
+			node := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      nodeName,
+					Namespace: "default",
+					Annotations: map[string]string{
+						dbmeshv1alpha1.AnnotationsInstanceIdentifier:        "test-instance-identifier",
+						controllers.AnnotationKeyRegisterStorageUnitEnabled: "true",
+						dbmeshv1alpha1.AnnotationsInstanceDBName:            "test-db-name",
+						controllers.AnnotationKeyComputeNodeNamespace:       "default",
+						controllers.AnnotationKeyComputeNodeName:            "test-compute-node",
+						controllers.AnnotationKeyLogicDatabaseName:          "test-logic-db-name",
+					},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					DatabaseClassName: databaseClassName,
+				},
+			}
+
+			Expect(k8sClient.Create(ctx, cn)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, node)).Should(Succeed())
+
+			dbmock.ExpectExec(regexp.QuoteMeta("CREATE DATABASE IF NOT EXISTS")).WillReturnResult(sqlmock.NewResult(0, 0))
+			dbmock.ExpectExec(regexp.QuoteMeta("REGISTER STORAGE UNIT IF NOT EXISTS")).WillReturnResult(sqlmock.NewResult(0, 0))
+
+			Eventually(func() v1alpha1.StorageNodePhaseStatus {
+				newSN := &v1alpha1.StorageNode{}
+				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
+				return newSN.Status.Phase
+			}, 10, 1).Should(Equal(v1alpha1.StorageNodePhaseReady))
+
+			Eventually(func() bool {
+				newSN := &v1alpha1.StorageNode{}
+				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
+				return newSN.Status.Registered
+			}, 10, 1).Should(BeTrue())
 		})
 	})
 })

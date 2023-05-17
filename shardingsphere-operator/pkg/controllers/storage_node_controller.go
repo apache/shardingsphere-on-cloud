@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -48,7 +49,7 @@ const (
 	AnnotationKeyRegisterStorageUnitEnabled = "shardingsphere.apache.org/register-storage-unit-enabled"
 	AnnotationKeyComputeNodeNamespace       = "shardingsphere.apache.org/compute-node-namespace"
 	AnnotationKeyComputeNodeName            = "shardingsphere.apache.org/compute-node-name"
-	AnnotationKeyDatabaseName               = "shardingsphere.apache.org/database-name"
+	AnnotationKeyLogicDatabaseName          = "shardingsphere.apache.org/logic-database-name"
 
 	ShardingSphereProtocolType = "proxy-frontend-database-protocol-type"
 )
@@ -157,7 +158,16 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1
 		r.Log.Error(nil, fmt.Sprintf("unsupported database provisioner %s", dbClass.Spec.Provisioner))
 	}
 
-	// update status
+	d, _ := json.MarshalIndent(node.Status, "", "  ")
+	r.Log.Info(string(d))
+
+	// register storage unit if needed.
+	if err := r.registerStorageUnit(ctx, node); err != nil {
+		r.Recorder.Eventf(node, corev1.EventTypeWarning, "RegisterStorageUnitFailed", "unable to register storage unit %s/%s", node.GetNamespace(), node.GetName())
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	// finally, update status
 	desiredState := computeDesiredState(node.Status)
 
 	if !reflect.DeepEqual(node.Status, desiredState) {
@@ -169,11 +179,8 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1
 		}
 	}
 
-	// register storage unit if needed.
-	if err := r.registerStorageUnit(ctx, node); err != nil {
-		r.Log.Error(err, fmt.Sprintf("unable to register storage unit %s/%s", node.GetNamespace(), node.GetName()))
-		return ctrl.Result{Requeue: true}, err
-	}
+	d, _ = json.MarshalIndent(node.Status, "", "  ")
+	r.Log.Info(string(d))
 
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 }
@@ -204,7 +211,7 @@ func (r *StorageNodeReconciler) getDatabaseClass(ctx context.Context, node *v1al
 	return databaseClass, nil
 }
 
-// nolint:gocritic,gocognit
+// nolint:gocritic
 func computeDesiredState(status v1alpha1.StorageNodeStatus) v1alpha1.StorageNodeStatus {
 	// Initialize a new status object based on the current state
 	desiredState := status
@@ -228,6 +235,13 @@ func computeDesiredState(status v1alpha1.StorageNodeStatus) v1alpha1.StorageNode
 		desiredState.Phase = v1alpha1.StorageNodePhaseDeleteComplete
 	}
 
+	desiredState.Conditions = computeNewConditions(desiredState, status, clusterStatus)
+
+	return desiredState
+}
+
+// nolint:gocritic
+func computeNewConditions(desiredState, status v1alpha1.StorageNodeStatus, clusterStatus string) v1alpha1.StorageNodeConditions {
 	newSNConditions := status.Conditions
 
 	// Update the cluster ready condition if the cluster status is not empty
@@ -268,9 +282,23 @@ func computeDesiredState(status v1alpha1.StorageNodeStatus) v1alpha1.StorageNode
 		})
 	}
 
-	desiredState.Conditions = newSNConditions
-
-	return desiredState
+	// Update the registered condition
+	if status.Registered {
+		newSNConditions.UpsertCondition(&v1alpha1.StorageNodeCondition{
+			Type:           v1alpha1.StorageNodeConditionTypeRegistered,
+			Status:         corev1.ConditionTrue,
+			LastUpdateTime: metav1.Now(),
+			Reason:         "StorageNode is registered",
+		})
+	} else {
+		newSNConditions.UpsertCondition(&v1alpha1.StorageNodeCondition{
+			Type:           v1alpha1.StorageNodeConditionTypeRegistered,
+			Status:         corev1.ConditionFalse,
+			LastUpdateTime: metav1.Now(),
+			Reason:         "StorageNode is not registered",
+		})
+	}
+	return newSNConditions
 }
 
 // allInstancesReady returns true if all instances are ready, false otherwise
@@ -450,10 +478,18 @@ func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client
 func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v1alpha1.StorageNode) error {
 	// if register storage unit is not enabled, return
 	if node.Annotations[AnnotationKeyRegisterStorageUnitEnabled] != "true" {
+		r.Log.Info(fmt.Sprintf("register storage unit is not enabled for node %s/%s", node.GetNamespace(), node.GetName()))
 		return nil
 	}
+
+	// if storage unit is already registered, return
+	if node.Status.Registered {
+		return nil
+	}
+
 	// if node is not ready, return
 	if node.Status.Phase != v1alpha1.StorageNodePhaseReady {
+		r.Recorder.Eventf(node, corev1.EventTypeWarning, "RegisterCanceled", "Canceled to register storage unit for node %s/%s: node is not ready", node.GetNamespace(), node.GetName())
 		return nil
 	}
 
@@ -461,7 +497,8 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 		return err
 	}
 
-	dbName := node.Annotations[AnnotationKeyDatabaseName]
+	logicDBName := node.Annotations[AnnotationKeyLogicDatabaseName]
+	dbName := node.Annotations[dbmeshv1alpha1.AnnotationsInstanceDBName]
 
 	ssServer, err := r.getShardingsphereServer(ctx, node)
 	if err != nil {
@@ -470,29 +507,33 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 
 	defer ssServer.Close()
 
-	if err := ssServer.CreateDatabase(dbName); err != nil {
+	if err := ssServer.CreateDatabase(logicDBName); err != nil {
 		return fmt.Errorf("create database failed: %w", err)
 	}
+	r.Recorder.Eventf(node, corev1.EventTypeNormal, "LogicDatabaseCreated", "LogicDatabase %s is created", logicDBName)
 
 	// TODO add cluster
 
 	ins := node.Status.Instances[0]
 	host := ins.Endpoint.Address
 	port := ins.Endpoint.Port
-	username := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUsername]
+	username := strings.Split(node.Annotations[dbmeshv1alpha1.AnnotationsMasterUsername], "@")[0]
 	password := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUserPassword]
 
 	// TODO how to set ds name?
 	if err := ssServer.RegisterStorageUnit("ds_0", host, uint(port), dbName, username, password); err != nil {
 		return fmt.Errorf("register storage node failed: %w", err)
 	}
+	r.Recorder.Eventf(node, corev1.EventTypeNormal, "StorageUnitRegistered", "StorageUnit %s:%d/%s is registered", host, port, dbName)
 
+	node.Status.Registered = true
 	return nil
 }
 
 func validateComputeNodeAnnotations(node *v1alpha1.StorageNode) error {
 	requiredAnnos := []string{
-		AnnotationKeyDatabaseName,
+		AnnotationKeyLogicDatabaseName,
+		dbmeshv1alpha1.AnnotationsInstanceDBName,
 		AnnotationKeyComputeNodeNamespace,
 		AnnotationKeyComputeNodeName,
 	}
@@ -562,7 +603,5 @@ func (r *StorageNodeReconciler) getShardingsphereServer(ctx context.Context, nod
 func (r *StorageNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.StorageNode{}).
-		Owns(&v1alpha1.ComputeNode{}).
-		Owns(&corev1.Service{}).
 		Complete(r)
 }
