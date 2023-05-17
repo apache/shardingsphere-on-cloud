@@ -112,6 +112,7 @@ var _ = BeforeSuite(func() {
 		Log:      ctrl.Log.WithName("controllers").WithName("StorageNode"),
 		Recorder: k8sManager.GetEventRecorderFor("StorageNode"),
 		AwsRDS:   dbmesh_rds.NewService(sess["AwsRegion"]),
+		Service:  service.NewServiceClient(k8sManager.GetClient()),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

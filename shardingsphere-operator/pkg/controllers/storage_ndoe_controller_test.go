@@ -413,10 +413,11 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					Name:      nodeName,
 					Namespace: defaultTestNamespace,
 					Annotations: map[string]string{
-						AnnotationKeyRegisterStorageUnitEnabled: "true",
-						AnnotationKeyDatabaseName:               "sharding_db",
-						AnnotationKeyComputeNodeNamespace:       defaultTestNamespace,
-						AnnotationKeyComputeNodeName:            cnName,
+						AnnotationKeyRegisterStorageUnitEnabled:  "true",
+						dbmeshv1alpha1.AnnotationsInstanceDBName: "test_db",
+						AnnotationKeyComputeNodeNamespace:        defaultTestNamespace,
+						AnnotationKeyComputeNodeName:             cnName,
+						AnnotationKeyLogicDatabaseName:           "sharding_db",
 					},
 				},
 				Spec: v1alpha1.StorageNodeSpec{
@@ -480,7 +481,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			Expect(fakeClient.Create(ctx, svc)).Should(Succeed())
 
 			// mock aws rds client, get available instance
-			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(ins, nil)
+			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(ins, nil).AnyTimes()
 			// mock shardingsphere create database
 			mockSS.EXPECT().CreateDatabase(gomock.Any()).Return(nil)
 			// mock shardingsphere register storage unit
@@ -488,12 +489,168 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			// mock shardingsphere close connection
 			mockSS.EXPECT().Close()
 
+			// reconcile storage node status to Ready
 			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+			// reconcile to register storage node
+			_, err = reconciler.Reconcile(ctx, req)
 			Expect(err).To(BeNil())
 
 			registeredSN := &v1alpha1.StorageNode{}
-			Expect(fakeClient.Get(ctx, client.ObjectKey{Name: defaultTestStorageNode, Namespace: defaultTestNamespace}, registeredSN)).Should(Succeed())
-			// TODO update storage node register status
+			Expect(fakeClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: defaultTestNamespace}, registeredSN)).Should(Succeed())
+			Expect(registeredSN.Status.Registered).To(BeTrue())
+		})
+	})
+
+	Context("Test getShardingsphereServer", func() {
+		BeforeEach(func() {
+			mockCtrl = gomock.NewController(GinkgoT())
+			mockSS = mock_shardingsphere.NewMockIServer(mockCtrl)
+			monkey.Patch(shardingsphere.NewServer, func(_, _ string, _ uint, _, _ string) (shardingsphere.IServer, error) {
+				return mockSS, nil
+			})
+		})
+		AfterEach(func() {
+			mockCtrl.Finish()
+			monkey.UnpatchAll()
+		})
+		It("should be successful when get shardingsphere server", func() {
+			cn := &v1alpha1.ComputeNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-get-shardingsphere-server",
+					Namespace: defaultTestNamespace,
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					Bootstrap: v1alpha1.BootstrapConfig{
+						ServerConfig: v1alpha1.ServerConfig{
+							Authority: v1alpha1.ComputeNodeAuthority{
+								Users: []v1alpha1.ComputeNodeUser{
+									{
+										User:     "root",
+										Password: "root",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			svc := &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-get-shardingsphere-server",
+					Namespace: defaultTestNamespace,
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     3307,
+						},
+					},
+				},
+			}
+			Expect(fakeClient.Create(ctx, cn)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, svc)).Should(Succeed())
+
+			sn := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-get-shardingsphere-server",
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						AnnotationKeyComputeNodeName:      "test-get-shardingsphere-server",
+						AnnotationKeyComputeNodeNamespace: defaultTestNamespace,
+					},
+				},
+			}
+
+			ss, err := reconciler.getShardingsphereServer(ctx, sn)
+			Expect(err).To(BeNil())
+			Expect(ss).ToNot(BeNil())
+		})
+	})
+
+	Context("Test registerStorageUnit", func() {
+		BeforeEach(func() {
+			mockCtrl = gomock.NewController(GinkgoT())
+			mockSS = mock_shardingsphere.NewMockIServer(mockCtrl)
+			monkey.Patch(shardingsphere.NewServer, func(_, _ string, _ uint, _, _ string) (shardingsphere.IServer, error) {
+				return mockSS, nil
+			})
+		})
+		AfterEach(func() {
+			mockCtrl.Finish()
+			monkey.UnpatchAll()
+		})
+		It("should be successful when register storage unit", func() {
+			testName := "test-register-storage-unit"
+			cn := &v1alpha1.ComputeNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: defaultTestNamespace,
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					Bootstrap: v1alpha1.BootstrapConfig{
+						ServerConfig: v1alpha1.ServerConfig{
+							Authority: v1alpha1.ComputeNodeAuthority{
+								Users: []v1alpha1.ComputeNodeUser{
+									{
+										User:     "root",
+										Password: "root",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			svc := &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: defaultTestNamespace,
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     3307,
+						},
+					},
+				},
+			}
+			Expect(fakeClient.Create(ctx, cn)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, svc)).Should(Succeed())
+
+			sn := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						AnnotationKeyComputeNodeName:             testName,
+						AnnotationKeyComputeNodeNamespace:        defaultTestNamespace,
+						AnnotationKeyRegisterStorageUnitEnabled:  "true",
+						AnnotationKeyLogicDatabaseName:           testName,
+						dbmeshv1alpha1.AnnotationsInstanceDBName: testName,
+					},
+				},
+				Status: v1alpha1.StorageNodeStatus{
+					Phase: v1alpha1.StorageNodePhaseReady,
+					Instances: []v1alpha1.InstanceStatus{
+						{
+							Status:   v1alpha1.StorageNodeInstanceStatusAvailable,
+							Endpoint: v1alpha1.Endpoint{},
+						},
+					},
+				},
+			}
+
+			mockSS.EXPECT().CreateDatabase(gomock.Any()).Return(nil)
+			mockSS.EXPECT().Close().Return(nil)
+			mockSS.EXPECT().RegisterStorageUnit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			Expect(reconciler.registerStorageUnit(ctx, sn)).To(BeNil())
+			Expect(sn.Status.Registered).To(BeTrue())
 		})
 	})
 })

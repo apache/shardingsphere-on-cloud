@@ -54,6 +54,7 @@ func validCreateInstanceParams(node *v1alpha1.StorageNode, paramsptr *map[string
 			}
 		}
 	}
+
 	if username, ok := params["masterUsername"]; ok {
 		validatedUsername, err := validateusername(username)
 		if err != nil {
@@ -139,6 +140,10 @@ func (c *RdsClient) CreateInstance(ctx context.Context, node *v1alpha1.StorageNo
 		SetMasterUsername(params["masterUsername"]).
 		SetMasterUserPassword(params["masterUserPassword"]).
 		SetAllocatedStorage(int32(storage))
+	// set database name if needed.
+	if v, ok := params[node.Annotations[""]]; ok {
+		instance.SetDBName(v)
+	}
 	return instance.Create(ctx)
 }
 
