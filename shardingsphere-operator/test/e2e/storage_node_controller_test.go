@@ -21,6 +21,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/DATA-DOG/go-sqlmock"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"reflect"
 	"regexp"
 	"time"
@@ -145,15 +146,13 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 			}, 10*time.Second, 1*time.Second).Should(BeTrue())
 		})
 
-		It("should register storage unit success", func() {
+		It("should register and unregister storage unit success", func() {
 			// mock mysql
 			db, dbmock, err := sqlmock.New()
 			Expect(err).Should(Succeed())
 			Expect(dbmock).ShouldNot(BeNil())
-			defer db.Close()
-
 			// mock rds DescribeDBInstances func returns success
-			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
+			g := monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
 				return &dbmesh_rds.DescInstance{
 					DBInstanceStatus: dbmesh_rds.DBInstanceStatusAvailable,
 					Endpoint: dbmesh_rds.Endpoint{
@@ -162,8 +161,14 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 					},
 				}, nil
 			})
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "DeleteInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode, _ *dbmeshv1alpha1.DatabaseClass) error {
+				return nil
+			})
 			monkey.Patch(sql.Open, func(_ string, _ string) (*sql.DB, error) {
 				return db, nil
+			})
+			monkey.PatchInstanceMethod(reflect.TypeOf(db), "Close", func(_ *sql.DB) error {
+				return nil
 			})
 
 			cn := &v1alpha1.ComputeNode{
@@ -238,20 +243,43 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 			Expect(k8sClient.Create(ctx, cn)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 
-			dbmock.ExpectExec(regexp.QuoteMeta("CREATE DATABASE IF NOT EXISTS")).WillReturnResult(sqlmock.NewResult(0, 0))
+			dbmock.ExpectExec(regexp.QuoteMeta("CREATE DATABASE IF NOT EXISTS")).WillReturnResult(sqlmock.NewResult(1, 1))
 			dbmock.ExpectExec(regexp.QuoteMeta("REGISTER STORAGE UNIT IF NOT EXISTS")).WillReturnResult(sqlmock.NewResult(0, 0))
 
 			Eventually(func() v1alpha1.StorageNodePhaseStatus {
 				newSN := &v1alpha1.StorageNode{}
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
 				return newSN.Status.Phase
-			}, 10, 1).Should(Equal(v1alpha1.StorageNodePhaseReady))
+			}, 20, 2).Should(Equal(v1alpha1.StorageNodePhaseReady))
 
 			Eventually(func() bool {
 				newSN := &v1alpha1.StorageNode{}
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
 				return newSN.Status.Registered
-			}, 10, 1).Should(BeTrue())
+			}, 20, 2).Should(BeTrue())
+
+			// delete storage node
+			Expect(k8sClient.Delete(ctx, node)).Should(Succeed())
+
+			dbmock.ExpectQuery(regexp.QuoteMeta("SHOW RULES USED STORAGE UNIT")).WillReturnRows(sqlmock.NewRows([]string{"type", "name"}).AddRow("sharding", "t_order"))
+			dbmock.ExpectExec("DROP SHARDING TABLE RULE").WillReturnResult(sqlmock.NewResult(1, 1))
+			dbmock.ExpectExec(regexp.QuoteMeta("UNREGISTER STORAGE UNIT")).WillReturnResult(sqlmock.NewResult(0, 0))
+			Eventually(func() v1alpha1.StorageNodePhaseStatus {
+				newSN := &v1alpha1.StorageNode{}
+				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
+				return newSN.Status.Phase
+			}, 20, 2).Should(Equal(v1alpha1.StorageNodePhaseDeleting))
+
+			g.Unpatch()
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
+				return nil, nil
+			})
+
+			Eventually(func() bool {
+				newSN := &v1alpha1.StorageNode{}
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)
+				return apierrors.IsNotFound(err)
+			}, 20, 2).Should(BeTrue())
 		})
 	})
 })

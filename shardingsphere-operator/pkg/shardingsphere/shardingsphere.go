@@ -39,9 +39,7 @@ const (
 	DistSQLDropTable = `DROP TABLE %s;`
 )
 
-var (
-	ruleTypeMap = map[string]string{}
-)
+var ruleTypeMap = map[string]string{}
 
 type Rule struct {
 	Type string
@@ -142,21 +140,10 @@ func (s *server) UnRegisterStorageUnit(dsName string) error {
 		return fmt.Errorf("get rules used error: %w", err)
 	}
 
-	// TODO DISCUSS: should we drop all tables used by storage unit?
-	// clean all rules and tables used by storage unit
-	tables := map[string]struct{}{}
+	// clean all rules used by storage unit
 	for _, rule := range rules {
 		if err := s.dropRule(rule.Type, rule.Name); err != nil {
 			return fmt.Errorf("drop rule error: %w", err)
-		}
-		if _, ok := tables[rule.Name]; !ok {
-			tables[rule.Name] = struct{}{}
-		}
-	}
-
-	for table := range tables {
-		if err := s.dropTable(table); err != nil {
-			return fmt.Errorf("drop table error: %w", err)
 		}
 	}
 
@@ -177,15 +164,6 @@ func (s *server) dropRule(ruleType, ruleName string) error {
 	_, err := s.db.Exec(distSQL)
 	if err != nil {
 		return fmt.Errorf("drop rule fail, err: %s", err)
-	}
-	return nil
-}
-
-func (s *server) dropTable(tableName string) error {
-	distSQL := fmt.Sprintf(DistSQLDropTable, tableName)
-	_, err := s.db.Exec(distSQL)
-	if err != nil {
-		return fmt.Errorf("drop table fail, err: %s", err)
 	}
 	return nil
 }
