@@ -125,7 +125,7 @@ type LogbackConfig string
 type Properties map[string]string
 
 type LoggingFile struct {
-	Props Properties `json:"props,omitempty"`
+	Props Properties `json:"props,omitempty" yaml:"props,omitempty"`
 }
 
 // PluginLogging defines the plugin for logging
@@ -136,7 +136,7 @@ type PluginLogging struct {
 type Prometheus struct {
 	Host  string     `json:"host"`
 	Port  int32      `json:"port"`
-	Props Properties `json:"props,omitempty"`
+	Props Properties `json:"props,omitempty" yaml:"props,omitempty"`
 }
 
 // PluginMetrics defines the plugin for metrics
@@ -145,11 +145,11 @@ type PluginMetrics struct {
 }
 
 type OpenTelemetry struct {
-	Props Properties `json:"props,omitempty"`
+	Props Properties `json:"props,omitempty" yaml:"props,omitempty"`
 }
 
 type OpenTracing struct {
-	Props Properties `json:"props,omitempty"`
+	Props Properties `json:"props,omitempty" yaml:"props,omitempty" `
 }
 
 // PluginTracing defines the plugin for tracing
@@ -163,11 +163,11 @@ type PluginTracing struct {
 // AgentPlugin defines a set of plugins for ShardingSphere Agent
 type AgentPlugin struct {
 	// +optional
-	Logging *PluginLogging `json:"logging,omitempty"`
+	Logging *PluginLogging `json:"logging,omitempty" yaml:"logging,omitempty"`
 	// +optional
-	Metrics *PluginMetrics `json:"metrics,omitempty"`
+	Metrics *PluginMetrics `json:"metrics,omitempty" yaml:"metrics,omitempty"`
 	// +optional
-	Tracing *PluginTracing `json:"tracing,omitempty"`
+	Tracing *PluginTracing `json:"tracing,omitempty" yaml:"tracing,omitempty"`
 }
 
 // AgentConfig defines the config for ShardingSphere-Agent, renderred as agent.yaml
@@ -253,14 +253,14 @@ type PortBinding struct {
 	// from NodePort to ClusterIP).
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
 	// +optional
-	NodePort int32 `json:"nodePort,omitempty" yaml:"nodePort"`
+	NodePort int32 `json:"nodePort,omitempty" yaml:"nodePort,omitempty"`
 }
 
 // ProxySpec defines the desired state of ShardingSphereProxy
 type ComputeNodeSpec struct {
 	StorageNodeConnector *StorageNodeConnector `json:"storageNodeConnector,omitempty"`
 	// version  is the version of ShardingSphere-Proxy
-	ServerVersion string `json:"serverVersion,omitempty" yaml:"serverVersion"`
+	ServerVersion string `json:"serverVersion,omitempty" yaml:"serverVersion,omitempty"`
 
 	// replicas is the expected number of replicas of ShardingSphere-Proxy
 	// +optional
@@ -277,11 +277,11 @@ type ComputeNodeSpec struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// +optional
-	PortBindings []PortBinding `json:"portBindings,omitempty" yaml:"portBinding"`
+	PortBindings []PortBinding `json:"portBindings,omitempty" yaml:"portBindings,omitempty"`
 
 	// +kubebuilder:validation:Enum=ClusterIP;NodePort;LoadBalancer;ExternalName
 	// +optional
-	ServiceType corev1.ServiceType `json:"serviceType,omitempty" yaml:"serviceType"`
+	ServiceType corev1.ServiceType `json:"serviceType,omitempty" yaml:"serviceType,omitempty"`
 
 	// +optional
 	Bootstrap BootstrapConfig `json:"bootstrap,omitempty"`
