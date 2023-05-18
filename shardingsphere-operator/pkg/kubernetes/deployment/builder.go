@@ -144,7 +144,7 @@ type DeploymentBuilder interface {
 	SetNamespace(namespace string) DeploymentBuilder
 	SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder
 	SetAnnotations(annos map[string]string) DeploymentBuilder
-	SetShardingSphereProxyPodTemplate(tpl corev1.PodTemplateSpec) DeploymentBuilder
+	SetShardingSphereProxyPodTemplate(tpl *corev1.PodTemplateSpec) DeploymentBuilder
 	SetShardingSphereProxyPodTemplateLabels(labels map[string]string) DeploymentBuilder
 	SetShardingSphereProxyPodTemplateAnnotations(annos map[string]string) DeploymentBuilder
 	SetShardingSphereProxyContainer(con *corev1.Container) DeploymentBuilder
@@ -201,8 +201,8 @@ func (d *deploymentBuilder) SetReplicas(r *int32) DeploymentBuilder {
 }
 
 // SetShardingSphereProxyPodTemplate sets Deployment PodTemplateSpec for ShardingSphereProxy Pod
-func (d *deploymentBuilder) SetShardingSphereProxyPodTemplate(tpl corev1.PodTemplateSpec) DeploymentBuilder {
-	d.deployment.Spec.Template = tpl
+func (d *deploymentBuilder) SetShardingSphereProxyPodTemplate(tpl *corev1.PodTemplateSpec) DeploymentBuilder {
+	d.deployment.Spec.Template = *tpl
 	return d
 }
 

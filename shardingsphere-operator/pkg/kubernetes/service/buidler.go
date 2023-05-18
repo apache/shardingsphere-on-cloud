@@ -57,9 +57,9 @@ func NewService(cn *v1alpha1.ComputeNode) *corev1.Service {
 		builder.SetAnnotations(metricsAnnos)
 
 		var found bool
-		for _, p := range ports {
-			if p.Name == "metrics" {
-				p.TargetPort = intstr.FromInt(int(cn.Spec.Bootstrap.AgentConfig.Plugins.Metrics.Prometheus.Port))
+		for i := range ports {
+			if ports[i].Name == "metrics" {
+				ports[i].TargetPort = intstr.FromInt(int(cn.Spec.Bootstrap.AgentConfig.Plugins.Metrics.Prometheus.Port))
 				found = true
 				break
 			}
