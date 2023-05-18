@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -68,19 +67,12 @@ type StorageNodeReconciler struct {
 // Reconcile handles main function of this controller
 // nolint:gocognit
 func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Log.WithValues(StorageNodeControllerName, req.NamespacedName)
-
-	r.Log.Info("Reconciling StorageNode")
+	r.Log.Info(fmt.Sprintf("Reconciling StorageNode %s", req.NamespacedName))
 
 	// get storage node
 	node := &v1alpha1.StorageNode{}
 	if err := r.Get(ctx, req.NamespacedName, node); err != nil {
-		if client.IgnoreNotFound(err) == nil {
-			r.Log.Info(fmt.Sprintf("StorageNode %s/%s is not exist", req.Namespace, req.Name))
-			return ctrl.Result{}, nil
-		}
-		r.Log.Error(err, fmt.Sprintf("unable to fetch StorageNode %s/%s", req.Namespace, req.Name))
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	// Get databaseClass with storageNode.Spec.DatabaseClassName
@@ -91,7 +83,6 @@ func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// finalize storage node
-	// nolint: nestif
 	if node.ObjectMeta.DeletionTimestamp.IsZero() {
 		// The object is not being deleted, so if it does not have our finalizer,
 		// then lets add the finalizer and update the object. This is equivalent to registering our finalizer.
@@ -102,72 +93,36 @@ func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 		}
 	} else if slices.Contains(node.ObjectMeta.Finalizers, FinalizerName) {
-		switch node.Status.Phase {
-		case v1alpha1.StorageNodePhaseReady, v1alpha1.StorageNodePhaseNotReady:
-			if err := r.deleteDatabaseCluster(ctx, node, databaseClass); err != nil {
-				return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
-			}
-		case v1alpha1.StorageNodePhaseDeleting:
-			ins, err := aws.NewRdsClient(r.AwsRDS).GetInstance(ctx, node)
-			if err != nil {
-				return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
-			}
-			if ins == nil {
-				// update storage node status to v1alpha1.StorageNodePhaseDeleteComplete
-				node.Status.Phase = v1alpha1.StorageNodePhaseDeleteComplete
-				node.Status.Instances = nil
-				if err := r.Status().Update(ctx, node); err != nil {
-					r.Log.Error(err, "failed to update storage node status")
-				}
-				return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
-			}
-			r.Log.V(2).Info("RDS instance is still deleting")
-			return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
-		case v1alpha1.StorageNodePhaseDeleteComplete:
-			// remove our finalizer from the list and update it.
-			node.ObjectMeta.Finalizers = slices.Filter([]string{}, node.ObjectMeta.Finalizers, func(f string) bool {
-				return f != FinalizerName
-			})
-			if err := r.Update(ctx, node); err != nil {
-				r.Log.Error(err, "failed to remove finalizer")
-			}
-			return ctrl.Result{}, nil
-		default:
-			r.Recorder.Event(node, corev1.EventTypeWarning, fmt.Sprintf("Delete %s/%s Failed", node.GetNamespace(), node.GetName()), "StorageNode is not in a valid phase")
-			return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
-		}
+		return r.finalize(ctx, node, databaseClass)
 	}
 
+	// reconcile storage node
 	return r.reconcile(ctx, databaseClass, node)
 }
 
-func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1alpha1.DatabaseClass, node *v1alpha1.StorageNode) (ctrl.Result, error) {
-	// reconcile storage node with databaseClass
-	switch dbClass.Spec.Provisioner {
-	case dbmeshv1alpha1.ProvisionerAWSRDSInstance:
-		if err := r.reconcileAwsRdsInstance(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
-			r.Log.Error(err, fmt.Sprintf("unable to reconcile AWS RDS Instance %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
-			r.Recorder.Event(node, corev1.EventTypeWarning, fmt.Sprintf("Reconcile %s/%s Failed", node.GetNamespace(), node.GetName()), err.Error())
+func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.StorageNode, databaseClass *dbmeshv1alpha1.DatabaseClass) (ctrl.Result, error) {
+	var err error
+	switch node.Status.Phase {
+	case v1alpha1.StorageNodePhaseReady, v1alpha1.StorageNodePhaseNotReady:
+		// set storage node status to deleting
+		node.Status.Phase = v1alpha1.StorageNodePhaseDeleting
+	case v1alpha1.StorageNodePhaseDeleting:
+		break
+	case v1alpha1.StorageNodePhaseDeleteComplete:
+		node.ObjectMeta.Finalizers = slices.Filter([]string{}, node.ObjectMeta.Finalizers, func(f string) bool {
+			return f != FinalizerName
+		})
+		if err = r.Update(ctx, node); err != nil {
+			r.Log.Error(err, "failed to remove finalizer")
 		}
-	case dbmeshv1alpha1.ProvisionerAWSAurora:
-		if err := r.reconcileAwsAurora(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
-			r.Recorder.Event(node, corev1.EventTypeWarning, fmt.Sprintf("Reconcile %s/%s Failed", node.GetNamespace(), node.GetName()), err.Error())
-		}
-	default:
-		r.Recorder.Event(node, corev1.EventTypeWarning, "UnsupportedDatabaseProvisioner", fmt.Sprintf("unsupported database provisioner %s", dbClass.Spec.Provisioner))
-		r.Log.Error(nil, fmt.Sprintf("unsupported database provisioner %s", dbClass.Spec.Provisioner))
+		return ctrl.Result{}, nil
 	}
 
-	d, _ := json.MarshalIndent(node.Status, "", "  ")
-	r.Log.Info(string(d))
-
-	// register storage unit if needed.
-	if err := r.registerStorageUnit(ctx, node); err != nil {
-		r.Recorder.Eventf(node, corev1.EventTypeWarning, "RegisterStorageUnitFailed", "unable to register storage unit %s/%s", node.GetNamespace(), node.GetName())
-		return ctrl.Result{Requeue: true}, err
+	if err = r.deleteDatabaseCluster(ctx, node, databaseClass); err != nil {
+		r.Log.Error(err, "failed to delete database cluster")
+		return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 	}
 
-	// finally, update status
 	desiredState := computeDesiredState(node.Status)
 
 	if !reflect.DeepEqual(node.Status, desiredState) {
@@ -179,8 +134,42 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1
 		}
 	}
 
-	d, _ = json.MarshalIndent(node.Status, "", "  ")
-	r.Log.Info(string(d))
+	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
+}
+
+func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1alpha1.DatabaseClass, node *v1alpha1.StorageNode) (ctrl.Result, error) {
+	// reconcile storage node with databaseClass
+	switch dbClass.Spec.Provisioner {
+	case dbmeshv1alpha1.ProvisionerAWSRDSInstance:
+		if err := r.reconcileAwsRdsInstance(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
+			r.Log.Error(err, fmt.Sprintf("unable to reconcile AWS RDS Instance %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
+			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS RDS Instance %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
+		}
+	case dbmeshv1alpha1.ProvisionerAWSAurora:
+		if err := r.reconcileAwsAurora(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
+			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS Aurora %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
+		}
+	default:
+		r.Recorder.Event(node, corev1.EventTypeWarning, "UnsupportedDatabaseProvisioner", fmt.Sprintf("unsupported database provisioner %s", dbClass.Spec.Provisioner))
+		r.Log.Error(nil, fmt.Sprintf("unsupported database provisioner %s", dbClass.Spec.Provisioner))
+	}
+
+	// register storage unit if needed.
+	if err := r.registerStorageUnit(ctx, node); err != nil {
+		r.Recorder.Eventf(node, corev1.EventTypeWarning, "RegisterStorageUnitFailed", "unable to register storage unit %s/%s", node.GetNamespace(), node.GetName())
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	desiredState := computeDesiredState(node.Status)
+
+	if !reflect.DeepEqual(node.Status, desiredState) {
+		node.Status = desiredState
+		err := r.Status().Update(ctx, node)
+		if err != nil {
+			r.Log.Error(err, fmt.Sprintf("unable to update StorageNode %s/%s", node.GetNamespace(), node.GetName()))
+			return ctrl.Result{Requeue: true}, err
+		}
+	}
 
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 }
@@ -215,24 +204,20 @@ func (r *StorageNodeReconciler) getDatabaseClass(ctx context.Context, node *v1al
 func computeDesiredState(status v1alpha1.StorageNodeStatus) v1alpha1.StorageNodeStatus {
 	// Initialize a new status object based on the current state
 	desiredState := status
-
 	clusterStatus := status.Cluster.Status
 
-	if (clusterStatus == "" || clusterStatus == "Ready") && allInstancesReady(status.Instances) {
-		desiredState.Phase = v1alpha1.StorageNodePhaseReady
-	} else {
-		desiredState.Phase = v1alpha1.StorageNodePhaseNotReady
-	}
-
-	for idx := range status.Instances {
-		ins := &status.Instances[idx]
-		if ins.Status == string(rds.DBInstanceStatusDeleting) {
-			desiredState.Phase = v1alpha1.StorageNodePhaseDeleting
+	if status.Phase == v1alpha1.StorageNodePhaseDeleting {
+		// If the storage node is being deleted, check if all instances are deleted.
+		if len(status.Instances) == 0 {
+			desiredState.Phase = v1alpha1.StorageNodePhaseDeleteComplete
 		}
-	}
-
-	if (status.Phase == v1alpha1.StorageNodePhaseDeleting || status.Phase == v1alpha1.StorageNodePhaseDeleteComplete) && len(status.Instances) == 0 {
-		desiredState.Phase = v1alpha1.StorageNodePhaseDeleteComplete
+	} else {
+		// If the storage node is not being deleted, check if all instances are ready.
+		if (clusterStatus == "" || clusterStatus == "Ready") && allInstancesReady(status.Instances) {
+			desiredState.Phase = v1alpha1.StorageNodePhaseReady
+		} else {
+			desiredState.Phase = v1alpha1.StorageNodePhaseNotReady
+		}
 	}
 
 	desiredState.Conditions = computeNewConditions(desiredState, status, clusterStatus)
@@ -318,10 +303,6 @@ func allInstancesReady(instances []v1alpha1.InstanceStatus) bool {
 }
 
 func (r *StorageNodeReconciler) reconcileAwsRdsInstance(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, dbClass *dbmeshv1alpha1.DatabaseClass) error {
-	if node.Status.Phase == v1alpha1.StorageNodePhaseDeleteComplete {
-		return nil
-	}
-
 	instance, err := client.GetInstance(ctx, node)
 	if err != nil {
 		return err
@@ -348,6 +329,11 @@ func (r *StorageNodeReconciler) reconcileAwsRdsInstance(ctx context.Context, cli
 
 func updateAWSRDSInstanceStatus(node *v1alpha1.StorageNode, instance *rds.DescInstance) error {
 	instances := make([]v1alpha1.InstanceStatus, 0)
+
+	if instance == nil {
+		node.Status.Instances = instances
+		return nil
+	}
 
 	status := instance.DBInstanceStatus
 	if status == rds.DBInstanceStatusAvailable {
@@ -449,22 +435,13 @@ func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client
 		return err
 	}
 
-	if instance == nil {
-		r.Log.Info(fmt.Sprintf("instance %s is not found", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
-		return nil
+	if instance != nil && instance.DBInstanceStatus != rds.DBInstanceStatusDeleting {
+		if err := client.DeleteInstance(ctx, node, databaseClass); err != nil {
+			r.Recorder.Eventf(node, corev1.EventTypeWarning, "DeleteFailed", "Failed to delete instance %s: %s", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier], err.Error())
+			return err
+		}
+		r.Recorder.Event(node, corev1.EventTypeNormal, "Deleting", fmt.Sprintf("instance %s is deleting", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
 	}
-
-	if instance.DBInstanceStatus == rds.DBInstanceStatusDeleting {
-		r.Log.Info(fmt.Sprintf("instance %s is deleting", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
-		return nil
-	}
-
-	if err := client.DeleteInstance(ctx, node, databaseClass); err != nil {
-		r.Recorder.Eventf(node, corev1.EventTypeWarning, "DeleteFailed", "Failed to delete instance %s: %s", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier], err.Error())
-		return err
-	}
-
-	r.Recorder.Event(node, corev1.EventTypeNormal, "Deleting", fmt.Sprintf("instance %s is deleting", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
 
 	// update instance status
 	if err := updateAWSRDSInstanceStatus(node, instance); err != nil {
@@ -478,8 +455,11 @@ func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client
 func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v1alpha1.StorageNode) error {
 	// if register storage unit is not enabled, return
 	if node.Annotations[AnnotationKeyRegisterStorageUnitEnabled] != "true" {
-		r.Log.Info(fmt.Sprintf("register storage unit is not enabled for node %s/%s", node.GetNamespace(), node.GetName()))
 		return nil
+	}
+
+	if err := r.validateComputeNodeAnnotations(node); err != nil {
+		return err
 	}
 
 	// if storage unit is already registered, return
@@ -489,12 +469,8 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 
 	// if node is not ready, return
 	if node.Status.Phase != v1alpha1.StorageNodePhaseReady {
-		r.Recorder.Eventf(node, corev1.EventTypeWarning, "RegisterCanceled", "Canceled to register storage unit for node %s/%s: node is not ready", node.GetNamespace(), node.GetName())
+		r.Recorder.Eventf(node, corev1.EventTypeWarning, "RegisterWaiting", "Waiting to register storage unit for node %s/%s: node is not ready", node.GetNamespace(), node.GetName())
 		return nil
-	}
-
-	if err := validateComputeNodeAnnotations(node); err != nil {
-		return err
 	}
 
 	logicDBName := node.Annotations[AnnotationKeyLogicDatabaseName]
@@ -517,7 +493,7 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 	ins := node.Status.Instances[0]
 	host := ins.Endpoint.Address
 	port := ins.Endpoint.Port
-	username := strings.Split(node.Annotations[dbmeshv1alpha1.AnnotationsMasterUsername], "@")[0]
+	username := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUsername]
 	password := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUserPassword]
 
 	// TODO how to set ds name?
@@ -530,7 +506,7 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 	return nil
 }
 
-func validateComputeNodeAnnotations(node *v1alpha1.StorageNode) error {
+func (r *StorageNodeReconciler) validateComputeNodeAnnotations(node *v1alpha1.StorageNode) error {
 	requiredAnnos := []string{
 		AnnotationKeyLogicDatabaseName,
 		dbmeshv1alpha1.AnnotationsInstanceDBName,
@@ -540,6 +516,7 @@ func validateComputeNodeAnnotations(node *v1alpha1.StorageNode) error {
 
 	for _, anno := range requiredAnnos {
 		if v, ok := node.Annotations[anno]; !ok || v == "" {
+			r.Recorder.Eventf(node, corev1.EventTypeWarning, "RegisterChecking", "Waiting to register storage unit for node %s/%s: annotation %s is required", node.GetNamespace(), node.GetName(), anno)
 			return fmt.Errorf("annotation %s is required", anno)
 		}
 	}
@@ -574,7 +551,7 @@ func (r *StorageNodeReconciler) getShardingsphereServer(ctx context.Context, nod
 		return nil, fmt.Errorf("no user in compute node %s/%s", cn.Namespace, cn.Name)
 	}
 
-	username = serverConf.Authority.Users[0].User
+	username = strings.Split(serverConf.Authority.Users[0].User, "@")[0]
 	password = serverConf.Authority.Users[0].Password
 
 	// get service of compute node

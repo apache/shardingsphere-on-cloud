@@ -254,14 +254,6 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					Port:    3306,
 				},
 			}
-			instanceInDeleting = dbmesh_rds.DescInstance{
-				DBInstanceIdentifier: defaultTestInstanceIdentifier,
-				DBInstanceStatus:     dbmesh_rds.DBInstanceStatusDeleting,
-				Endpoint: dbmesh_rds.Endpoint{
-					Address: "127.0.0.1",
-					Port:    3306,
-				},
-			}
 		)
 		It("should be successful when instance is in available status", func() {
 			deletingStorageNode := "test-deleting-storage-node"
@@ -295,10 +287,11 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					Namespace: defaultTestNamespace,
 				},
 			})).Should(Succeed())
+
 			// mock aws rds client, delete instance
 			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(&rdsInstanceAvailable, nil)
 			mockAws.EXPECT().DeleteInstance(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-			mockAws.EXPECT().GetInstance(gomock.Any(), gomock.Any()).Return(&instanceInDeleting, nil)
+
 			_, err = reconciler.Reconcile(ctx, req)
 			Expect(err).To(BeNil())
 
