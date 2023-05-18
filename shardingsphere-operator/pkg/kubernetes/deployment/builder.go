@@ -458,7 +458,7 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 	scb.SetVolumeMount(vmc[0])
 
 	// set agent for proxy
-	if enabled, ok := cn.Annotations[defaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
+	if enabled, ok := cn.Annotations[DefaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
 		builder.SetAgentBin(scb, cn)
 
 		metricsAnnos := map[string]string{}

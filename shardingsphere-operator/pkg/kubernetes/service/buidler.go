@@ -19,16 +19,24 @@ package service
 
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	commonAnnotationPrometheusMetricsPath   = "prometheus.io/path"
+	commonAnnotationPrometheusMetricsPort   = "prometheus.io/port"
+	commonAnnotationPrometheusMetricsScrape = "prometheus.io/scrape"
+	commonAnnotationPrometheusMetricsScheme = "prometheus.io/scheme"
+)
+
 // NewService returns a new Service
 func NewService(cn *v1alpha1.ComputeNode) *corev1.Service {
 	builder := NewServiceBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
-	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetType(cn.Spec.ServiceType)
+	builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetType(cn.Spec.ServiceType)
 
 	ports := []corev1.ServicePort{}
 	for idx := range cn.Spec.PortBindings {
@@ -39,6 +47,34 @@ func NewService(cn *v1alpha1.ComputeNode) *corev1.Service {
 			Protocol:   cn.Spec.PortBindings[idx].Protocol,
 		})
 	}
+
+	if enabled, ok := cn.Annotations[deployment.DefaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
+		metricsAnnos := map[string]string{}
+		metricsAnnos[commonAnnotationPrometheusMetricsPath] = cn.Annotations[commonAnnotationPrometheusMetricsPath]
+		metricsAnnos[commonAnnotationPrometheusMetricsPort] = cn.Annotations[commonAnnotationPrometheusMetricsPort]
+		metricsAnnos[commonAnnotationPrometheusMetricsScrape] = cn.Annotations[commonAnnotationPrometheusMetricsScrape]
+		metricsAnnos[commonAnnotationPrometheusMetricsScheme] = cn.Annotations[commonAnnotationPrometheusMetricsScheme]
+		builder.SetAnnotations(metricsAnnos)
+
+		var found bool
+		for _, p := range ports {
+			if p.Name == "metrics" {
+				p.TargetPort = intstr.FromInt(int(cn.Spec.Bootstrap.AgentConfig.Plugins.Metrics.Prometheus.Port))
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			ports = append(ports, corev1.ServicePort{
+				Name:       "metrics",
+				Port:       9090,
+				TargetPort: intstr.FromInt(int(cn.Spec.Bootstrap.AgentConfig.Plugins.Metrics.Prometheus.Port)),
+			})
+		}
+
+	}
+
 	builder.SetPorts(ports)
 	return builder.Build()
 }
