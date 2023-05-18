@@ -41,7 +41,7 @@ const (
 	defaultMySQLDriverEnvName    = "MYSQL_CONNECTOR_VERSION"
 	defaultMySQLDriverVolumeName = "mysql-connector-java"
 
-	defaultAnnotationJavaAgentEnabled       = "shardingsphere.apache.org/java-agent-enabled"
+	DefaultAnnotationJavaAgentEnabled       = "shardingsphere.apache.org/java-agent-enabled"
 	commonAnnotationPrometheusMetricsPath   = "prometheus.io/path"
 	commonAnnotationPrometheusMetricsPort   = "prometheus.io/port"
 	commonAnnotationPrometheusMetricsScrape = "prometheus.io/scrape"
