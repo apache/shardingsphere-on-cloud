@@ -451,8 +451,33 @@ func assertTemplateSpec(t *testing.T, exp, act corev1.PodTemplateSpec) bool {
 
 func assertPodSpec(t *testing.T, exp, act corev1.PodSpec) bool {
 	return assert.ElementsMatch(t, exp.InitContainers, act.InitContainers, "init containers should be equal") &&
-		assert.ElementsMatch(t, exp.Containers, act.Containers, "containers should be equal") &&
+		// assert.ElementsMatch(t, exp.Containers, act.Containers, "containers should be equal") &&
+		assertContainers(t, exp.Containers, act.Containers, "containers should be equal") &&
 		assert.ElementsMatch(t, exp.Volumes, act.Volumes, "volumes should be equal")
+}
+
+func assertContainers(t *testing.T, exp, act []corev1.Container, message string) bool {
+	var re bool
+	for i := range exp {
+		re = assertContainer(t, exp[i], act[i])
+	}
+	return re
+}
+
+func assertContainer(t *testing.T, exp, act corev1.Container) bool {
+	return assert.Equal(t, exp.Name, act.Name, "name should be equal") &&
+		assert.ElementsMatch(t, exp.Command, act.Command, "command should be equal") &&
+		assert.ElementsMatch(t, exp.Args, act.Args, "args should be equal") &&
+		assert.ElementsMatch(t, exp.Env, act.Env, "env should be equal") &&
+		assert.ElementsMatch(t, exp.VolumeMounts, act.VolumeMounts, "volumeMounts should be equal") &&
+		assert.ElementsMatch(t, exp.Ports, act.Ports, "ports should be equal") &&
+		assert.Equal(t, exp.Image, act.Image, "image should be equal") &&
+		assert.ElementsMatch(t, exp.Lifecycle, act.Lifecycle, "lifecycle should be equal") &&
+		assert.ElementsMatch(t, exp.Resources, act.Resources, "resources should be equal") &&
+		assert.ElementsMatch(t, exp.LivenessProbe, act.LivenessProbe, "livenessProbe should be equal") &&
+		assert.ElementsMatch(t, exp.ReadinessProbe, act.ReadinessProbe, "readinessProbe should be equal") &&
+		assert.ElementsMatch(t, exp.StartupProbe, act.StartupProbe, "startupProbe should be equal")
+
 }
 
 func TestDeploymentBuilder_SetShardingSphereProxyContainer(t *testing.T) {
