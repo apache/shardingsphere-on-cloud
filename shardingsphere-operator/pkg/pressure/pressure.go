@@ -24,8 +24,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/database-mesh/golang-sdk/pkg/random"
-
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -41,8 +39,7 @@ type Pressure struct {
 }
 
 var (
-	db       *sql.DB
-	totalReq int
+	db *sql.DB
 )
 
 type Result struct {
@@ -68,9 +65,9 @@ func NewPressure(name string, tasks []v1alpha1.DistSQL) *Pressure {
 	}
 }
 
-// todo: get conn args by labels over string
 func initDB(connArgs string) error {
 	var err error
+
 	db, err = sql.Open("mysql", connArgs)
 	if err != nil {
 		return err
@@ -84,20 +81,17 @@ func initDB(connArgs string) error {
 
 func (p *Pressure) Run(ctx context.Context, pressureCfg *v1alpha1.PressureCfg) {
 	p.Active = true
-	totalReq = 0
+	//when all task finished,update active
+	defer func() {
+		p.Active = false
+	}()
 
-	//judge nil for simplify test
-	if db == nil {
-		if err := initDB(pressureCfg.SsHost); err != nil {
-			p.Err = err
-			return
-		}
-		defer func() {
-			if err := db.Close(); err != nil {
-				p.Err = err
-			}
-		}()
+	if err := initDB(pressureCfg.SsHost); err != nil {
+		p.Err = err
+		return
 	}
+
+	defer db.Close()
 
 	result := &p.Result
 	pressureCtx, cancel := context.WithTimeout(context.Background(), pressureCfg.Duration.Duration)
@@ -106,7 +100,7 @@ func (p *Pressure) Run(ctx context.Context, pressureCfg *v1alpha1.PressureCfg) {
 	resCh := make(chan bool, 1000)
 
 	//handle result
-	go p.handleResponse(pressureCtx, resCh, result)
+	go p.handleResponse(resCh, result)
 
 	//statistics the running time
 	start := time.Now()
@@ -119,7 +113,6 @@ FOR:
 			break FOR
 		case <-ticker.C:
 			for i := 0; i < pressureCfg.ConcurrentNum; i++ {
-				totalReq += pressureCfg.ReqNum
 				//todo: handle err
 
 				//put wg here to prevent: when root ctx is closed,but some exec task do not start yet
@@ -139,9 +132,6 @@ FOR:
 
 	//wait collect results channel finished
 	<-p.finishSignalCh
-
-	//when all task finished,update active
-	p.Active = false
 }
 
 func (p *Pressure) exec(ctx context.Context, times int, res chan bool) {
@@ -151,30 +141,21 @@ func (p *Pressure) exec(ctx context.Context, times int, res chan bool) {
 		case <-ctx.Done():
 			return
 		default:
-		}
-		if len(p.Tasks) == 0 {
-			return
-		}
-		for i := range p.Tasks {
-			//generate diff sql, put result into channel
-			args := randomArgs(p.Tasks[i].Args)
-			_, err := db.Exec(p.Tasks[i].SQL, args)
-			res <- err == nil
+			if len(p.Tasks) == 0 {
+				return
+			}
+			for i := range p.Tasks {
+				//generate diff sql, put result into channel
+				args := randomArgs(p.Tasks[i].Args)
+				_, err := db.Exec(p.Tasks[i].SQL, args...)
+
+				res <- err == nil
+			}
 		}
 	}
 }
 
-func (p *Pressure) handleResponse(ctx context.Context, resCh chan bool, result *Result) {
-For:
-	for {
-		select {
-		case <-ctx.Done():
-			break For
-		case ret := <-resCh:
-			//todo: add more msg
-			handle(ret, result)
-		}
-	}
+func (p *Pressure) handleResponse(resCh chan bool, result *Result) {
 
 	//get left handleResponse
 	for ret := range resCh {
@@ -191,12 +172,13 @@ func handle(ret bool, result *Result) {
 		result.Success++
 	}
 	result.Total++
+
 }
 
-func randomArgs(args []string) []string {
-	var ret []string
+func randomArgs(args []string) []any {
+	var ret []any
 	for i := range args {
-		randomArg := fmt.Sprintf("%s-%s", args[i], random.StringN(4))
+		randomArg := fmt.Sprintf("%s-%d", args[i], time.Now().UnixNano())
 		ret = append(ret, randomArg)
 	}
 	return ret

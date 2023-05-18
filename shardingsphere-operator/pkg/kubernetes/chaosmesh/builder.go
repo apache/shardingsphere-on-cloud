@@ -24,7 +24,7 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 
-	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -57,20 +57,20 @@ var (
 type GenericChaos interface{}
 
 func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) v1alpha1.ChaosCondition {
-	var status chaosv1alpha1.ChaosStatus
+	var status chaosmeshv1alpha1.ChaosStatus
 	if ssChaos.Spec.EmbedChaos.PodChaos != nil {
-		if podChao, ok := chaos.(*chaosv1alpha1.PodChaos); ok && podChao != nil {
+		if podChao, ok := chaos.(*chaosmeshv1alpha1.PodChaos); ok && podChao != nil {
 			status = *podChao.GetStatus()
 		} else {
 			return v1alpha1.Unknown
 		}
 	} else if ssChaos.Spec.EmbedChaos.NetworkChaos != nil {
-		if networkChaos, ok := chaos.(*chaosv1alpha1.NetworkChaos); ok && networkChaos != nil {
+		if networkChaos, ok := chaos.(*chaosmeshv1alpha1.NetworkChaos); ok && networkChaos != nil {
 			status = *networkChaos.GetStatus()
 		}
 		return v1alpha1.Unknown
 	}
-	var conditions = map[chaosv1alpha1.ChaosConditionType]bool{}
+	var conditions = map[chaosmeshv1alpha1.ChaosConditionType]bool{}
 	for i := range status.Conditions {
 		conditions[status.Conditions[i].Type] = status.Conditions[i].Status == corev1.ConditionTrue
 	}
@@ -78,21 +78,21 @@ func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereCha
 	return judgeCondition(conditions, status.Experiment.DesiredPhase)
 }
 
-func judgeCondition(condition map[chaosv1alpha1.ChaosConditionType]bool, phase chaosv1alpha1.DesiredPhase) v1alpha1.ChaosCondition {
+func judgeCondition(condition map[chaosmeshv1alpha1.ChaosConditionType]bool, phase chaosmeshv1alpha1.DesiredPhase) v1alpha1.ChaosCondition {
 
-	if condition[chaosv1alpha1.ConditionPaused] {
-		if !condition[chaosv1alpha1.ConditionSelected] {
+	if condition[chaosmeshv1alpha1.ConditionPaused] {
+		if !condition[chaosmeshv1alpha1.ConditionSelected] {
 			return v1alpha1.NoTarget
 		}
 		return v1alpha1.Paused
 	}
 
-	if condition[chaosv1alpha1.ConditionSelected] {
-		if condition[chaosv1alpha1.ConditionAllRecovered] && phase == chaosv1alpha1.StoppedPhase {
+	if condition[chaosmeshv1alpha1.ConditionSelected] {
+		if condition[chaosmeshv1alpha1.ConditionAllRecovered] && phase == chaosmeshv1alpha1.StoppedPhase {
 			return v1alpha1.AllRecovered
 		}
 
-		if condition[chaosv1alpha1.ConditionAllInjected] && phase == chaosv1alpha1.RunningPhase {
+		if condition[chaosmeshv1alpha1.ConditionAllInjected] && phase == chaosmeshv1alpha1.RunningPhase {
 			return v1alpha1.AllInjected
 		}
 	}
@@ -107,7 +107,7 @@ func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	chao := ssChao.Spec.PodChaos
 	if act, ok := ssChao.Annotations[podAction]; ok {
 		pcb.SetAction(act)
-		if gp, ok := ssChao.Annotations[gracePeriod]; chaosv1alpha1.PodChaosAction(act) == chaosv1alpha1.PodKillAction && ok {
+		if gp, ok := ssChao.Annotations[gracePeriod]; chaosmeshv1alpha1.PodChaosAction(act) == chaosmeshv1alpha1.PodKillAction && ok {
 			gpInt, err := strconv.ParseInt(gp, 10, 64)
 			if err != nil {
 				return nil, err
@@ -130,7 +130,7 @@ func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 
 	psb.SetSelectMode(ssChao.Annotations[podSelectorMode]).
 		SetValue(ssChao.Annotations[podSelectorValue])
-	containerSelector := &chaosv1alpha1.ContainerSelector{
+	containerSelector := &chaosmeshv1alpha1.ContainerSelector{
 		PodSelector: *psb.Build(),
 	}
 
@@ -194,34 +194,34 @@ func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error)
 	ncb.SetDevice(ssChao.Annotations[device]).
 		SetTargetDevice(ssChao.Annotations[targetDevice])
 
-	tcParams := &chaosv1alpha1.TcParameter{}
+	tcParams := &chaosmeshv1alpha1.TcParameter{}
 
 	if chao.Action == v1alpha1.Delay {
-		tcParams.Delay = &chaosv1alpha1.DelaySpec{
+		tcParams.Delay = &chaosmeshv1alpha1.DelaySpec{
 			Latency: chao.Params.Delay.Latency,
 			Jitter:  chao.Params.Delay.Jitter,
 		}
 	}
 
 	if chao.Action == v1alpha1.Corruption {
-		tcParams.Corrupt = &chaosv1alpha1.CorruptSpec{
+		tcParams.Corrupt = &chaosmeshv1alpha1.CorruptSpec{
 			Corrupt: chao.Params.Corruption.Corruption,
 		}
 	}
 
 	if chao.Action == v1alpha1.Duplication {
-		tcParams.Duplicate = &chaosv1alpha1.DuplicateSpec{
+		tcParams.Duplicate = &chaosmeshv1alpha1.DuplicateSpec{
 			Duplicate: chao.Params.Duplication.Duplication,
 		}
 	}
 
 	if chao.Action == v1alpha1.Loss {
-		tcParams.Loss = &chaosv1alpha1.LossSpec{
+		tcParams.Loss = &chaosmeshv1alpha1.LossSpec{
 			Loss: chao.Params.Loss.Loss,
 		}
 	}
 
-	if chaosv1alpha1.NetworkChaosAction(act) == chaosv1alpha1.BandwidthAction {
+	if chaosmeshv1alpha1.NetworkChaosAction(act) == chaosmeshv1alpha1.BandwidthAction {
 		bwab := NewBandWidthActionBuilder()
 		if ind1, ok := ssChao.Annotations[rate]; ok {
 			bwab.SetRate(ind1)
@@ -253,11 +253,11 @@ type PodChaosBuilder interface {
 	SetName(string) PodChaosBuilder
 	SetLabels(map[string]string) PodChaosBuilder
 	SetAnnotations(map[string]string) PodChaosBuilder
-	SetContainerSelector(*chaosv1alpha1.ContainerSelector) PodChaosBuilder
+	SetContainerSelector(*chaosmeshv1alpha1.ContainerSelector) PodChaosBuilder
 	SetAction(string) PodChaosBuilder
 	SetDuration(*string) PodChaosBuilder
 	SetGracePeriod(int64) PodChaosBuilder
-	Build() *chaosv1alpha1.PodChaos
+	Build() *chaosmeshv1alpha1.PodChaos
 }
 
 func NewPodChaosBuilder() PodChaosBuilder {
@@ -267,7 +267,7 @@ func NewPodChaosBuilder() PodChaosBuilder {
 }
 
 type podChaosBuilder struct {
-	podChaos *chaosv1alpha1.PodChaos
+	podChaos *chaosmeshv1alpha1.PodChaos
 }
 
 type BandWidthActionBuilder interface {
@@ -276,17 +276,17 @@ type BandWidthActionBuilder interface {
 	SetBuffer(string) BandWidthActionBuilder
 	SetPeakRate(string) BandWidthActionBuilder
 	SetMinBurst(string) BandWidthActionBuilder
-	Build() *chaosv1alpha1.BandwidthSpec
+	Build() *chaosmeshv1alpha1.BandwidthSpec
 }
 
 func NewBandWidthActionBuilder() BandWidthActionBuilder {
 	return &bandWidthActionBuilder{
-		bandwidth: &chaosv1alpha1.BandwidthSpec{},
+		bandwidth: &chaosmeshv1alpha1.BandwidthSpec{},
 	}
 }
 
 type bandWidthActionBuilder struct {
-	bandwidth *chaosv1alpha1.BandwidthSpec
+	bandwidth *chaosmeshv1alpha1.BandwidthSpec
 }
 
 func (b *bandWidthActionBuilder) SetRate(s string) BandWidthActionBuilder {
@@ -328,7 +328,7 @@ func (b *bandWidthActionBuilder) SetMinBurst(s string) BandWidthActionBuilder {
 	return b
 }
 
-func (b *bandWidthActionBuilder) Build() *chaosv1alpha1.BandwidthSpec {
+func (b *bandWidthActionBuilder) Build() *chaosmeshv1alpha1.BandwidthSpec {
 	return b.bandwidth
 }
 
@@ -352,22 +352,22 @@ func (p *podChaosBuilder) SetAnnotations(annotations map[string]string) PodChaos
 	return p
 }
 
-func (p *podChaosBuilder) SetContainerSelector(selector *chaosv1alpha1.ContainerSelector) PodChaosBuilder {
+func (p *podChaosBuilder) SetContainerSelector(selector *chaosmeshv1alpha1.ContainerSelector) PodChaosBuilder {
 	p.podChaos.Spec.ContainerSelector = *selector
 	return p
 }
 
 func (p *podChaosBuilder) SetAction(action string) PodChaosBuilder {
 	if v1alpha1.PodChaosAction(action) == v1alpha1.PodFailure {
-		p.podChaos.Spec.Action = chaosv1alpha1.PodFailureAction
+		p.podChaos.Spec.Action = chaosmeshv1alpha1.PodFailureAction
 	}
 
 	if v1alpha1.PodChaosAction(action) == v1alpha1.ContainerKill {
-		p.podChaos.Spec.Action = chaosv1alpha1.ContainerKillAction
+		p.podChaos.Spec.Action = chaosmeshv1alpha1.ContainerKillAction
 	}
 
-	if chaosv1alpha1.PodChaosAction(action) == chaosv1alpha1.PodKillAction {
-		p.podChaos.Spec.Action = chaosv1alpha1.PodKillAction
+	if chaosmeshv1alpha1.PodChaosAction(action) == chaosmeshv1alpha1.PodKillAction {
+		p.podChaos.Spec.Action = chaosmeshv1alpha1.PodKillAction
 	}
 	return p
 }
@@ -388,7 +388,7 @@ func (p *podChaosBuilder) SetGracePeriod(gracePeriod int64) PodChaosBuilder {
 	return p
 }
 
-func (p *podChaosBuilder) Build() *chaosv1alpha1.PodChaos {
+func (p *podChaosBuilder) Build() *chaosmeshv1alpha1.PodChaos {
 	return p.podChaos
 }
 
@@ -397,19 +397,19 @@ type NetworkChaosBuilder interface {
 	SetName(string) NetworkChaosBuilder
 	SetLabels(map[string]string) NetworkChaosBuilder
 	SetAnnotations(map[string]string) NetworkChaosBuilder
-	SetPodSelector(*chaosv1alpha1.PodSelector) NetworkChaosBuilder
+	SetPodSelector(*chaosmeshv1alpha1.PodSelector) NetworkChaosBuilder
 	SetAction(string) NetworkChaosBuilder
 	SetDevice(string) NetworkChaosBuilder
 	SetDuration(*string) NetworkChaosBuilder
 	SetDirection(string) NetworkChaosBuilder
-	SetTarget(*chaosv1alpha1.PodSelector) NetworkChaosBuilder
+	SetTarget(*chaosmeshv1alpha1.PodSelector) NetworkChaosBuilder
 	SetTargetDevice(string) NetworkChaosBuilder
-	SetTcParameter(chaosv1alpha1.TcParameter) NetworkChaosBuilder
-	Build() *chaosv1alpha1.NetworkChaos
+	SetTcParameter(chaosmeshv1alpha1.TcParameter) NetworkChaosBuilder
+	Build() *chaosmeshv1alpha1.NetworkChaos
 }
 
 type netWorkChaosBuilder struct {
-	netWorkChaos *chaosv1alpha1.NetworkChaos
+	netWorkChaos *chaosmeshv1alpha1.NetworkChaos
 }
 
 func (n *netWorkChaosBuilder) SetNamespace(namespace string) NetworkChaosBuilder {
@@ -432,31 +432,31 @@ func (n *netWorkChaosBuilder) SetAnnotations(annotations map[string]string) Netw
 	return n
 }
 
-func (n *netWorkChaosBuilder) SetPodSelector(selector *chaosv1alpha1.PodSelector) NetworkChaosBuilder {
+func (n *netWorkChaosBuilder) SetPodSelector(selector *chaosmeshv1alpha1.PodSelector) NetworkChaosBuilder {
 	n.netWorkChaos.Spec.PodSelector = *selector
 	return n
 }
 
 func (n *netWorkChaosBuilder) SetAction(action string) NetworkChaosBuilder {
 	//FIXME
-	if chaosv1alpha1.NetworkChaosAction(action) == chaosv1alpha1.BandwidthAction {
-		n.netWorkChaos.Spec.Action = chaosv1alpha1.BandwidthAction
+	if chaosmeshv1alpha1.NetworkChaosAction(action) == chaosmeshv1alpha1.BandwidthAction {
+		n.netWorkChaos.Spec.Action = chaosmeshv1alpha1.BandwidthAction
 	}
 
 	if v1alpha1.NetworkChaosAction(action) == v1alpha1.Corruption {
-		n.netWorkChaos.Spec.Action = chaosv1alpha1.CorruptAction
+		n.netWorkChaos.Spec.Action = chaosmeshv1alpha1.CorruptAction
 	}
 
 	if v1alpha1.NetworkChaosAction(action) == v1alpha1.Partition {
-		n.netWorkChaos.Spec.Action = chaosv1alpha1.PartitionAction
+		n.netWorkChaos.Spec.Action = chaosmeshv1alpha1.PartitionAction
 	}
 
 	if v1alpha1.NetworkChaosAction(action) == v1alpha1.Loss {
-		n.netWorkChaos.Spec.Action = chaosv1alpha1.LossAction
+		n.netWorkChaos.Spec.Action = chaosmeshv1alpha1.LossAction
 	}
 
 	if v1alpha1.NetworkChaosAction(action) == v1alpha1.Duplication {
-		n.netWorkChaos.Spec.Action = chaosv1alpha1.DuplicateAction
+		n.netWorkChaos.Spec.Action = chaosmeshv1alpha1.DuplicateAction
 	}
 
 	return n
@@ -473,11 +473,11 @@ func (n *netWorkChaosBuilder) SetDuration(duration *string) NetworkChaosBuilder 
 }
 
 func (n *netWorkChaosBuilder) SetDirection(direction string) NetworkChaosBuilder {
-	n.netWorkChaos.Spec.Direction = chaosv1alpha1.Direction(direction)
+	n.netWorkChaos.Spec.Direction = chaosmeshv1alpha1.Direction(direction)
 	return n
 }
 
-func (n *netWorkChaosBuilder) SetTarget(selector *chaosv1alpha1.PodSelector) NetworkChaosBuilder {
+func (n *netWorkChaosBuilder) SetTarget(selector *chaosmeshv1alpha1.PodSelector) NetworkChaosBuilder {
 	n.netWorkChaos.Spec.Target = selector
 	return n
 }
@@ -487,12 +487,12 @@ func (n *netWorkChaosBuilder) SetTargetDevice(targetDevice string) NetworkChaosB
 	return n
 }
 
-func (n *netWorkChaosBuilder) SetTcParameter(parameter chaosv1alpha1.TcParameter) NetworkChaosBuilder {
+func (n *netWorkChaosBuilder) SetTcParameter(parameter chaosmeshv1alpha1.TcParameter) NetworkChaosBuilder {
 	n.netWorkChaos.Spec.TcParameter = parameter
 	return n
 }
 
-func (n *netWorkChaosBuilder) Build() *chaosv1alpha1.NetworkChaos {
+func (n *netWorkChaosBuilder) Build() *chaosmeshv1alpha1.NetworkChaos {
 	return n.netWorkChaos
 }
 
@@ -514,17 +514,17 @@ type PodSelectorBuilder interface {
 	SetLabelSelector(map[string]string) PodSelectorBuilder
 	SetExpressionSelectors([]metav1.LabelSelectorRequirement) PodSelectorBuilder
 	SetAnnotationSelectors(map[string]string) PodSelectorBuilder
-	Build() *chaosv1alpha1.PodSelector
+	Build() *chaosmeshv1alpha1.PodSelector
 }
 
 func NewPodSelectorBuilder() PodSelectorBuilder {
 	return &podSelectorBuilder{
-		podSelector: &chaosv1alpha1.PodSelector{},
+		podSelector: &chaosmeshv1alpha1.PodSelector{},
 	}
 }
 
 type podSelectorBuilder struct {
-	podSelector *chaosv1alpha1.PodSelector
+	podSelector *chaosmeshv1alpha1.PodSelector
 }
 
 func (p *podSelectorBuilder) SetNamespaces(namespaces []string) PodSelectorBuilder {
@@ -533,7 +533,7 @@ func (p *podSelectorBuilder) SetNamespaces(namespaces []string) PodSelectorBuild
 }
 
 func (p *podSelectorBuilder) SetSelectMode(mode string) PodSelectorBuilder {
-	p.podSelector.Mode = chaosv1alpha1.SelectorMode(mode)
+	p.podSelector.Mode = chaosmeshv1alpha1.SelectorMode(mode)
 	return p
 }
 
@@ -582,32 +582,32 @@ func (p *podSelectorBuilder) SetAnnotationSelectors(annotationSelectors map[stri
 	return p
 }
 
-func (p *podSelectorBuilder) Build() *chaosv1alpha1.PodSelector {
+func (p *podSelectorBuilder) Build() *chaosmeshv1alpha1.PodSelector {
 	return p.podSelector
 }
 
-func DefaultPodChaos() *chaosv1alpha1.PodChaos {
-	return &chaosv1alpha1.PodChaos{
+func DefaultPodChaos() *chaosmeshv1alpha1.PodChaos {
+	return &chaosmeshv1alpha1.PodChaos{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "shardingsphere-proxy",
 			Namespace: "default",
 			Labels:    map[string]string{},
 		},
-		Spec: chaosv1alpha1.PodChaosSpec{
-			Action: chaosv1alpha1.ContainerKillAction,
+		Spec: chaosmeshv1alpha1.PodChaosSpec{
+			Action: chaosmeshv1alpha1.ContainerKillAction,
 		},
 	}
 }
 
-func DefaultNetworkChaos() *chaosv1alpha1.NetworkChaos {
-	return &chaosv1alpha1.NetworkChaos{
+func DefaultNetworkChaos() *chaosmeshv1alpha1.NetworkChaos {
+	return &chaosmeshv1alpha1.NetworkChaos{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "shardingsphere-proxy",
 			Namespace: "default",
 			Labels:    map[string]string{},
 		},
-		Spec: chaosv1alpha1.NetworkChaosSpec{
-			Action:    chaosv1alpha1.PartitionAction,
+		Spec: chaosmeshv1alpha1.NetworkChaosSpec{
+			Action:    chaosmeshv1alpha1.PartitionAction,
 			Direction: "to",
 		},
 	}
