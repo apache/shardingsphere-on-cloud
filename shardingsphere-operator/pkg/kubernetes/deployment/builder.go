@@ -41,7 +41,12 @@ const (
 	defaultMySQLDriverEnvName    = "MYSQL_CONNECTOR_VERSION"
 	defaultMySQLDriverVolumeName = "mysql-connector-java"
 
-	defaultAnnotationJavaAgentEnabled     = "shardingsphere.apache.org/java-agent-enabled"
+	DefaultAnnotationJavaAgentEnabled       = "shardingsphere.apache.org/java-agent-enabled"
+	commonAnnotationPrometheusMetricsPath   = "prometheus.io/path"
+	commonAnnotationPrometheusMetricsPort   = "prometheus.io/port"
+	commonAnnotationPrometheusMetricsScrape = "prometheus.io/scrape"
+	commonAnnotationPrometheusMetricsScheme = "prometheus.io/scheme"
+
 	defaultJavaAgentVolumeName            = "java-agent-bin"
 	defaultJavaAgentVolumeMountPath       = "/opt/shardingsphere-proxy/agent"
 	defaultJavaAgentConfigVolumeName      = "java-agent-config"
@@ -139,6 +144,9 @@ type DeploymentBuilder interface {
 	SetNamespace(namespace string) DeploymentBuilder
 	SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder
 	SetAnnotations(annos map[string]string) DeploymentBuilder
+	SetShardingSphereProxyPodTemplate(tpl *corev1.PodTemplateSpec) DeploymentBuilder
+	SetShardingSphereProxyPodTemplateLabels(labels map[string]string) DeploymentBuilder
+	SetShardingSphereProxyPodTemplateAnnotations(annos map[string]string) DeploymentBuilder
 	SetShardingSphereProxyContainer(con *corev1.Container) DeploymentBuilder
 	SetMySQLConnector(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder
 	SetAgentBin(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder
@@ -189,6 +197,24 @@ func (d *deploymentBuilder) SetAnnotations(annos map[string]string) DeploymentBu
 // SetReplicas sets Deployment replicas
 func (d *deploymentBuilder) SetReplicas(r *int32) DeploymentBuilder {
 	d.deployment.Spec.Replicas = r
+	return d
+}
+
+// SetShardingSphereProxyPodTemplate sets Deployment PodTemplateSpec for ShardingSphereProxy Pod
+func (d *deploymentBuilder) SetShardingSphereProxyPodTemplate(tpl *corev1.PodTemplateSpec) DeploymentBuilder {
+	d.deployment.Spec.Template = *tpl
+	return d
+}
+
+// SetShardingSphereProxyPodTemplateAnnotations sets annotations for ShardingSphereProxy Pod
+func (d *deploymentBuilder) SetShardingSphereProxyPodTemplateAnnotations(annotations map[string]string) DeploymentBuilder {
+	d.deployment.Spec.Template.Annotations = annotations
+	return d
+}
+
+// SetShardingSphereProxyPodTemplateLabels sets labels for ShardingSphereProxy Pod
+func (d *deploymentBuilder) SetShardingSphereProxyPodTemplateLabels(labels map[string]string) DeploymentBuilder {
+	d.deployment.Spec.Template.Labels = labels
 	return d
 }
 
@@ -431,6 +457,19 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 	builder.SetVolume(vc)
 	scb.SetVolumeMount(vmc[0])
 
+	// set agent for proxy
+	if enabled, ok := cn.Annotations[DefaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
+		builder.SetAgentBin(scb, cn)
+
+		metricsAnnos := map[string]string{}
+		metricsAnnos[commonAnnotationPrometheusMetricsPath] = cn.Annotations[commonAnnotationPrometheusMetricsPath]
+		metricsAnnos[commonAnnotationPrometheusMetricsPort] = cn.Annotations[commonAnnotationPrometheusMetricsPort]
+		metricsAnnos[commonAnnotationPrometheusMetricsScrape] = cn.Annotations[commonAnnotationPrometheusMetricsScrape]
+		metricsAnnos[commonAnnotationPrometheusMetricsScheme] = cn.Annotations[commonAnnotationPrometheusMetricsScheme]
+
+		builder.SetShardingSphereProxyPodTemplateAnnotations(metricsAnnos)
+	}
+
 	if cn.Spec.StorageNodeConnector != nil {
 		switch cn.Spec.StorageNodeConnector.Type {
 		case v1alpha1.ConnectorTypeMySQL:
@@ -439,11 +478,6 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 			sc := scb.Build()
 			builder.SetShardingSphereProxyContainer(sc)
 		}
-	}
-
-	// set agent for proxy
-	if enabled, ok := cn.Annotations[defaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
-		builder.SetAgentBin(scb, cn)
 	}
 
 	return builder.Build()
@@ -554,9 +588,10 @@ func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *appsv1.
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "shardingsphere-proxy",
-			Namespace: "default",
-			Labels:    map[string]string{},
+			Name:        "shardingsphere-proxy",
+			Namespace:   "default",
+			Labels:      map[string]string{},
+			Annotations: map[string]string{},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(meta, gvk),
 			},
@@ -574,7 +609,8 @@ func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *appsv1.
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{},
+					Labels:      map[string]string{},
+					Annotations: map[string]string{},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
