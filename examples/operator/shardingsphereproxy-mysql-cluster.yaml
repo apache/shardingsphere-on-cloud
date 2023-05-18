@@ -42,7 +42,7 @@ spec:
         privilege:
           type: ALL_PERMITTED
         users:
-        - user: root%
+        - user: root@%
           password: root
       mode: 
         type: Cluster 
