@@ -59,7 +59,7 @@ type PressureCfg struct {
 
 type DistSQL struct {
 	SQL  string   `json:"sql"`
-	Args []string `json:"args"`
+	Args []string `json:"args,omitempty"`
 }
 
 type Script string
@@ -94,9 +94,10 @@ const (
 
 // ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
 type ShardingSphereChaosStatus struct {
-	ChaosCondition ChaosCondition `json:"chaosCondition"`
-	Phase          ChaosPhase     `json:"phase"`
-	Result         Result         `json:"result"`
+	ChaosCondition ChaosCondition      `json:"chaosCondition"`
+	Phase          ChaosPhase          `json:"phase"`
+	Result         Result              `json:"result"`
+	Conditions     []*metav1.Condition `json:"condition,omitempty"`
 }
 
 // Result represents the result of the ShardingSphereChaos

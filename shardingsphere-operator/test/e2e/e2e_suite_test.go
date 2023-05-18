@@ -19,6 +19,9 @@ package e2e
 
 import (
 	"context"
+	mockChaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh/mocks"
+	"github.com/golang/mock/gomock"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -51,6 +54,7 @@ var (
 	ctx       context.Context
 	cancel    context.CancelFunc
 	err       error
+	mockchaos *mockChaos.MockChaos
 )
 
 func TestControllers(t *testing.T) {
@@ -96,6 +100,7 @@ var _ = BeforeSuite(func() {
 
 	Expect(v1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	Expect(dbmeshv1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(clientgoscheme.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
@@ -126,21 +131,19 @@ var _ = BeforeSuite(func() {
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	/*
-		ctl := gomock.NewController(GinkgoT())
-		clientset, err := clientset.NewForConfig(k8sManager.GetConfig())
-		err = (&controllers.ShardingSphereChaosReconciler{
-			Client:    k8sManager.GetClient(),
-			Scheme:    k8sManager.GetScheme(),
-			Log:       logf.Log,
-			Chaos:     mockChaos.NewMockChaos(ctl),
-			Job:       job.NewJob(k8sManager.GetClient()),
-			ConfigMap: configmap.NewConfigMapClient(k8sManager.GetClient()),
-			Events:    k8sManager.GetEventRecorderFor("shardingsphere-chaos-controller"),
-			ClientSet: clientset,
-		}).SetupWithManager(k8sManager)
-		Expect(err).ToNot(HaveOccurred())
-	*/
+	ctl := gomock.NewController(GinkgoT())
+	mockchaos = mockChaos.NewMockChaos(ctl)
+
+	err = (&controllers.ShardingSphereChaosReconciler{
+		Client:    k8sManager.GetClient(),
+		Scheme:    k8sManager.GetScheme(),
+		Log:       logf.Log,
+		Events:    k8sManager.GetEventRecorderFor("shardingsphere-chaos-controller"),
+		Chaos:     mockchaos,
+		ExecCtrls: make([]*controllers.ExecCtrl, 0),
+		ConfigMap: configmap.NewConfigMapClient(k8sManager.GetClient()),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
 		defer GinkgoRecover()

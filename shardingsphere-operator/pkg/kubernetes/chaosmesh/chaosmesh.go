@@ -23,7 +23,7 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 
-	chaosmeshapi "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -85,7 +85,7 @@ type getter struct {
 type PodChaos interface{}
 
 func (cg getter) GetPodChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (PodChaos, error) {
-	chaos := &chaosmeshapi.PodChaos{}
+	chaos := &chaosmeshv1alpha1.PodChaos{}
 	if err := cg.Get(ctx, namespacedName, chaos); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
@@ -99,7 +99,7 @@ func (cg getter) GetPodChaosByNamespacedName(ctx context.Context, namespacedName
 type NetworkChaos interface{}
 
 func (cg getter) GetNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (NetworkChaos, error) {
-	chaos := &chaosmeshapi.NetworkChaos{}
+	chaos := &chaosmeshv1alpha1.NetworkChaos{}
 	if err := cg.Get(ctx, namespacedName, chaos); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
@@ -132,7 +132,7 @@ func (cs setter) CreatePodChaos(ctx context.Context, sschaos *v1alpha1.ShardingS
 	if err != nil {
 		return err
 	}
-	return cs.Client.Create(ctx, pc.(*chaosmeshapi.PodChaos))
+	return cs.Client.Create(ctx, pc.(*chaosmeshv1alpha1.PodChaos))
 }
 
 // UpdatePodChaos updates a pod chaos
@@ -141,11 +141,11 @@ func (cs setter) UpdatePodChaos(ctx context.Context, podChaos PodChaos, sschaos 
 	if err != nil {
 		return err
 	}
-	s, ok := pc.(*chaosmeshapi.PodChaos)
+	s, ok := pc.(*chaosmeshv1alpha1.PodChaos)
 	if !ok {
 		return ErrConvert
 	}
-	t, ok := podChaos.(*chaosmeshapi.PodChaos)
+	t, ok := podChaos.(*chaosmeshv1alpha1.PodChaos)
 	if !ok {
 		return ErrConvert
 	}
@@ -159,7 +159,7 @@ func (cs setter) UpdatePodChaos(ctx context.Context, podChaos PodChaos, sschaos 
 
 // DeletePodChaos deletes a pod chaos
 func (cs setter) DeletePodChaos(ctx context.Context, chao PodChaos) error {
-	podChao, ok := chao.(*chaosmeshapi.PodChaos)
+	podChao, ok := chao.(*chaosmeshv1alpha1.PodChaos)
 	if !ok {
 		return ErrConvert
 	}
@@ -176,7 +176,7 @@ func (cs setter) CreateNetworkChaos(ctx context.Context, sschaos *v1alpha1.Shard
 	if err != nil {
 		return err
 	}
-	return cs.Client.Create(ctx, nc.(*chaosmeshapi.NetworkChaos))
+	return cs.Client.Create(ctx, nc.(*chaosmeshv1alpha1.NetworkChaos))
 }
 
 // UpdateNetworkChaos updates a network chaos
@@ -185,11 +185,11 @@ func (cs setter) UpdateNetworkChaos(ctx context.Context, networkChaos NetworkCha
 	if err != nil {
 		return err
 	}
-	s, ok := pc.(*chaosmeshapi.NetworkChaos)
+	s, ok := pc.(*chaosmeshv1alpha1.NetworkChaos)
 	if !ok {
 		return ErrConvert
 	}
-	t, ok := networkChaos.(*chaosmeshapi.NetworkChaos)
+	t, ok := networkChaos.(*chaosmeshv1alpha1.NetworkChaos)
 	if !ok {
 		return ErrConvert
 	}
@@ -202,7 +202,7 @@ func (cs setter) UpdateNetworkChaos(ctx context.Context, networkChaos NetworkCha
 }
 
 func (cs setter) DeleteNetworkChaos(ctx context.Context, chao NetworkChaos) error {
-	networkChaos, ok := chao.(*chaosmeshapi.NetworkChaos)
+	networkChaos, ok := chao.(*chaosmeshv1alpha1.NetworkChaos)
 	if !ok {
 		return ErrConvert
 	}
