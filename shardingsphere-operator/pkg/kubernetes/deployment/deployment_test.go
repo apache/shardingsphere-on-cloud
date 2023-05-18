@@ -226,7 +226,7 @@ func Test_NewDeployment(t *testing.T) {
 						"k1": "v1",
 					},
 					Annotations: map[string]string{
-						defaultAnnotationJavaAgentEnabled: "true",
+						DefaultAnnotationJavaAgentEnabled: "true",
 					},
 				},
 				Spec: v1alpha1.ComputeNodeSpec{
@@ -273,7 +273,7 @@ func Test_NewDeployment(t *testing.T) {
 						"k1": "v1",
 					},
 					Annotations: map[string]string{
-						defaultAnnotationJavaAgentEnabled: "true",
+						DefaultAnnotationJavaAgentEnabled: "true",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -346,8 +346,8 @@ func Test_NewDeployment(t *testing.T) {
 									},
 									Env: []corev1.EnvVar{
 										{
-											Name:  defaultJavaToolOptionsName,
-											Value: fmt.Sprintf(defaultJavaAgentEnvValue, "5.3.1"),
+											Name:  defaultMySQLDriverEnvName,
+											Value: "5.1.47",
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{
