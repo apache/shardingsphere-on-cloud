@@ -232,7 +232,7 @@ computeNode:
         ## @param computeNode.users[0].password the password 
         ##
         users:
-          - user: root%
+          - user: root@%
             password: root
       ## @param computeNode.bootstrap.serverConfig.mode the modes for ShardingSphere
       ##
