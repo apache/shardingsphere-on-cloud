@@ -3,7 +3,9 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "prometheus"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -21,13 +23,15 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 9,
-  "iteration": 1678340029746,
+  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "collapsed": false,
+      "datasource": {
+        "type": "prometheus"
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -36,10 +40,21 @@
       },
       "id": 12,
       "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "Kubernetes General Metrics",
       "type": "row"
     },
     {
+      "datasource": {
+        "type": "prometheus"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -81,12 +96,11 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "9.3.6",
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
           "exemplar": true,
           "expr": "kube_deployment_status_replicas{deployment=\"$shardingsphere\",namespace=\"$namespace\"}",
@@ -104,6 +118,9 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": {
+        "type": "prometheus"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -132,7 +149,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "9.3.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -143,15 +160,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "kube_pod_status_phase{phase=\"Running\",kubernetes_namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}",
+          "editorMode": "code",
+          "expr": "kube_pod_status_phase{phase=\"Running\",namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}",
           "hide": false,
-          "interval": "",
           "legendFormat": "{{pod}}",
-          "refId": "B"
+          "range": true,
+          "refId": "A"
         }
       ],
       "thresholds": [],
@@ -191,6 +207,9 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": {
+        "type": "prometheus"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -219,7 +238,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "9.3.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -230,13 +249,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "sum by (pod_name)(rate(container_cpu_usage_seconds_total{image!=\"\", pod_name=~\"$shardingsphere.*\",namespace=\"$namespace\"}[$interval]))",
-          "interval": "",
-          "legendFormat": "{{pod_name}}",
+          "editorMode": "code",
+          "expr": "sum by (pod)(rate(container_cpu_usage_seconds_total{image!=\"\", pod=~\"$shardingsphere.*\",namespace=\"$namespace\"}[$interval]) * 100)",
+          "hide": false,
+          "legendFormat": "{{pod}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -277,6 +296,9 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": {
+        "type": "prometheus"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -305,7 +327,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "9.3.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -316,14 +338,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "sort_desc(sum(container_memory_usage_bytes{image!=\"\",container=\"shardingsphere-proxy\",namespace=\"$namespace\"}) by (pod_name))",
-          "interval": "",
-          "legendFormat": "{{pod_name}}",
-          "refId": "A"
+          "editorMode": "code",
+          "expr": "sort_desc(sum(container_memory_usage_bytes{image!=\"\",container=\"shardingsphere-proxy\",namespace=\"$namespace\"}) by (pod))",
+          "hide": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B"
         }
       ],
       "thresholds": [],
@@ -363,6 +385,9 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": {
+        "type": "prometheus"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -391,7 +416,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "9.3.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -402,27 +427,25 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "sort_desc(sum by (pod_name) (rate (container_network_receive_bytes_total{kubernetes_namespace=\"$namespace\",pod_name=~\"$shardingsphere.*\"}[$interval]) ))",
+          "editorMode": "code",
+          "expr": "sort_desc(sum by (pod) (rate (container_network_receive_bytes_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]) ))",
           "hide": false,
-          "interval": "",
-          "legendFormat": "接收-{{pod_name}}",
-          "refId": "A"
+          "legendFormat": "接收-{{pod}}",
+          "range": true,
+          "refId": "C"
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "sort_desc(sum by (pod_name) (rate (container_network_transmit_bytes_total{kubernetes_namespace=\"$namespace\",pod_name=~\"$shardingsphere.*\"}[$interval]) ))",
+          "editorMode": "code",
+          "expr": "sort_desc(sum by (pod) (rate (container_network_transmit_bytes_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]) ))",
           "hide": false,
-          "interval": "",
-          "legendFormat": "发送-{{pod_name}}",
-          "refId": "B"
+          "legendFormat": "发送-{{pod}}",
+          "range": true,
+          "refId": "D"
         }
       ],
       "thresholds": [],
@@ -459,6 +482,9 @@
     },
     {
       "collapsed": false,
+      "datasource": {
+        "type": "prometheus"
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -467,6 +493,14 @@
       },
       "id": 10,
       "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "ShardingSphere Proxy Metrics",
       "type": "row"
     },
@@ -475,6 +509,9 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": {
+        "type": "prometheus"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -502,7 +539,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "9.3.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -513,26 +550,25 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "jvm_memory_bytes_used{kubernetes_namespace=\"$namespace\",area=\"heap\"}",
-          "interval": "",
-          "legendFormat": "已用堆内存-{{kubernetes_pod_name}}",
-          "refId": "A"
+          "editorMode": "code",
+          "expr": "jvm_memory_bytes_used{namespace=\"$namespace\",area=\"heap\"}",
+          "hide": false,
+          "legendFormat": "已用堆内存-{{pod}}",
+          "range": true,
+          "refId": "C"
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "jvm_memory_bytes_used{kubernetes_namespace=\"$namespace\",area=\"nonheap\"}",
+          "editorMode": "code",
+          "expr": "jvm_memory_bytes_used{namespace=\"$namespace\",area=\"nonheap\"}",
           "hide": false,
-          "interval": "",
-          "legendFormat": "已用非堆内存-{{kubernetes_pod_name}}",
-          "refId": "B"
+          "legendFormat": "已用非堆内存-{{pod}}",
+          "range": true,
+          "refId": "D"
         }
       ],
       "thresholds": [],
@@ -572,6 +608,9 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": {
+        "type": "prometheus"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -599,7 +638,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "9.3.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -610,14 +649,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "increase(jvm_gc_collection_seconds_sum{kubernetes_namespace=\"$namespace\"}[$interval])",
-          "interval": "",
-          "legendFormat": "{{kubernetes_pod_name}}",
-          "refId": "A"
+          "editorMode": "code",
+          "expr": "increase(jvm_gc_collection_seconds_sum{namespace=\"$namespace\"}[$interval])",
+          "hide": false,
+          "legendFormat": "{{pod}}",
+          "range": true,
+          "refId": "B"
         }
       ],
       "thresholds": [],
@@ -657,6 +696,9 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": {
+        "type": "prometheus"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -684,7 +726,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "9.3.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -695,14 +737,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "jvm_memory_pool_bytes_used{kubernetes_namespace=\"$namespace\",kubernetes_pod_name=~\"$shardingsphere.*\"}",
-          "interval": "",
-          "legendFormat": "{{pool}}-{{kubernetes_pod_name}}",
-          "refId": "A"
+          "editorMode": "code",
+          "expr": "jvm_memory_pool_bytes_used{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}",
+          "hide": false,
+          "legendFormat": "{{pool}}-{{pod}}",
+          "range": true,
+          "refId": "B"
         }
       ],
       "thresholds": [],
@@ -742,6 +784,9 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": {
+        "type": "prometheus"
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -769,7 +814,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "9.3.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -780,14 +825,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "jvm_classes_loaded{kubernetes_namespace=\"$namespace\",kubernetes_pod_name=~\"$shardingsphere.*\"}",
-          "interval": "",
-          "legendFormat": "{{kubernetes_pod_name}}",
-          "refId": "A"
+          "editorMode": "code",
+          "expr": "jvm_classes_loaded{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}",
+          "hide": false,
+          "legendFormat": "{{pod}}",
+          "range": true,
+          "refId": "B"
         }
       ],
       "thresholds": [],
@@ -823,12 +868,17 @@
       }
     },
     {
+      "datasource": {
+        "type": "prometheus"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -885,7 +935,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
@@ -896,26 +947,31 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "proxy_connection_total{kubernetes_namespace=\"$namespace\"}",
-          "interval": "",
-          "legendFormat": "{{kubernetes_pod_name}}",
-          "refId": "A"
+          "editorMode": "code",
+          "expr": "proxy_connection_total{namespace=\"$namespace\"}",
+          "hide": false,
+          "legendFormat": "{{pod}}",
+          "range": true,
+          "refId": "B"
         }
       ],
       "title": "Proxy 连接数",
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -971,7 +1027,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -981,27 +1038,31 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "sum(rate(proxy_request_total{kubernetes_namespace=\"$namespace\",kubernetes_pod_name=~\"$shardingsphere.*\"}[$interval]))",
+          "editorMode": "code",
+          "expr": "sum(rate(proxy_request_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]))",
           "hide": false,
-          "interval": "",
           "legendFormat": "QPS",
-          "refId": "A"
+          "range": true,
+          "refId": "B"
         }
       ],
       "title": "QPS",
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -1063,7 +1124,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -1073,38 +1135,42 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "histogram_quantile(0.9, rate(proxy_execute_latency_millis_bucket{kubernetes_namespace=\"$namespace\"}[$interval]))",
-          "interval": "",
-          "legendFormat": "P90",
-          "refId": "A"
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.9, rate(proxy_execute_latency_millis_bucket{namespace=\"$namespace\"}[$interval]))",
+          "hide": false,
+          "legendFormat": "{{pod}} P90",
+          "range": true,
+          "refId": "C"
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "histogram_quantile(0.95, rate(proxy_execute_latency_millis_bucket{kubernetes_namespace=\"$namespace\"}[$interval]))",
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(proxy_execute_latency_millis_bucket{namespace=\"$namespace\"}[$interval]))",
           "hide": false,
-          "interval": "",
-          "legendFormat": "P95",
-          "refId": "B"
+          "legendFormat": "{{pod}} P95",
+          "range": true,
+          "refId": "D"
         }
       ],
       "title": "执行耗时统计",
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -1165,7 +1231,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -1175,26 +1242,31 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "sum(rate(proxy_execute_error_total{kubernetes_namespace=\"$namespace\"}[$interval]))",
-          "interval": "",
-          "legendFormat": "Proxy_Execute_Error_Total",
-          "refId": "A"
+          "editorMode": "code",
+          "expr": "proxy_execute_error_total{namespace=\"$namespace\"}",
+          "hide": false,
+          "legendFormat": "{{pod}}",
+          "range": true,
+          "refId": "B"
         }
       ],
       "title": "Proxy 执行异常数",
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -1255,7 +1327,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -1265,56 +1338,56 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "sum(rate(route_sql_insert_total{kubernetes_namespace=\"$namespace\",kubernetes_pod_name=~\"$shardingsphere.*\"}[$interval]))",
-          "interval": "",
+          "editorMode": "code",
+          "expr": "sum(rate(route_sql_insert_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]))",
+          "hide": false,
           "legendFormat": "Insert",
+          "range": true,
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(route_sql_select_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]))",
+          "hide": false,
+          "legendFormat": "Select",
+          "range": true,
           "refId": "A"
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "sum(rate(route_sql_select_total{kubernetes_namespace=\"$namespace\",kubernetes_pod_name=~\"$shardingsphere.*\"}[$interval]))",
+          "editorMode": "code",
+          "expr": "sum(rate(route_sql_update_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]))",
           "hide": false,
-          "interval": "",
-          "legendFormat": "select",
+          "legendFormat": "Update",
+          "range": true,
           "refId": "B"
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "sum(rate(route_sql_update_total{kubernetes_namespace=\"$namespace\",kubernetes_pod_name=~\"$shardingsphere.*\"}[$interval]))",
+          "editorMode": "code",
+          "expr": "sum(rate(route_sql_delete_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]))",
           "hide": false,
-          "interval": "",
-          "legendFormat": "update",
+          "legendFormat": "Delete",
+          "range": true,
           "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
-          },
-          "exemplar": true,
-          "expr": "sum(rate(route_sql_delete_total{kubernetes_namespace=\"$namespace\",kubernetes_pod_name=~\"$shardingsphere.*\"}[$interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "delete",
-          "refId": "D"
         }
       ],
       "title": "SQL 路由数量",
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1359,26 +1432,37 @@
         "text": {},
         "textMode": "value_and_name"
       },
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "9.3.6",
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
-          "exemplar": true,
-          "expr": "ceil(sum(meta_data_info{name=\"database_count\",kubernetes_namespace=\"$namespace\", kubernetes_pod_name=~\"$shardingsphere.*\"}) / count(meta_data_info{name=\"database_count\",kubernetes_namespace=\"$namespace\", kubernetes_pod_name=~\"$shardingsphere.*\"}))",
-          "interval": "",
-          "legendFormat": "逻辑库数量",
+          "editorMode": "code",
+          "expr": "ceil(sum(meta_data_info{name=\"database_count\",namespace=\"$namespace\", pod=~\"$shardingsphere.*\"}) / count(meta_data_info{name=\"database_count\",namespace=\"$namespace\", pod=~\"$shardingsphere.*\"}))",
+          "hide": false,
+          "legendFormat": "Database 数量",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "ceil(sum(meta_data_info{name=\"schema_count\",namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}) / count(meta_data_info{name=\"schema_count\",namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}))",
+          "hide": false,
+          "legendFormat": "Schema 数量",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "Panel Title",
+      "title": "逻辑库数量",
       "type": "stat"
     }
   ],
-  "refresh": "5s",
-  "schemaVersion": 35,
+  "refresh": false,
+  "schemaVersion": 37,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -1386,8 +1470,11 @@
       {
         "current": {
           "selected": false,
-          "text": "ss-manifest-test",
-          "value": "ss-manifest-test"
+          "text": "chaos-test",
+          "value": "chaos-test"
+        },
+        "datasource": {
+          "type": "prometheus"
         },
         "definition": "label_values(kube_namespace_created{cluster=~\"$cluster\"}, namespace)",
         "hide": 0,
@@ -1407,10 +1494,12 @@
       },
       {
         "current": {
-          "isNone": true,
           "selected": false,
           "text": "None",
           "value": ""
+        },
+        "datasource": {
+          "type": "prometheus"
         },
         "definition": "label_values(kube_node_info, cluster)",
         "hide": 0,
@@ -1431,17 +1520,20 @@
       {
         "current": {
           "selected": false,
-          "text": "ss-apache-shardingsphere-proxy",
-          "value": "ss-apache-shardingsphere-proxy"
+          "text": "foo",
+          "value": "foo"
         },
-        "definition": "label_values(kube_deployment_status_replicas{kubernetes_namespace=\"$namespace\"},deployment)",
+        "datasource": {
+          "type": "prometheus"
+        },
+        "definition": "label_values(kube_deployment_status_replicas{namespace=\"$namespace\"},deployment)",
         "hide": 0,
         "includeAll": false,
         "multi": false,
         "name": "shardingsphere",
         "options": [],
         "query": {
-          "query": "label_values(kube_deployment_status_replicas{kubernetes_namespace=\"$namespace\"},deployment)",
+          "query": "label_values(kube_deployment_status_replicas{namespace=\"$namespace\"},deployment)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
@@ -1452,9 +1544,9 @@
       },
       {
         "current": {
-          "selected": false,
-          "text": "1m",
-          "value": "1m"
+          "selected": true,
+          "text": "2m",
+          "value": "2m"
         },
         "hide": 0,
         "includeAll": false,
@@ -1462,12 +1554,12 @@
         "name": "interval",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "1m",
             "value": "1m"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "2m",
             "value": "2m"
           },
@@ -1537,6 +1629,6 @@
   "timezone": "",
   "title": "ShardingSphere Proxy Dashboard",
   "uid": "sFVsfgaVz",
-  "version": 39,
+  "version": 16,
   "weekStart": ""
 }
