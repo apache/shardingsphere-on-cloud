@@ -61,7 +61,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: add-metrics
+  name: {{ printf "%s-agent-configuration" (include "common.names.fullname" .) }}
 data:
   agent.yaml: |-
     {{- include "common.tplvalues.render" (dict "value" .Values.compute.agent.config "context" $) | nindent 4 }}
