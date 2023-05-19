@@ -129,7 +129,7 @@ spec:
           emptyDir: { }
         - name: agent-config
           configMap:
-            name: add-metrics
+            name: {{ printf "%s-agent-configuration" (include "common.names.fullname" .) }}
             items:
               - key: agent.yaml
                 path: agent.yaml
