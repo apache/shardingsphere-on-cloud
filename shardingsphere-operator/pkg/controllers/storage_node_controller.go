@@ -118,6 +118,12 @@ func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.Sto
 		return ctrl.Result{}, nil
 	}
 
+	// Try to unregister storage unit in shardingsphere.
+	if err = r.unregisterStorageUnit(ctx, node); err != nil {
+		r.Log.Error(err, "failed to delete storage unit")
+		return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
+	}
+
 	if err = r.deleteDatabaseCluster(ctx, node, databaseClass); err != nil {
 		r.Log.Error(err, "failed to delete database cluster")
 		return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
@@ -503,6 +509,32 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 	r.Recorder.Eventf(node, corev1.EventTypeNormal, "StorageUnitRegistered", "StorageUnit %s:%d/%s is registered", host, port, dbName)
 
 	node.Status.Registered = true
+	return nil
+}
+
+func (r *StorageNodeReconciler) unregisterStorageUnit(ctx context.Context, node *v1alpha1.StorageNode) error {
+	if !node.Status.Registered {
+		return nil
+	}
+	if err := r.validateComputeNodeAnnotations(node); err != nil {
+		return err
+	}
+
+	ssServer, err := r.getShardingsphereServer(ctx, node)
+	if err != nil {
+		return fmt.Errorf("getShardingsphereServer failed: %w", err)
+	}
+
+	defer ssServer.Close()
+
+	// TODO how to set ds name?
+	if err := ssServer.UnRegisterStorageUnit("ds_0"); err != nil {
+		return fmt.Errorf("unregister storage unit failed: %w", err)
+	}
+
+	r.Recorder.Eventf(node, corev1.EventTypeNormal, "StorageUnitUnRegistered", "StorageUnit of node %s/%s is unregistered", node.GetNamespace(), node.GetName())
+
+	node.Status.Registered = false
 	return nil
 }
 
