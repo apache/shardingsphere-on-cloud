@@ -4,8 +4,7 @@
       {
         "builtIn": 1,
         "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
+          "type": "prometheus"
         },
         "enable": true,
         "hide": true,
@@ -31,8 +30,7 @@
     {
       "collapsed": false,
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -45,8 +43,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -56,8 +53,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -104,8 +100,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "qeYuQ1s7k"
+            "type": "prometheus"
           },
           "exemplar": true,
           "expr": "kube_deployment_status_replicas{deployment=\"$shardingsphere\",namespace=\"$namespace\"}",
@@ -124,8 +119,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fill": 1,
       "fillGradient": 0,
@@ -166,8 +160,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "kube_pod_status_phase{phase=\"Running\",namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}",
@@ -215,8 +208,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fill": 1,
       "fillGradient": 0,
@@ -257,8 +249,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (pod)(rate(container_cpu_usage_seconds_total{image!=\"\", pod=~\"$shardingsphere.*\",namespace=\"$namespace\"}[$interval]) * 100)",
@@ -306,8 +297,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fill": 1,
       "fillGradient": 0,
@@ -348,8 +338,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "sort_desc(sum(container_memory_usage_bytes{image!=\"\",container=\"shardingsphere-proxy\",namespace=\"$namespace\"}) by (pod))",
@@ -397,8 +386,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fill": 1,
       "fillGradient": 0,
@@ -439,8 +427,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "sort_desc(sum by (pod) (rate (container_network_receive_bytes_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]) ))",
@@ -451,8 +438,7 @@
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "sort_desc(sum by (pod) (rate (container_network_transmit_bytes_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]) ))",
@@ -497,8 +483,7 @@
     {
       "collapsed": false,
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "gridPos": {
         "h": 1,
@@ -511,8 +496,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "refId": "A"
         }
@@ -526,8 +510,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fill": 1,
       "fillGradient": 0,
@@ -567,8 +550,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "jvm_memory_bytes_used{namespace=\"$namespace\",area=\"heap\"}",
@@ -579,8 +561,7 @@
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "jvm_memory_bytes_used{namespace=\"$namespace\",area=\"nonheap\"}",
@@ -628,8 +609,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fill": 1,
       "fillGradient": 0,
@@ -669,8 +649,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "increase(jvm_gc_collection_seconds_sum{namespace=\"$namespace\"}[$interval])",
@@ -718,8 +697,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fill": 1,
       "fillGradient": 0,
@@ -759,8 +737,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "jvm_memory_pool_bytes_used{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}",
@@ -808,8 +785,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fill": 1,
       "fillGradient": 0,
@@ -849,8 +825,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "jvm_classes_loaded{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}",
@@ -894,8 +869,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -973,8 +947,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "proxy_connection_total{namespace=\"$namespace\"}",
@@ -989,8 +962,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1066,8 +1038,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum(rate(proxy_request_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]))",
@@ -1082,8 +1053,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1165,8 +1135,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.9, rate(proxy_execute_latency_millis_bucket{namespace=\"$namespace\"}[$interval]))",
@@ -1177,8 +1146,7 @@
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, rate(proxy_execute_latency_millis_bucket{namespace=\"$namespace\"}[$interval]))",
@@ -1193,8 +1161,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1275,8 +1242,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "proxy_execute_error_total{namespace=\"$namespace\"}",
@@ -1291,8 +1257,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1373,8 +1338,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum(rate(route_sql_insert_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]))",
@@ -1385,8 +1349,7 @@
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum(rate(route_sql_select_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]))",
@@ -1397,8 +1360,7 @@
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum(rate(route_sql_update_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]))",
@@ -1409,8 +1371,7 @@
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum(rate(route_sql_delete_total{namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}[$interval]))",
@@ -1425,8 +1386,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "2cbUtE8Vz"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1476,8 +1436,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "ceil(sum(meta_data_info{name=\"database_count\",namespace=\"$namespace\", pod=~\"$shardingsphere.*\"}) / count(meta_data_info{name=\"database_count\",namespace=\"$namespace\", pod=~\"$shardingsphere.*\"}))",
@@ -1488,8 +1447,7 @@
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "2cbUtE8Vz"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "ceil(sum(meta_data_info{name=\"schema_count\",namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}) / count(meta_data_info{name=\"schema_count\",namespace=\"$namespace\",pod=~\"$shardingsphere.*\"}))",
@@ -1516,8 +1474,7 @@
           "value": "chaos-test"
         },
         "datasource": {
-          "type": "prometheus",
-          "uid": "2cbUtE8Vz"
+          "type": "prometheus"
         },
         "definition": "label_values(kube_namespace_created{cluster=~\"$cluster\"}, namespace)",
         "hide": 0,
@@ -1542,8 +1499,7 @@
           "value": ""
         },
         "datasource": {
-          "type": "prometheus",
-          "uid": "2cbUtE8Vz"
+          "type": "prometheus"
         },
         "definition": "label_values(kube_node_info, cluster)",
         "hide": 0,
@@ -1568,8 +1524,7 @@
           "value": "foo"
         },
         "datasource": {
-          "type": "prometheus",
-          "uid": "2cbUtE8Vz"
+          "type": "prometheus"
         },
         "definition": "label_values(kube_deployment_status_replicas{namespace=\"$namespace\"},deployment)",
         "hide": 0,
@@ -1667,8 +1622,8 @@
     ]
   },
   "time": {
-    "from": "2023-05-18T07:07:22.000Z",
-    "to": "2023-05-18T07:22:22.000Z"
+    "from": "now-6h",
+    "to": "now"
   },
   "timepicker": {},
   "timezone": "",
