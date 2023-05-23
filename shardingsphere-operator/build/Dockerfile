@@ -17,11 +17,11 @@
 
 
 # Stage1: Build Go binary for AMD64 
-FROM --platform=linux/amd64 golang:1.17-alpine AS builder-amd64
+FROM --platform=linux/amd64 golang:1.19-alpine AS builder-amd64
 WORKDIR /workspace
 COPY go.mod go.mod
 COPY go.sum go.sum
-#ENV GOPROXY=https://goproxy.cn
+ENV GOPROXY=https://goproxy.cn
 RUN go mod download
 
 # Copy Go source files
@@ -34,11 +34,11 @@ COPY pkg pkg/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -ldflags "-w -s" -gcflags "-N -l" -a -o operator-bin-amd64 cmd/shardingsphere-operator/main.go
 
 # Step2: Build Go binary for ARM64
-FROM --platform=linux/arm64 golang:1.17-alpine AS builder-arm64
+FROM --platform=linux/arm64 golang:1.19-alpine AS builder-arm64
 WORKDIR /workspace
 COPY go.mod go.mod
 COPY go.sum go.sum
-#ENV GOPROXY=https://goproxy.cn
+ENV GOPROXY=https://goproxy.cn
 RUN go mod download
 
 # Copy the go source
