@@ -47,7 +47,7 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/arm64/v8
       -
         # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
