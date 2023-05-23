@@ -66,10 +66,11 @@ var _ = Describe("Test ShardingSphere Server", func() {
 	Context("Test register storage unit", func() {
 		It("should register success", func() {
 			// mock db and return register storage unit success
+			dbmock.ExpectExec(regexp.QuoteMeta("USE")).WillReturnResult(sqlmock.NewResult(1, 1))
 			dbmock.ExpectExec(regexp.QuoteMeta("REGISTER STORAGE UNIT")).WillReturnResult(sqlmock.NewResult(1, 1))
 
 			// create server
-			err = s.RegisterStorageUnit("ds_0", "localhost", uint(3307), "sharding_db", "user", "password")
+			err = s.RegisterStorageUnit("sharding_db", "ds_0", "localhost", uint(3307), "sharding_db", "user", "password")
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 	})
@@ -81,7 +82,7 @@ var _ = Describe("Test ShardingSphere Server", func() {
 			// mock db and return sharding table rule
 			dbmock.ExpectQuery(regexp.QuoteMeta("SHOW RULES USED STORAGE UNIT")).WillReturnRows(sqlmock.NewRows([]string{"type", "name"}).AddRow("sharding", "t_order"))
 
-			result, err := s.(*server).getRulesUsed("ds_0", "sharding_db")
+			result, err := s.(*server).getRulesUsed("ds_0")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(result).Should(Equal([]*Rule{{Type: "sharding", Name: "t_order"}}))
 		})
@@ -100,10 +101,11 @@ var _ = Describe("Test ShardingSphere Server", func() {
 
 	Context("Test unregister storage node", func() {
 		It("should unregister success", func() {
+			dbmock.ExpectExec(regexp.QuoteMeta("USE")).WillReturnResult(sqlmock.NewResult(1, 1))
 			dbmock.ExpectQuery(regexp.QuoteMeta("SHOW RULES USED STORAGE UNIT")).WillReturnRows(sqlmock.NewRows([]string{"type", "name"}))
 			dbmock.ExpectExec(regexp.QuoteMeta("UNREGISTER STORAGE UNIT")).WillReturnResult(sqlmock.NewResult(1, 1))
 
-			err = s.UnRegisterStorageUnit("ds_0")
+			err = s.UnRegisterStorageUnit("sharding_db", "ds_0")
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 	})
@@ -116,6 +118,13 @@ var _ = Describe("Test ShardingSphere Server Manually", func() {
 		port   uint
 		user   string
 		pass   string
+
+		dsName   string
+		dsHost   string
+		dsPort   uint
+		dsDBName string
+		dsUser   string
+		dsPass   string
 	)
 
 	Context("Test create database", func() {
@@ -123,13 +132,19 @@ var _ = Describe("Test ShardingSphere Server Manually", func() {
 			if driver == "" || host == "" || port == 0 || user == "" || pass == "" {
 				Skip("skip test")
 			}
-			dbName := "test_db"
+			logicDBName := "test_db"
 			s, err := NewServer(driver, host, port, user, pass)
 			Expect(err).ShouldNot(HaveOccurred())
-			err = s.CreateDatabase(dbName)
+			err = s.CreateDatabase(logicDBName)
 			Expect(err).ShouldNot(HaveOccurred())
 
-			s.(*server).db.Exec(fmt.Sprintf(`DROP DATABASE %s`, dbName))
+			err = s.RegisterStorageUnit(logicDBName, dsName, dsHost, dsPort, dsDBName, dsUser, dsPass)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			err = s.UnRegisterStorageUnit(logicDBName, dsName)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			s.(*server).db.Exec(fmt.Sprintf(`DROP DATABASE %s`, logicDBName))
 		})
 	})
 })

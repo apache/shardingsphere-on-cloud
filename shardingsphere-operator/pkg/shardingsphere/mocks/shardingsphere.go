@@ -79,29 +79,29 @@ func (mr *MockIServerMockRecorder) CreateDatabase(dbName interface{}) *gomock.Ca
 }
 
 // RegisterStorageUnit mocks base method.
-func (m *MockIServer) RegisterStorageUnit(dsName, host string, port uint, dbName, user, password string) error {
+func (m *MockIServer) RegisterStorageUnit(logicDBName, dsName, dsHost string, dsPort uint, dsDBName, dsUser, dsPassword string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterStorageUnit", dsName, host, port, dbName, user, password)
+	ret := m.ctrl.Call(m, "RegisterStorageUnit", logicDBName, dsName, dsHost, dsPort, dsDBName, dsUser, dsPassword)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterStorageUnit indicates an expected call of RegisterStorageUnit.
-func (mr *MockIServerMockRecorder) RegisterStorageUnit(dsName, host, port, dbName, user, password interface{}) *gomock.Call {
+func (mr *MockIServerMockRecorder) RegisterStorageUnit(logicDBName, dsName, dsHost, dsPort, dsDBName, dsUser, dsPassword interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterStorageUnit", reflect.TypeOf((*MockIServer)(nil).RegisterStorageUnit), dsName, host, port, dbName, user, password)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterStorageUnit", reflect.TypeOf((*MockIServer)(nil).RegisterStorageUnit), logicDBName, dsName, dsHost, dsPort, dsDBName, dsUser, dsPassword)
 }
 
 // UnRegisterStorageUnit mocks base method.
-func (m *MockIServer) UnRegisterStorageUnit(dsName string) error {
+func (m *MockIServer) UnRegisterStorageUnit(logicDBName, dsName string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnRegisterStorageUnit", dsName)
+	ret := m.ctrl.Call(m, "UnRegisterStorageUnit", logicDBName, dsName)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UnRegisterStorageUnit indicates an expected call of UnRegisterStorageUnit.
-func (mr *MockIServerMockRecorder) UnRegisterStorageUnit(dsName interface{}) *gomock.Call {
+func (mr *MockIServerMockRecorder) UnRegisterStorageUnit(logicDBName, dsName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnRegisterStorageUnit", reflect.TypeOf((*MockIServer)(nil).UnRegisterStorageUnit), dsName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnRegisterStorageUnit", reflect.TypeOf((*MockIServer)(nil).UnRegisterStorageUnit), logicDBName, dsName)
 }

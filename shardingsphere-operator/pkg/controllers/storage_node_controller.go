@@ -503,7 +503,7 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 	password := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUserPassword]
 
 	// TODO how to set ds name?
-	if err := ssServer.RegisterStorageUnit("ds_0", host, uint(port), dbName, username, password); err != nil {
+	if err := ssServer.RegisterStorageUnit(logicDBName, "ds_0", host, uint(port), dbName, username, password); err != nil {
 		return fmt.Errorf("register storage node failed: %w", err)
 	}
 	r.Recorder.Eventf(node, corev1.EventTypeNormal, "StorageUnitRegistered", "StorageUnit %s:%d/%s is registered", host, port, dbName)
@@ -520,6 +520,8 @@ func (r *StorageNodeReconciler) unregisterStorageUnit(ctx context.Context, node 
 		return err
 	}
 
+	logicDBName := node.Annotations[AnnotationKeyLogicDatabaseName]
+
 	ssServer, err := r.getShardingsphereServer(ctx, node)
 	if err != nil {
 		return fmt.Errorf("getShardingsphereServer failed: %w", err)
@@ -528,7 +530,7 @@ func (r *StorageNodeReconciler) unregisterStorageUnit(ctx context.Context, node 
 	defer ssServer.Close()
 
 	// TODO how to set ds name?
-	if err := ssServer.UnRegisterStorageUnit("ds_0"); err != nil {
+	if err := ssServer.UnRegisterStorageUnit(logicDBName, "ds_0"); err != nil {
 		return fmt.Errorf("unregister storage unit failed: %w", err)
 	}
 

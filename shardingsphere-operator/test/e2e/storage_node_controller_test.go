@@ -20,27 +20,27 @@ package e2e
 import (
 	"context"
 	"database/sql"
-	"github.com/DATA-DOG/go-sqlmock"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"reflect"
 	"regexp"
 	"time"
 
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
-
 	"bou.ke/monkey"
+	"github.com/DATA-DOG/go-sqlmock"
 	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
 )
 
 var _ = Describe("StorageNode Controller Suite Test", func() {
-	var databaseClassName = "test-database-class"
+	databaseClassName := "test-database-class"
 
 	BeforeEach(func() {
 		databaseClass := &dbmeshv1alpha1.DatabaseClass{
@@ -244,6 +244,7 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 			Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 
 			dbmock.ExpectExec(regexp.QuoteMeta("CREATE DATABASE IF NOT EXISTS")).WillReturnResult(sqlmock.NewResult(1, 1))
+			dbmock.ExpectExec(regexp.QuoteMeta("USE")).WillReturnResult(sqlmock.NewResult(1, 1))
 			dbmock.ExpectExec(regexp.QuoteMeta("REGISTER STORAGE UNIT IF NOT EXISTS")).WillReturnResult(sqlmock.NewResult(0, 0))
 
 			Eventually(func() v1alpha1.StorageNodePhaseStatus {
@@ -261,6 +262,7 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 			// delete storage node
 			Expect(k8sClient.Delete(ctx, node)).Should(Succeed())
 
+			dbmock.ExpectExec(regexp.QuoteMeta("USE")).WillReturnResult(sqlmock.NewResult(1, 1))
 			dbmock.ExpectQuery(regexp.QuoteMeta("SHOW RULES USED STORAGE UNIT")).WillReturnRows(sqlmock.NewRows([]string{"type", "name"}).AddRow("sharding", "t_order"))
 			dbmock.ExpectExec("DROP SHARDING TABLE RULE").WillReturnResult(sqlmock.NewResult(1, 1))
 			dbmock.ExpectExec(regexp.QuoteMeta("UNREGISTER STORAGE UNIT")).WillReturnResult(sqlmock.NewResult(0, 0))

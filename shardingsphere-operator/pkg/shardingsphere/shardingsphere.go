@@ -27,10 +27,12 @@ import (
 const (
 	// DistSQLCreateDatabase create database if not exists.
 	DistSQLCreateDatabase = `CREATE DATABASE IF NOT EXISTS %s;`
+	// DistSQLUseDatabase use database.
+	DistSQLUseDatabase = `USE %s;`
 	// DistSQLRegisterStorageUnit register database to shardingsphere by storage unit name and database info.
 	DistSQLRegisterStorageUnit = `REGISTER STORAGE UNIT IF NOT EXISTS %s (HOST="%s",PORT=%d,DB="%s",USER="%s",PASSWORD="%s");`
 	// DistSQLShowRulesUsed show all rules used by storage unit name.
-	DistSQLShowRulesUsed = `SHOW RULES USED STORAGE UNIT %s FROM %s;`
+	DistSQLShowRulesUsed = `SHOW RULES USED STORAGE UNIT %s;`
 	// DistSQLUnRegisterStorageUnit unregister database from shardingsphere by storage unit name.
 	DistSQLUnRegisterStorageUnit = `UNREGISTER STORAGE UNIT %s;`
 	// DistSQLDropRule drop rule by rule type and rule name.
@@ -52,8 +54,8 @@ type server struct {
 
 type IServer interface {
 	CreateDatabase(dbName string) error
-	RegisterStorageUnit(dsName, host string, port uint, dbName, user, password string) error
-	UnRegisterStorageUnit(dsName string) error
+	RegisterStorageUnit(logicDBName, dsName, dsHost string, dsPort uint, dsDBName, dsUser, dsPassword string) error
+	UnRegisterStorageUnit(logicDBName, dsName string) error
 	Close() error
 }
 
@@ -98,10 +100,15 @@ func (s *server) CreateDatabase(dbName string) error {
 	return nil
 }
 
-func (s *server) RegisterStorageUnit(dsName, host string, port uint, dbName, user, password string) error {
-	distSQL := fmt.Sprintf(DistSQLRegisterStorageUnit, dsName, host, port, dbName, user, password)
+func (s *server) RegisterStorageUnit(logicDBName, dsName, dsHost string, dsPort uint, dsDBName, dsUser, dsPassword string) error {
+	_, err := s.db.Exec(fmt.Sprintf(DistSQLUseDatabase, logicDBName))
+	if err != nil {
+		return fmt.Errorf("use database error: %w", err)
+	}
 
-	_, err := s.db.Exec(distSQL)
+	distSQL := fmt.Sprintf(DistSQLRegisterStorageUnit, dsName, dsHost, dsPort, dsDBName, dsUser, dsPassword)
+
+	_, err = s.db.Exec(distSQL)
 	if err != nil {
 		return fmt.Errorf("register database error: %w", err)
 	}
@@ -110,9 +117,9 @@ func (s *server) RegisterStorageUnit(dsName, host string, port uint, dbName, use
 }
 
 // getRulesUsed returns all rules used by storage unit name.
-func (s *server) getRulesUsed(dsName, dbName string) (rules []*Rule, err error) {
+func (s *server) getRulesUsed(dsName string) (rules []*Rule, err error) {
 	rules = make([]*Rule, 0)
-	distSQL := fmt.Sprintf(DistSQLShowRulesUsed, dsName, dbName)
+	distSQL := fmt.Sprintf(DistSQLShowRulesUsed, dsName)
 
 	rows, err := s.db.Query(distSQL)
 	if err != nil {
@@ -134,8 +141,13 @@ func (s *server) getRulesUsed(dsName, dbName string) (rules []*Rule, err error) 
 	return rules, nil
 }
 
-func (s *server) UnRegisterStorageUnit(dsName string) error {
-	rules, err := s.getRulesUsed(dsName, "")
+func (s *server) UnRegisterStorageUnit(logicDBName, dsName string) error {
+	_, err := s.db.Exec(fmt.Sprintf(DistSQLUseDatabase, logicDBName))
+	if err != nil {
+		return fmt.Errorf("use database error: %w", err)
+	}
+
+	rules, err := s.getRulesUsed(dsName)
 	if err != nil {
 		return fmt.Errorf("get rules used error: %w", err)
 	}
