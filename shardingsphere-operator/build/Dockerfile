@@ -21,7 +21,7 @@ FROM --platform=linux/amd64 golang:1.19-alpine AS builder-amd64
 WORKDIR /workspace
 COPY go.mod go.mod
 COPY go.sum go.sum
-ENV GOPROXY=https://goproxy.cn
+#ENV GOPROXY=https://goproxy.cn
 RUN go mod download
 
 # Copy Go source files
@@ -38,7 +38,7 @@ FROM --platform=linux/arm64 golang:1.19-alpine AS builder-arm64
 WORKDIR /workspace
 COPY go.mod go.mod
 COPY go.sum go.sum
-ENV GOPROXY=https://goproxy.cn
+#ENV GOPROXY=https://goproxy.cn
 RUN go mod download
 
 # Copy the go source
