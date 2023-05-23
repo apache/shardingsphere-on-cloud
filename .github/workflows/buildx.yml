@@ -54,7 +54,7 @@ jobs:
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
-          platforms: 'arm64,amd64,arm64/v8'
+          platforms: 'arm64,amd64,arm/v8'
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
