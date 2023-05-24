@@ -47,7 +47,7 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/arm/v8
       -
         # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
@@ -68,4 +68,5 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           file: shardingsphere-operator/build/Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/arm/v8
 

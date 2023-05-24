@@ -45,8 +45,6 @@ spec:
               {{- if eq .Values.operator.featureGates.computeNode true }}
             - --feature-gates=ComputeNode={{ .Values.operator.featureGates.computeNode }}
               {{- end }}
-          command:
-            - /operator
           ports:
             - name: healthcheck
               containerPort: {{ .Values.operator.health.healthProbePort }}
