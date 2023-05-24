@@ -23,8 +23,8 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: uhub.service.ucloud.cn 
-  IMAGE_NAME: cloud-ops/apache-shardingsphere-operator
+  REGISTRY: docker.io 
+  IMAGE_NAME: apache/shardingsphere-operator
 
 jobs:
   build-and-push-image:
