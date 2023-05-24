@@ -141,7 +141,7 @@ func (c *RdsClient) CreateInstance(ctx context.Context, node *v1alpha1.StorageNo
 		SetMasterUserPassword(params["masterUserPassword"]).
 		SetAllocatedStorage(int32(storage))
 	// set database name if needed.
-	if v, ok := params[node.Annotations[""]]; ok {
+	if v, ok := params[node.Annotations[dbmeshv1alpha1.AnnotationsInstanceDBName]]; ok {
 		instance.SetDBName(v)
 	}
 	return instance.Create(ctx)

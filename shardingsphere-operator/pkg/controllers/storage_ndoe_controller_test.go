@@ -245,16 +245,14 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 	})
 
 	Context("reconcile storage node in Ready status when it's been deleted", func() {
-		var (
-			rdsInstanceAvailable = dbmesh_rds.DescInstance{
-				DBInstanceIdentifier: defaultTestInstanceIdentifier,
-				DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
-				Endpoint: dbmesh_rds.Endpoint{
-					Address: "127.0.0.1",
-					Port:    3306,
-				},
-			}
-		)
+		rdsInstanceAvailable := dbmesh_rds.DescInstance{
+			DBInstanceIdentifier: defaultTestInstanceIdentifier,
+			DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
+			Endpoint: dbmesh_rds.Endpoint{
+				Address: "127.0.0.1",
+				Port:    3306,
+			},
+		}
 		It("should be successful when instance is in available status", func() {
 			deletingStorageNode := "test-deleting-storage-node"
 			req := ctrl.Request{
@@ -478,7 +476,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 			// mock shardingsphere create database
 			mockSS.EXPECT().CreateDatabase(gomock.Any()).Return(nil)
 			// mock shardingsphere register storage unit
-			mockSS.EXPECT().RegisterStorageUnit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			mockSS.EXPECT().RegisterStorageUnit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			// mock shardingsphere close connection
 			mockSS.EXPECT().Close()
 
@@ -640,7 +638,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 
 			mockSS.EXPECT().CreateDatabase(gomock.Any()).Return(nil)
 			mockSS.EXPECT().Close().Return(nil)
-			mockSS.EXPECT().RegisterStorageUnit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			mockSS.EXPECT().RegisterStorageUnit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
 			Expect(reconciler.registerStorageUnit(ctx, sn)).To(BeNil())
 			Expect(sn.Status.Registered).To(BeTrue())
@@ -716,7 +714,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 				}
 				Expect(fakeClient.Create(ctx, sn)).Should(Succeed())
 
-				mockSS.EXPECT().UnRegisterStorageUnit(gomock.Any()).Return(nil)
+				mockSS.EXPECT().UnRegisterStorageUnit(gomock.Any(), gomock.Any()).Return(nil)
 				mockSS.EXPECT().Close().Return(nil)
 				Expect(reconciler.unregisterStorageUnit(ctx, sn)).To(BeNil())
 			})
