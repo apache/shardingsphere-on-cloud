@@ -75,7 +75,7 @@ run: manifests generate fmt ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	docker build -f build/Dockerfile -t ${IMG} --no-cache .
+	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v8 -f build/Dockerfile  -t ${IMG} . 
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
