@@ -57,5 +57,5 @@ COPY --from=builder-arm64 /workspace/operator-bin-arm64 .
 
 # Add a scripts for start 
 COPY start.sh /start.sh
-RUN chmod +x /start.sh
-ENTRYPOINT ["/start.sh"]
+#RUN chmod +x /start.sh
+ENTRYPOINT ["/bin/sh", "/start.sh"]
