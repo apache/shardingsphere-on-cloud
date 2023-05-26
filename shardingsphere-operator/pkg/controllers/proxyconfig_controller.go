@@ -45,10 +45,10 @@ type ProxyConfigReconciler struct {
 	Log    logr.Logger
 }
 
-//+kubebuilder:rbac:groups=shardingsphere.apache.org,resources=proxyconfigs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=shardingsphere.apache.org,resources=proxyconfigs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=shardingsphere.apache.org,resources=proxyconfigs/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=configmap,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=shardingsphereproxyserverconfigs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=shardingsphereproxyserverconfigs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=shardingsphereproxyserverconfigs/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

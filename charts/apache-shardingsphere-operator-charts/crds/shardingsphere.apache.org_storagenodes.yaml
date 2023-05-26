@@ -1,0 +1,189 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
+  name: storagenodes.shardingsphere.apache.org
+spec:
+  group: shardingsphere.apache.org
+  names:
+    kind: StorageNode
+    listKind: StorageNodeList
+    plural: storagenodes
+    singular: storagenode
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.Cluster.Status
+      name: ClusterStatus
+      type: string
+    - jsonPath: .status.Registered
+      name: Registered
+      priority: 1
+      type: boolean
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: StorageNode is the Schema for the ShardingSphere storage unit
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: StorageNodeSpec defines the desired state of a set of storage
+              units
+            properties:
+              databaseClassName:
+                type: string
+              schema:
+                type: string
+            required:
+            - databaseClassName
+            type: object
+          status:
+            description: StorageNodeStatus defines the actual state of a set of storage
+              units
+            properties:
+              cluster:
+                description: Cluster contains the current status of the StorageNode
+                  cluster
+                properties:
+                  primaryEndpoint:
+                    properties:
+                      address:
+                        type: string
+                      port:
+                        format: int32
+                        type: integer
+                    required:
+                    - address
+                    - port
+                    type: object
+                  properties:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  readerEndpoints:
+                    items:
+                      properties:
+                        address:
+                          type: string
+                        port:
+                          format: int32
+                          type: integer
+                      required:
+                      - address
+                      - port
+                      type: object
+                    type: array
+                  status:
+                    type: string
+                required:
+                - primaryEndpoint
+                - status
+                type: object
+              conditions:
+                description: Conditions The conditions array, the reason and message
+                  fields
+                items:
+                  description: StorageNodeCondition contains details for the current
+                    condition of this StorageNode.
+                  properties:
+                    lastUpdateTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              instances:
+                description: Instances contains the current status of the StorageNode
+                  instance
+                items:
+                  properties:
+                    primaryEndpoint:
+                      properties:
+                        address:
+                          type: string
+                        port:
+                          format: int32
+                          type: integer
+                      required:
+                      - address
+                      - port
+                      type: object
+                    properties:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    status:
+                      type: string
+                  required:
+                  - primaryEndpoint
+                  - status
+                  type: object
+                type: array
+              observedGeneration:
+                description: The generation observed by the StorageNode controller.
+                format: int64
+                type: integer
+              phase:
+                description: 'Phase is a brief summary of the StorageNode life cycle
+                  There are two possible phase values: Ready: StorageNode can already
+                  provide external services NotReady: StorageNode cannot provide external
+                  services'
+                type: string
+              registered:
+                description: Registered indicates whether the StorageNode has been
+                  registered to shardingsphere
+                type: boolean
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

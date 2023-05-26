@@ -70,6 +70,10 @@ type ExecCtrl struct {
 	ctx      context.Context
 }
 
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=shardingspherechaos,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=shardingspherechaos/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=shardingspherechaos/finalizers,verbs=update
+
 // Reconcile handles main function of this controller
 func (r *ShardingSphereChaosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := r.Log.WithValues(ShardingSphereChaosControllerName, req.NamespacedName)

@@ -64,6 +64,11 @@ type StorageNodeReconciler struct {
 	Service service.Service
 }
 
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core.database-mesh.io,resources=databaseclasses,verbs=get;list;watch
+
 // Reconcile handles main function of this controller
 // nolint:gocognit
 func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

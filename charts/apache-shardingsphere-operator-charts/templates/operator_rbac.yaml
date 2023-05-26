@@ -69,7 +69,54 @@ rules:
       - ""
     resources:
       - configmaps
-      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments/status
+    verbs:
+      - get
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers/status
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
     verbs:
       - create
       - delete
@@ -85,6 +132,7 @@ rules:
     verbs:
       - create
       - delete
+      - deletecollection
       - get
       - list
       - patch
@@ -96,19 +144,10 @@ rules:
       - pods/status
     verbs:
       - get
-      - list
-      - watch
   - apiGroups:
-      - apps
+      - ""
     resources:
-      - deployment/status
-    verbs:
-      - get
-      - list
-  - apiGroups:
-      - apps
-    resources:
-      - deployments
+      - services
     verbs:
       - create
       - delete
@@ -117,6 +156,66 @@ rules:
       - patch
       - update
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services/status
+    verbs:
+      - get
+  - apiGroups:
+      - core.database-mesh.io
+    resources:
+      - databaseclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
+      - computenodes
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
+      - computenodes/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
+      - shardingspherechaos
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
+      - shardingspherechaos/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
+      - shardingspherechaos/status
+    verbs:
+      - get
+      - patch
+      - update
   - apiGroups:
       - shardingsphere.apache.org
     resources:
@@ -135,24 +234,6 @@ rules:
       - shardingsphereproxies/finalizers
     verbs:
       - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - computenodes
-    verbs:
-      - "*"
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - computenodes/finalizers
-    verbs:
-      - "*"
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - computenodes/status
-    verbs:
-      - "*"
   - apiGroups:
       - shardingsphere.apache.org
     resources:
@@ -188,9 +269,9 @@ rules:
       - patch
       - update
   - apiGroups:
-      - autoscaling
+      - shardingsphere.apache.org
     resources:
-      - horizontalpodautoscalers
+      - storagenodes
     verbs:
       - create
       - delete
@@ -200,17 +281,19 @@ rules:
       - update
       - watch
   - apiGroups:
-      - authentication.k8s.io
+      - shardingsphere.apache.org
     resources:
-      - tokenreviews
+      - storagenodes/finalizers
     verbs:
-      - create
+      - update
   - apiGroups:
-      - authorization.k8s.io
+      - shardingsphere.apache.org
     resources:
-      - subjectaccessreviews
+      - storagenodes/status
     verbs:
-      - create
+      - get
+      - patch
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

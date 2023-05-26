@@ -35,7 +35,7 @@ var (
 	isLeader = false
 )
 
-// LeaderElectionMetrics represents metrics about leader election
+// LeaderElectionMetric represents metrics about leader election
 type LeaderElectionMetric struct {
 	elected <-chan struct{}
 	status  *prometheus.GaugeVec

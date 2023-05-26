@@ -45,6 +45,8 @@ metadata:
     shardingsphere.apache.org/logic-database-name: "sharding_db"
     "shardingsphere.apache.org/compute-node-namespace": "default"
     "shardingsphere.apache.org/compute-node-name": "shardingsphere-operator-shardingsphere-proxy"
+    "databaseclass.database-mesh.io/master-username": "root"
+    "databaseclass.database-mesh.io/master-user-password": "root123456"
 
 spec:
   databaseClassName: "aws-rds-instance-mysql-5.7"

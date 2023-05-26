@@ -40,7 +40,7 @@ operator:
   ## imagePullSecrets:
   ##   - name: mysecret
   ##
-  imagePullSecrets: { }
+  imagePullSecrets: [ ]
   ## @param resources operator Resources required by the operator
   ## e.g:
   ## resources:
@@ -54,11 +54,28 @@ operator:
   ##
   health:
     healthProbePort: 8081
+  ## @param metrics.metricsBindAddress operator metrics port
+  ##
+  metrics:
+    metricsBindAddress: 8080
   ## @param featureGates.computeNode operator health check port
+  ## @param featureGates.storageNode operator health check port
   ##
   featureGates:
     computeNode: false
+    storageNode: false
 
+  storageNodeProviders:
+    aws:
+      ## @param storageNodeProviders.aws.enabled Whether to enable aws storage node
+      ## @param storageNodeProviders.aws.region aws region
+      ## @param storageNodeProviders.aws.accessKeyId aws access key id
+      ## @param storageNodeProviders.aws.secretAccessKey aws secret access key
+      ##
+      enabled: false
+      region: ""
+      accessKeyId: ""
+      secretAccessKey: ""
 
 ## @section ShardingSphere-Proxy cluster parameters
 proxyCluster:

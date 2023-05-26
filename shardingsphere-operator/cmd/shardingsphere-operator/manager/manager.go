@@ -21,9 +21,9 @@ import (
 	"context"
 	"os"
 
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/metrics"
 
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
