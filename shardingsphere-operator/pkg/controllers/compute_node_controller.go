@@ -301,7 +301,6 @@ func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha
 	}
 
 	reconcileComputeNodeStatus(podlist, service, rt)
-	fmt.Printf("status conditions: %#v\n", rt.Status.Conditions)
 
 	// TODO: Compare Status with or without modification
 	return r.Status().Update(ctx, rt)
@@ -368,10 +367,11 @@ func updateComputeNodeStatusCondition(conditions []v1alpha1.ComputeNodeCondition
 
 func reconcileComputeNodeStatus(podlist *corev1.PodList, svc *corev1.Service, cn *v1alpha1.ComputeNode) {
 	cond := reconcile.GetConditionFromPods(podlist)
+
 	cn.Status.Conditions = updateComputeNodeStatusCondition(cn.Status.Conditions, cond)
 
 	ready := getReadyProxyInstances(podlist)
-	cn.Status.Ready = fmt.Sprintf("%d/%d", ready, cn.Spec.Replicas)
+	cn.Status.Ready = fmt.Sprintf("%d/%d", ready, len(podlist.Items))
 	//TODO: consider removing this readyInstances
 	cn.Status.ReadyInstances = ready
 
