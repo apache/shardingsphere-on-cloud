@@ -344,18 +344,21 @@ func updateComputeNodeStatusCondition(conditions []v1alpha1.ComputeNodeCondition
 		for i := range conditions {
 			if conditions[i].Type == cond.Type {
 				found = true
-				conditions[i] = cond
+				conditions[i].Type = cond.Type
+				conditions[i].Status = cond.Status
+				conditions[i].Message = cond.Message
+				conditions[i].Reason = cond.Reason
 			} else {
 				if cond.Type == v1alpha1.ComputeNodeConditionUnknown {
-					conditions[i].LastUpdateTime = cond.LastUpdateTime
 					conditions[i].Status = v1alpha1.ConditionStatusFalse
 				} else {
 					if conditions[i].Type == v1alpha1.ComputeNodeConditionUnknown {
 						conditions[i].Status = v1alpha1.ConditionStatusFalse
 					}
-					conditions[i].LastUpdateTime = cond.LastUpdateTime
 				}
 			}
+
+			conditions[i].LastUpdateTime = cond.LastUpdateTime
 		}
 
 		// check current conditions
