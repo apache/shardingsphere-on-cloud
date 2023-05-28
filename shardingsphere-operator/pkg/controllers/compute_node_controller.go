@@ -338,37 +338,39 @@ func isTrueReadyPod(pod *corev1.Pod) bool {
 	return false
 }
 
-func updateComputeNodeStatusCondition(conditions []v1alpha1.ComputeNodeCondition, cond v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
-	var found bool
-	for i := range conditions {
-		if conditions[i].Type == cond.Type {
-			found = true
-			conditions[i] = cond
-		} else {
-			if cond.Type == v1alpha1.ComputeNodeConditionUnknown {
-				conditions[i].LastUpdateTime = cond.LastUpdateTime
-				conditions[i].Status = v1alpha1.ConditionStatusFalse
+func updateComputeNodeStatusCondition(conditions []v1alpha1.ComputeNodeCondition, conds []v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
+	for _, cond := range conds {
+		var found bool
+		for i := range conditions {
+			if conditions[i].Type == cond.Type {
+				found = true
+				conditions[i] = cond
 			} else {
-				if conditions[i].Type == v1alpha1.ComputeNodeConditionUnknown {
+				if cond.Type == v1alpha1.ComputeNodeConditionUnknown {
+					conditions[i].LastUpdateTime = cond.LastUpdateTime
 					conditions[i].Status = v1alpha1.ConditionStatusFalse
+				} else {
+					if conditions[i].Type == v1alpha1.ComputeNodeConditionUnknown {
+						conditions[i].Status = v1alpha1.ConditionStatusFalse
+					}
+					conditions[i].LastUpdateTime = cond.LastUpdateTime
 				}
-				conditions[i].LastUpdateTime = cond.LastUpdateTime
 			}
 		}
-	}
 
-	// check current conditions
-	if len(conditions) == 0 || !found {
-		conditions = append(conditions, cond)
+		// check current conditions
+		if len(conditions) == 0 || !found {
+			conditions = append(conditions, cond)
+		}
 	}
 
 	return conditions
 }
 
 func reconcileComputeNodeStatus(podlist *corev1.PodList, svc *corev1.Service, cn *v1alpha1.ComputeNode) {
-	cond := reconcile.GetConditionFromPods(podlist)
+	conds := reconcile.GetConditionFromPods(podlist)
 
-	cn.Status.Conditions = updateComputeNodeStatusCondition(cn.Status.Conditions, cond)
+	cn.Status.Conditions = updateComputeNodeStatusCondition(cn.Status.Conditions, conds)
 
 	ready := getReadyProxyInstances(podlist)
 	cn.Status.Ready = fmt.Sprintf("%d/%d", ready, len(podlist.Items))

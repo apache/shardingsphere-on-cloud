@@ -27,12 +27,14 @@ import (
 )
 
 // GetConditionFromPods returns the condition for a pod
-func GetConditionFromPods(podlist *corev1.PodList) v1alpha1.ComputeNodeCondition {
+func GetConditionFromPods(podlist *corev1.PodList) []v1alpha1.ComputeNodeCondition {
+	conds := []v1alpha1.ComputeNodeCondition{}
+
 	if len(podlist.Items) == 0 {
-		return newCondition(v1alpha1.ComputeNodeConditionUnknown, "PodNotFound", "No pod was found")
+		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionUnknown, "PodNotFound", "No pod was found"))
+		return conds
 	}
 
-	var cond v1alpha1.ComputeNodeCondition
 	result := map[v1alpha1.ComputeNodeConditionType]int{}
 	for _, p := range podlist.Items {
 		pcs := getPreferedConditionFromPod(p)
@@ -42,34 +44,34 @@ func GetConditionFromPods(podlist *corev1.PodList) v1alpha1.ComputeNodeCondition
 	}
 
 	if result[v1alpha1.ComputeNodeConditionUnknown] == len(podlist.Items) {
-		return newCondition(v1alpha1.ComputeNodeConditionUnknown, "PodUnknown", "All pods are unknown")
+		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionUnknown, "PodUnknown", "All pods are unknown"))
 	}
 
 	if result[v1alpha1.ComputeNodeConditionReady] > 0 {
-		return newCondition(v1alpha1.ComputeNodeConditionReady, "PodReady", "Some pods are ready")
+		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionReady, "PodReady", "Some pods are ready"))
 	}
 
 	if result[v1alpha1.ComputeNodeConditionStarted] > 0 {
-		return newCondition(v1alpha1.ComputeNodeConditionStarted, "PodStarted", "Some pods are started")
+		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionStarted, "PodStarted", "Some pods are started"))
 	}
 
 	if result[v1alpha1.ComputeNodeConditionInitialized] > 0 {
-		return newCondition(v1alpha1.ComputeNodeConditionInitialized, "PodInitialized", "Some pods are initialized")
+		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionInitialized, "PodInitialized", "Some pods are initialized"))
 	}
 
 	if result[v1alpha1.ComputeNodeConditionDeployed] > 0 {
-		return newCondition(v1alpha1.ComputeNodeConditionDeployed, "PodDeployed", "Some pods are deployed")
+		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionDeployed, "PodDeployed", "Some pods are deployed"))
 	}
 
 	if result[v1alpha1.ComputeNodeConditionPending] > 0 {
-		return newCondition(v1alpha1.ComputeNodeConditionPending, "PodPending", "Some pods are pending")
+		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionPending, "PodPending", "Some pods are pending"))
 	}
 
 	if result[v1alpha1.ComputeNodeConditionFailed] > 0 {
-		return newCondition(v1alpha1.ComputeNodeConditionFailed, "PodFailed", "Some pods are failed")
+		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionFailed, "PodFailed", "Some pods are failed"))
 	}
 
-	return cond
+	return conds
 }
 
 func getPreferedConditionFromPod(pod corev1.Pod) []v1alpha1.ComputeNodeCondition {
