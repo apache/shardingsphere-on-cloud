@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -79,6 +80,10 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	if err := r.reconcileStatus(ctx, cn); err != nil {
+		logger.Error(err, "Failed to reconcile status")
+	}
+
 	errors := []error{}
 	if err := r.reconcileDeployment(ctx, cn); err != nil {
 		logger.Error(err, "Failed to reconcile deployement")
@@ -95,10 +100,6 @@ func (r *ComputeNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	if len(errors) != 0 {
 		return ctrl.Result{Requeue: true}, errors[0]
-	}
-
-	if err := r.reconcileStatus(ctx, cn); err != nil {
-		logger.Error(err, "Failed to reconcile pod list")
 	}
 
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
@@ -299,8 +300,12 @@ func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha
 		return err
 	}
 
-	status := reconcileComputeNodeStatus(podlist, service)
-	rt.Status = *status
+	/*
+		status := reconcileComputeNodeStatus(podlist, service)
+		rt.Status = *status
+	*/
+	reconcileComputeNodeStatus(podlist, service, rt)
+	fmt.Printf("status conditions: %#v\n", rt.Status.Conditions)
 
 	// TODO: Compare Status with or without modification
 	return r.Status().Update(ctx, rt)
@@ -381,90 +386,263 @@ func updateNotReadyConditions(conditions []v1alpha1.ComputeNodeCondition, cond *
 	return cur
 }
 
-func clusterCondition(podlist *corev1.PodList) v1alpha1.ComputeNodeCondition {
-	cond := v1alpha1.ComputeNodeCondition{}
-	if len(podlist.Items) == 0 {
-		return cond
+func newConditionUnknown(reason, message string) v1alpha1.ComputeNodeCondition {
+	return newCondition(v1alpha1.ComputeNodeConditionUnknown, reason, message)
+}
+
+func newConditionPending(reason, message string) v1alpha1.ComputeNodeCondition {
+	return newCondition(v1alpha1.ComputeNodeConditionPending, reason, message)
+}
+
+func newConditionDeployed(reason, message string) v1alpha1.ComputeNodeCondition {
+	return newCondition(v1alpha1.ComputeNodeConditionDeployed, reason, message)
+}
+
+func newConditionStarted(reason, message string) v1alpha1.ComputeNodeCondition {
+	return newCondition(v1alpha1.ComputeNodeConditionStarted, reason, message)
+}
+
+func newConditionInitialized(reason, message string) v1alpha1.ComputeNodeCondition {
+	return newCondition(v1alpha1.ComputeNodeConditionInitialized, reason, message)
+}
+
+func newConditionReady(reason, message string) v1alpha1.ComputeNodeCondition {
+	return newCondition(v1alpha1.ComputeNodeConditionReady, reason, message)
+}
+
+func newConditionFailed(reason, message string) v1alpha1.ComputeNodeCondition {
+	return newCondition(v1alpha1.ComputeNodeConditionFailed, reason, message)
+}
+
+func newCondition(t v1alpha1.ComputeNodeConditionType, reason, message string) v1alpha1.ComputeNodeCondition {
+	return v1alpha1.ComputeNodeCondition{
+		Type:               t,
+		Status:             v1alpha1.ConditionStatusTrue,
+		LastUpdateTime:     metav1.NewTime(time.Now()),
+		LastTransitionTime: metav1.NewTime(time.Now()),
+		Reason:             reason,
+		Message:            message,
+	}
+}
+
+func setConditionUnknown(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
+	setCondition(conditions, v1alpha1.ComputeNodeConditionUnknown, reason, message, true)
+}
+
+func setConditionPending(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
+	setCondition(conditions, v1alpha1.ComputeNodeConditionPending, reason, message, false)
+}
+
+func setConditionDeployed(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
+	setCondition(conditions, v1alpha1.ComputeNodeConditionDeployed, reason, message, false)
+}
+
+func setConditionInitialized(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
+	setCondition(conditions, v1alpha1.ComputeNodeConditionInitialized, reason, message, false)
+}
+
+func setConditionStarted(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
+	setCondition(conditions, v1alpha1.ComputeNodeConditionStarted, reason, message, false)
+}
+
+func setConditionReady(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
+	setCondition(conditions, v1alpha1.ComputeNodeConditionReady, reason, message, false)
+}
+
+func setConditionFailed(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
+	setCondition(conditions, v1alpha1.ComputeNodeConditionFailed, reason, message, true)
+}
+
+func setCondition(conditions []v1alpha1.ComputeNodeCondition, t v1alpha1.ComputeNodeConditionType, reason, message string, exlusive bool) {
+	cond := v1alpha1.ComputeNodeCondition{
+		Type:               t,
+		Status:             v1alpha1.ConditionStatusTrue,
+		LastUpdateTime:     metav1.NewTime(time.Now()),
+		LastTransitionTime: metav1.NewTime(time.Now()),
+		Reason:             reason,
+		Message:            message,
 	}
 
-	condStarted := v1alpha1.ComputeNodeCondition{
-		Type:           v1alpha1.ComputeNodeConditionStarted,
-		Status:         v1alpha1.ConditionStatusTrue,
-		LastUpdateTime: metav1.Now(),
-	}
+	var found bool
+	for i := range conditions {
+		if conditions[i].Type == cond.Type {
+			found = true
+			conditions[i] = cond
+		} else {
+			if cond.Type != v1alpha1.ComputeNodeConditionUnknown {
 
-	condSucceed := v1alpha1.ComputeNodeCondition{
-		Type:           v1alpha1.ComputeNodeConditionSucceed,
-		Status:         v1alpha1.ConditionStatusTrue,
-		LastUpdateTime: metav1.Now(),
-	}
-
-	condUnknown := v1alpha1.ComputeNodeCondition{
-		Type:           v1alpha1.ComputeNodeConditionUnknown,
-		Status:         v1alpha1.ConditionStatusTrue,
-		LastUpdateTime: metav1.Now(),
-	}
-	condDeployed := v1alpha1.ComputeNodeCondition{
-		Type:           v1alpha1.ComputeNodeConditionDeployed,
-		Status:         v1alpha1.ConditionStatusTrue,
-		LastUpdateTime: metav1.Now(),
-	}
-	condFailed := v1alpha1.ComputeNodeCondition{
-		Type:           v1alpha1.ComputeNodeConditionFailed,
-		Status:         v1alpha1.ConditionStatusTrue,
-		LastUpdateTime: metav1.Now(),
-	}
-
-	//FIXME: do not capture ConditionStarted in some cases
-	for idx := range podlist.Items {
-		switch podlist.Items[idx].Status.Phase {
-		case corev1.PodSucceeded:
-			return condSucceed
-		case corev1.PodRunning:
-			return condStarted
-		case corev1.PodUnknown:
-			return condUnknown
-		case corev1.PodPending:
-			return condDeployed
-		case corev1.PodFailed:
-			return condFailed
+			}
+			if exlusive {
+				conditions[i].LastUpdateTime = cond.LastUpdateTime
+				conditions[i].Status = v1alpha1.ConditionStatusFalse
+			}
 		}
 	}
+
+	// check current conditions
+	if len(conditions) == 0 || !found {
+		conditions = append(conditions, cond)
+	}
+}
+
+func getConditionFromPods(podlist *corev1.PodList) v1alpha1.ComputeNodeCondition {
+	if len(podlist.Items) == 0 {
+		return newConditionUnknown("PodNotFound", "No pod was found")
+	}
+	var cond v1alpha1.ComputeNodeCondition
+	result := map[v1alpha1.ComputeNodeConditionType]int{}
+	for _, p := range podlist.Items {
+		pc := getPreferedConditionFromPod(p)
+		result[pc.Type]++
+	}
+
+	if result[v1alpha1.ComputeNodeConditionUnknown] == len(podlist.Items) {
+		return newConditionUnknown("PodUnknown", "All pods are unknown")
+	}
+
+	if result[v1alpha1.ComputeNodeConditionReady] > 0 {
+		return newConditionReady("PodReady", "Some pods are ready")
+	}
+
+	if result[v1alpha1.ComputeNodeConditionStarted] > 0 {
+		return newConditionStarted("PodStarted", "Some pods are started")
+	}
+
+	if result[v1alpha1.ComputeNodeConditionInitialized] > 0 {
+		return newConditionInitialized("PodInitialized", "Some pods are initialized")
+	}
+
+	if result[v1alpha1.ComputeNodeConditionDeployed] > 0 {
+		return newConditionDeployed("PodDeployed", "Some pods are deployed")
+	}
+
+	if result[v1alpha1.ComputeNodeConditionPending] > 0 {
+		return newConditionPending("PodPending", "Some pods are pending")
+	}
+
+	if result[v1alpha1.ComputeNodeConditionFailed] > 0 {
+		return newConditionFailed("PodFailed", "Some pods are failed")
+	}
+
 	return cond
 }
 
-func reconcileComputeNodeStatus(podlist *corev1.PodList, svc *corev1.Service) *v1alpha1.ComputeNodeStatus {
-	status := &v1alpha1.ComputeNodeStatus{}
-
-	status.Replicas = int32(len(podlist.Items))
-
-	readyInstances := getReadyProxyInstances(podlist)
-	status.ReadyInstances = readyInstances
-	if status.Replicas == 0 {
-		status.Phase = v1alpha1.ComputeNodeStatusNotReady
-	} else {
-		if readyInstances < miniReadyCount {
-			status.Phase = v1alpha1.ComputeNodeStatusNotReady
-		} else {
-			status.Phase = v1alpha1.ComputeNodeStatusReady
+func getPreferedConditionFromPod(pod corev1.Pod) v1alpha1.ComputeNodeCondition {
+	if pod.Status.Phase == corev1.PodUnknown {
+		return v1alpha1.ComputeNodeCondition{
+			Type: v1alpha1.ComputeNodeConditionUnknown,
 		}
 	}
 
-	if status.Phase == v1alpha1.ComputeNodeStatusReady {
-		status.Conditions = updateReadyConditions(status.Conditions, &v1alpha1.ComputeNodeCondition{
-			Type:           v1alpha1.ComputeNodeConditionReady,
-			Status:         v1alpha1.ConditionStatusTrue,
-			LastUpdateTime: metav1.Now(),
-		})
-	} else {
-		cond := clusterCondition(podlist)
-		status.Conditions = updateNotReadyConditions(status.Conditions, &cond)
+	if pod.Status.Phase == corev1.PodPending {
+		return v1alpha1.ComputeNodeCondition{
+			Type: v1alpha1.ComputeNodeConditionPending,
+		}
 	}
 
-	status.LoadBalancer.ClusterIP = svc.Spec.ClusterIP
-	status.LoadBalancer.Ingress = svc.Status.LoadBalancer.Ingress
+	if pod.Status.Phase == corev1.PodFailed {
+		return v1alpha1.ComputeNodeCondition{
+			Type: v1alpha1.ComputeNodeConditionFailed,
+		}
+	}
 
-	return status
+	return getPreferedConditionFromPodConditions(pod.Status.Conditions)
+}
+
+func getPreferedConditionFromPodConditions(conditions []corev1.PodCondition) v1alpha1.ComputeNodeCondition {
+	var (
+		sched       bool
+		initialized bool
+		conReady    bool
+		ready       bool
+	)
+
+	for _, c := range conditions {
+		if c.Type == corev1.PodScheduled && c.Status == corev1.ConditionTrue {
+			sched = true
+		}
+		if c.Type == corev1.PodInitialized && c.Status == corev1.ConditionTrue {
+			initialized = true
+		}
+		if c.Type == corev1.ContainersReady && c.Status == corev1.ConditionTrue {
+			conReady = true
+		}
+		if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
+			ready = true
+		}
+	}
+
+	if ready {
+		return v1alpha1.ComputeNodeCondition{
+			Type: v1alpha1.ComputeNodeConditionReady,
+		}
+	}
+
+	if conReady {
+		return v1alpha1.ComputeNodeCondition{
+			Type: v1alpha1.ComputeNodeConditionStarted,
+		}
+	}
+
+	if initialized {
+		return v1alpha1.ComputeNodeCondition{
+			Type: v1alpha1.ComputeNodeConditionInitialized,
+		}
+	}
+
+	if sched {
+		return v1alpha1.ComputeNodeCondition{
+			Type: v1alpha1.ComputeNodeConditionDeployed,
+		}
+	}
+
+	return v1alpha1.ComputeNodeCondition{}
+}
+
+func updateComputeNodeStatusCondition(conditions []v1alpha1.ComputeNodeCondition, cond v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
+	var found bool
+	for i := range conditions {
+		if conditions[i].Type == cond.Type {
+			found = true
+			conditions[i] = cond
+		} else {
+			if cond.Type == v1alpha1.ComputeNodeConditionUnknown {
+				conditions[i].LastUpdateTime = cond.LastUpdateTime
+				conditions[i].Status = v1alpha1.ConditionStatusFalse
+			} else {
+				if conditions[i].Type == v1alpha1.ComputeNodeConditionUnknown {
+					conditions[i].Status = v1alpha1.ConditionStatusFalse
+				}
+				conditions[i].LastUpdateTime = cond.LastUpdateTime
+			}
+		}
+	}
+
+	// check current conditions
+	if len(conditions) == 0 || !found {
+		conditions = append(conditions, cond)
+	}
+
+	return conditions
+}
+
+func reconcileComputeNodeStatus(podlist *corev1.PodList, svc *corev1.Service, cn *v1alpha1.ComputeNode) {
+	cond := getConditionFromPods(podlist)
+	cn.Status.Conditions = updateComputeNodeStatusCondition(cn.Status.Conditions, cond)
+
+	ready := getReadyProxyInstances(podlist)
+	cn.Status.Ready = fmt.Sprintf("%d/%d", ready, cn.Spec.Replicas)
+	//TODO: consider removing this readyInstances
+	cn.Status.ReadyInstances = ready
+
+	if ready > 0 {
+		cn.Status.Phase = v1alpha1.ComputeNodeStatusReady
+	} else {
+		cn.Status.Phase = v1alpha1.ComputeNodeStatusNotReady
+	}
+
+	cn.Status.LoadBalancer.ClusterIP = svc.Spec.ClusterIP
+	cn.Status.LoadBalancer.Ingress = svc.Status.LoadBalancer.Ingress
 }
 
 func (r *ComputeNodeReconciler) getRuntimeComputeNode(ctx context.Context, namespacedName types.NamespacedName) (*v1alpha1.ComputeNode, error) {

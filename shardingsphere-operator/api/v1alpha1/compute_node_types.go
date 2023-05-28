@@ -30,8 +30,8 @@ type ComputeNodeList struct {
 	Items           []ComputeNode `json:"items"`
 }
 
-// +kubebuilder:printcolumn:JSONPath=".status.readyInstances",name=ReadyInstances,type=integer
-// +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
+// +kubebuilder:printcolumn:JSONPath=".status.ready",name=Ready,type=string
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name=Status,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.loadBalancer.clusterIP",name="Cluster-IP",type=string
 // +kubebuilder:printcolumn:JSONPath=".spec.portBindings[*].servicePort",name="ServicePorts",type=integer
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
@@ -289,8 +289,7 @@ type ComputeNodeSpec struct {
 
 // ComputeNodeStatus defines the observed state of ShardingSphere Proxy
 type ComputeNodeStatus struct {
-	Replicas int32 `json:"replicas"`
-
+	Ready string `json:"ready,omitempty"`
 	// The generation observed by the deployment controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -304,7 +303,7 @@ type ComputeNodeStatus struct {
 
 	// Conditions The conditions array, the reason and message fields
 	// +optional
-	Conditions ComputeNodeConditions `json:"conditions"`
+	Conditions []ComputeNodeCondition `json:"conditions"`
 	// ReadyInstances shows the number of replicas that ShardingSphere-Proxy is running normally
 	// +optional
 	ReadyInstances int32 `json:"readyInstances"`
@@ -330,6 +329,7 @@ type ComputeNodePhaseStatus string
 const (
 	ComputeNodeStatusReady    ComputeNodePhaseStatus = "Ready"
 	ComputeNodeStatusNotReady ComputeNodePhaseStatus = "NotReady"
+	ComputeNodeStatusUnknown  ComputeNodePhaseStatus = "Unknown"
 )
 
 type ComputeNodeConditionType string
@@ -338,14 +338,16 @@ type ComputeNodeConditionType string
 const (
 	ComputeNodeConditionInitialized ComputeNodeConditionType = "Initialized"
 	ComputeNodeConditionStarted     ComputeNodeConditionType = "Started"
-	ComputeNodeConditionSucceed     ComputeNodeConditionType = "Succeed"
 	ComputeNodeConditionReady       ComputeNodeConditionType = "Ready"
 	ComputeNodeConditionUnknown     ComputeNodeConditionType = "Unknown"
 	ComputeNodeConditionDeployed    ComputeNodeConditionType = "Deployed"
 	ComputeNodeConditionFailed      ComputeNodeConditionType = "Failed"
+	ComputeNodeConditionPending     ComputeNodeConditionType = "Pending"
+
+	ComputeNodeConditionSucceed ComputeNodeConditionType = "Succeed"
 )
 
-type ComputeNodeConditions []ComputeNodeCondition
+// type ComputeNodeConditions []ComputeNodeCondition
 
 type ConditionStatus string
 
@@ -355,20 +357,13 @@ const (
 	ConditionStatusUnknown = "Unknown"
 )
 
-// ComputeNodeCondition
-// | **phase** | **condition**  | **descriptions**|
-// | ------------- | ---------- | ---------------------------------------------------- |
-// | NotReady      | Deployed   | pods are deployed but are not created or currently pending|
-// | NotReady      | Started    | pods are started but not satisfy ready requirements|
-// | Ready         | Ready      | minimum pods satisfy ready requirements|
-// | NotReady      | Unknown    | can not locate the status of pods |
-// | NotReady      | Failed     | ShardingSphere-Proxy failed to start correctly due to some problems|
 type ComputeNodeCondition struct {
-	Type           ComputeNodeConditionType `json:"type"`
-	Status         ConditionStatus          `json:"status"`
-	LastUpdateTime metav1.Time              `json:"lastUpdateTime,omitempty"`
-	Reason         string                   `json:"reason"`
-	Message        string                   `json:"message"`
+	Type               ComputeNodeConditionType `json:"type"`
+	Status             ConditionStatus          `json:"status"`
+	LastTransitionTime metav1.Time              `json:"lastTransitionTime,omitempty"`
+	LastUpdateTime     metav1.Time              `json:"lastUpdateTime,omitempty"`
+	Reason             string                   `json:"reason"`
+	Message            string                   `json:"message"`
 }
 
 func init() {
