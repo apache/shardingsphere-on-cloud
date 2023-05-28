@@ -28,7 +28,7 @@ import (
 
 func GetConditionFromPods(podlist *corev1.PodList) v1alpha1.ComputeNodeCondition {
 	if len(podlist.Items) == 0 {
-		return newConditionUnknown("PodNotFound", "No pod was found")
+		return newCondition(v1alpha1.ComputeNodeConditionUnknown, "PodNotFound", "No pod was found")
 	}
 	var cond v1alpha1.ComputeNodeCondition
 	result := map[v1alpha1.ComputeNodeConditionType]int{}
@@ -38,31 +38,31 @@ func GetConditionFromPods(podlist *corev1.PodList) v1alpha1.ComputeNodeCondition
 	}
 
 	if result[v1alpha1.ComputeNodeConditionUnknown] == len(podlist.Items) {
-		return newConditionUnknown("PodUnknown", "All pods are unknown")
+		return newCondition(v1alpha1.ComputeNodeConditionUnknown, "PodUnknown", "All pods are unknown")
 	}
 
 	if result[v1alpha1.ComputeNodeConditionReady] > 0 {
-		return newConditionReady("PodReady", "Some pods are ready")
+		return newCondition(v1alpha1.ComputeNodeConditionReady, "PodReady", "Some pods are ready")
 	}
 
 	if result[v1alpha1.ComputeNodeConditionStarted] > 0 {
-		return newConditionStarted("PodStarted", "Some pods are started")
+		return newCondition(v1alpha1.ComputeNodeConditionStarted, "PodStarted", "Some pods are started")
 	}
 
 	if result[v1alpha1.ComputeNodeConditionInitialized] > 0 {
-		return newConditionInitialized("PodInitialized", "Some pods are initialized")
+		return newCondition(v1alpha1.ComputeNodeConditionInitialized, "PodInitialized", "Some pods are initialized")
 	}
 
 	if result[v1alpha1.ComputeNodeConditionDeployed] > 0 {
-		return newConditionDeployed("PodDeployed", "Some pods are deployed")
+		return newCondition(v1alpha1.ComputeNodeConditionDeployed, "PodDeployed", "Some pods are deployed")
 	}
 
 	if result[v1alpha1.ComputeNodeConditionPending] > 0 {
-		return newConditionPending("PodPending", "Some pods are pending")
+		return newCondition(v1alpha1.ComputeNodeConditionPending, "PodPending", "Some pods are pending")
 	}
 
 	if result[v1alpha1.ComputeNodeConditionFailed] > 0 {
-		return newConditionFailed("PodFailed", "Some pods are failed")
+		return newCondition(v1alpha1.ComputeNodeConditionFailed, "PodFailed", "Some pods are failed")
 	}
 
 	return cond
@@ -181,59 +181,4 @@ func setCondition(conditions []v1alpha1.ComputeNodeCondition, t v1alpha1.Compute
 	if len(conditions) == 0 || !found {
 		conditions = append(conditions, cond)
 	}
-}
-func setConditionUnknown(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
-	setCondition(conditions, v1alpha1.ComputeNodeConditionUnknown, reason, message, true)
-}
-
-func setConditionPending(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
-	setCondition(conditions, v1alpha1.ComputeNodeConditionPending, reason, message, false)
-}
-
-func setConditionDeployed(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
-	setCondition(conditions, v1alpha1.ComputeNodeConditionDeployed, reason, message, false)
-}
-
-func setConditionInitialized(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
-	setCondition(conditions, v1alpha1.ComputeNodeConditionInitialized, reason, message, false)
-}
-
-func setConditionStarted(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
-	setCondition(conditions, v1alpha1.ComputeNodeConditionStarted, reason, message, false)
-}
-
-func setConditionReady(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
-	setCondition(conditions, v1alpha1.ComputeNodeConditionReady, reason, message, false)
-}
-
-func setConditionFailed(conditions []v1alpha1.ComputeNodeCondition, reason, message string) {
-	setCondition(conditions, v1alpha1.ComputeNodeConditionFailed, reason, message, true)
-}
-
-func newConditionPending(reason, message string) v1alpha1.ComputeNodeCondition {
-	return newCondition(v1alpha1.ComputeNodeConditionPending, reason, message)
-}
-
-func newConditionDeployed(reason, message string) v1alpha1.ComputeNodeCondition {
-	return newCondition(v1alpha1.ComputeNodeConditionDeployed, reason, message)
-}
-
-func newConditionStarted(reason, message string) v1alpha1.ComputeNodeCondition {
-	return newCondition(v1alpha1.ComputeNodeConditionStarted, reason, message)
-}
-
-func newConditionInitialized(reason, message string) v1alpha1.ComputeNodeCondition {
-	return newCondition(v1alpha1.ComputeNodeConditionInitialized, reason, message)
-}
-
-func newConditionReady(reason, message string) v1alpha1.ComputeNodeCondition {
-	return newCondition(v1alpha1.ComputeNodeConditionReady, reason, message)
-}
-
-func newConditionFailed(reason, message string) v1alpha1.ComputeNodeCondition {
-	return newCondition(v1alpha1.ComputeNodeConditionFailed, reason, message)
-}
-
-func newConditionUnknown(reason, message string) v1alpha1.ComputeNodeCondition {
-	return newCondition(v1alpha1.ComputeNodeConditionUnknown, reason, message)
 }
