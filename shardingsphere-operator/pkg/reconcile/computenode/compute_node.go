@@ -26,15 +26,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// GetConditionFromPods returns the condition for a pod
 func GetConditionFromPods(podlist *corev1.PodList) v1alpha1.ComputeNodeCondition {
 	if len(podlist.Items) == 0 {
 		return newCondition(v1alpha1.ComputeNodeConditionUnknown, "PodNotFound", "No pod was found")
 	}
+
 	var cond v1alpha1.ComputeNodeCondition
 	result := map[v1alpha1.ComputeNodeConditionType]int{}
 	for _, p := range podlist.Items {
-		pc := getPreferedConditionFromPod(p)
-		result[pc.Type]++
+		pcs := getPreferedConditionFromPod(p)
+		for _, c := range pcs {
+			result[c.Type]++
+		}
 	}
 
 	if result[v1alpha1.ComputeNodeConditionUnknown] == len(podlist.Items) {
@@ -68,76 +72,59 @@ func GetConditionFromPods(podlist *corev1.PodList) v1alpha1.ComputeNodeCondition
 	return cond
 }
 
-func getPreferedConditionFromPod(pod corev1.Pod) v1alpha1.ComputeNodeCondition {
+func getPreferedConditionFromPod(pod corev1.Pod) []v1alpha1.ComputeNodeCondition {
+	conds := []v1alpha1.ComputeNodeCondition{}
 	if pod.Status.Phase == corev1.PodUnknown {
-		return v1alpha1.ComputeNodeCondition{
+		conds = append(conds, v1alpha1.ComputeNodeCondition{
 			Type: v1alpha1.ComputeNodeConditionUnknown,
-		}
+		})
+		return conds
 	}
 
 	if pod.Status.Phase == corev1.PodPending {
-		return v1alpha1.ComputeNodeCondition{
+		conds = append(conds, v1alpha1.ComputeNodeCondition{
 			Type: v1alpha1.ComputeNodeConditionPending,
-		}
+		})
+		return conds
 	}
 
 	if pod.Status.Phase == corev1.PodFailed {
-		return v1alpha1.ComputeNodeCondition{
+		conds = append(conds, v1alpha1.ComputeNodeCondition{
 			Type: v1alpha1.ComputeNodeConditionFailed,
-		}
+		})
+		return conds
 	}
 
 	return getPreferedConditionFromPodConditions(pod.Status.Conditions)
 }
 
-func getPreferedConditionFromPodConditions(conditions []corev1.PodCondition) v1alpha1.ComputeNodeCondition {
-	var (
-		sched       bool
-		initialized bool
-		conReady    bool
-		ready       bool
-	)
+func getPreferedConditionFromPodConditions(pcs []corev1.PodCondition) []v1alpha1.ComputeNodeCondition {
+	conditions := []v1alpha1.ComputeNodeCondition{}
 
-	for _, c := range conditions {
+	for _, c := range pcs {
 		if c.Type == corev1.PodScheduled && c.Status == corev1.ConditionTrue {
-			sched = true
+			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
+				Type: v1alpha1.ComputeNodeConditionDeployed,
+			})
 		}
 		if c.Type == corev1.PodInitialized && c.Status == corev1.ConditionTrue {
-			initialized = true
+			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
+				Type: v1alpha1.ComputeNodeConditionInitialized,
+			})
 		}
 		if c.Type == corev1.ContainersReady && c.Status == corev1.ConditionTrue {
-			conReady = true
+			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
+				Type: v1alpha1.ComputeNodeConditionStarted,
+			})
 		}
 		if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
-			ready = true
+			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
+				Type: v1alpha1.ComputeNodeConditionReady,
+			})
 		}
 	}
 
-	if ready {
-		return v1alpha1.ComputeNodeCondition{
-			Type: v1alpha1.ComputeNodeConditionReady,
-		}
-	}
-
-	if conReady {
-		return v1alpha1.ComputeNodeCondition{
-			Type: v1alpha1.ComputeNodeConditionStarted,
-		}
-	}
-
-	if initialized {
-		return v1alpha1.ComputeNodeCondition{
-			Type: v1alpha1.ComputeNodeConditionInitialized,
-		}
-	}
-
-	if sched {
-		return v1alpha1.ComputeNodeCondition{
-			Type: v1alpha1.ComputeNodeConditionDeployed,
-		}
-	}
-
-	return v1alpha1.ComputeNodeCondition{}
+	return conditions
 }
 
 func newCondition(t v1alpha1.ComputeNodeConditionType, reason, message string) v1alpha1.ComputeNodeCondition {
@@ -148,37 +135,5 @@ func newCondition(t v1alpha1.ComputeNodeConditionType, reason, message string) v
 		LastTransitionTime: metav1.NewTime(time.Now()),
 		Reason:             reason,
 		Message:            message,
-	}
-}
-
-func setCondition(conditions []v1alpha1.ComputeNodeCondition, t v1alpha1.ComputeNodeConditionType, reason, message string, exlusive bool) {
-	cond := v1alpha1.ComputeNodeCondition{
-		Type:               t,
-		Status:             v1alpha1.ConditionStatusTrue,
-		LastUpdateTime:     metav1.NewTime(time.Now()),
-		LastTransitionTime: metav1.NewTime(time.Now()),
-		Reason:             reason,
-		Message:            message,
-	}
-
-	var found bool
-	for i := range conditions {
-		if conditions[i].Type == cond.Type {
-			found = true
-			conditions[i] = cond
-		} else {
-			if cond.Type != v1alpha1.ComputeNodeConditionUnknown {
-
-			}
-			if exlusive {
-				conditions[i].LastUpdateTime = cond.LastUpdateTime
-				conditions[i].Status = v1alpha1.ConditionStatusFalse
-			}
-		}
-	}
-
-	// check current conditions
-	if len(conditions) == 0 || !found {
-		conditions = append(conditions, cond)
 	}
 }
