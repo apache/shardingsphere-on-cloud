@@ -36,10 +36,10 @@ func GetConditionFromPods(podlist *corev1.PodList) []v1alpha1.ComputeNodeConditi
 	}
 
 	result := map[v1alpha1.ComputeNodeConditionType]int{}
-	for _, p := range podlist.Items {
-		pcs := getPreferedConditionFromPod(p)
-		for _, c := range pcs {
-			result[c.Type]++
+	for i := range podlist.Items {
+		pcs := getPreferedConditionFromPod(&podlist.Items[i])
+		for idx := range pcs {
+			result[pcs[idx].Type]++
 		}
 	}
 
@@ -74,7 +74,7 @@ func GetConditionFromPods(podlist *corev1.PodList) []v1alpha1.ComputeNodeConditi
 	return conds
 }
 
-func getPreferedConditionFromPod(pod corev1.Pod) []v1alpha1.ComputeNodeCondition {
+func getPreferedConditionFromPod(pod *corev1.Pod) []v1alpha1.ComputeNodeCondition {
 	conds := []v1alpha1.ComputeNodeCondition{}
 	if pod.Status.Phase == corev1.PodUnknown {
 		conds = append(conds, v1alpha1.ComputeNodeCondition{
@@ -103,23 +103,27 @@ func getPreferedConditionFromPod(pod corev1.Pod) []v1alpha1.ComputeNodeCondition
 func getPreferedConditionFromPodConditions(pcs []corev1.PodCondition) []v1alpha1.ComputeNodeCondition {
 	conditions := []v1alpha1.ComputeNodeCondition{}
 
-	for _, c := range pcs {
-		if c.Type == corev1.PodScheduled && c.Status == corev1.ConditionTrue {
+	for i := range pcs {
+		if pcs[i].Status != corev1.ConditionTrue {
+			continue
+		}
+
+		if pcs[i].Type == corev1.PodScheduled {
 			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
 				Type: v1alpha1.ComputeNodeConditionDeployed,
 			})
 		}
-		if c.Type == corev1.PodInitialized && c.Status == corev1.ConditionTrue {
+		if pcs[i].Type == corev1.PodInitialized {
 			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
 				Type: v1alpha1.ComputeNodeConditionInitialized,
 			})
 		}
-		if c.Type == corev1.ContainersReady && c.Status == corev1.ConditionTrue {
+		if pcs[i].Type == corev1.ContainersReady {
 			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
 				Type: v1alpha1.ComputeNodeConditionStarted,
 			})
 		}
-		if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
+		if pcs[i].Type == corev1.PodReady {
 			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
 				Type: v1alpha1.ComputeNodeConditionReady,
 			})

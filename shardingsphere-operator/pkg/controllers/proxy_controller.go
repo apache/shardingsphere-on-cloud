@@ -40,8 +40,6 @@ import (
 const (
 	//WaitingForReady Time selection reference kubelet restart time
 	WaitingForReady = 10 * time.Second
-	// miniReadyCount Minimum number of replicas that can be served
-	miniReadyCount = 1
 
 	proxyControllerName = "proxy_controller"
 )

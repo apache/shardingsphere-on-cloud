@@ -339,31 +339,30 @@ func isTrueReadyPod(pod *corev1.Pod) bool {
 }
 
 func updateComputeNodeStatusCondition(conditions []v1alpha1.ComputeNodeCondition, conds []v1alpha1.ComputeNodeCondition) []v1alpha1.ComputeNodeCondition {
-	for _, cond := range conds {
+	for idx := range conds {
 		var found bool
 		for i := range conditions {
-			if conditions[i].Type == cond.Type {
+			if conditions[i].Type == conds[idx].Type {
 				found = true
-				conditions[i].Type = cond.Type
-				conditions[i].Status = cond.Status
-				conditions[i].Message = cond.Message
-				conditions[i].Reason = cond.Reason
+				conditions[i].Type = conds[idx].Type
+				conditions[i].Status = conds[idx].Status
+				conditions[i].Message = conds[idx].Message
+				conditions[i].Reason = conds[idx].Reason
 			} else {
-				if cond.Type == v1alpha1.ComputeNodeConditionUnknown {
+				if conds[idx].Type == v1alpha1.ComputeNodeConditionUnknown {
 					conditions[i].Status = v1alpha1.ConditionStatusFalse
-				} else {
-					if conditions[i].Type == v1alpha1.ComputeNodeConditionUnknown {
-						conditions[i].Status = v1alpha1.ConditionStatusFalse
-					}
+				} else if conditions[i].Type == v1alpha1.ComputeNodeConditionUnknown {
+					conditions[i].Status = v1alpha1.ConditionStatusFalse
 				}
+
 			}
 
-			conditions[i].LastUpdateTime = cond.LastUpdateTime
+			conditions[i].LastUpdateTime = conds[idx].LastUpdateTime
 		}
 
 		// check current conditions
 		if len(conditions) == 0 || !found {
-			conditions = append(conditions, cond)
+			conditions = append(conditions, conds[idx])
 		}
 	}
 
