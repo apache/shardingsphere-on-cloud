@@ -376,8 +376,7 @@ func reconcileComputeNodeStatus(podlist *corev1.PodList, svc *corev1.Service, cn
 
 	ready := getReadyProxyInstances(podlist)
 	cn.Status.Ready = fmt.Sprintf("%d/%d", ready, len(podlist.Items))
-	//TODO: consider removing this readyInstances
-	cn.Status.ReadyInstances = ready
+	cn.Status.Replicas = int32(len(podlist.Items))
 
 	if ready > 0 {
 		cn.Status.Phase = v1alpha1.ComputeNodeStatusReady

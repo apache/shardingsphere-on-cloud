@@ -45,7 +45,7 @@ type ComputeNode struct {
 
 	Spec ComputeNodeSpec `json:"spec,omitempty"`
 	// +optional
-	Status ComputeNodeStatus `json:"status,omitempty"`
+	Status ComputeNodeStatus `json:"status,omitempty" yaml:"status,omitempty"`
 }
 
 type PrivilegeType string
@@ -56,7 +56,7 @@ const (
 
 // ComputeNodePrivilege for storage node, the default value is ALL_PERMITTED
 type ComputeNodePrivilege struct {
-	Type PrivilegeType `json:"type"`
+	Type PrivilegeType `json:"type" yaml:"type"`
 }
 
 // ComputeNodeUser is a slice about authorized host and password for compute node.
@@ -64,8 +64,8 @@ type ComputeNodePrivilege struct {
 // user:<username>@<hostname>,hostname is % or empty string means do not care about authorized host
 // password:<password>
 type ComputeNodeUser struct {
-	User     string `json:"user"`
-	Password string `json:"password"`
+	User     string `json:"user" yaml:"user"`
+	Password string `json:"password" yaml:"password"`
 }
 
 // ComputeNodeAuthority  is used to set up initial user to login compute node, and authority data of storage node.
@@ -87,7 +87,7 @@ const (
 type Repository struct {
 	// +kubebuilder:validation:Enum=ZooKeeper;Etcd
 	// type of metadata repository
-	Type RepositoryType `json:"type"`
+	Type RepositoryType `json:"type" yaml:"type"`
 	// properties of metadata repository
 	// +optional
 	Props Properties `json:"props,omitempty" yaml:"props,omitempty"`
@@ -134,8 +134,8 @@ type PluginLogging struct {
 }
 
 type Prometheus struct {
-	Host  string     `json:"host"`
-	Port  int32      `json:"port"`
+	Host  string     `json:"host" yaml:"host"`
+	Port  int32      `json:"port" yaml:"port"`
 	Props Properties `json:"props,omitempty" yaml:"props,omitempty"`
 }
 
@@ -177,22 +177,22 @@ type AgentConfig struct {
 
 // ServiceType defines the Service in Kubernetes of ShardingSphere-Proxy
 type Service struct {
-	Ports []corev1.ServicePort `json:"ports,omitempty"`
+	Ports []corev1.ServicePort `json:"ports,omitempty" yaml:"ports,omitempty"`
 	// +kubebuilder:validation:Enum=ClusterIP;NodePort;LoadBalancer;ExternalName
-	Type corev1.ServiceType `json:"type"`
+	Type corev1.ServiceType `json:"type" yaml:"type"`
 }
 
 // ProxyProbe defines the probe actions for LivenesProbe, ReadinessProbe and StartupProbe
 type ProxyProbe struct {
 	// Probes are not allowed for ephemeral containers.
 	// +optional
-	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty"`
+	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty" yaml:"livenessProbe,omitempty"`
 	// Probes are not allowed for ephemeral containers.
 	// +optional
-	ReadinessProbe *corev1.Probe `json:"readinessProbe,omitempty" `
+	ReadinessProbe *corev1.Probe `json:"readinessProbe,omitempty" yaml:"readinessProbe,omitempty"`
 	// Probes are not allowed for ephemeral containers.
 	// +optional
-	StartupProbe *corev1.Probe `json:"startupProbe,omitempty"`
+	StartupProbe *corev1.Probe `json:"startupProbe,omitempty" yaml:"startupProbe,omitempty"`
 }
 
 // ConnectorType defines the frontend protocol for ShardingSphere Proxy
@@ -205,20 +205,20 @@ const (
 
 // MySQLDriver Defines the mysql-driven version in ShardingSphere-proxy
 type StorageNodeConnector struct {
-	Type ConnectorType `json:"type"`
+	Type ConnectorType `json:"type" yaml:"type"`
 	// +kubebuilder:validation:Pattern=`^([1-9]\d|[1-9])(\.([1-9]\d|\d)){2}$`
 	// mysql-driven version,must be x.y.z
-	Version string `json:"version"`
+	Version string `json:"version" yaml:"version"`
 }
 
 // BootstrapConfig is used for any ShardingSphere Proxy startup
 type BootstrapConfig struct {
 	// +optional
-	ServerConfig ServerConfig `json:"serverConfig,omitempty"`
+	ServerConfig ServerConfig `json:"serverConfig,omitempty" yaml:"serverConfig,omitempty"`
 	// +optional
-	LogbackConfig LogbackConfig `json:"logbackConfig,omitempty"`
+	LogbackConfig LogbackConfig `json:"logbackConfig,omitempty" yaml:"logbackConfig,omitempty"`
 	// +optional
-	AgentConfig AgentConfig `json:"agentConfig,omitempty"`
+	AgentConfig AgentConfig `json:"agentConfig,omitempty" yaml:"agentConfig,omitempty"`
 }
 
 type PortBinding struct {
@@ -226,7 +226,7 @@ type PortBinding struct {
 	// named port in a pod must have a unique name. Name for the port that can be
 	// referred to by services.
 	// +optional
-	Name string `json:"name,omitempty"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 
 	// Number of port to expose on the pod's IP address.
 	// This must be a valid port number, 0 < x < 65536.
@@ -235,10 +235,10 @@ type PortBinding struct {
 	// Defaults to "TCP".
 	// +optional
 	// +default="TCP"
-	Protocol corev1.Protocol `json:"protocol,omitempty"`
+	Protocol corev1.Protocol `json:"protocol,omitempty" yaml:"protocol,omitempty"`
 	// What host IP to bind the external port to.
 	// +optional
-	HostIP string `json:"hostIP,omitempty" yaml:"hostIP"`
+	HostIP string `json:"hostIP,omitempty" yaml:"hostIP,omitempty"`
 
 	// The port that will be exposed by this service.
 	ServicePort int32 `json:"servicePort" yaml:"servicePort"`
@@ -258,24 +258,24 @@ type PortBinding struct {
 
 // ProxySpec defines the desired state of ShardingSphereProxy
 type ComputeNodeSpec struct {
-	StorageNodeConnector *StorageNodeConnector `json:"storageNodeConnector,omitempty"`
+	StorageNodeConnector *StorageNodeConnector `json:"storageNodeConnector,omitempty" yaml:"storageNodeConnector,omitempty"`
 	// version  is the version of ShardingSphere-Proxy
 	ServerVersion string `json:"serverVersion,omitempty" yaml:"serverVersion,omitempty"`
 
 	// replicas is the expected number of replicas of ShardingSphere-Proxy
 	// +optional
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas int32 `json:"replicas" yaml:"replicas"`
 	// selector defines a set of label selectors
-	Selector *metav1.LabelSelector `json:"selector"`
+	Selector *metav1.LabelSelector `json:"selector" yaml:"selector"`
 
 	// +optional
-	Probes *ProxyProbe `json:"probes,omitempty"`
+	Probes *ProxyProbe `json:"probes,omitempty" yaml:"probes,omitempty"`
 	// +optional
-	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets,omitempty"`
 	// +optional
-	Env []corev1.EnvVar `json:"env,omitempty"`
+	Env []corev1.EnvVar `json:"env,omitempty" yaml:"env,omitempty"`
 	// +optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources corev1.ResourceRequirements `json:"resources,omitempty" yaml:"resources,omitempty"`
 	// +optional
 	PortBindings []PortBinding `json:"portBindings,omitempty" yaml:"portBindings,omitempty"`
 
@@ -284,71 +284,81 @@ type ComputeNodeSpec struct {
 	ServiceType corev1.ServiceType `json:"serviceType,omitempty" yaml:"serviceType,omitempty"`
 
 	// +optional
-	Bootstrap BootstrapConfig `json:"bootstrap,omitempty"`
+	Bootstrap BootstrapConfig `json:"bootstrap,omitempty" yaml:"bootstrap,omitempty"`
 }
 
 // ComputeNodeStatus defines the observed state of ShardingSphere Proxy
 type ComputeNodeStatus struct {
-	Ready string `json:"ready,omitempty"`
+	Replicas int32 `json:"replicas" yaml:"replicas"`
+
+	Ready string `json:"ready,omitempty" yaml:"ready,omitempty"`
 	// The generation observed by the deployment controller.
 	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	ObservedGeneration int64 `json:"observedGeneration,omitempty" yaml:"observedGeneration,omitempty"`
 
 	// ShardingSphere-Proxy phase are a brief summary of the ShardingSphere-Proxy life cycle
 	// There are two possible phase values:
 	// Ready: ShardingSphere-Proxy can already provide external services
 	// NotReady: ShardingSphere-Proxy cannot provide external services
 	// +optional
-	Phase ComputeNodePhaseStatus `json:"phase"`
+	Phase ComputeNodePhaseStatus `json:"phase,omitempty" yaml:"phase,omitempty"`
 
 	// Conditions The conditions array, the reason and message fields
 	// +optional
-	Conditions []ComputeNodeCondition `json:"conditions"`
-	// ReadyInstances shows the number of replicas that ShardingSphere-Proxy is running normally
-	// +optional
-	ReadyInstances int32 `json:"readyInstances"`
+	Conditions []ComputeNodeCondition `json:"conditions,omitempty" yaml:"conditions,omitempty"`
 
 	// LoadBalancer contains the current status of the load-balancer,
 	// if one is present.
 	// +optional
-	LoadBalancer LoadBalancerStatus `json:"loadBalancer,omitempty"`
+	LoadBalancer LoadBalancerStatus `json:"loadBalancer,omitempty" yaml:"loadBalancer,omitempty"`
 }
 
+// LoadBalancerStatus represents the status of service endpoints
 type LoadBalancerStatus struct {
 	// +optional
-	ClusterIP string `json:"clusterIP,omitempty"`
+	ClusterIP string `json:"clusterIP,omitempty" yaml:"clusterIP,omitempty"`
 
 	// Ingress is a list containing ingress points for the load-balancer.
 	// Traffic intended for the service should be sent to these ingress points.
 	// +optional
-	Ingress []corev1.LoadBalancerIngress `json:"ingress,omitempty"`
+	Ingress []corev1.LoadBalancerIngress `json:"ingress,omitempty" yaml:"ingress,omitempty"`
 }
 
+// ComputeNodePhase represents a brief summary of the compute node
 type ComputeNodePhaseStatus string
 
 const (
-	ComputeNodeStatusReady    ComputeNodePhaseStatus = "Ready"
+	// ComputeNodeStatusReady indicates that at least one compute node is ready for connections
+	ComputeNodeStatusReady ComputeNodePhaseStatus = "Ready"
+	// ComputeNodeStatusNotReady indicates that no compute node is ready
 	ComputeNodeStatusNotReady ComputeNodePhaseStatus = "NotReady"
-	ComputeNodeStatusUnknown  ComputeNodePhaseStatus = "Unknown"
+	// ComputeNodeStatusUnknown indicates that cannot determine the status of compute node at present
+	ComputeNodeStatusUnknown ComputeNodePhaseStatus = "Unknown"
 )
 
+// ComputeNodeConditioType represents the type of a compute node condition during the startup process of ShardingSphere-Proxy
 type ComputeNodeConditionType string
 
-// ComputeNodeConditionType shows some states during the startup process of ShardingSphere-Proxy
 const (
+	// ComputeNodeConditionPending indicates that at least one pod is in pending phase
+	ComputeNodeConditionPending ComputeNodeConditionType = "Pending"
+	// ComputeNodeConditionInitialized indicates that at least one pod is scheduled
+	ComputeNodeConditionDeployed ComputeNodeConditionType = "Deployed"
+	// ComputeNodeConditionInitialized indicates that at least one pod is initialized
 	ComputeNodeConditionInitialized ComputeNodeConditionType = "Initialized"
-	ComputeNodeConditionStarted     ComputeNodeConditionType = "Started"
-	ComputeNodeConditionReady       ComputeNodeConditionType = "Ready"
-	ComputeNodeConditionUnknown     ComputeNodeConditionType = "Unknown"
-	ComputeNodeConditionDeployed    ComputeNodeConditionType = "Deployed"
-	ComputeNodeConditionFailed      ComputeNodeConditionType = "Failed"
-	ComputeNodeConditionPending     ComputeNodeConditionType = "Pending"
-
+	// ComputeNodeConditionInitialized indicates that at least one pod is started
+	ComputeNodeConditionStarted ComputeNodeConditionType = "Started"
+	// ComputeNodeConditionInitialized indicates that at least one pod is ready
+	ComputeNodeConditionReady ComputeNodeConditionType = "Ready"
+	// ComputeNodeConditionInitialized indicates that at least one pod is unknown
+	ComputeNodeConditionUnknown ComputeNodeConditionType = "Unknown"
+	// ComputeNodeConditionInitialized indicates that at least one pod is failed
+	ComputeNodeConditionFailed ComputeNodeConditionType = "Failed"
+	// ComputeNodeConditionInitialized indicates that at least one pod is succeed
 	ComputeNodeConditionSucceed ComputeNodeConditionType = "Succeed"
 )
 
-// type ComputeNodeConditions []ComputeNodeCondition
-
+// ConditionStatus represents the validation status of a condition
 type ConditionStatus string
 
 const (
@@ -357,13 +367,14 @@ const (
 	ConditionStatusUnknown = "Unknown"
 )
 
+// ComputeNodeCondition defines a condition template
 type ComputeNodeCondition struct {
-	Type               ComputeNodeConditionType `json:"type"`
-	Status             ConditionStatus          `json:"status"`
-	LastTransitionTime metav1.Time              `json:"lastTransitionTime,omitempty"`
-	LastUpdateTime     metav1.Time              `json:"lastUpdateTime,omitempty"`
-	Reason             string                   `json:"reason"`
-	Message            string                   `json:"message"`
+	Type               ComputeNodeConditionType `json:"type" yaml:"type"`
+	Status             ConditionStatus          `json:"status" yaml:"status"`
+	LastTransitionTime metav1.Time              `json:"lastTransitionTime,omitempty" yaml:"lastTransitionTime,omitempty"`
+	LastUpdateTime     metav1.Time              `json:"lastUpdateTime,omitempty" yaml:"lastUpdateTime,omitempty"`
+	Reason             string                   `json:"reason" yaml:"reason"`
+	Message            string                   `json:"message" yaml:"message"`
 }
 
 func init() {
