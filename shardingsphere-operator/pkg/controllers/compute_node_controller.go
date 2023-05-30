@@ -173,6 +173,19 @@ func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.
 	return err
 }
 
+func (r *ComputeNodeReconciler) updateComputeNodePortBindings(ctx context.Context, cn *v1alpha1.ComputeNode) error {
+	if rt, err := r.getRuntimeComputeNode(ctx, types.NamespacedName{
+		Namespace: cn.Namespace,
+		Name:      cn.Name,
+	}); err == nil {
+		rt.Spec.PortBindings = cn.Spec.PortBindings
+		if err := r.Update(ctx, rt); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, cur *corev1.Service) error {
 	switch cn.Spec.ServiceType {
 	case corev1.ServiceTypeClusterIP:
@@ -180,17 +193,7 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 		copy(cn.Spec.PortBindings, pbs)
 		updateServiceClusterIP(cn.Spec.PortBindings)
 		if !reflect.DeepEqual(cn.Spec.PortBindings, pbs) {
-			if rt, err := r.getRuntimeComputeNode(ctx, types.NamespacedName{
-				Namespace: cn.Namespace,
-				Name:      cn.Name,
-			}); err != nil {
-				return err
-			} else {
-				rt.Spec.PortBindings = cn.Spec.PortBindings
-				if err := r.Update(ctx, rt); err != nil {
-					return err
-				}
-			}
+			return r.updateComputeNodePortBindings(ctx, cn)
 		}
 	case corev1.ServiceTypeExternalName:
 		fallthrough
@@ -201,17 +204,7 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 		copy(cn.Spec.PortBindings, pbs)
 		updateServiceNodePort(cn.Spec.PortBindings, cur.Spec.Ports)
 		if !reflect.DeepEqual(cn.Spec.PortBindings, pbs) {
-			if rt, err := r.getRuntimeComputeNode(ctx, types.NamespacedName{
-				Namespace: cn.Namespace,
-				Name:      cn.Name,
-			}); err != nil {
-				return err
-			} else {
-				rt.Spec.PortBindings = cn.Spec.PortBindings
-				if err := r.Update(ctx, rt); err != nil {
-					return err
-				}
-			}
+			return r.updateComputeNodePortBindings(ctx, cn)
 		}
 	}
 
