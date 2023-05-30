@@ -19,13 +19,14 @@ package e2e
 
 import (
 	"context"
-	mockChaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh/mocks"
-	"github.com/golang/mock/gomock"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
+
+	mockChaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh/mocks"
+	"github.com/golang/mock/gomock"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"

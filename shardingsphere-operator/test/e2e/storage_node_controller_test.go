@@ -251,7 +251,7 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 				newSN := &v1alpha1.StorageNode{}
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)).Should(Succeed())
 				return newSN.Status.Phase
-			}, 20, 2).Should(Equal(v1alpha1.StorageNodePhaseReady))
+			}, time.Second*10, time.Millisecond*250).Should(Equal(v1alpha1.StorageNodePhaseReady))
 
 			Eventually(func() bool {
 				newSN := &v1alpha1.StorageNode{}

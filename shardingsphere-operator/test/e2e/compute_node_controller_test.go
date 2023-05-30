@@ -29,6 +29,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -531,7 +532,8 @@ var _ = Describe("ComputeNodeController", func() {
 
 var _ = Describe("GetNamespacedByName", func() {
 	Context("Assert Get ConfigMap ", func() {
-		var (
+		var cn *v1alpha1.ComputeNode
+		BeforeEach(func() {
 			cn = &v1alpha1.ComputeNode{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "ComputeNode",
@@ -545,7 +547,34 @@ var _ = Describe("GetNamespacedByName", func() {
 					},
 				},
 				Spec: v1alpha1.ComputeNodeSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"test_key": "test_value",
+						},
+					},
+					PortBindings: []v1alpha1.PortBinding{
+						{
+							Name:          "port",
+							ContainerPort: 3307,
+							ServicePort:   3307,
+						},
+					},
 					Bootstrap: v1alpha1.BootstrapConfig{
+						ServerConfig: v1alpha1.ServerConfig{
+							Mode: v1alpha1.ComputeNodeServerMode{
+								Repository: v1alpha1.Repository{
+									Type: v1alpha1.RepositoryTypeZookeeper,
+								},
+							},
+							Authority: v1alpha1.ComputeNodeAuthority{
+								Users: []v1alpha1.ComputeNodeUser{
+									{
+										User:     "root",
+										Password: "root",
+									},
+								},
+							},
+						},
 						AgentConfig: v1alpha1.AgentConfig{
 							Plugins: v1alpha1.AgentPlugin{
 								Logging: &v1alpha1.PluginLogging{
@@ -581,21 +610,33 @@ var _ = Describe("GetNamespacedByName", func() {
 					},
 				},
 			}
-		)
+			Expect(k8sClient.Create(ctx, cn)).To(BeNil())
+		})
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, cn)).To(BeNil())
+		})
 
 		It("get configmap should be equal", func() {
-			c := configmap.NewConfigMapClient(k8sClient)
+			factory := configmap.NewConfigMapFactory(cn)
+			gvk := schema.GroupVersionKind{
+				Group:   "shardingsphere.apache.org",
+				Version: "v1alpha1",
+				Kind:    "ComputeNode",
+			}
 
-			cm := c.Build(ctx, cn)
-			err := c.Create(ctx, cm)
-			Expect(err).To(BeNil())
+			meta := cn.GetObjectMeta()
+			cm := factory.NewConfigMapBuilder(meta, gvk).Build()
 
-			expect, err := c.GetByNamespacedName(ctx, types.NamespacedName{
-				Name:      cn.Name,
-				Namespace: cn.Namespace,
-			})
+			expect := &corev1.ConfigMap{}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, types.NamespacedName{
+					Namespace: cn.Namespace,
+					Name:      cn.Name,
+				}, expect)
+				return err == nil
+			}, time.Second*10, time.Millisecond*250).Should(BeTrue())
+
 			Expect(expect).To(Not(BeNil()))
-
 			Expect(err).To(BeNil())
 			Expect(expect.Name).To(Equal(cm.Name))
 			Expect(expect.Namespace).To(Equal(cm.Namespace))
