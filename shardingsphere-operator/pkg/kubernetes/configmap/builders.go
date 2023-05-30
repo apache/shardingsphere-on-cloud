@@ -95,8 +95,26 @@ func DefaultConfigMap(meta metav1.Object, gvk schema.GroupVersionKind) *corev1.C
 // NewConfigMap returns a new ConfigMap
 func NewConfigMap(obj runtime.Object) *corev1.ConfigMap {
 	factory := NewConfigMapFactory(obj)
-	builder := factory.NewConfigMapBuilder()
-	return builder.Build()
+	gvk := obj.GetObjectKind().GroupVersionKind()
+
+	var (
+		cn   *v1alpha1.ComputeNode
+		sc   *v1alpha1.ShardingSphereChaos
+		meta metav1.Object
+		ok   bool
+	)
+
+	if cn, ok = obj.(*v1alpha1.ComputeNode); ok {
+		meta = cn.GetObjectMeta()
+		return factory.NewConfigMapBuilder(meta, gvk).Build()
+	}
+
+	if sc, ok = obj.(*v1alpha1.ShardingSphereChaos); ok {
+		meta = sc.GetObjectMeta()
+		return factory.NewConfigMapBuilder(meta, gvk).Build()
+	}
+
+	return &corev1.ConfigMap{}
 }
 
 // TODO: check if changed first, then decide if need to respawn the Pods
@@ -104,7 +122,6 @@ func NewConfigMap(obj runtime.Object) *corev1.ConfigMap {
 func UpdateComputeNodeConfigMap(cn *v1alpha1.ComputeNode, cur *corev1.ConfigMap) *corev1.ConfigMap {
 	exp := &corev1.ConfigMap{}
 	exp.ObjectMeta = cur.ObjectMeta
-	exp.ObjectMeta.ResourceVersion = ""
 	exp.Labels = cur.Labels
 	exp.Annotations = cur.Annotations
 	exp.Data = NewConfigMap(cn).Data
@@ -196,6 +213,7 @@ func (c *computeNodeConfigMapBuilder) Build() *corev1.ConfigMap {
 	}
 
 	c.SetData(data)
+
 	return c.configmap
 }
 

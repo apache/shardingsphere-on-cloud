@@ -19,12 +19,14 @@ package configmap
 
 import (
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // ConfigMapFactory generic configmap factory interface
 type ConfigMapFactory interface {
-	NewConfigMapBuilder() ConfigMapBuilder
+	NewConfigMapBuilder(metav1.Object, schema.GroupVersionKind) ConfigMapBuilder
 }
 
 // NewConfigMapFactory Create a new common configmap factory
@@ -39,15 +41,16 @@ type configmapFactory struct {
 }
 
 // NewConfigMapBuilder Create a new common configmap builder
-func (c *configmapFactory) NewConfigMapBuilder() ConfigMapBuilder {
-	gvk := c.obj.GetObjectKind().GroupVersionKind()
+func (c *configmapFactory) NewConfigMapBuilder(meta metav1.Object, gvk schema.GroupVersionKind) ConfigMapBuilder {
+	cm := DefaultConfigMap(meta, gvk)
 
 	if gvk.Group == "shardingsphere.apache.org" {
 		if gvk.Kind == "ComputeNode" && gvk.Version == "v1alpha1" {
+
 			return &computeNodeConfigMapBuilder{
 				obj: c.obj,
 				configMapBuilder: configMapBuilder{
-					configmap: &v1.ConfigMap{},
+					configmap: cm,
 				},
 			}
 		}
@@ -56,14 +59,14 @@ func (c *configmapFactory) NewConfigMapBuilder() ConfigMapBuilder {
 			return &shardingsphereChaosConfigMapBuilder{
 				obj: c.obj,
 				configMapBuilder: configMapBuilder{
-					configmap: &v1.ConfigMap{},
+					configmap: cm,
 				},
 			}
 		}
 	}
 
 	return &configMapBuilder{
-		configmap: &v1.ConfigMap{},
+		configmap: cm,
 	}
 }
 
