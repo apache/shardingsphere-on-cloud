@@ -64,7 +64,7 @@ helm install shardingsphere shardingsphere/apache-shardingsphere-operator-cluste
 |--------------------------|-----------------------------------------------------------------------------------------------------------|----------------------------------|
 | `nameOverride`           | nameOverride String to partially override common.names.fullname template (will maintain the release name) | `apache-shardingsphere-operator` |
 | `replicaCount`           | operator replica count                                                                                    | `2`                              |
-| `image.repository`       | operator image name                                                                                       | `sahrdingsphere-operator`        |
+| `image.repository`       | operator image name                                                                                       | `shardingsphere-operator`        |
 | `image.pullPolicy`       | image pull policy                                                                                         | `IfNotPresent`                   |
 | `image.tag`              | image tag                                                                                                 | `0.0.1`                          |
 | `imagePullSecrets`       | image pull secret of private repository                                                                   | `[]`                             |

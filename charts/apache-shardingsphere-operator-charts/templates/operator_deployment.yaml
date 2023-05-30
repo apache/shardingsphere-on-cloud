@@ -40,11 +40,17 @@ spec:
     spec:
       containers:
         - args:
+            - --metrics-bind-address=:{{ .Values.operator.metrics.metricsBindAddress }}
             - --health-probe-bind-address=:{{ .Values.operator.health.healthProbePort }}
             - --leader-elect
               {{- if eq .Values.operator.featureGates.computeNode true }}
-            - --feature-gates=ComputeNode={{ .Values.operator.featureGates.computeNode }}
+            - --feature-gates=ComputeNode=true{{- if eq .Values.operator.featureGates.storageNode true }},StorageNode=true{{- end }}
               {{- end }}
+            {{- if eq .Values.operator.storageNodeProviders.aws.enabled true }}
+            - --aws-region={{ .Values.operator.storageNodeProviders.aws.region }}
+            - --aws-access-key-id={{ .Values.operator.storageNodeProviders.aws.accessKeyId }}
+            - --aws-secret-access-key={{ .Values.operator.storageNodeProviders.aws.secretAccessKey }}
+            {{- end }}
           ports:
             - name: healthcheck
               containerPort: {{ .Values.operator.health.healthProbePort }}

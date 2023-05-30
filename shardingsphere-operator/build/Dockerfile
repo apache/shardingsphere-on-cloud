@@ -16,7 +16,7 @@
 #
 
 
-# Stage1: Build Go binary for AMD64 
+# Stage1: Build Go binary for AMD64
 FROM --platform=linux/amd64 golang:1.19-alpine AS builder-amd64
 WORKDIR /workspace
 COPY go.mod go.mod
@@ -52,9 +52,9 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build  -ldflags "-w -s" -gcflags "-
 
 # Step3: Build a multi-platform image
 FROM alpine:3.15.4
-COPY --from=builder-amd64 /workspace/operator-bin-amd64 . 
-COPY --from=builder-arm64 /workspace/operator-bin-arm64 . 
+COPY --from=builder-amd64 /workspace/operator-bin-amd64 .
+COPY --from=builder-arm64 /workspace/operator-bin-arm64 .
 
-# Add a scripts for start 
+# Add a scripts for start
 COPY start.sh /start.sh
 ENTRYPOINT ["/bin/sh", "/start.sh"]

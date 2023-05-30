@@ -6,7 +6,7 @@ require (
 	bou.ke/monkey v1.0.2
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/antlr/antlr4 v0.0.0-20181218183524-be58ebffde8e
-	github.com/chaos-mesh/chaos-mesh/api v0.0.0-20230410023700-25a841a23cd2
+	github.com/chaos-mesh/chaos-mesh/api v0.0.0-20230517110555-afab5b4a7813
 	github.com/database-mesh/golang-sdk v0.0.0-20230517034007-f86740cbb78b
 	github.com/go-logr/logr v1.2.4
 	github.com/go-sql-driver/mysql v1.7.1

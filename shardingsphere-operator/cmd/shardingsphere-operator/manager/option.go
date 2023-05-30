@@ -95,7 +95,7 @@ func ParseOptionsFromCmdFlags() *Options {
 	flag.StringVar(&opt.FeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for alpha/experimental features.")
 	// aws client options
 	flag.StringVar(&AwsAccessKeyID, "aws-access-key-id", "", "The AWS access key ID.")
-	flag.StringVar(&AwsSecretAccessKey, "aws-secret-key", "", "The AWS secret access key.")
+	flag.StringVar(&AwsSecretAccessKey, "aws-secret-access-key", "", "The AWS secret access key.")
 	flag.StringVar(&AwsRegion, "aws-region", "", "The AWS region.")
 
 	opt.ZapOptions.BindFlags(flag.CommandLine)
