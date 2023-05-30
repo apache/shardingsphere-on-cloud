@@ -101,6 +101,7 @@ func init() {
 // 5. Waiting for backups finished
 // 6. Update local backup info
 // 7. Double check backups all finished
+// nolint:gocognit
 func backup() error {
 	var err error
 	var lsBackup *model.LsBackup
@@ -120,8 +121,11 @@ func backup() error {
 			if err := proxy.Unlock(); err != nil {
 				logging.Error(fmt.Sprintf("Coz backup failed, try to unlock cluster, but still failed, err:%s", err.Error()))
 			}
-			logging.Warn("Try to delete backup data ...")
-			deleteBackupFiles(lsBackup)
+
+			if lsBackup != nil {
+				logging.Warn("Try to delete backup data ...")
+				deleteBackupFiles(lsBackup)
+			}
 		}
 	}()
 
