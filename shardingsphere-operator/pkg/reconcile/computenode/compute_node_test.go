@@ -78,7 +78,7 @@ func Test_getPreferedConditionFromPod(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		act := getPreferedConditionFromPod(c.pod)
+		act := getPreferedConditionFromPod(&c.pod)
 		assert.Equal(t, len(c.expect), len(act), c.message)
 		for i := range act {
 			assert.Equal(t, c.expect[i].Type, act[i].Type, c.message)
