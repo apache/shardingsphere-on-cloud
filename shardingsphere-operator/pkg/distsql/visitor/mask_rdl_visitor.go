@@ -109,7 +109,7 @@ func (v *MaskVisitor) VisitIfNotExists(ctx *parser.IfNotExistsContext) *ast.IfNo
 	}
 }
 
-// nolint:gocognit
+// nolint
 func (v *MaskVisitor) VisitLiteral(ctx *parser.LiteralContext) *ast.Literal {
 	stmt := &ast.Literal{}
 	switch {

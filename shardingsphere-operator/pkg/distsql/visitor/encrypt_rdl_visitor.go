@@ -319,7 +319,7 @@ func (v *EncryptVisitor) VisitResourceName(ctx *parser.ResourceNameContext) *ast
 	return stmt
 }
 
-// nolint:gocognit
+// nolint
 func (v *EncryptVisitor) VisitLiteral(ctx *parser.LiteralContext) *ast.Literal {
 	stmt := &ast.Literal{}
 	switch {
