@@ -75,29 +75,31 @@ func GetConditionFromPods(podlist *corev1.PodList) []v1alpha1.ComputeNodeConditi
 }
 
 func getPreferedConditionFromPod(pod *corev1.Pod) []v1alpha1.ComputeNodeCondition {
-	conds := []v1alpha1.ComputeNodeCondition{}
+	computenodeConditions := []v1alpha1.ComputeNodeCondition{}
 	if pod.Status.Phase == corev1.PodUnknown {
-		conds = append(conds, v1alpha1.ComputeNodeCondition{
+		computenodeConditions = append(computenodeConditions, v1alpha1.ComputeNodeCondition{
 			Type: v1alpha1.ComputeNodeConditionUnknown,
 		})
-		return conds
+		return computenodeConditions
 	}
 
+	podConditions := getPreferedConditionFromPodConditions(pod.Status.Conditions)
 	if pod.Status.Phase == corev1.PodPending {
-		conds = append(conds, v1alpha1.ComputeNodeCondition{
+		computenodeConditions = append(computenodeConditions, v1alpha1.ComputeNodeCondition{
 			Type: v1alpha1.ComputeNodeConditionPending,
 		})
-		return conds
+		computenodeConditions = append(computenodeConditions, podConditions...)
+		return computenodeConditions
 	}
 
 	if pod.Status.Phase == corev1.PodFailed {
-		conds = append(conds, v1alpha1.ComputeNodeCondition{
+		computenodeConditions = append(computenodeConditions, v1alpha1.ComputeNodeCondition{
 			Type: v1alpha1.ComputeNodeConditionFailed,
 		})
-		return conds
+		return computenodeConditions
 	}
 
-	return getPreferedConditionFromPodConditions(pod.Status.Conditions)
+	return podConditions
 }
 
 func getPreferedConditionFromPodConditions(pcs []corev1.PodCondition) []v1alpha1.ComputeNodeCondition {
