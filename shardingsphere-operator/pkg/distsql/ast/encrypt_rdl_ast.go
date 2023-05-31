@@ -22,7 +22,7 @@ import (
 	"strings"
 )
 
-// Define RDL AST
+// Define Create Encrypt Rule AST
 type CreateEncryptRule struct {
 	IfNotExists              *IfNotExists
 	EncryptRuleDefinition    *EncryptRuleDefinition

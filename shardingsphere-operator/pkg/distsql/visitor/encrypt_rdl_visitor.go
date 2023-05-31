@@ -24,11 +24,11 @@ import (
 	parser "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/distsql/visitor_parser/encrypt"
 )
 
-type Visitor struct {
+type EncryptVisitor struct {
 	parser.BaseRDLStatementVisitor
 }
 
-func (v *Visitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) *ast.CreateEncryptRule {
+func (v *EncryptVisitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) *ast.CreateEncryptRule {
 	stmt := &ast.CreateEncryptRule{}
 
 	if ctx.IfNotExists() != nil {
@@ -50,19 +50,19 @@ func (v *Visitor) VisitCreateEncryptRule(ctx *parser.CreateEncryptRuleContext) *
 	return stmt
 }
 
-func (v *Visitor) VisitIfNotExists(ctx *parser.IfNotExistsContext) *ast.IfNotExists {
+func (v *EncryptVisitor) VisitIfNotExists(ctx *parser.IfNotExistsContext) *ast.IfNotExists {
 	return &ast.IfNotExists{
 		IfNotExists: fmt.Sprintf("%s %s %s", ctx.IF().GetText(), ctx.NOT().GetText(), ctx.EXISTS().GetText()),
 	}
 }
 
-func (v *Visitor) VisitIfExists(ctx *parser.IfExistsContext) *ast.IfExists {
+func (v *EncryptVisitor) VisitIfExists(ctx *parser.IfExistsContext) *ast.IfExists {
 	return &ast.IfExists{
 		IfExists: fmt.Sprintf("%s %s", ctx.IF().GetText(), ctx.EXISTS().GetText()),
 	}
 }
 
-func (v *Visitor) VisitAlterEncryptRule(ctx *parser.AlterEncryptRuleContext) *ast.AlterEncryptRule {
+func (v *EncryptVisitor) VisitAlterEncryptRule(ctx *parser.AlterEncryptRuleContext) *ast.AlterEncryptRule {
 	stmt := &ast.AlterEncryptRule{}
 
 	if ctx.AllEncryptRuleDefinition() != nil {
@@ -73,7 +73,7 @@ func (v *Visitor) VisitAlterEncryptRule(ctx *parser.AlterEncryptRuleContext) *as
 	return stmt
 }
 
-func (v *Visitor) VisitDropEncryptRule(ctx *parser.DropEncryptRuleContext) *ast.DropEncryptRule {
+func (v *EncryptVisitor) VisitDropEncryptRule(ctx *parser.DropEncryptRuleContext) *ast.DropEncryptRule {
 	stmt := &ast.DropEncryptRule{}
 
 	if ctx.IfExists() != nil {
@@ -88,7 +88,7 @@ func (v *Visitor) VisitDropEncryptRule(ctx *parser.DropEncryptRuleContext) *ast.
 	return stmt
 }
 
-func (v *Visitor) VisitEncryptRuleDefinition(ctx *parser.EncryptRuleDefinitionContext) *ast.EncryptRuleDefinition {
+func (v *EncryptVisitor) VisitEncryptRuleDefinition(ctx *parser.EncryptRuleDefinitionContext) *ast.EncryptRuleDefinition {
 	stmt := &ast.EncryptRuleDefinition{}
 
 	if ctx.TableName() != nil {
@@ -116,7 +116,7 @@ func (v *Visitor) VisitEncryptRuleDefinition(ctx *parser.EncryptRuleDefinitionCo
 	return stmt
 }
 
-func (v *Visitor) VisitQueryWithCipherColumn(ctx *parser.QueryWithCipherColumnContext) *ast.QueryWithCipherColumn {
+func (v *EncryptVisitor) VisitQueryWithCipherColumn(ctx *parser.QueryWithCipherColumnContext) *ast.QueryWithCipherColumn {
 	stmt := &ast.QueryWithCipherColumn{}
 	switch {
 	case ctx.TRUE() != nil:
@@ -127,7 +127,7 @@ func (v *Visitor) VisitQueryWithCipherColumn(ctx *parser.QueryWithCipherColumnCo
 	return stmt
 }
 
-func (v *Visitor) VisitEncryptColumnDefinition(ctx *parser.EncryptColumnDefinitionContext) *ast.EncryptColumnDefinition {
+func (v *EncryptVisitor) VisitEncryptColumnDefinition(ctx *parser.EncryptColumnDefinitionContext) *ast.EncryptColumnDefinition {
 	stmt := &ast.EncryptColumnDefinition{}
 
 	if ctx.ColumnDefinition() != nil {
@@ -169,7 +169,7 @@ func (v *Visitor) VisitEncryptColumnDefinition(ctx *parser.EncryptColumnDefiniti
 	return stmt
 }
 
-func (v *Visitor) VisitPlainColumnDefinition(ctx *parser.PlainColumnDefinitionContext) *ast.PlainColumnDefinition {
+func (v *EncryptVisitor) VisitPlainColumnDefinition(ctx *parser.PlainColumnDefinitionContext) *ast.PlainColumnDefinition {
 	stmt := &ast.PlainColumnDefinition{}
 	if ctx.PlainColumnName() != nil {
 		stmt.PlainColumnName = v.VisitPlainColumnName(ctx.PlainColumnName().(*parser.PlainColumnNameContext))
@@ -181,7 +181,7 @@ func (v *Visitor) VisitPlainColumnDefinition(ctx *parser.PlainColumnDefinitionCo
 	return stmt
 }
 
-func (v *Visitor) VisitPlainColumnName(ctx *parser.PlainColumnNameContext) *ast.CommonIdentifier {
+func (v *EncryptVisitor) VisitPlainColumnName(ctx *parser.PlainColumnNameContext) *ast.CommonIdentifier {
 	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
 		stmt.Identifier = ctx.IDENTIFIER_().GetText()
@@ -189,7 +189,7 @@ func (v *Visitor) VisitPlainColumnName(ctx *parser.PlainColumnNameContext) *ast.
 	return stmt
 }
 
-func (v *Visitor) VisitCipherColumnDefinition(ctx *parser.CipherColumnDefinitionContext) *ast.CipherColumnDefinition {
+func (v *EncryptVisitor) VisitCipherColumnDefinition(ctx *parser.CipherColumnDefinitionContext) *ast.CipherColumnDefinition {
 	stmt := &ast.CipherColumnDefinition{}
 	if ctx.CipherColumnName() != nil {
 		stmt.CipherColumnName = v.VisitCipherColumnName(ctx.CipherColumnName().(*parser.CipherColumnNameContext))
@@ -202,7 +202,7 @@ func (v *Visitor) VisitCipherColumnDefinition(ctx *parser.CipherColumnDefinition
 	return stmt
 }
 
-func (v *Visitor) VisitCipherColumnName(ctx *parser.CipherColumnNameContext) *ast.CommonIdentifier {
+func (v *EncryptVisitor) VisitCipherColumnName(ctx *parser.CipherColumnNameContext) *ast.CommonIdentifier {
 	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
 		stmt.Identifier = ctx.IDENTIFIER_().GetText()
@@ -210,7 +210,7 @@ func (v *Visitor) VisitCipherColumnName(ctx *parser.CipherColumnNameContext) *as
 	return stmt
 }
 
-func (v *Visitor) VisitAssistedQueryColumnDefinition(ctx *parser.AssistedQueryColumnDefinitionContext) *ast.AssistedQueryColumnDefinition {
+func (v *EncryptVisitor) VisitAssistedQueryColumnDefinition(ctx *parser.AssistedQueryColumnDefinitionContext) *ast.AssistedQueryColumnDefinition {
 	stmt := &ast.AssistedQueryColumnDefinition{}
 	if ctx.AssistedQueryColumnName() != nil {
 		stmt.AssistedQueryColumnName = v.VisitAssistedQueryColumnName(ctx.AssistedQueryColumnName().(*parser.AssistedQueryColumnNameContext))
@@ -223,7 +223,7 @@ func (v *Visitor) VisitAssistedQueryColumnDefinition(ctx *parser.AssistedQueryCo
 	return stmt
 }
 
-func (v *Visitor) VisitAssistedQueryColumnName(ctx *parser.AssistedQueryColumnNameContext) *ast.CommonIdentifier {
+func (v *EncryptVisitor) VisitAssistedQueryColumnName(ctx *parser.AssistedQueryColumnNameContext) *ast.CommonIdentifier {
 	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
 		stmt.Identifier = ctx.IDENTIFIER_().GetText()
@@ -231,7 +231,7 @@ func (v *Visitor) VisitAssistedQueryColumnName(ctx *parser.AssistedQueryColumnNa
 	return stmt
 }
 
-func (v *Visitor) VisitLikeQueryColumnDefinition(ctx *parser.LikeQueryColumnDefinitionContext) *ast.LikeQueryColumnDefinition {
+func (v *EncryptVisitor) VisitLikeQueryColumnDefinition(ctx *parser.LikeQueryColumnDefinitionContext) *ast.LikeQueryColumnDefinition {
 	stmt := &ast.LikeQueryColumnDefinition{}
 	if ctx.LikeQueryColumnName() != nil {
 		stmt.LikeQueryColumnName = v.VisitLikeQueryColumnName(ctx.LikeQueryColumnName().(*parser.LikeQueryColumnNameContext))
@@ -243,7 +243,7 @@ func (v *Visitor) VisitLikeQueryColumnDefinition(ctx *parser.LikeQueryColumnDefi
 	return stmt
 }
 
-func (v *Visitor) VisitLikeQueryColumnName(ctx *parser.LikeQueryColumnNameContext) *ast.CommonIdentifier {
+func (v *EncryptVisitor) VisitLikeQueryColumnName(ctx *parser.LikeQueryColumnNameContext) *ast.CommonIdentifier {
 	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
 		stmt.Identifier = ctx.IDENTIFIER_().GetText()
@@ -251,7 +251,7 @@ func (v *Visitor) VisitLikeQueryColumnName(ctx *parser.LikeQueryColumnNameContex
 	return stmt
 }
 
-func (v *Visitor) VisitAssistedQueryAlgorithm(ctx *parser.AssistedQueryAlgorithmContext) *ast.AssistedQueryAlgorithm {
+func (v *EncryptVisitor) VisitAssistedQueryAlgorithm(ctx *parser.AssistedQueryAlgorithmContext) *ast.AssistedQueryAlgorithm {
 	stmt := &ast.AssistedQueryAlgorithm{}
 	if ctx.AlgorithmDefinition() != nil {
 		stmt.AlgorithmDefinition = v.VisitAlgorithmDefinition(ctx.AlgorithmDefinition().(*parser.AlgorithmDefinitionContext))
@@ -259,7 +259,7 @@ func (v *Visitor) VisitAssistedQueryAlgorithm(ctx *parser.AssistedQueryAlgorithm
 	return stmt
 }
 
-func (v *Visitor) VisitLikeQueryAlgorithm(ctx *parser.LikeQueryAlgorithmContext) *ast.LikeQueryAlgorithm {
+func (v *EncryptVisitor) VisitLikeQueryAlgorithm(ctx *parser.LikeQueryAlgorithmContext) *ast.LikeQueryAlgorithm {
 	stmt := &ast.LikeQueryAlgorithm{}
 	if ctx.AlgorithmDefinition() != nil {
 		stmt.AlgorithmDefinition = v.VisitAlgorithmDefinition(ctx.AlgorithmDefinition().(*parser.AlgorithmDefinitionContext))
@@ -267,7 +267,7 @@ func (v *Visitor) VisitLikeQueryAlgorithm(ctx *parser.LikeQueryAlgorithmContext)
 	return stmt
 }
 
-func (v *Visitor) VisitEncryptAlgorithm(ctx *parser.EncryptAlgorithmContext) *ast.EncryptAlgorithm {
+func (v *EncryptVisitor) VisitEncryptAlgorithm(ctx *parser.EncryptAlgorithmContext) *ast.EncryptAlgorithm {
 	stmt := &ast.EncryptAlgorithm{}
 	if ctx.AlgorithmDefinition() != nil {
 		stmt.AlgorithmDefinition = v.VisitAlgorithmDefinition(ctx.AlgorithmDefinition().(*parser.AlgorithmDefinitionContext))
@@ -275,7 +275,7 @@ func (v *Visitor) VisitEncryptAlgorithm(ctx *parser.EncryptAlgorithmContext) *as
 	return stmt
 }
 
-func (v *Visitor) VisitColumnDefinition(ctx *parser.ColumnDefinitionContext) *ast.ColumnDefinition {
+func (v *EncryptVisitor) VisitColumnDefinition(ctx *parser.ColumnDefinitionContext) *ast.ColumnDefinition {
 	stmt := &ast.ColumnDefinition{}
 	if ctx.ColumnName() != nil {
 		stmt.ColumnName = v.VisitColumnName(ctx.ColumnName().(*parser.ColumnNameContext))
@@ -287,7 +287,7 @@ func (v *Visitor) VisitColumnDefinition(ctx *parser.ColumnDefinitionContext) *as
 	return stmt
 }
 
-func (v *Visitor) VisitColumnName(ctx *parser.ColumnNameContext) *ast.CommonIdentifier {
+func (v *EncryptVisitor) VisitColumnName(ctx *parser.ColumnNameContext) *ast.CommonIdentifier {
 	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
 		stmt.Identifier = ctx.IDENTIFIER_().GetText()
@@ -295,7 +295,7 @@ func (v *Visitor) VisitColumnName(ctx *parser.ColumnNameContext) *ast.CommonIden
 	return stmt
 }
 
-func (v *Visitor) VisitDataType(ctx *parser.DataTypeContext) *ast.DataType {
+func (v *EncryptVisitor) VisitDataType(ctx *parser.DataTypeContext) *ast.DataType {
 	stmt := &ast.DataType{}
 	if ctx.STRING_() != nil {
 		stmt.String = ctx.STRING_().GetText()
@@ -303,7 +303,7 @@ func (v *Visitor) VisitDataType(ctx *parser.DataTypeContext) *ast.DataType {
 	return stmt
 }
 
-func (v *Visitor) VisitResourceDefinition(ctx *parser.ResourceDefinitionContext) *ast.ResourceDefinition {
+func (v *EncryptVisitor) VisitResourceDefinition(ctx *parser.ResourceDefinitionContext) *ast.ResourceDefinition {
 	stmt := &ast.ResourceDefinition{}
 	if ctx.ResourceName() != nil {
 		stmt.ResourceName = v.VisitResourceName(ctx.ResourceName().(*parser.ResourceNameContext))
@@ -311,7 +311,7 @@ func (v *Visitor) VisitResourceDefinition(ctx *parser.ResourceDefinitionContext)
 	return stmt
 }
 
-func (v *Visitor) VisitResourceName(ctx *parser.ResourceNameContext) *ast.CommonIdentifier {
+func (v *EncryptVisitor) VisitResourceName(ctx *parser.ResourceNameContext) *ast.CommonIdentifier {
 	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
 		stmt.Identifier = ctx.IDENTIFIER_().GetText()
@@ -319,7 +319,8 @@ func (v *Visitor) VisitResourceName(ctx *parser.ResourceNameContext) *ast.Common
 	return stmt
 }
 
-func (v *Visitor) VisitLiteral(ctx *parser.LiteralContext) *ast.Literal {
+// nolint
+func (v *EncryptVisitor) VisitLiteral(ctx *parser.LiteralContext) *ast.Literal {
 	stmt := &ast.Literal{}
 	switch {
 	case ctx.STRING_() != nil:
@@ -336,7 +337,7 @@ func (v *Visitor) VisitLiteral(ctx *parser.LiteralContext) *ast.Literal {
 	return stmt
 }
 
-func (v *Visitor) VisitAlgorithmDefinition(ctx *parser.AlgorithmDefinitionContext) *ast.AlgorithmDefinition {
+func (v *EncryptVisitor) VisitAlgorithmDefinition(ctx *parser.AlgorithmDefinitionContext) *ast.AlgorithmDefinition {
 	stmt := &ast.AlgorithmDefinition{}
 	if ctx.AlgorithmTypeName() != nil {
 		stmt.AlgorithmTypeName = v.VisitAlgorithmTypeName(ctx.AlgorithmTypeName().(*parser.AlgorithmTypeNameContext))
@@ -348,7 +349,7 @@ func (v *Visitor) VisitAlgorithmDefinition(ctx *parser.AlgorithmDefinitionContex
 	return stmt
 }
 
-func (v *Visitor) VisitAlgorithmTypeName(ctx *parser.AlgorithmTypeNameContext) *ast.AlgorithmTypeName {
+func (v *EncryptVisitor) VisitAlgorithmTypeName(ctx *parser.AlgorithmTypeNameContext) *ast.AlgorithmTypeName {
 	stmt := &ast.AlgorithmTypeName{}
 	switch {
 	case ctx.STRING_() != nil:
@@ -359,7 +360,7 @@ func (v *Visitor) VisitAlgorithmTypeName(ctx *parser.AlgorithmTypeNameContext) *
 	return stmt
 }
 
-func (v *Visitor) VisitBuildinAlgorithmTypeName(ctx *parser.BuildinAlgorithmTypeNameContext) *ast.BuildinAlgorithmTypeName {
+func (v *EncryptVisitor) VisitBuildinAlgorithmTypeName(ctx *parser.BuildinAlgorithmTypeNameContext) *ast.BuildinAlgorithmTypeName {
 	stmt := &ast.BuildinAlgorithmTypeName{}
 	switch {
 	case ctx.MD5() != nil:
@@ -378,7 +379,7 @@ func (v *Visitor) VisitBuildinAlgorithmTypeName(ctx *parser.BuildinAlgorithmType
 	return stmt
 }
 
-func (v *Visitor) VisitPropertiesDefinition(ctx *parser.PropertiesDefinitionContext) *ast.PropertiesDefinition {
+func (v *EncryptVisitor) VisitPropertiesDefinition(ctx *parser.PropertiesDefinitionContext) *ast.PropertiesDefinition {
 	stmt := &ast.PropertiesDefinition{}
 	if ctx.Properties() != nil {
 		stmt.Properties = v.VisitProperties(ctx.Properties().(*parser.PropertiesContext))
@@ -386,7 +387,7 @@ func (v *Visitor) VisitPropertiesDefinition(ctx *parser.PropertiesDefinitionCont
 	return stmt
 }
 
-func (v *Visitor) VisitProperties(ctx *parser.PropertiesContext) *ast.Properties {
+func (v *EncryptVisitor) VisitProperties(ctx *parser.PropertiesContext) *ast.Properties {
 	stmt := &ast.Properties{}
 	for _, p := range ctx.AllProperty() {
 		stmt.Properties = append(stmt.Properties, v.VisitProperty(p.(*parser.PropertyContext)))
@@ -394,7 +395,7 @@ func (v *Visitor) VisitProperties(ctx *parser.PropertiesContext) *ast.Properties
 	return stmt
 }
 
-func (v *Visitor) VisitProperty(ctx *parser.PropertyContext) *ast.Property {
+func (v *EncryptVisitor) VisitProperty(ctx *parser.PropertyContext) *ast.Property {
 	stmt := &ast.Property{}
 	if ctx.STRING_() != nil {
 		stmt.Key = ctx.STRING_().GetText()
@@ -405,7 +406,7 @@ func (v *Visitor) VisitProperty(ctx *parser.PropertyContext) *ast.Property {
 	return stmt
 }
 
-func (v *Visitor) VisitTableName(ctx *parser.TableNameContext) *ast.CommonIdentifier {
+func (v *EncryptVisitor) VisitTableName(ctx *parser.TableNameContext) *ast.CommonIdentifier {
 	stmt := &ast.CommonIdentifier{}
 	if ctx.IDENTIFIER_() != nil {
 		stmt.Identifier = ctx.IDENTIFIER_().GetText()
