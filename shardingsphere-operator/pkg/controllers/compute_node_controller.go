@@ -324,7 +324,9 @@ func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha
 		Namespace: cn.Namespace,
 		Name:      cn.Name,
 	}, service); err != nil {
-		return err
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
 	}
 
 	status := reconcileComputeNodeStatus(podlist, service, cn)
