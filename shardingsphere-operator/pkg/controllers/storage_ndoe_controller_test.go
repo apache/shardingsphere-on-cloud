@@ -625,6 +625,9 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 						dbmeshv1alpha1.AnnotationsInstanceDBName: testName,
 					},
 				},
+				Spec: v1alpha1.StorageNodeSpec{
+					DatabaseClassName: defaultTestDBClass,
+				},
 				Status: v1alpha1.StorageNodeStatus{
 					Phase: v1alpha1.StorageNodePhaseReady,
 					Instances: []v1alpha1.InstanceStatus{
@@ -636,11 +639,24 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 				},
 			}
 
+			dbClass := &dbmeshv1alpha1.DatabaseClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: defaultTestDBClass,
+				},
+				Spec: dbmeshv1alpha1.DatabaseClassSpec{
+					Provisioner: dbmeshv1alpha1.ProvisionerAWSRDSInstance,
+					Parameters: map[string]string{
+						"masterUsername":     testName,
+						"masterUserPassword": testName,
+					},
+				},
+			}
+
 			mockSS.EXPECT().CreateDatabase(gomock.Any()).Return(nil)
 			mockSS.EXPECT().Close().Return(nil)
 			mockSS.EXPECT().RegisterStorageUnit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-			Expect(reconciler.registerStorageUnit(ctx, sn)).To(BeNil())
+			Expect(reconciler.registerStorageUnit(ctx, sn, dbClass)).To(BeNil())
 			Expect(sn.Status.Registered).To(BeTrue())
 		})
 

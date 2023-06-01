@@ -166,7 +166,7 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1
 	}
 
 	// register storage unit if needed.
-	if err := r.registerStorageUnit(ctx, node); err != nil {
+	if err := r.registerStorageUnit(ctx, node, dbClass); err != nil {
 		r.Recorder.Eventf(node, corev1.EventTypeWarning, "RegisterStorageUnitFailed", "unable to register storage unit %s/%s", node.GetNamespace(), node.GetName())
 		return ctrl.Result{Requeue: true}, err
 	}
@@ -463,7 +463,7 @@ func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client
 }
 
 // registerStorageUnit
-func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v1alpha1.StorageNode) error {
+func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v1alpha1.StorageNode, dbClass *dbmeshv1alpha1.DatabaseClass) error {
 	// if register storage unit is not enabled, return
 	if node.Annotations[AnnotationKeyRegisterStorageUnitEnabled] != "true" {
 		return nil
@@ -505,7 +505,13 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 	host := ins.Endpoint.Address
 	port := ins.Endpoint.Port
 	username := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUsername]
+	if username == "" {
+		username = dbClass.Spec.Parameters["masterUsername"]
+	}
 	password := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUserPassword]
+	if password == "" {
+		password = dbClass.Spec.Parameters["masterUserPassword"]
+	}
 
 	// TODO how to set ds name?
 	if err := ssServer.RegisterStorageUnit(logicDBName, "ds_0", host, uint(port), dbName, username, password); err != nil {
