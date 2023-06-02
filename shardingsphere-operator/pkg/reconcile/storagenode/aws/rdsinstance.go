@@ -27,8 +27,8 @@ import (
 	"strconv"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
-	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	"github.com/database-mesh/golang-sdk/pkg/random"
 )
 
@@ -64,7 +64,7 @@ func validCreateInstanceParams(node *v1alpha1.StorageNode, paramsptr *map[string
 	}
 
 	// validate instance identifier.
-	if val, ok := node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]; !ok || val == "" {
+	if val, ok := node.Annotations[v1alpha1.AnnotationsInstanceIdentifier]; !ok || val == "" {
 		return errors.New("instance identifier is empty")
 	}
 
@@ -75,7 +75,7 @@ func validCreateInstanceParams(node *v1alpha1.StorageNode, paramsptr *map[string
 	if lp < 8 || lp > 41 {
 		return errors.New("master user password length should be greater than 8")
 	} else {
-		node.Annotations[dbmeshv1alpha1.AnnotationsMasterUserPassword] = params["masterUserPassword"]
+		node.Annotations[v1alpha1.AnnotationsMasterUserPassword] = params["masterUserPassword"]
 	}
 
 	return nil
@@ -136,19 +136,19 @@ func (c *RdsClient) CreateInstance(ctx context.Context, node *v1alpha1.StorageNo
 	instance.SetEngine(params["engine"]).
 		SetEngineVersion(params["engineVersion"]).
 		SetDBInstanceClass(params["instanceClass"]).
-		SetDBInstanceIdentifier(node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]).
+		SetDBInstanceIdentifier(node.Annotations[v1alpha1.AnnotationsInstanceIdentifier]).
 		SetMasterUsername(params["masterUsername"]).
 		SetMasterUserPassword(params["masterUserPassword"]).
 		SetAllocatedStorage(int32(storage))
 	// set database name if needed.
-	if v, ok := params[node.Annotations[dbmeshv1alpha1.AnnotationsInstanceDBName]]; ok {
+	if v, ok := params[node.Annotations[v1alpha1.AnnotationsInstanceDBName]]; ok {
 		instance.SetDBName(v)
 	}
 	return instance.Create(ctx)
 }
 
 func (c *RdsClient) GetInstance(ctx context.Context, node *v1alpha1.StorageNode) (*rds.DescInstance, error) {
-	identifier, ok := node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]
+	identifier, ok := node.Annotations[v1alpha1.AnnotationsInstanceIdentifier]
 	if !ok {
 		return nil, errors.New("instance identifier is empty")
 	}
@@ -165,7 +165,7 @@ func (c *RdsClient) GetInstanceByIdentifier(ctx context.Context, identifier stri
 
 // DeleteInstance delete rds instance.
 // aws rds instance status doc: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/accessing-monitoring.html
-func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNode, databaseClass *dbmeshv1alpha1.DatabaseClass) error {
+func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	// TODO add more test case.
 	/* TODO set options to skip final snapshot and backup stuff depends on database class ClaimPolicy.
 	"error": "operation error RDS: DeleteDBInstance,
@@ -175,7 +175,7 @@ func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNo
 	FinalDBSnapshotIdentifier is required unless SkipFinalSnapshot is specified."
 	*/
 
-	identifier, ok := node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]
+	identifier, ok := node.Annotations[v1alpha1.AnnotationsInstanceIdentifier]
 	if !ok {
 		return errors.New("instance identifier is empty")
 	}
@@ -194,12 +194,12 @@ func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNo
 	}
 
 	var isDeleteBackup, isSkipFinalSnapshot bool
-	switch databaseClass.Spec.ReclaimPolicy {
-	case dbmeshv1alpha1.DatabaseReclaimDeleteWithFinalSnapshot:
+	switch storageProvider.Spec.ReclaimPolicy {
+	case v1alpha1.StorageReclaimPolicyDeleteWithFinalSnapshot:
 		isDeleteBackup, isSkipFinalSnapshot = true, false
-	case dbmeshv1alpha1.DatabaseReclaimDelete:
+	case v1alpha1.StorageReclaimPolicyDelete:
 		isDeleteBackup, isSkipFinalSnapshot = true, true
-	case dbmeshv1alpha1.DatabaseReclaimRetain:
+	case v1alpha1.StorageReclaimPolicyRetain:
 		isDeleteBackup, isSkipFinalSnapshot = false, true
 	}
 

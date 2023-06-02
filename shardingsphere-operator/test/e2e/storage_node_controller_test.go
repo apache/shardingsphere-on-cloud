@@ -24,31 +24,31 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
+
 	"bou.ke/monkey"
 	"github.com/DATA-DOG/go-sqlmock"
 	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
-	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
 )
 
-var _ = Describe("StorageNode Controller Suite Test", func() {
-	databaseClassName := "test-database-class"
+var _ = Describe("StorageNode Controller Suite Test For AWS RDS Instance", func() {
+	storageProviderName := "test-storage-provider"
+	instanceIdentifier := "test-instance-identifier"
 
 	BeforeEach(func() {
-		databaseClass := &dbmeshv1alpha1.DatabaseClass{
+		StorageProvider := &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: databaseClassName,
+				Name: storageProviderName,
 			},
-			Spec: dbmeshv1alpha1.DatabaseClassSpec{
-				Provisioner: dbmeshv1alpha1.ProvisionerAWSRDSInstance,
+			Spec: v1alpha1.StorageProviderSpec{
+				Provisioner: v1alpha1.ProvisionerAWSRDSInstance,
 				Parameters: map[string]string{
 					"engine":             "mysql",
 					"engineVersion":      "5.7",
@@ -60,13 +60,13 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 			},
 		}
 
-		Expect(k8sClient.Create(ctx, databaseClass)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, StorageProvider)).Should(Succeed())
 	})
 
 	AfterEach(func() {
-		databaseClass := &dbmeshv1alpha1.DatabaseClass{}
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: databaseClassName}, databaseClass)).Should(Succeed())
-		Expect(k8sClient.Delete(ctx, databaseClass)).Should(Succeed())
+		StorageProvider := &v1alpha1.StorageProvider{}
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: storageProviderName}, StorageProvider)).Should(Succeed())
+		Expect(k8sClient.Delete(ctx, StorageProvider)).Should(Succeed())
 	})
 
 	Context("reconcile storageNode", func() {
@@ -86,7 +86,7 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 				}, nil
 			})
 			// mock delete instance func returns success
-			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "DeleteInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode, _ *dbmeshv1alpha1.DatabaseClass) error {
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "DeleteInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode, _ *v1alpha1.StorageProvider) error {
 				return nil
 			})
 
@@ -96,11 +96,11 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 					Name:      nodeName,
 					Namespace: "default",
 					Annotations: map[string]string{
-						dbmeshv1alpha1.AnnotationsInstanceIdentifier: "test-instance-identifier",
+						v1alpha1.AnnotationsInstanceIdentifier: instanceIdentifier,
 					},
 				},
 				Spec: v1alpha1.StorageNodeSpec{
-					DatabaseClassName: databaseClassName,
+					StorageProviderName: storageProviderName,
 				},
 			}
 
@@ -125,11 +125,11 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 					Name:      nodeName,
 					Namespace: "default",
 					Annotations: map[string]string{
-						dbmeshv1alpha1.AnnotationsInstanceIdentifier: "test-instance-identifier",
+						v1alpha1.AnnotationsInstanceIdentifier: instanceIdentifier,
 					},
 				},
 				Spec: v1alpha1.StorageNodeSpec{
-					DatabaseClassName: databaseClassName,
+					StorageProviderName: storageProviderName,
 				},
 			}
 			Expect(k8sClient.Create(ctx, node)).Should(Succeed())
@@ -161,7 +161,7 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 					},
 				}, nil
 			})
-			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "DeleteInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode, _ *dbmeshv1alpha1.DatabaseClass) error {
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "DeleteInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode, _ *v1alpha1.StorageProvider) error {
 				return nil
 			})
 			monkey.Patch(sql.Open, func(_ string, _ string) (*sql.DB, error) {
@@ -227,16 +227,16 @@ var _ = Describe("StorageNode Controller Suite Test", func() {
 					Name:      nodeName,
 					Namespace: "default",
 					Annotations: map[string]string{
-						dbmeshv1alpha1.AnnotationsInstanceIdentifier:        "test-instance-identifier",
+						v1alpha1.AnnotationsInstanceIdentifier:              instanceIdentifier,
 						controllers.AnnotationKeyRegisterStorageUnitEnabled: "true",
-						dbmeshv1alpha1.AnnotationsInstanceDBName:            "test-db-name",
+						v1alpha1.AnnotationsInstanceDBName:                  "test-db-name",
 						controllers.AnnotationKeyComputeNodeNamespace:       "default",
 						controllers.AnnotationKeyComputeNodeName:            "test-compute-node",
 						controllers.AnnotationKeyLogicDatabaseName:          "test-logic-db-name",
 					},
 				},
 				Spec: v1alpha1.StorageNodeSpec{
-					DatabaseClassName: databaseClassName,
+					StorageProviderName: storageProviderName,
 				},
 			}
 

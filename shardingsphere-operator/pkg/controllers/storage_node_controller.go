@@ -29,7 +29,6 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/shardingsphere"
 
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
-	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,7 +66,7 @@ type StorageNodeReconciler struct {
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/finalizers,verbs=update
-// +kubebuilder:rbac:groups=core.database-mesh.io,resources=databaseclasses,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core.database-mesh.io,resources=storageProvideres,verbs=get;list;watch
 
 // Reconcile handles main function of this controller
 // nolint:gocognit
@@ -80,10 +79,10 @@ func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Get databaseClass with storageNode.Spec.DatabaseClassName
-	databaseClass, err := r.getDatabaseClass(ctx, node)
+	// Get storageProvider with storagenode.Spec.StorageProviderName
+	storageProvider, err := r.getstorageProvider(ctx, node)
 	if err != nil {
-		r.Log.Error(err, fmt.Sprintf("unable to fetch DatabaseClass %s", node.Spec.DatabaseClassName))
+		r.Log.Error(err, fmt.Sprintf("unable to fetch storageProvider %s", node.Spec.StorageProviderName))
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -98,14 +97,14 @@ func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 		}
 	} else if slices.Contains(node.ObjectMeta.Finalizers, FinalizerName) {
-		return r.finalize(ctx, node, databaseClass)
+		return r.finalize(ctx, node, storageProvider)
 	}
 
 	// reconcile storage node
-	return r.reconcile(ctx, databaseClass, node)
+	return r.reconcile(ctx, storageProvider, node)
 }
 
-func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.StorageNode, databaseClass *dbmeshv1alpha1.DatabaseClass) (ctrl.Result, error) {
+func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) (ctrl.Result, error) {
 	var err error
 	switch node.Status.Phase {
 	case v1alpha1.StorageNodePhaseReady, v1alpha1.StorageNodePhaseNotReady:
@@ -129,7 +128,7 @@ func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.Sto
 		return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 	}
 
-	if err = r.deleteDatabaseCluster(ctx, node, databaseClass); err != nil {
+	if err = r.deleteDatabaseCluster(ctx, node, storageProvider); err != nil {
 		r.Log.Error(err, "failed to delete database cluster")
 		return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 	}
@@ -148,15 +147,15 @@ func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.Sto
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 }
 
-func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1alpha1.DatabaseClass, node *v1alpha1.StorageNode) (ctrl.Result, error) {
-	// reconcile storage node with databaseClass
+func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *v1alpha1.StorageProvider, node *v1alpha1.StorageNode) (ctrl.Result, error) {
+	// reconcile storage node with storageProvider
 	switch dbClass.Spec.Provisioner {
-	case dbmeshv1alpha1.ProvisionerAWSRDSInstance:
+	case v1alpha1.ProvisionerAWSRDSInstance:
 		if err := r.reconcileAwsRdsInstance(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
 			r.Log.Error(err, fmt.Sprintf("unable to reconcile AWS RDS Instance %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS RDS Instance %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 		}
-	case dbmeshv1alpha1.ProvisionerAWSAurora:
+	case v1alpha1.ProvisionerAWSAurora:
 		if err := r.reconcileAwsAurora(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS Aurora %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 		}
@@ -185,30 +184,30 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *dbmeshv1
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 }
 
-func (r *StorageNodeReconciler) getDatabaseClass(ctx context.Context, node *v1alpha1.StorageNode) (databaseClass *dbmeshv1alpha1.DatabaseClass, err error) {
-	if node.Spec.DatabaseClassName == "" {
-		r.Recorder.Event(node, corev1.EventTypeWarning, "DatabaseClassNameIsNil", "DatabaseClassName is nil")
-		return nil, fmt.Errorf("DatabaseClassName is nil")
+func (r *StorageNodeReconciler) getstorageProvider(ctx context.Context, node *v1alpha1.StorageNode) (storageProvider *v1alpha1.StorageProvider, err error) {
+	if node.Spec.StorageProviderName == "" {
+		r.Recorder.Event(node, corev1.EventTypeWarning, "storageProviderNameIsNil", "storageProviderName is nil")
+		return nil, fmt.Errorf("storageProviderName is nil")
 	}
 
-	databaseClass = &dbmeshv1alpha1.DatabaseClass{}
+	storageProvider = &v1alpha1.StorageProvider{}
 
-	if err := r.Get(ctx, client.ObjectKey{Name: node.Spec.DatabaseClassName}, databaseClass); err != nil {
-		r.Log.Error(err, fmt.Sprintf("unable to fetch DatabaseClass %s", node.Spec.DatabaseClassName))
-		r.Recorder.Event(node, corev1.EventTypeWarning, "DatabaseClassNotFound", fmt.Sprintf("DatabaseClass %s not found", node.Spec.DatabaseClassName))
+	if err := r.Get(ctx, client.ObjectKey{Name: node.Spec.StorageProviderName}, storageProvider); err != nil {
+		r.Log.Error(err, fmt.Sprintf("unable to fetch storageProvider %s", node.Spec.StorageProviderName))
+		r.Recorder.Event(node, corev1.EventTypeWarning, "storageProviderNotFound", fmt.Sprintf("storageProvider %s not found", node.Spec.StorageProviderName))
 		return nil, err
 	}
 
 	// check provisioner
 	// aws-like provisioner need aws rds client
-	if databaseClass.Spec.Provisioner == dbmeshv1alpha1.ProvisionerAWSRDSInstance || databaseClass.Spec.Provisioner == dbmeshv1alpha1.ProvisionerAWSAurora {
+	if storageProvider.Spec.Provisioner == v1alpha1.ProvisionerAWSRDSInstance || storageProvider.Spec.Provisioner == v1alpha1.ProvisionerAWSAurora {
 		if r.AwsRDS == nil {
 			r.Recorder.Event(node, corev1.EventTypeWarning, "AwsRdsClientIsNil", "aws rds client is nil, please check your aws credentials")
 			return nil, fmt.Errorf("aws rds client is nil, please check your aws credentials")
 		}
 	}
 
-	return databaseClass, nil
+	return storageProvider, nil
 }
 
 // nolint:gocritic
@@ -313,7 +312,7 @@ func allInstancesReady(instances []v1alpha1.InstanceStatus) bool {
 	return true
 }
 
-func (r *StorageNodeReconciler) reconcileAwsRdsInstance(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, dbClass *dbmeshv1alpha1.DatabaseClass) error {
+func (r *StorageNodeReconciler) reconcileAwsRdsInstance(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, dbClass *v1alpha1.StorageProvider) error {
 	instance, err := client.GetInstance(ctx, node)
 	if err != nil {
 		return err
@@ -363,7 +362,7 @@ func updateAWSRDSInstanceStatus(node *v1alpha1.StorageNode, instance *rds.DescIn
 	return nil
 }
 
-func (r *StorageNodeReconciler) reconcileAwsAurora(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, dbClass *dbmeshv1alpha1.DatabaseClass) error {
+func (r *StorageNodeReconciler) reconcileAwsAurora(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, dbClass *v1alpha1.StorageProvider) error {
 	// get instance
 	aurora, err := client.GetAuroraCluster(ctx, node)
 	if err != nil {
@@ -424,34 +423,34 @@ func updateClusterStatus(ctx context.Context, node *v1alpha1.StorageNode, client
 }
 
 // deleteDatabaseCluster
-func (r *StorageNodeReconciler) deleteDatabaseCluster(ctx context.Context, node *v1alpha1.StorageNode, databaseClass *dbmeshv1alpha1.DatabaseClass) error {
-	switch databaseClass.Spec.Provisioner {
-	case dbmeshv1alpha1.ProvisionerAWSRDSInstance:
-		if err := r.deleteAWSRDSInstance(ctx, aws.NewRdsClient(r.AwsRDS), node, databaseClass); err != nil {
+func (r *StorageNodeReconciler) deleteDatabaseCluster(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+	switch storageProvider.Spec.Provisioner {
+	case v1alpha1.ProvisionerAWSRDSInstance:
+		if err := r.deleteAWSRDSInstance(ctx, aws.NewRdsClient(r.AwsRDS), node, storageProvider); err != nil {
 			return fmt.Errorf("delete aws rds instance failed: %w", err)
 		}
-	case dbmeshv1alpha1.ProvisionerAWSAurora:
-		if err := aws.NewRdsClient(r.AwsRDS).DeleteAuroraCluster(ctx, node, databaseClass); err != nil {
+	case v1alpha1.ProvisionerAWSAurora:
+		if err := aws.NewRdsClient(r.AwsRDS).DeleteAuroraCluster(ctx, node, storageProvider); err != nil {
 			return err
 		}
 	default:
-		return fmt.Errorf("unsupported database provisioner %s", databaseClass.Spec.Provisioner)
+		return fmt.Errorf("unsupported database provisioner %s", storageProvider.Spec.Provisioner)
 	}
 	return nil
 }
 
-func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, databaseClass *dbmeshv1alpha1.DatabaseClass) error {
+func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	instance, err := client.GetInstance(ctx, node)
 	if err != nil {
 		return err
 	}
 
 	if instance != nil && instance.DBInstanceStatus != rds.DBInstanceStatusDeleting {
-		if err := client.DeleteInstance(ctx, node, databaseClass); err != nil {
-			r.Recorder.Eventf(node, corev1.EventTypeWarning, "DeleteFailed", "Failed to delete instance %s: %s", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier], err.Error())
+		if err := client.DeleteInstance(ctx, node, storageProvider); err != nil {
+			r.Recorder.Eventf(node, corev1.EventTypeWarning, "DeleteFailed", "Failed to delete instance %s: %s", node.Annotations[v1alpha1.AnnotationsInstanceIdentifier], err.Error())
 			return err
 		}
-		r.Recorder.Event(node, corev1.EventTypeNormal, "Deleting", fmt.Sprintf("instance %s is deleting", node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier]))
+		r.Recorder.Event(node, corev1.EventTypeNormal, "Deleting", fmt.Sprintf("instance %s is deleting", node.Annotations[v1alpha1.AnnotationsInstanceIdentifier]))
 	}
 
 	// update instance status
@@ -463,7 +462,7 @@ func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client
 }
 
 // registerStorageUnit
-func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v1alpha1.StorageNode, dbClass *dbmeshv1alpha1.DatabaseClass) error {
+func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v1alpha1.StorageNode, dbClass *v1alpha1.StorageProvider) error {
 	// if register storage unit is not enabled, return
 	if node.Annotations[AnnotationKeyRegisterStorageUnitEnabled] != "true" {
 		return nil
@@ -485,7 +484,7 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 	}
 
 	logicDBName := node.Annotations[AnnotationKeyLogicDatabaseName]
-	dbName := node.Annotations[dbmeshv1alpha1.AnnotationsInstanceDBName]
+	dbName := node.Annotations[v1alpha1.AnnotationsInstanceDBName]
 
 	ssServer, err := r.getShardingsphereServer(ctx, node)
 	if err != nil {
@@ -504,11 +503,11 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 	ins := node.Status.Instances[0]
 	host := ins.Endpoint.Address
 	port := ins.Endpoint.Port
-	username := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUsername]
+	username := node.Annotations[v1alpha1.AnnotationsMasterUsername]
 	if username == "" {
 		username = dbClass.Spec.Parameters["masterUsername"]
 	}
-	password := node.Annotations[dbmeshv1alpha1.AnnotationsMasterUserPassword]
+	password := node.Annotations[v1alpha1.AnnotationsMasterUserPassword]
 	if password == "" {
 		password = dbClass.Spec.Parameters["masterUserPassword"]
 	}
@@ -554,7 +553,7 @@ func (r *StorageNodeReconciler) unregisterStorageUnit(ctx context.Context, node 
 func (r *StorageNodeReconciler) validateComputeNodeAnnotations(node *v1alpha1.StorageNode) error {
 	requiredAnnos := []string{
 		AnnotationKeyLogicDatabaseName,
-		dbmeshv1alpha1.AnnotationsInstanceDBName,
+		v1alpha1.AnnotationsInstanceDBName,
 		AnnotationKeyComputeNodeNamespace,
 		AnnotationKeyComputeNodeName,
 	}

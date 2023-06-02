@@ -19,7 +19,6 @@ package aws
 
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,18 +45,18 @@ var _ = Describe("validCreateInstanceParams", func() {
 
 		It("should return true", func() {
 
-			node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier] = "test-instance"
+			node.Annotations[v1alpha1.AnnotationsInstanceIdentifier] = "test-instance"
 			Expect(validCreateInstanceParams(node, &params)).To(BeNil())
-			Expect(node.Annotations[dbmeshv1alpha1.AnnotationsMasterUserPassword]).To(Equal("root123456"))
+			Expect(node.Annotations[v1alpha1.AnnotationsMasterUserPassword]).To(Equal("root123456"))
 		})
 		It("should return username contains invalid characters", func() {
 			params["masterUsername"] = "@masterUser"
-			node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier] = "test-instance"
+			node.Annotations[v1alpha1.AnnotationsInstanceIdentifier] = "test-instance"
 			Expect(validCreateInstanceParams(node, &params)).To(MatchError(ContainSubstring("username contains invalid characters")))
 		})
 		It("should handle multiple characters correctly", func() {
 			params["masterUsername"] = "test__test--"
-			node.Annotations[dbmeshv1alpha1.AnnotationsInstanceIdentifier] = "test-instance"
+			node.Annotations[v1alpha1.AnnotationsInstanceIdentifier] = "test-instance"
 			Expect(validCreateInstanceParams(node, &params)).To(BeNil())
 			Expect(params["masterUsername"]).To(Equal("test_test-"))
 		})
