@@ -22,6 +22,7 @@ import (
 	"strings"
 )
 
+// define read write splitting ast
 type CreateReadwriteSplittingRule struct {
 	IfNotExists                         *IfNotExists
 	AllReadwriteSplittingRuleDefinition []*ReadWriteSplittingRuleDefinition
