@@ -165,6 +165,21 @@ func (mr *MockIRdsClientMockRecorder) GetInstanceByIdentifier(ctx, identifier in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceByIdentifier", reflect.TypeOf((*MockIRdsClient)(nil).GetInstanceByIdentifier), ctx, identifier)
 }
 
+// GetInstancesByFilters mocks base method.
+func (m *MockIRdsClient) GetInstancesByFilters(ctx context.Context, filters map[string][]string) ([]*rds.DescInstance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInstancesByFilters", ctx, filters)
+	ret0, _ := ret[0].([]*rds.DescInstance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInstancesByFilters indicates an expected call of GetInstancesByFilters.
+func (mr *MockIRdsClientMockRecorder) GetInstancesByFilters(ctx, filters interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstancesByFilters", reflect.TypeOf((*MockIRdsClient)(nil).GetInstancesByFilters), ctx, filters)
+}
+
 // Instance mocks base method.
 func (m *MockIRdsClient) Instance() rds.Instance {
 	m.ctrl.T.Helper()

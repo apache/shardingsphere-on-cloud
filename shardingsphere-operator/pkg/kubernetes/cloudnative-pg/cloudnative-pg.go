@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewCloudNativePG creates a new CloudNativePG client
+// NewCloudNativePGClient creates a new CloudNativePG client
 func NewCloudNativePGClient(c client.Client) CloudNativePG {
 	return cloudnativePGClient{
 		builder: builder{},

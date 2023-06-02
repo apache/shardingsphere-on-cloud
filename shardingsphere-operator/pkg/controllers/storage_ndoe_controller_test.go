@@ -38,6 +38,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -84,7 +85,7 @@ var _ = BeforeEach(func() {
 	fakeStorageNodeReconciler()
 })
 
-var _ = Describe("StorageNode Controller Mock Test", func() {
+var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func() {
 	BeforeEach(func() {
 		// mock aws rds client
 		mockCtrl = gomock.NewController(GinkgoT())
@@ -238,7 +239,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 
 			Expect(newSN.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseReady))
 			Expect(newSN.Status.Instances).To(HaveLen(1))
-			Expect(newSN.Status.Instances[0].Status).To(Equal(string(dbmesh_rds.DBInstanceStatusReady)))
+			Expect(newSN.Status.Instances[0].Status).To(Equal(string(dbmesh_rds.DBInstanceStatusAvailable)))
 		})
 	})
 
@@ -732,6 +733,245 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 				mockSS.EXPECT().Close().Return(nil)
 				Expect(reconciler.unregisterStorageUnit(ctx, sn)).To(BeNil())
 			})
+		})
+	})
+})
+
+var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
+	BeforeEach(func() {
+		provider := v1alpha1.StorageProvider{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "aws-aurora",
+			},
+			Spec: v1alpha1.StorageProviderSpec{
+				Provisioner: v1alpha1.ProvisionerAWSAurora,
+				Parameters:  map[string]string{},
+			},
+		}
+		Expect(fakeClient.Create(ctx, &provider)).Should(Succeed())
+
+		// mock aws client
+		// mock aws rds client
+		mockCtrl = gomock.NewController(GinkgoT())
+		mockAws = mock_aws.NewMockIRdsClient(mockCtrl)
+
+		monkey.Patch(aws.NewRdsClient, func(rds dbmesh_rds.RDS) aws.IRdsClient {
+			return mockAws
+		})
+	})
+
+	AfterEach(func() {
+		mockCtrl.Finish()
+		monkey.UnpatchAll()
+	})
+
+	Context("reconcile storage node", func() {
+		It("should success when aws aurora cluster is not exits", func() {
+			name := "test-aws-aurora-not-exists"
+			namespacedName := types.NamespacedName{
+				Name:      name,
+				Namespace: defaultTestNamespace,
+			}
+			storageNode := v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier: "test-aws-aurora",
+					},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: "aws-aurora",
+				},
+			}
+			Expect(fakeClient.Create(ctx, &storageNode)).Should(Succeed())
+
+			descCluster := &dbmesh_rds.DescCluster{
+				DBClusterIdentifier: "test-aws-aurora",
+				PrimaryEndpoint:     "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
+				ReaderEndpoint:      "test-aws-aurora.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com",
+				Port:                3306,
+				Status:              dbmesh_rds.DBClusterStatusAvailable,
+			}
+			descInstance := &dbmesh_rds.DescInstance{
+				DBInstanceIdentifier: "test-aws-aurora-1",
+				DBClusterIdentifier:  "test-aws-aurora",
+				Endpoint: dbmesh_rds.Endpoint{
+					Address: "test-aws-aurora-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
+					Port:    3306,
+				},
+				DBInstanceStatus: dbmesh_rds.DBInstanceStatusAvailable,
+			}
+
+			// mock aws aurora cluster is not exist
+			mockAws.EXPECT().GetAuroraCluster(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+			// mock create aws aurora cluster
+			mockAws.EXPECT().CreateAuroraCluster(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			// mock aws aurora cluster is created
+			mockAws.EXPECT().GetAuroraCluster(gomock.Any(), gomock.Any()).Return(descCluster, nil).Times(1)
+			// mock aws instance is created
+			mockAws.EXPECT().GetInstancesByFilters(gomock.Any(), gomock.Any()).Return([]*dbmesh_rds.DescInstance{descInstance}, nil).Times(1)
+
+			req := ctrl.Request{NamespacedName: namespacedName}
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+			sn := &v1alpha1.StorageNode{}
+			Expect(fakeClient.Get(ctx, namespacedName, sn)).Should(Succeed())
+			Expect(sn.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseReady))
+		})
+
+		It("should success when storage node been delete", func() {
+			name := "test-aws-aurora-deleted"
+			namespacedName := types.NamespacedName{
+				Name:      name,
+				Namespace: defaultTestNamespace,
+			}
+			req := ctrl.Request{NamespacedName: namespacedName}
+			storageNode := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier: "test-aws-aurora",
+					},
+					Finalizers: []string{FinalizerName},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: "aws-aurora",
+				},
+				Status: v1alpha1.StorageNodeStatus{
+					Phase: v1alpha1.StorageNodePhaseReady,
+					Cluster: v1alpha1.ClusterStatus{
+						Status:          dbmesh_rds.DBClusterStatusAvailable,
+						PrimaryEndpoint: v1alpha1.Endpoint{Address: "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+						ReaderEndpoints: []v1alpha1.Endpoint{{Address: "test-aws-aurora.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306}},
+					},
+					Instances: []v1alpha1.InstanceStatus{
+						{
+							Status:   string(dbmesh_rds.DBInstanceStatusAvailable),
+							Endpoint: v1alpha1.Endpoint{Address: "test-aws-aurora-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+						},
+					},
+				},
+			}
+
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
+
+			descCluster := &dbmesh_rds.DescCluster{
+				DBClusterIdentifier: "test-aws-aurora",
+				PrimaryEndpoint:     "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
+				ReaderEndpoint:      "test-aws-aurora.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com",
+				Port:                3306,
+				Status:              dbmesh_rds.DBClusterStatusAvailable,
+			}
+
+			descInstance := &dbmesh_rds.DescInstance{
+				DBInstanceIdentifier: "test-aws-aurora-1",
+				DBClusterIdentifier:  "test-aws-aurora",
+				Endpoint: dbmesh_rds.Endpoint{
+					Address: "test-aws-aurora-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
+					Port:    3306,
+				},
+				DBInstanceStatus: dbmesh_rds.DBInstanceStatusAvailable,
+			}
+
+			Expect(fakeClient.Delete(ctx, storageNode)).Should(Succeed())
+
+			// mock aws aurora is exists
+			mockAws.EXPECT().GetAuroraCluster(gomock.Any(), gomock.Any()).Return(descCluster, nil).Times(1)
+			// mock get instances of aws aurora
+			mockAws.EXPECT().GetInstancesByFilters(gomock.Any(), gomock.Any()).Return([]*dbmesh_rds.DescInstance{descInstance}, nil).Times(1)
+			// mock delete aws aurora cluster
+			mockAws.EXPECT().DeleteAuroraCluster(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+
+			Expect(fakeClient.Get(ctx, namespacedName, storageNode)).Should(Succeed())
+			Expect(storageNode.DeletionTimestamp).NotTo(BeNil())
+			Expect(storageNode.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseDeleting))
+		})
+
+		It("should be success when storage node is deleting", func() {
+			name := "test-aws-aurora-deleting"
+			namespacedName := types.NamespacedName{
+				Name:      name,
+				Namespace: defaultTestNamespace,
+			}
+			req := ctrl.Request{NamespacedName: namespacedName}
+			deletionTimestamp := metav1.Now()
+			storageNode := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier: "test-aws-aurora",
+					},
+					Finalizers:        []string{FinalizerName},
+					DeletionTimestamp: &deletionTimestamp,
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: "aws-aurora",
+				},
+				Status: v1alpha1.StorageNodeStatus{
+					Phase: v1alpha1.StorageNodePhaseDeleting,
+					Cluster: v1alpha1.ClusterStatus{
+						Status:          dbmesh_rds.DBClusterStatusDeleting,
+						PrimaryEndpoint: v1alpha1.Endpoint{Address: "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+						ReaderEndpoints: []v1alpha1.Endpoint{{Address: "test-aws-aurora.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306}},
+					},
+					Instances: []v1alpha1.InstanceStatus{
+						{
+							Status:   string(dbmesh_rds.DBInstanceStatusDeleting),
+							Endpoint: v1alpha1.Endpoint{Address: "test-aws-aurora-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+						},
+					},
+				},
+			}
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
+
+			// mock aws aurora is not exists
+			mockAws.EXPECT().GetAuroraCluster(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+			// mock get instances of aws aurora is not exists
+			mockAws.EXPECT().GetInstancesByFilters(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(fakeClient.Get(ctx, namespacedName, storageNode)).Should(Succeed())
+			Expect(storageNode.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseDeleteComplete))
+		})
+
+		It("should be success when storage node is delete completed", func() {
+			name := "test-aws-aurora-delete-completed"
+			namespacedName := types.NamespacedName{
+				Name:      name,
+				Namespace: defaultTestNamespace,
+			}
+			req := ctrl.Request{NamespacedName: namespacedName}
+			deletionTimestamp := metav1.Now()
+			storageNode := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier: "test-aws-aurora",
+					},
+					Finalizers:        []string{FinalizerName},
+					DeletionTimestamp: &deletionTimestamp,
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: "aws-aurora",
+				},
+				Status: v1alpha1.StorageNodeStatus{
+					Phase: v1alpha1.StorageNodePhaseDeleteComplete,
+				},
+			}
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
+
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+			err = fakeClient.Get(ctx, namespacedName, storageNode)
+			Expect(apierrors.IsNotFound(err)).To(BeTrue())
 		})
 	})
 })

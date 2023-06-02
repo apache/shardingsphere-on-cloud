@@ -163,6 +163,14 @@ func (c *RdsClient) GetInstanceByIdentifier(ctx context.Context, identifier stri
 	return instance.Describe(ctx)
 }
 
+func (c *RdsClient) GetInstancesByFilters(ctx context.Context, filters map[string][]string) ([]*rds.DescInstance, error) {
+	instance := c.Instance()
+	for k, v := range filters {
+		instance.SetFilter(k, v)
+	}
+	return instance.DescribeAll(ctx)
+}
+
 // DeleteInstance delete rds instance.
 // aws rds instance status doc: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/accessing-monitoring.html
 func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
