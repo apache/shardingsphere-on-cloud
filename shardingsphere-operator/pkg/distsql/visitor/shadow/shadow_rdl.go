@@ -180,9 +180,12 @@ func (v *ShadowVisitor) VisitIfNotExists(ctx *parser.IfNotExistsContext) *ast.If
 	}
 }
 
-// nolint
-// NOSONAR
 func (v *ShadowVisitor) VisitLiteral(ctx *parser.LiteralContext) *ast.Literal {
+	return visitLiteral(ctx)
+}
+
+// nolint
+func visitLiteral(ctx *parser.LiteralContext) *ast.Literal {
 	stmt := &ast.Literal{}
 	switch {
 	case ctx.STRING_() != nil:
