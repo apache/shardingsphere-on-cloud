@@ -10,7 +10,6 @@ import (
 
 	v1alpha1 "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	rds "github.com/database-mesh/golang-sdk/aws/client/rds"
-	v1alpha10 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -94,31 +93,31 @@ func (mr *MockIRdsClientMockRecorder) CreateInstance(ctx, node, params interface
 }
 
 // DeleteAuroraCluster mocks base method.
-func (m *MockIRdsClient) DeleteAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, databaseClass *v1alpha10.DatabaseClass) error {
+func (m *MockIRdsClient) DeleteAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteAuroraCluster", ctx, node, databaseClass)
+	ret := m.ctrl.Call(m, "DeleteAuroraCluster", ctx, node, storageProvider)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteAuroraCluster indicates an expected call of DeleteAuroraCluster.
-func (mr *MockIRdsClientMockRecorder) DeleteAuroraCluster(ctx, node, databaseClass interface{}) *gomock.Call {
+func (mr *MockIRdsClientMockRecorder) DeleteAuroraCluster(ctx, node, storageProvider interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAuroraCluster", reflect.TypeOf((*MockIRdsClient)(nil).DeleteAuroraCluster), ctx, node, databaseClass)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAuroraCluster", reflect.TypeOf((*MockIRdsClient)(nil).DeleteAuroraCluster), ctx, node, storageProvider)
 }
 
 // DeleteInstance mocks base method.
-func (m *MockIRdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNode, databaseClass *v1alpha10.DatabaseClass) error {
+func (m *MockIRdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteInstance", ctx, node, databaseClass)
+	ret := m.ctrl.Call(m, "DeleteInstance", ctx, node, storageProvider)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteInstance indicates an expected call of DeleteInstance.
-func (mr *MockIRdsClientMockRecorder) DeleteInstance(ctx, node, databaseClass interface{}) *gomock.Call {
+func (mr *MockIRdsClientMockRecorder) DeleteInstance(ctx, node, storageProvider interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInstance", reflect.TypeOf((*MockIRdsClient)(nil).DeleteInstance), ctx, node, databaseClass)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInstance", reflect.TypeOf((*MockIRdsClient)(nil).DeleteInstance), ctx, node, storageProvider)
 }
 
 // GetAuroraCluster mocks base method.

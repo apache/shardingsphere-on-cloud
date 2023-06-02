@@ -19,27 +19,24 @@ package e2e
 
 import (
 	"context"
-	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
 
-	mockChaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh/mocks"
-	"github.com/golang/mock/gomock"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
+	mockChaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh/mocks"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 
 	dbmesh_aws "github.com/database-mesh/golang-sdk/aws"
 	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
-	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,21 +60,7 @@ func TestControllers(t *testing.T) {
 	RunSpecs(t, "Controllers Suite")
 }
 
-func loadOnlineCRDs() {
-	urls := []string{
-		// DatabaseClass CRD file
-		"https://raw.githubusercontent.com/database-mesh/golang-sdk/main/config/crd/bases/core.database-mesh.io_databaseclasses.yaml",
-	}
-
-	filePath := filepath.Join("..", "..", "config", "crd", "bases")
-	for _, url := range urls {
-		Expect(exec.Command("wget", url, "-nc", "-P", filePath).Run()).Should(Succeed())
-	}
-}
-
 var _ = BeforeSuite(func() {
-	loadOnlineCRDs()
-
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	ctx, cancel = context.WithCancel(context.TODO())
@@ -100,7 +83,6 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	Expect(v1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(dbmeshv1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	Expect(clientgoscheme.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	//+kubebuilder:scaffold:scheme
 

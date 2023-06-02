@@ -16,12 +16,12 @@
 #
 
 ---
-apiVersion: core.database-mesh.io/v1alpha1
-kind: DatabaseClass
+apiVersion: shardingsphere.apache.org/v1alpha1
+kind: StorageProvider
 metadata:
   name: aws-rds-instance-mysql-5.7
 spec:
-  provisioner: databaseclass.database-mesh.io/aws-rds-instance
+  provisioner: storageproviders.shardingsphere.apache.org/aws-rds-instance
   reclaimPolicy: Delete
   parameters:
     allocatedStorage: "20"

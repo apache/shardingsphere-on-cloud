@@ -31,7 +31,6 @@ import (
 	"bou.ke/monkey"
 	dbmesh_aws "github.com/database-mesh/golang-sdk/aws"
 	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
-	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -49,7 +48,7 @@ import (
 
 const (
 	defaultTestNamespace          = "test-namespace"
-	defaultTestDBClass            = "test-database-class"
+	defaultTestStorageProvider    = "test-storage-provider"
 	defaultTestStorageNode        = "test-storage-node"
 	defaultTestInstanceIdentifier = "test-database-instance"
 )
@@ -67,7 +66,6 @@ func fakeStorageNodeReconciler() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	scheme := runtime.NewScheme()
-	Expect(dbmeshv1alpha1.AddToScheme(scheme)).To(Succeed())
 	Expect(v1alpha1.AddToScheme(scheme)).To(Succeed())
 	Expect(corev1.AddToScheme(scheme)).To(Succeed())
 	fakeClient = fake.NewClientBuilder().WithScheme(scheme).Build()
@@ -97,12 +95,12 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 		})
 
 		// create default resource
-		dbClass := &dbmeshv1alpha1.DatabaseClass{
+		dbClass := &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: defaultTestDBClass,
+				Name: defaultTestStorageProvider,
 			},
-			Spec: dbmeshv1alpha1.DatabaseClassSpec{
-				Provisioner: dbmeshv1alpha1.ProvisionerAWSRDSInstance,
+			Spec: v1alpha1.StorageProviderSpec{
+				Provisioner: v1alpha1.ProvisionerAWSRDSInstance,
 			},
 		}
 
@@ -111,11 +109,11 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 				Name:      defaultTestStorageNode,
 				Namespace: defaultTestNamespace,
 				Annotations: map[string]string{
-					dbmeshv1alpha1.AnnotationsInstanceIdentifier: defaultTestInstanceIdentifier,
+					v1alpha1.AnnotationsInstanceIdentifier: defaultTestInstanceIdentifier,
 				},
 			},
 			Spec: v1alpha1.StorageNodeSpec{
-				DatabaseClassName: defaultTestDBClass,
+				StorageProviderName: defaultTestStorageProvider,
 			},
 		}
 		Expect(fakeClient.Create(ctx, dbClass)).Should(Succeed())
@@ -130,9 +128,9 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 				Namespace: defaultTestNamespace,
 			},
 		})).Should(Succeed())
-		Expect(fakeClient.Delete(ctx, &dbmeshv1alpha1.DatabaseClass{
+		Expect(fakeClient.Delete(ctx, &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: defaultTestDBClass,
+				Name: defaultTestStorageProvider,
 			},
 		})).Should(Succeed())
 
@@ -148,7 +146,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					Namespace: defaultTestNamespace,
 				},
 				Spec: v1alpha1.StorageNodeSpec{
-					DatabaseClassName: defaultTestDBClass,
+					StorageProviderName: defaultTestStorageProvider,
 				},
 				Status: v1alpha1.StorageNodeStatus{},
 			}
@@ -167,7 +165,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					Namespace: defaultTestNamespace,
 				},
 				Spec: v1alpha1.StorageNodeSpec{
-					DatabaseClassName: "no-database",
+					StorageProviderName: "no-database",
 				},
 				Status: v1alpha1.StorageNodeStatus{},
 			}
@@ -266,10 +264,10 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					Name:      deletingStorageNode,
 					Namespace: defaultTestNamespace,
 					Annotations: map[string]string{
-						dbmeshv1alpha1.AnnotationsInstanceIdentifier: defaultTestInstanceIdentifier,
+						v1alpha1.AnnotationsInstanceIdentifier: defaultTestInstanceIdentifier,
 					},
 				},
-				Spec: v1alpha1.StorageNodeSpec{DatabaseClassName: defaultTestDBClass},
+				Spec: v1alpha1.StorageNodeSpec{StorageProviderName: defaultTestStorageProvider},
 			}
 			Expect(fakeClient.Create(ctx, readyStorageNode)).Should(Succeed())
 			// mock aws rds client, get instance and return available status
@@ -318,7 +316,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					DeletionTimestamp: &deleteTime,
 				},
 				Spec: v1alpha1.StorageNodeSpec{
-					DatabaseClassName: defaultTestDBClass,
+					StorageProviderName: defaultTestStorageProvider,
 				},
 				Status: v1alpha1.StorageNodeStatus{
 					Phase: v1alpha1.StorageNodePhaseDeleting,
@@ -363,7 +361,7 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					DeletionTimestamp: &deleteTime,
 				},
 				Spec: v1alpha1.StorageNodeSpec{
-					DatabaseClassName: defaultTestDBClass,
+					StorageProviderName: defaultTestStorageProvider,
 				},
 				Status: v1alpha1.StorageNodeStatus{
 					Phase: v1alpha1.StorageNodePhaseDeleteComplete,
@@ -404,15 +402,15 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					Name:      nodeName,
 					Namespace: defaultTestNamespace,
 					Annotations: map[string]string{
-						AnnotationKeyRegisterStorageUnitEnabled:  "true",
-						dbmeshv1alpha1.AnnotationsInstanceDBName: "test_db",
-						AnnotationKeyComputeNodeNamespace:        defaultTestNamespace,
-						AnnotationKeyComputeNodeName:             cnName,
-						AnnotationKeyLogicDatabaseName:           "sharding_db",
+						AnnotationKeyRegisterStorageUnitEnabled: "true",
+						v1alpha1.AnnotationsInstanceDBName:      "test_db",
+						AnnotationKeyComputeNodeNamespace:       defaultTestNamespace,
+						AnnotationKeyComputeNodeName:            cnName,
+						AnnotationKeyLogicDatabaseName:          "sharding_db",
 					},
 				},
 				Spec: v1alpha1.StorageNodeSpec{
-					DatabaseClassName: defaultTestDBClass,
+					StorageProviderName: defaultTestStorageProvider,
 				},
 			}
 			ins := &dbmesh_rds.DescInstance{
@@ -618,15 +616,15 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 					Name:      testName,
 					Namespace: defaultTestNamespace,
 					Annotations: map[string]string{
-						AnnotationKeyComputeNodeName:             testName,
-						AnnotationKeyComputeNodeNamespace:        defaultTestNamespace,
-						AnnotationKeyRegisterStorageUnitEnabled:  "true",
-						AnnotationKeyLogicDatabaseName:           testName,
-						dbmeshv1alpha1.AnnotationsInstanceDBName: testName,
+						AnnotationKeyComputeNodeName:            testName,
+						AnnotationKeyComputeNodeNamespace:       defaultTestNamespace,
+						AnnotationKeyRegisterStorageUnitEnabled: "true",
+						AnnotationKeyLogicDatabaseName:          testName,
+						v1alpha1.AnnotationsInstanceDBName:      testName,
 					},
 				},
 				Spec: v1alpha1.StorageNodeSpec{
-					DatabaseClassName: defaultTestDBClass,
+					StorageProviderName: defaultTestStorageProvider,
 				},
 				Status: v1alpha1.StorageNodeStatus{
 					Phase: v1alpha1.StorageNodePhaseReady,
@@ -639,12 +637,12 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 				},
 			}
 
-			dbClass := &dbmeshv1alpha1.DatabaseClass{
+			dbClass := &v1alpha1.StorageProvider{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: defaultTestDBClass,
+					Name: defaultTestStorageProvider,
 				},
-				Spec: dbmeshv1alpha1.DatabaseClassSpec{
-					Provisioner: dbmeshv1alpha1.ProvisionerAWSRDSInstance,
+				Spec: v1alpha1.StorageProviderSpec{
+					Provisioner: v1alpha1.ProvisionerAWSRDSInstance,
 					Parameters: map[string]string{
 						"masterUsername":     testName,
 						"masterUserPassword": testName,
@@ -718,10 +716,10 @@ var _ = Describe("StorageNode Controller Mock Test", func() {
 						Name:      testName,
 						Namespace: defaultTestNamespace,
 						Annotations: map[string]string{
-							AnnotationKeyLogicDatabaseName:           testName,
-							dbmeshv1alpha1.AnnotationsInstanceDBName: testName,
-							AnnotationKeyComputeNodeName:             testName,
-							AnnotationKeyComputeNodeNamespace:        defaultTestNamespace,
+							AnnotationKeyLogicDatabaseName:     testName,
+							v1alpha1.AnnotationsInstanceDBName: testName,
+							AnnotationKeyComputeNodeName:       testName,
+							AnnotationKeyComputeNodeNamespace:  defaultTestNamespace,
 						},
 					},
 					Status: v1alpha1.StorageNodeStatus{

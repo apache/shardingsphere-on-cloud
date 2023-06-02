@@ -115,8 +115,7 @@ type StorageNode struct {
 // StorageNodeSpec defines the desired state of a set of storage units
 type StorageNodeSpec struct {
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:DatabaseClass defined by: https://github.com/database-mesh/golang-sdk/blob/main/kubernetes/api/v1alpha1/databaseclass.go
-	DatabaseClassName string `json:"databaseClassName"`
+	StorageProviderName string `json:"storageProviderName"`
 	// +optional
 	Schema string `json:"schema"`
 }

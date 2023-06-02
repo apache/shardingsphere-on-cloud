@@ -22,7 +22,6 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
-	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 )
 
 type RdsClient struct {
@@ -37,11 +36,11 @@ type IRdsClient interface {
 	CreateInstance(ctx context.Context, node *v1alpha1.StorageNode, params map[string]string) error
 	GetInstance(ctx context.Context, node *v1alpha1.StorageNode) (instance *rds.DescInstance, err error)
 	GetInstanceByIdentifier(ctx context.Context, identifier string) (*rds.DescInstance, error)
-	DeleteInstance(ctx context.Context, node *v1alpha1.StorageNode, databaseClass *dbmeshv1alpha1.DatabaseClass) error
+	DeleteInstance(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error
 
 	CreateAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, params map[string]string) error
 	GetAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode) (cluster *rds.DescCluster, err error)
-	DeleteAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, databaseClass *dbmeshv1alpha1.DatabaseClass) error
+	DeleteAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error
 }
 
 func NewRdsClient(rds rds.RDS) IRdsClient {

@@ -47,7 +47,7 @@ func (c *RdsClient) GetAuroraCluster(ctx context.Context, node *v1alpha1.Storage
 	return aurora.Describe(ctx)
 }
 
-func (c *RdsClient) DeleteAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, databaseClass *dbmeshv1alpha1.DatabaseClass) error {
+func (c *RdsClient) DeleteAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	aurora := c.Aurora()
 	return aurora.Delete(ctx)
 }
