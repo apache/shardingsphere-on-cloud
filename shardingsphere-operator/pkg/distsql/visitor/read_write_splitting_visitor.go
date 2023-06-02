@@ -161,6 +161,7 @@ func (v *ReadWriteSplittingVisitor) VisitIfNotExists(ctx *parser.IfNotExistsCont
 }
 
 // nolint
+// NOSONAR
 func (v *ReadWriteSplittingVisitor) VisitLiteral(ctx *parser.LiteralContext) *ast.Literal {
 	stmt := &ast.Literal{}
 	switch {
