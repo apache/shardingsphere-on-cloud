@@ -24,13 +24,16 @@ import (
 	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	cloudnativepg "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/cloudnative-pg"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/shardingsphere"
 
+	cnpg "github.com/cloudnative-pg/cloudnative-pg/api/v1"
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -59,6 +62,7 @@ type StorageNodeReconciler struct {
 	Log      logr.Logger
 	Recorder record.EventRecorder
 	AwsRDS   rds.RDS
+	CNPG     cloudnativepg.CloudNativePG
 
 	Service service.Service
 }
@@ -158,6 +162,10 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *v1alpha1
 	case v1alpha1.ProvisionerAWSAurora:
 		if err := r.reconcileAwsAurora(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS Aurora %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
+		}
+	case v1alpha1.ProvisionerCloudNativePG:
+		if err := r.reconcileCloudNativePG(ctx, node, dbClass); err != nil {
+			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile CloudNative PG %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 		}
 	default:
 		r.Recorder.Event(node, corev1.EventTypeWarning, "UnsupportedDatabaseProvisioner", fmt.Sprintf("unsupported database provisioner %s", dbClass.Spec.Provisioner))
@@ -618,6 +626,46 @@ func (r *StorageNodeReconciler) getShardingsphereServer(ctx context.Context, nod
 	}
 
 	return ssServer, nil
+}
+
+func (r *StorageNodeReconciler) reconcileCloudNativePG(ctx context.Context, sn *v1alpha1.StorageNode, sp *v1alpha1.StorageProvider) error {
+	cluster, err := r.getCloudNativePGCluster(ctx, types.NamespacedName{Namespace: sn.Namespace, Name: sn.Name})
+	if err != nil {
+		return err
+	}
+	if cluster != nil {
+		return r.updateCloudNativePGCluster(ctx, sn, sp, cluster)
+	}
+	return r.createCloudNativePGCluster(ctx, sn, sp)
+}
+
+func (r *StorageNodeReconciler) getCloudNativePGCluster(ctx context.Context, namespacedName types.NamespacedName) (*cnpg.Cluster, error) {
+	c, err := r.CNPG.GetClusterByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func (r *StorageNodeReconciler) createCloudNativePGCluster(ctx context.Context, sn *v1alpha1.StorageNode, sp *v1alpha1.StorageProvider) error {
+	cluster := r.CNPG.Build(ctx, sn, sp)
+	err := r.CNPG.Create(ctx, cluster)
+	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
+		return nil
+	}
+	return err
+}
+
+func (r *StorageNodeReconciler) updateCloudNativePGCluster(ctx context.Context, sn *v1alpha1.StorageNode, sp *v1alpha1.StorageProvider, cluster *cnpg.Cluster) error {
+	exp := r.CNPG.Build(ctx, sn, sp)
+	exp.ObjectMeta = cluster.ObjectMeta
+	exp.Labels = cluster.Labels
+	exp.Annotations = cluster.Annotations
+
+	if !reflect.DeepEqual(cluster.Spec, exp.Spec) {
+		return r.CNPG.Update(ctx, exp)
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager

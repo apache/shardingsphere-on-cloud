@@ -24,12 +24,14 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
 	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh"
+	cloudnativepg "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/cloudnative-pg"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/job"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	cnpgv1 "github.com/cloudnative-pg/cloudnative-pg/api/v1"
 	"github.com/database-mesh/golang-sdk/aws"
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
@@ -55,6 +57,7 @@ func init() {
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	utilruntime.Must(batchV1.AddToScheme(scheme))
 	utilruntime.Must(dbmeshv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(cnpgv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -150,6 +153,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Log:      mgr.GetLogger(),
 			Recorder: mgr.GetEventRecorderFor(controllers.StorageNodeControllerName),
 			Service:  service.NewServiceClient(mgr.GetClient()),
+			CNPG:     cloudnativepg.NewCloudNativePGClient(mgr.GetClient()),
 		}
 
 		// init aws client if aws credentials are provided
