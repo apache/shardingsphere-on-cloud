@@ -24,6 +24,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
 	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh"
+	cloudnativepg "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/cloudnative-pg"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/job"
@@ -150,6 +151,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Log:      mgr.GetLogger(),
 			Recorder: mgr.GetEventRecorderFor(controllers.StorageNodeControllerName),
 			Service:  service.NewServiceClient(mgr.GetClient()),
+			CNPG:     cloudnativepg.NewCloudNativePG(mgr.GetClient()),
 		}
 
 		// init aws client if aws credentials are provided

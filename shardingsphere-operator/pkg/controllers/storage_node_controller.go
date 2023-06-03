@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	cloudnativepg "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/cloudnative-pg"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/storagenode/aws"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/shardingsphere"
@@ -59,6 +60,7 @@ type StorageNodeReconciler struct {
 	Log      logr.Logger
 	Recorder record.EventRecorder
 	AwsRDS   rds.RDS
+	CNPG     cloudnativepg.CloudNativePG
 
 	Service service.Service
 }
@@ -158,6 +160,10 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *v1alpha1
 	case v1alpha1.ProvisionerAWSAurora:
 		if err := r.reconcileAwsAurora(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS Aurora %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
+		}
+	case dbmeshv1alpha1.ProvisionerCloudNativePG:
+		if err := r.reconcileCloudNativePG(ctx, node, dbClass); err != nil {
+			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile CloudNative PG %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 		}
 	default:
 		r.Recorder.Event(node, corev1.EventTypeWarning, "UnsupportedDatabaseProvisioner", fmt.Sprintf("unsupported database provisioner %s", dbClass.Spec.Provisioner))
@@ -618,6 +624,17 @@ func (r *StorageNodeReconciler) getShardingsphereServer(ctx context.Context, nod
 	}
 
 	return ssServer, nil
+}
+
+func (r *StorageNodeReconciler) reconcileCloudNativePG(ctx context.Context, sn *v1alpha1.StorageNode, dbClass *dbmeshv1alpha1.DatabaseClass) error {
+	cluster, err := r.getCloudNativePGCluster(ctx, types.NamespacedName{Namespace: sn.Namespace, Name: sn.Name})
+	if err != nil {
+		return err
+	}
+	if cluster != nil {
+		return r.updateDeployment(ctx, cn, deploy)
+	}
+	return r.createDeployment(ctx, cn)
 }
 
 // SetupWithManager sets up the controller with the Manager
