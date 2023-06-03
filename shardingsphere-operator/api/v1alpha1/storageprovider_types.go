@@ -38,6 +38,7 @@ const (
 	ProvisionerAWSRDSInstance = "storageproviders.shardingsphere.apache.org/aws-rds-instance"
 	ProvisionerAWSRDSCluster  = "storageproviders.shardingsphere.apache.org/aws-rds-cluster"
 	ProvisionerAWSAurora      = "storageproviders.shardingsphere.apache.org/aws-aurora"
+	ProvisionerCloudNativePG  = "storageproviders.shardingsphere.apache.org/cloud-native-pg"
 )
 
 // StorageReclaimPolicy defines the reclaim policy for storage
