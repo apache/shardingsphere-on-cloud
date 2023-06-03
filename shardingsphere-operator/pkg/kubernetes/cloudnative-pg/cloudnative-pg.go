@@ -23,11 +23,23 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 
 	cnpgv1 "github.com/cloudnative-pg/cloudnative-pg/api/v1"
-	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// NewCloudNativePG creates a new CloudNativePG client
+func NewCloudNativePGClient(c client.Client) CloudNativePG {
+	return cloudnativePGClient{
+		builder: builder{},
+		getter: getter{
+			Client: c,
+		},
+		setter: setter{
+			Client: c,
+		},
+	}
+}
 
 // CloudNativePG interface contains setter and getter
 type CloudNativePG interface {
@@ -44,19 +56,18 @@ type cloudnativePGClient struct {
 
 // Builder build CloudNativePG Cluster from different parameters
 type Builder interface {
-	NewCluster(context.Context, *v1alpha1.StorageNode, *dbmeshv1alpha1.DatabaseClass) cnpgv1.Cluster
+	Build(context.Context, *v1alpha1.StorageNode, *v1alpha1.StorageProvider) *cnpgv1.Cluster
 }
 
 // Getter get CloudNativePG Cluster from different parameters
 type Getter interface {
-	GetCluster(context.Context, types.NamespacedName) (cnpgv1.Cluster, error)
+	GetClusterByNamespacedName(context.Context, types.NamespacedName) (*cnpgv1.Cluster, error)
 }
 
 // Setter set CloudNativePG Cluster from different parameters
 type Setter interface {
-	CreateCluster(context.Context, *cnpgv1.Cluster) error
-	UpdateCluster(context.Context, *cnpgv1.Cluster) error
-	DeleteCluster(context.Context, *cnpgv1.Cluster) error
+	Create(context.Context, *cnpgv1.Cluster) error
+	Update(context.Context, *cnpgv1.Cluster) error
 }
 
 type getter struct {
@@ -77,10 +88,9 @@ func (cg getter) GetClusterByNamespacedName(ctx context.Context, namespacedName 
 
 type builder struct{}
 
-// NewCluster builds a new CloudNative PG Cluster
-func (blder builder) NewCluster(ctx context.Context, sn *v1alpha1.StorageNode, dbcalss *dbmeshv1alpha1.DatabaseClass) *cnpgv1.Cluster {
-	c, _ := NewCluster()
-	return c
+// Build builds a new CloudNative PG Cluster
+func (blder builder) Build(ctx context.Context, sn *v1alpha1.StorageNode, sp *v1alpha1.StorageProvider) *cnpgv1.Cluster {
+	return NewCluster(sn, sp)
 }
 
 type setter struct {
@@ -88,16 +98,16 @@ type setter struct {
 }
 
 // CreateCluster creates a new CloudNative PG Cluster
-func (cs setter) CreateCluster(ctx context.Context, cluster *cnpgv1.Cluster) error {
+func (cs setter) Create(ctx context.Context, cluster *cnpgv1.Cluster) error {
 	return cs.Client.Create(ctx, cluster)
 }
 
 // UpdateCluster updates a existing CloudNative PG Cluster
-func (cs setter) UpdateCluster(ctx context.Context, cluster *cnpgv1.Cluster) error {
+func (cs setter) Update(ctx context.Context, cluster *cnpgv1.Cluster) error {
 	return cs.Client.Update(ctx, cluster)
 }
 
 // DeleteCluster deletes a existing CloudNative PG Cluster
-func (cs setter) DeletePodChaos(ctx context.Context, cluster *cnpgv1.Cluster) error {
+func (cs setter) Delete(ctx context.Context, cluster *cnpgv1.Cluster) error {
 	return cs.Client.Delete(ctx, cluster)
 }
