@@ -319,20 +319,20 @@ type ShardingStrategy struct {
 func (shardingStrategy *ShardingStrategy) ToString() string {
 	var (
 		strategyType             string
-		ShardingColumnDefinition string
-		ShardingAlgorithm        string
+		shardingColumnDefinition string
+		shardingAlgorithm        string
 	)
 	if shardingStrategy.StrategyType != nil {
 		strategyType = shardingStrategy.StrategyType.ToString()
 	}
 	if shardingStrategy.ShardingColumnDefinition != nil {
-		ShardingColumnDefinition = shardingStrategy.ShardingColumnDefinition.ToString()
+		shardingColumnDefinition = shardingStrategy.ShardingColumnDefinition.ToString()
 	}
 	if shardingStrategy.ShardingAlgorithm != nil {
-		ShardingAlgorithm = shardingStrategy.ShardingAlgorithm.ToString()
+		shardingAlgorithm = shardingStrategy.ShardingAlgorithm.ToString()
 	}
 
-	return fmt.Sprintf("TYPE = %s,%s,%s", strategyType, ShardingColumnDefinition, ShardingAlgorithm)
+	return fmt.Sprintf("TYPE = %s,%s,%s", strategyType, shardingColumnDefinition, shardingAlgorithm)
 }
 
 type StrategyType struct {
@@ -510,18 +510,18 @@ type DropShardingAlgorithm struct {
 
 func (dropShardingAlgorithm DropShardingAlgorithm) ToString() string {
 	var (
-		IfExists string
+		ifExists string
 		allAlgo  []string
 	)
 	if dropShardingAlgorithm.IfExists != nil {
-		IfExists = dropShardingAlgorithm.IfExists.ToString()
+		ifExists = dropShardingAlgorithm.IfExists.ToString()
 	}
 	if dropShardingAlgorithm.AllShardingAlgorithmName != nil {
 		for _, t := range dropShardingAlgorithm.AllShardingAlgorithmName {
 			allAlgo = append(allAlgo, t.ToString())
 		}
 	}
-	return fmt.Sprintf("DROP BROADCAST TABLE RULE %s %s", IfExists, strings.Join(allAlgo, ","))
+	return fmt.Sprintf("DROP BROADCAST TABLE RULE %s %s", ifExists, strings.Join(allAlgo, ","))
 }
 
 type CreateDefaultShardingStrategy struct {
@@ -612,16 +612,16 @@ type DropShardingKeyGenerator struct {
 	AllKeyGeneratorName []*CommonIdentifier
 }
 
-func (DropShardingKeyGenerator *DropShardingKeyGenerator) ToString() string {
+func (dropShardingKeyGenerator *DropShardingKeyGenerator) ToString() string {
 	var (
 		ifExists string
 		allKey   []string
 	)
-	if DropShardingKeyGenerator.IfExists != nil {
-		ifExists = DropShardingKeyGenerator.IfExists.ToString()
+	if dropShardingKeyGenerator.IfExists != nil {
+		ifExists = dropShardingKeyGenerator.IfExists.ToString()
 	}
-	if DropShardingKeyGenerator.AllKeyGeneratorName != nil {
-		for _, k := range DropShardingKeyGenerator.AllKeyGeneratorName {
+	if dropShardingKeyGenerator.AllKeyGeneratorName != nil {
+		for _, k := range dropShardingKeyGenerator.AllKeyGeneratorName {
 			allKey = append(allKey, k.ToString())
 		}
 	}
