@@ -109,6 +109,7 @@ type ShardingAutoTableRule struct {
 	AuditDefinition              *AuditDefinition
 }
 
+// nolint
 func (shardingAutoTableRule *ShardingAutoTableRule) ToString() string {
 	var (
 		tableName                    string
@@ -254,6 +255,7 @@ type ShardingTableRule struct {
 	AuditDefinition       *AuditDefinition
 }
 
+// nolint
 func (shardingTableRule *ShardingTableRule) ToString() string {
 	var (
 		tableName             string
