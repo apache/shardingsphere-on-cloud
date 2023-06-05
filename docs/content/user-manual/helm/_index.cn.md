@@ -1,30 +1,30 @@
 +++
-pre = "<b>3.1 </b>"
-title = "ShardingSphere Helm Charts User Manual"
+pre = "<b>4.1 </b>"
+title = "ShardingSphere Helm Charts 简明用户手册"
 weight = 1
 chapter = true
 +++
 
-## Procedure
+## 操作步骤
 
-### Online Installation
+### 在线安装
 
-1. Add ShardingSphere-Proxy to the local Helm warehouse:
+1. 添加 ShardingSphere-Proxy 到本地 Helm 仓库：
 
 ```shell
 helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
 helm repo update
 ```
 
-2. Install ShardingSphere-Proxy Charts:
+2. 安装 ShardingSphere-Proxy Charts：
 
 ```shell
 helm install shardingsphere-proxy shardingsphere/apache-shardingsphere-proxy-charts 
 ```
 
-### Source Code Installation
+### 源码安装
 
-1. Charts can be configured and installed by default using the following command:
+1. Charts 可以使用如下命令进行默认配置安装：
 
 ```shell
 cd charts/apache-shardingsphere-proxy-charts/charts/governance
@@ -35,33 +35,33 @@ cd ..
 helm install shardingsphere-proxy apache-shardingsphere-proxy-charts
 ```
 
-Note: Please refer to the configuration description below for details.
+注意：详情请参考下方配置说明。
 
-2. Execute `helm list` to get the list of all installed releases.
+2. 执行 `helm list` 获取所有已安装的发布版本列表。
 
-### Uninstall
+### 卸载
 
-1. By default, all publishing records are deleted and can be retained by adding '-- keep history'.
+1. 默认删除所有的发布记录，通过添加 `--keep-history` 可以进行保留。
 
 ```shell
 helm uninstall shardingsphere-proxy
 ```
 
-## Parameter Description
+## 参数说明
 
-### Name parameters
+### 命名参数
 
 | Name              | Description                                                                                                | Value                         |
 |-------------------|------------------------------------------------------------------------------------------------------------|-------------------------------|
 | `nameOverride   ` | nameOverride String to partially override common.names.fullname template (will maintain the release name)  | `apache-shardingsphere-proxy` |
 
-### Governance Node Parameters
+### 治理节点参数
 
 | Name                 | Description                                           | Value  |
 | -------------------- | ----------------------------------------------------- | ------ |
 | `governance.enabled` | Switch to enable or disable the governance helm chart | `true` |
 
-### Governance Node ZooKeeper Parameters
+### 治理节点 ZooKeeper 参数
 
 | Name                                             | Description                                          | Value               |
 | ------------------------------------------------ | ---------------------------------------------------- | ------------------- |
@@ -75,7 +75,7 @@ helm uninstall shardingsphere-proxy
 | `governance.zookeeper.resources.requests.memory` | The requested memory for the ZooKeeper containers    | `256Mi`             |
 | `governance.zookeeper.resources.requests.cpu`    | The requested cpu for the ZooKeeper containers       | `250m`              |
 
-### Compute Node ShardingSphere-Proxy Parameters 
+### 计算节点 ShardingSphere-Proxy 参数
 
 | Name                                | Description                                                  | Value                         |
 | ----------------------------------- | ------------------------------------------------------------ |-------------------------------|
@@ -93,7 +93,7 @@ helm uninstall shardingsphere-proxy
 | `compute.startPort`                 | ShardingSphere-Proxy start port                              | `3307`                        |
 | `compute.serverConfig`              | Server Configuration file for ShardingSphere-Proxy            | `""`                          |
 
-## Example
+## 配置示例
 
 ```yaml
 ## @section Name parameters
@@ -202,11 +202,11 @@ compute:
   ##
   serverConfig:
     ## @section Compute-Node ShardingSphere-Proxy ServerConfiguration authority parameters
-    ## NOTE: It‘s used to set up initial user to login to the compute node, and  storage node authority data.
+    ## NOTE: It is used to set up initial user to login compute node, and authority data of storage node.
     ## ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/yaml-config/authentication/
     ## @param compute.serverConfig.authority.privilege.type authority provider for storage node, the default value is ALL_PERMITTED
     ## @param compute.serverConfig.authority.users[0].password Password for compute node.
-    ## @param compute.serverConfig.authority.users[0].user Username, authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host
+    ## @param compute.serverConfig.authority.users[0].user Username,authorized host for compute node. Format: <username>@<hostname> hostname is % or empty string means do not care about authorized host
     ##
     authority:
       privilege:
@@ -240,4 +240,3 @@ compute:
     props:
       proxy-frontend-database-protocol-type: MySQL
 ```
-

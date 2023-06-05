@@ -1,5 +1,5 @@
 +++
-pre = "<b>3.3 </b>"
+pre = "<b>4.3 </b>"
 title = "利用 CloudFormation 启动 ShardingSphere Proxy"
 weight = 3
 chapter = true

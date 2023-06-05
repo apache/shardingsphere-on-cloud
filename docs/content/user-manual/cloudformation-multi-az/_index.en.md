@@ -1,5 +1,5 @@
 +++
-pre = "<b>3.4 </b>"
+pre = "<b>4.4 </b>"
 title = "CloudFormation Deploys ShardingSphere Proxy Cluster in Multiple AZs"
 weight = 4
 chapter = true
