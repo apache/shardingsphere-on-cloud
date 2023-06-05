@@ -187,10 +187,10 @@ func (r *ComputeNodeReconciler) updateComputeNodePortBindings(ctx context.Contex
 }
 
 func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, s *corev1.Service) error {
+	pbs := []v1alpha1.PortBinding{}
+	copy(cn.Spec.PortBindings, pbs)
 	switch cn.Spec.ServiceType {
 	case corev1.ServiceTypeClusterIP:
-		pbs := []v1alpha1.PortBinding{}
-		copy(cn.Spec.PortBindings, pbs)
 		updateServiceClusterIP(cn.Spec.PortBindings)
 		if !reflect.DeepEqual(cn.Spec.PortBindings, pbs) {
 			return r.updateComputeNodePortBindings(ctx, cn)
@@ -200,8 +200,6 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 	case corev1.ServiceTypeLoadBalancer:
 		fallthrough
 	case corev1.ServiceTypeNodePort:
-		pbs := []v1alpha1.PortBinding{}
-		copy(cn.Spec.PortBindings, pbs)
 		updateServiceNodePort(cn.Spec.PortBindings, s.Spec.Ports)
 		if !reflect.DeepEqual(cn.Spec.PortBindings, pbs) {
 			return r.updateComputeNodePortBindings(ctx, cn)
