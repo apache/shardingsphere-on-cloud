@@ -223,12 +223,12 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 	return nil
 }
 
-func updateServiceNodePort(portBindings []v1alpha1.PortBinding, svcports []corev1.ServicePort) {
-	for idx := range svcports {
-		for i := range portBindings {
-			if svcports[idx].Name == portBindings[i].Name {
-				if portBindings[i].NodePort == 0 {
-					portBindings[i].NodePort = svcports[idx].NodePort
+func updateServiceNodePort(pbs []v1alpha1.PortBinding, ports []corev1.ServicePort) {
+	for idx := range ports {
+		for i := range pbs {
+			if ports[idx].Name == pbs[i].Name {
+				if pbs[i].NodePort == 0 {
+					pbs[i].NodePort = ports[idx].NodePort
 				}
 				break
 			}
