@@ -1,5 +1,5 @@
 +++
-pre = "<b>4.1 </b>"
+pre = "<b>2.1 </b>"
 title = "ShardingSphere Helm Charts 一键安装"
 weight = 1
 chapter = true

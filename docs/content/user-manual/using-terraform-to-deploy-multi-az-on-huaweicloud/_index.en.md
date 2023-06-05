@@ -1,5 +1,5 @@
 +++
-pre = "<b>3.5 </b>"
+pre = "<b>4.5 </b>"
 title = "Terraform Deploys ShardingSphere Cluster in Multiple AZs On Huawei Cloud"
 weight = 5
 chapter = true

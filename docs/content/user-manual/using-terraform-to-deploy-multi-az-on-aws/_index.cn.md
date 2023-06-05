@@ -1,5 +1,5 @@
 +++
-pre = "<b>3.5 </b>"
+pre = "<b>4.5 </b>"
 title = "Terraform 在 AWS 上部署多可用区 ShardingSphere 集群"
 weight = 5
 chapter = true
