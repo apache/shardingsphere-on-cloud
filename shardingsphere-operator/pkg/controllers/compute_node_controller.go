@@ -383,12 +383,9 @@ func updateComputeNodeStatusCondition(conditions []v1alpha1.ComputeNodeCondition
 				conditions[i].Message = conds[idx].Message
 				conditions[i].Reason = conds[idx].Reason
 			} else {
-				if conds[idx].Type == v1alpha1.ComputeNodeConditionUnknown {
-					conditions[i].Status = v1alpha1.ConditionStatusFalse
-				} else if conditions[i].Type == v1alpha1.ComputeNodeConditionUnknown {
+				if conds[idx].Type == v1alpha1.ComputeNodeConditionUnknown || conditions[i].Type == v1alpha1.ComputeNodeConditionUnknown {
 					conditions[i].Status = v1alpha1.ConditionStatusFalse
 				}
-
 			}
 
 			conditions[i].LastUpdateTime = conds[idx].LastUpdateTime
