@@ -218,8 +218,27 @@ func (v *ShardingVisitor) VisitShardingAutoTableRule(ctx *parser.ShardingAutoTab
 	return stmt
 }
 
-func (v *ShardingVisitor) VisitShardingTableRule(ctx *parser.ShardingTableRuleContext) interface{} {
-	return nil
+func (v *ShardingVisitor) VisitShardingTableRule(ctx *parser.ShardingTableRuleContext) *ast.ShardingTableRule {
+	stmt := &ast.ShardingTableRule{}
+	if ctx.TableName() != nil {
+		stmt.TableName = v.VisitTableName(ctx.TableName().(*parser.TableNameContext))
+	}
+	if ctx.DataNodes() != nil {
+		stmt.DataNodes = v.VisitDataNodes(ctx.DataNodes().(*parser.DataNodesContext))
+	}
+	if ctx.DatabaseStrategy() != nil {
+		stmt.DatabaseStrategy = v.VisitDatabaseStrategy(ctx.DatabaseStrategy().(*parser.DatabaseStrategyContext))
+	}
+	if ctx.TableStrategy() != nil {
+		stmt.TableStrategy = v.VisitTableStrategy(ctx.TableStrategy().(*parser.TableStrategyContext))
+	}
+	if ctx.KeyGenerateDefinition() != nil {
+		stmt.KeyGenerateDefinition = v.VisitKeyGenerateDefinition(ctx.KeyGenerateDefinition().(*parser.KeyGenerateDefinitionContext))
+	}
+	if ctx.AuditDefinition() != nil {
+		stmt.AuditDefinition = v.VisitAuditDefinition(ctx.AuditDefinition().(*parser.AuditDefinitionContext))
+	}
+	return stmt
 }
 
 func (v *ShardingVisitor) VisitKeyGeneratorName(ctx *parser.KeyGeneratorNameContext) *ast.CommonIdentifier {
@@ -230,8 +249,15 @@ func (v *ShardingVisitor) VisitKeyGeneratorName(ctx *parser.KeyGeneratorNameCont
 	return stmt
 }
 
-func (v *ShardingVisitor) VisitAuditorDefinition(ctx *parser.AuditorDefinitionContext) interface{} {
-	return nil
+func (v *ShardingVisitor) VisitAuditorDefinition(ctx *parser.AuditorDefinitionContext) *ast.AuditorDefinition {
+	stmt := &ast.AuditorDefinition{}
+	if ctx.AuditorName() != nil {
+		stmt.AuditorName = v.VisitAuditorName(ctx.AuditorName().(*parser.AuditorNameContext))
+	}
+	if ctx.AlgorithmDefinition() != nil {
+		stmt.AlgorithmDefinition = v.VisitAlgorithmDefinition(ctx.AlgorithmDefinition().(*parser.AlgorithmDefinitionContext))
+	}
+	return stmt
 }
 
 func (v *ShardingVisitor) VisitAuditorName(ctx *parser.AuditorNameContext) *ast.CommonIdentifier {

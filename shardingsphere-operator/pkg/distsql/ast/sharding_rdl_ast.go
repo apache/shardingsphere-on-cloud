@@ -498,7 +498,7 @@ func (dropBroadcastTableRule *DropBroadcastTableRule) ToString() string {
 			allTable = append(allTable, t.ToString())
 		}
 	}
-	return fmt.Sprintf("DROP BROADCAST TABLE RULE %s %s", ifExists, strings.Join(allTable,","))
+	return fmt.Sprintf("DROP BROADCAST TABLE RULE %s %s", ifExists, strings.Join(allTable, ","))
 }
 
 type DropShardingAlgorithm struct {
@@ -581,11 +581,12 @@ func (shardingAlgorithmTypeName *ShardingAlgorithmTypeName) ToString() string {
 		return shardingAlgorithmTypeName.String
 	case shardingAlgorithmTypeName.BuildInShardingAlgorithmType != nil:
 		return shardingAlgorithmTypeName.BuildInShardingAlgorithmType.ToString()
-	case shardingAlgorithmTypeName.BuildInKeyGenerateAlgorithmType != nil :
+	case shardingAlgorithmTypeName.BuildInKeyGenerateAlgorithmType != nil:
 		return shardingAlgorithmTypeName.BuildInKeyGenerateAlgorithmType.ToString()
 	case shardingAlgorithmTypeName.BuildInShardingAuditAlgorithmType != nil:
 		return shardingAlgorithmTypeName.BuildInShardingAuditAlgorithmType.ToString()
 	}
+	return ""
 }
 
 type BuildInCommon struct {
@@ -612,7 +613,7 @@ type DropShardingKeyGenerator struct {
 func (DropShardingKeyGenerator *DropShardingKeyGenerator) ToString() string {
 	var (
 		ifExists string
-		allKey []string
+		allKey   []string
 	)
 	if DropShardingKeyGenerator.IfExists != nil {
 		ifExists = DropShardingKeyGenerator.IfExists.ToString()
@@ -622,7 +623,7 @@ func (DropShardingKeyGenerator *DropShardingKeyGenerator) ToString() string {
 			allKey = append(allKey, k.ToString())
 		}
 	}
-	return fmt.Sprintf("DROP SHARDING KEY GENERATOR %s %s", ifExists,strings.Join(allKey,","))
+	return fmt.Sprintf("DROP SHARDING KEY GENERATOR %s %s", ifExists, strings.Join(allKey, ","))
 }
 
 type DropShardingAuditor struct {
@@ -643,7 +644,7 @@ func (dropShardingAuditor *DropShardingAuditor) ToString() string {
 			allName = append(allName, r.ToString())
 		}
 	}
-	return fmt.Sprintf("DROP SHARDING AUDITOR %s %s", ifExists,allName[])
+	return fmt.Sprintf("DROP SHARDING AUDITOR %s %s", ifExists, strings.Join(allName, ","))
 }
 
 type DataNodes struct {
@@ -664,4 +665,13 @@ type AlterDefaultShardingStrategy struct {
 
 func (alterDefaultShardingStrategy *AlterDefaultShardingStrategy) ToString() string {
 	return fmt.Sprintf("ALTER DEFAULT SHARDING type=(DATABASE | TABLE) STRATEGY (%s)", alterDefaultShardingStrategy.ShardingStrategy.ToString())
+}
+
+type AuditorDefinition struct {
+	AuditorName         *CommonIdentifier
+	AlgorithmDefinition *ShardingAlgorithmDefinition
+}
+
+func (auditorDefinition *AuditorDefinition) ToString() string {
+	return fmt.Sprintf("%s (%s)", auditorDefinition.AuditorName.ToString(), auditorDefinition.AlgorithmDefinition.ToString())
 }
