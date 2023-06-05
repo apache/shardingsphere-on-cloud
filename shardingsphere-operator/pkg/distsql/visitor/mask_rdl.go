@@ -150,6 +150,7 @@ func (v *MaskVisitor) VisitAlgorithmTypeName(ctx *parser.AlgorithmTypeNameContex
 	return stmt
 }
 
+// nolint
 func (v *MaskVisitor) VisitBuildInMaskAlgorithmType(ctx *parser.BuildInMaskAlgorithmTypeContext) *ast.BuildinAlgorithmTypeName {
 	stmt := &ast.BuildinAlgorithmTypeName{}
 	switch {
