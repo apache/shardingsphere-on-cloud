@@ -186,7 +186,7 @@ func (r *ComputeNodeReconciler) updateComputeNodePortBindings(ctx context.Contex
 	return nil
 }
 
-func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, cur *corev1.Service) error {
+func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, s *corev1.Service) error {
 	switch cn.Spec.ServiceType {
 	case corev1.ServiceTypeClusterIP:
 		pbs := []v1alpha1.PortBinding{}
@@ -202,22 +202,22 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 	case corev1.ServiceTypeNodePort:
 		pbs := []v1alpha1.PortBinding{}
 		copy(cn.Spec.PortBindings, pbs)
-		updateServiceNodePort(cn.Spec.PortBindings, cur.Spec.Ports)
+		updateServiceNodePort(cn.Spec.PortBindings, s.Spec.Ports)
 		if !reflect.DeepEqual(cn.Spec.PortBindings, pbs) {
 			return r.updateComputeNodePortBindings(ctx, cn)
 		}
 	}
 
 	exp := r.Service.Build(ctx, cn)
-	exp.ObjectMeta = cur.ObjectMeta
-	exp.Spec.ClusterIP = cur.Spec.ClusterIP
-	exp.Spec.ClusterIPs = cur.Spec.ClusterIPs
+	exp.ObjectMeta = s.ObjectMeta
+	exp.Spec.ClusterIP = s.Spec.ClusterIP
+	exp.Spec.ClusterIPs = s.Spec.ClusterIPs
 
 	if cn.Spec.ServiceType == corev1.ServiceTypeNodePort {
-		exp.Spec.Ports = updateNodePorts(cn.Spec.PortBindings, cur.Spec.Ports)
+		exp.Spec.Ports = updateNodePorts(cn.Spec.PortBindings, s.Spec.Ports)
 	}
 
-	if !reflect.DeepEqual(exp.Spec, cur.Spec) {
+	if !reflect.DeepEqual(exp.Spec, s.Spec) {
 		return r.Update(ctx, exp)
 	}
 	return nil
