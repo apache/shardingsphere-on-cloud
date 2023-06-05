@@ -195,6 +195,12 @@ func (v *ShardingVisitor) VisitDropShardingAuditor(ctx *parser.DropShardingAudit
 
 func (v *ShardingVisitor) VisitShardingTableRuleDefinition(ctx *parser.ShardingTableRuleDefinitionContext) *ast.ShardingTableRuleDefinition {
 	stmt := &ast.ShardingTableRuleDefinition{}
+	if ctx.ShardingAutoTableRule() != nil {
+		stmt.ShardingAutoTableRule = v.VisitShardingAutoTableRule(ctx.ShardingAutoTableRule().(*parser.ShardingAutoTableRuleContext))
+	}
+	if ctx.ShardingTableRule() != nil {
+		stmt.ShardingTableRule = v.VisitShardingTableRule(ctx.ShardingTableRule().(*parser.ShardingTableRuleContext))
+	}
 	return stmt
 }
 
@@ -222,6 +228,7 @@ func (v *ShardingVisitor) VisitShardingAutoTableRule(ctx *parser.ShardingAutoTab
 	return stmt
 }
 
+// nolint
 func (v *ShardingVisitor) VisitShardingTableRule(ctx *parser.ShardingTableRuleContext) *ast.ShardingTableRule {
 	stmt := &ast.ShardingTableRule{}
 	if ctx.TableName() != nil {
