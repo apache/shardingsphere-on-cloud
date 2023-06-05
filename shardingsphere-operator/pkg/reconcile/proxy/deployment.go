@@ -44,6 +44,11 @@ const (
 
 	// miniReadyCount Minimum number of replicas that can be served
 	miniReadyCount = 1
+
+	// mysqlConnectorJarVolumeMountName refers to the name of the volume mount for the mysql connector jar
+	mysqlConnectorJarVolumeMountName = "mysql-connector-jar"
+	// downloadMySQLConnectorJarContainerName refers to the name of the init container for downloading the mysql connector jar
+	downloadMySQLConnectorJarContainerName = "download-mysql-connect"
 )
 
 // ConstructCascadingDeployment construct a Deployment from crd ShardingSphereProxy
@@ -176,12 +181,12 @@ else echo failed;exit 1;fi;mv /mysql-connector-java-${VERSION}.jar /opt/sharding
 func addInitContainer(dp *v1.Deployment, mysql *v1alpha1.MySQLDriver) {
 	if len(dp.Spec.Template.Spec.InitContainers) == 0 {
 		dp.Spec.Template.Spec.Containers[0].VolumeMounts = append(dp.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      "mysql-connect-jar",
+			Name:      mysqlConnectorJarVolumeMountName,
 			MountPath: "/opt/shardingsphere-proxy/ext-lib",
 		})
 
 		dp.Spec.Template.Spec.Volumes = append(dp.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: "mysql-connect-jar",
+			Name: mysqlConnectorJarVolumeMountName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -190,7 +195,7 @@ func addInitContainer(dp *v1.Deployment, mysql *v1alpha1.MySQLDriver) {
 
 	dp.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
-			Name:    "download-mysql-connect",
+			Name:    downloadMySQLConnectorJarContainerName,
 			Image:   "busybox:1.35.0",
 			Command: []string{"/bin/sh", "-c", script},
 			Env: []corev1.EnvVar{
@@ -201,7 +206,7 @@ func addInitContainer(dp *v1.Deployment, mysql *v1alpha1.MySQLDriver) {
 			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      "mysql-connect-jar",
+					Name:      mysqlConnectorJarVolumeMountName,
 					MountPath: "/opt/shardingsphere-proxy/ext-lib",
 				},
 			},
@@ -268,7 +273,7 @@ func updatePodTemplateSpec(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployme
 	if proxy.Spec.MySQLDriver != nil {
 		initContainer := updateInitContainer(proxy, act)
 		for i := range exp.Spec.InitContainers {
-			if exp.Spec.InitContainers[i].Name == "download-mysql-connect" {
+			if exp.Spec.InitContainers[i].Name == downloadMySQLConnectorJarContainerName {
 				exp.Spec.InitContainers[i] = *initContainer
 			}
 		}
@@ -291,7 +296,7 @@ func updateInitContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment
 	var exp *corev1.Container
 
 	for idx := range act.Spec.Template.Spec.InitContainers {
-		if act.Spec.Template.Spec.InitContainers[idx].Name == "download-mysql-connect" {
+		if act.Spec.Template.Spec.InitContainers[idx].Name == downloadMySQLConnectorJarContainerName {
 			for i := range act.Spec.Template.Spec.InitContainers[idx].Env {
 				if act.Spec.Template.Spec.InitContainers[idx].Env[i].Name == "VERSION" {
 					if act.Spec.Template.Spec.InitContainers[idx].Env[i].Value != proxy.Spec.MySQLDriver.Version {

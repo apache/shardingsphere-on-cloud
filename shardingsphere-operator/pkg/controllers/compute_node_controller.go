@@ -186,11 +186,11 @@ func (r *ComputeNodeReconciler) updateComputeNodePortBindings(ctx context.Contex
 	return nil
 }
 
-func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, cur *corev1.Service) error {
+func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.ComputeNode, s *corev1.Service) error {
+	pbs := []v1alpha1.PortBinding{}
+	copy(cn.Spec.PortBindings, pbs)
 	switch cn.Spec.ServiceType {
 	case corev1.ServiceTypeClusterIP:
-		pbs := []v1alpha1.PortBinding{}
-		copy(cn.Spec.PortBindings, pbs)
 		updateServiceClusterIP(cn.Spec.PortBindings)
 		if !reflect.DeepEqual(cn.Spec.PortBindings, pbs) {
 			return r.updateComputeNodePortBindings(ctx, cn)
@@ -200,35 +200,33 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 	case corev1.ServiceTypeLoadBalancer:
 		fallthrough
 	case corev1.ServiceTypeNodePort:
-		pbs := []v1alpha1.PortBinding{}
-		copy(cn.Spec.PortBindings, pbs)
-		updateServiceNodePort(cn.Spec.PortBindings, cur.Spec.Ports)
+		updateServiceNodePort(cn.Spec.PortBindings, s.Spec.Ports)
 		if !reflect.DeepEqual(cn.Spec.PortBindings, pbs) {
 			return r.updateComputeNodePortBindings(ctx, cn)
 		}
 	}
 
 	exp := r.Service.Build(ctx, cn)
-	exp.ObjectMeta = cur.ObjectMeta
-	exp.Spec.ClusterIP = cur.Spec.ClusterIP
-	exp.Spec.ClusterIPs = cur.Spec.ClusterIPs
+	exp.ObjectMeta = s.ObjectMeta
+	exp.Spec.ClusterIP = s.Spec.ClusterIP
+	exp.Spec.ClusterIPs = s.Spec.ClusterIPs
 
 	if cn.Spec.ServiceType == corev1.ServiceTypeNodePort {
-		exp.Spec.Ports = updateNodePorts(cn.Spec.PortBindings, cur.Spec.Ports)
+		exp.Spec.Ports = updateNodePorts(cn.Spec.PortBindings, s.Spec.Ports)
 	}
 
-	if !reflect.DeepEqual(exp.Spec, cur.Spec) {
+	if !reflect.DeepEqual(exp.Spec, s.Spec) {
 		return r.Update(ctx, exp)
 	}
 	return nil
 }
 
-func updateServiceNodePort(portBindings []v1alpha1.PortBinding, svcports []corev1.ServicePort) {
-	for idx := range svcports {
-		for i := range portBindings {
-			if svcports[idx].Name == portBindings[i].Name {
-				if portBindings[i].NodePort == 0 {
-					portBindings[i].NodePort = svcports[idx].NodePort
+func updateServiceNodePort(pbs []v1alpha1.PortBinding, ports []corev1.ServicePort) {
+	for idx := range ports {
+		for i := range pbs {
+			if ports[idx].Name == pbs[i].Name {
+				if pbs[i].NodePort == 0 {
+					pbs[i].NodePort = ports[idx].NodePort
 				}
 				break
 			}
@@ -378,22 +376,18 @@ func updateComputeNodeStatusCondition(conditions []v1alpha1.ComputeNodeCondition
 	for idx := range conds {
 		var found bool
 		for i := range conditions {
+			conditions[i].LastUpdateTime = conds[idx].LastUpdateTime
 			if conditions[i].Type == conds[idx].Type {
 				found = true
 				conditions[i].Type = conds[idx].Type
 				conditions[i].Status = conds[idx].Status
 				conditions[i].Message = conds[idx].Message
 				conditions[i].Reason = conds[idx].Reason
+			} else if conds[idx].Type == v1alpha1.ComputeNodeConditionUnknown || conditions[i].Type == v1alpha1.ComputeNodeConditionUnknown {
+				conditions[i].Status = v1alpha1.ConditionStatusFalse
 			} else {
-				if conds[idx].Type == v1alpha1.ComputeNodeConditionUnknown {
-					conditions[i].Status = v1alpha1.ConditionStatusFalse
-				} else if conditions[i].Type == v1alpha1.ComputeNodeConditionUnknown {
-					conditions[i].Status = v1alpha1.ConditionStatusFalse
-				}
-
+				continue
 			}
-
-			conditions[i].LastUpdateTime = conds[idx].LastUpdateTime
 		}
 
 		// check current conditions

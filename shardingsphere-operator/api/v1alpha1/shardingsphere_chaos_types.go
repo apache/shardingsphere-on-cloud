@@ -148,7 +148,6 @@ type PodChaosParams struct {
 	// +optional
 	ContainerKill *ContainerKillParams `json:"containerKill,omitempty"`
 	// +optional
-	// FIXME
 	// PodKill *PodKillParams `json:"containerKill,omitempty"`
 }
 

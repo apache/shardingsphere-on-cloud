@@ -229,7 +229,6 @@ func (r *ProxyReconciler) reconcilePodList(ctx context.Context, namespace, name 
 
 	rt.Status = reconcile.ReconcileStatus(podList, rt)
 
-	// TODO: Compare Status with or without modification
 	if err := r.Status().Update(ctx, rt); err != nil {
 		return result, err
 	}
