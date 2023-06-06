@@ -55,7 +55,6 @@ const (
 type JobType string
 
 var (
-	//FIXME: pick another name for experimental
 	InSteady JobType = "steady"
 	InChaos  JobType = "chaos"
 )
@@ -68,45 +67,20 @@ func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement JobType) (*v1.Job
 	jbd := NewJobBuilder()
 	jbd.SetNamespace(ssChaos.Namespace).SetLabels(ssChaos.Labels).SetName(MakeJobName(ssChaos.Name, requirement))
 
-	if v, ok := ssChaos.Annotations[AnnoJobCompletions]; ok {
-		value, err := MustInt32(v)
-		if err != nil {
-			return nil, err
-		}
-		jbd.SetCompletions(value)
-	}
+	c, _ := MustInt32(ssChaos.Annotations[AnnoJobCompletions])
+	jbd.SetCompletions(c)
 
-	if v, ok := ssChaos.Annotations[AnnoJobActiveDeadlineSeconds]; ok {
-		value, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		jbd.SetActiveDeadlineSeconds(value)
-	}
+	c, _ = MustInt32(ssChaos.Annotations[AnnoJobParallelism])
+	jbd.SetParallelism(c)
 
-	if v, ok := ssChaos.Annotations[AnnoJobParallelism]; ok {
-		value, err := MustInt32(v)
-		if err != nil {
-			return nil, err
-		}
-		jbd.SetParallelism(value)
-	}
+	c, _ = MustInt32(ssChaos.Annotations[AnnoJobBackoffLimit])
+	jbd.SetBackoffLimit(c)
 
-	if v, ok := ssChaos.Annotations[AnnoJobBackoffLimit]; ok {
-		value, err := MustInt32(v)
-		if err != nil {
-			return nil, err
-		}
-		jbd.SetBackoffLimit(value)
-	}
+	c, _ = MustInt32(ssChaos.Annotations[AnnoJobTTLSecondsAfterFinished])
+	jbd.SetTTLSecondsAfterFinished(c)
 
-	if v, ok := ssChaos.Annotations[AnnoJobTTLSecondsAfterFinished]; ok {
-		value, err := MustInt32(v)
-		if err != nil {
-			return nil, err
-		}
-		jbd.SetTTLSecondsAfterFinished(value)
-	}
+	t, _ := MustInt64(ssChaos.Annotations[AnnoJobActiveDeadlineSeconds])
+	jbd.SetActiveDeadlineSeconds(t)
 
 	if v, ok := ssChaos.Annotations[AnnoJobSuspend]; ok {
 		if v == "true" {
@@ -159,6 +133,14 @@ func MustInt32(s string) (int32, error) {
 		return 0, err
 	}
 	return int32(v), nil
+}
+
+func MustInt64(s string) (int64, error) {
+	v, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return int64(v), nil
 }
 
 func IsJobChanged(ssChaos *v1alpha1.ShardingSphereChaos, requirement JobType, cur *v1.Job) (bool, error) {
