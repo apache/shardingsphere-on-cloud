@@ -5,6 +5,4 @@ weight = 3
 chapter = true
 +++
 
-ShardingSphere-on-Cloud 中各类云环境下部署的 ShardingSphere 特性与官方版本特性保持一致。
-
-详见[链接](https://shardingsphere.apache.org/document/current/cn/features/)。
+ShardingSphere 在云环境下的特性和官方版本保持一致，详见[链接](https://shardingsphere.apache.org/document/current/cn/features/)。ShardingSphere on Cloud 从云上一键部署、数据库可靠性工程、混沌工程和生态扩展四个方面进行了相应的增强。
