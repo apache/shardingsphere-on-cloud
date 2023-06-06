@@ -30,22 +30,22 @@ import (
 )
 
 const (
-	podSelectorMode      = "selector.chaos-mesh.org/mode"
-	podSelectorValue     = "selector.chaos-mesh.org/value"
-	targetPodSelectMode  = "target-selector.chaos-mesh.org/mode"
-	targetPodSelectValue = "target-selector.chaos-mesh.org/value"
+	AnnoPodSelectorMode      = "selector.chaos-mesh.org/mode"
+	AnnoPodSelectorValue     = "selector.chaos-mesh.org/value"
+	AnnoTargetPodSelectMode  = "target-selector.chaos-mesh.org/mode"
+	AnnoTargetPodSelectValue = "target-selector.chaos-mesh.org/value"
 
-	podAction   = "podchaos.chaos-mesh.org/action"
-	gracePeriod = "podchaos.chaos-mesh.org/gracePeriod"
+	AnnoPodAction   = "podchaos.chaos-mesh.org/action"
+	AnnoGracePeriod = "podchaos.chaos-mesh.org/gracePeriod"
 
-	networkAction = "networkchaos.chaos-mesh.org/action"
-	device        = "networkchaos.chaos-mesh.org/device"
-	targetDevice  = "networkchaos.chaos-mesh.org/targetDevice"
-	rate          = "networkchaos.chaos-mesh.org/bandwidth:rate"
-	limit         = "networkchaos.chaos-mesh.org/bandwidth:limit"
-	buffer        = "networkchaos.chaos-mesh.org/bandwidth:buffer"
-	peakrate      = "networkchaos.chaos-mesh.org/bandwidth:peakrate"
-	minburst      = "networkchaos.chaos-mesh.org/bandwidth:minburst"
+	AnnoNetworkAction     = "networkchaos.chaos-mesh.org/action"
+	AnnoDevice            = "networkchaos.chaos-mesh.org/device"
+	AnnoTargetDevice      = "networkchaos.chaos-mesh.org/targetDevice"
+	AnnoBandwidthRate     = "networkchaos.chaos-mesh.org/bandwidth:rate"
+	AnnoBandwidthLimit    = "networkchaos.chaos-mesh.org/bandwidth:limit"
+	AnnoBandwidthBuffer   = "networkchaos.chaos-mesh.org/bandwidth:buffer"
+	AnnoBandwidthPeakrate = "networkchaos.chaos-mesh.org/bandwidth:peakrate"
+	AnnoBandwidthMinBurst = "networkchaos.chaos-mesh.org/bandwidth:minburst"
 )
 
 var (
@@ -105,9 +105,9 @@ func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 
 	chao := ssChao.Spec.PodChaos
-	if act, ok := ssChao.Annotations[podAction]; ok {
+	if act, ok := ssChao.Annotations[AnnoPodAction]; ok {
 		pcb.SetAction(act)
-		if gp, ok := ssChao.Annotations[gracePeriod]; chaosmeshv1alpha1.PodChaosAction(act) == chaosmeshv1alpha1.PodKillAction && ok {
+		if gp, ok := ssChao.Annotations[AnnoGracePeriod]; chaosmeshv1alpha1.PodChaosAction(act) == chaosmeshv1alpha1.PodKillAction && ok {
 			gpInt, err := strconv.ParseInt(gp, 10, 64)
 			if err != nil {
 				return nil, err
@@ -128,8 +128,9 @@ func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 		SetLabelSelector(chao.LabelSelectors).
 		SetPods(chao.Pods)
 
-	psb.SetSelectMode(ssChao.Annotations[podSelectorMode]).
-		SetValue(ssChao.Annotations[podSelectorValue])
+	psb.SetSelectMode(ssChao.Annotations[AnnoTargetPodSelectMode]).
+		SetValue(ssChao.Annotations[AnnoTargetPodSelectValue])
+
 	containerSelector := &chaosmeshv1alpha1.ContainerSelector{
 		PodSelector: *psb.Build(),
 	}
@@ -148,13 +149,32 @@ func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	return podChao, nil
 }
 
+func getAnnotation(anno map[string]string, k string) string {
+	if v, ok := anno[k]; ok {
+		return v
+	}
+	return ""
+}
+
 func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error) {
 	ncb := NewNetworkChaosBuilder()
 	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
+
+	tcParams := &chaosmeshv1alpha1.TcParameter{}
+
 	chao := ssChao.Spec.NetworkChaos
-	act, ok := ssChao.Annotations[networkAction]
-	if ok {
+	if act, ok := ssChao.Annotations[AnnoNetworkAction]; ok {
 		ncb.SetAction(act)
+
+		if chaosmeshv1alpha1.NetworkChaosAction(act) == chaosmeshv1alpha1.BandwidthAction {
+			bwab := NewBandWidthActionBuilder()
+			bwab.SetRate(getAnnotation(ssChao.Annotations, AnnoBandwidthRate))
+			bwab.SetLimit(getAnnotation(ssChao.Annotations, AnnoBandwidthLimit))
+			bwab.SetBuffer(getAnnotation(ssChao.Annotations, AnnoBandwidthBuffer))
+			bwab.SetPeakRate(getAnnotation(ssChao.Annotations, AnnoBandwidthPeakrate))
+			bwab.SetMinBurst(getAnnotation(ssChao.Annotations, AnnoBandwidthMinBurst))
+			tcParams.Bandwidth = bwab.Build()
+		}
 	} else {
 		ncb.SetAction(string(chao.Action))
 	}
@@ -162,7 +182,6 @@ func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error)
 	ncb.SetDuration(chao.Duration).SetDirection(string(chao.Direction))
 
 	psb := NewPodSelectorBuilder()
-
 	psb.SetNamespaces(chao.Source.Namespaces).
 		SetExpressionSelectors(chao.Source.ExpressionSelectors).
 		SetNodes(chao.Source.Nodes).
@@ -171,13 +190,12 @@ func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error)
 		SetLabelSelector(chao.Source.LabelSelectors).
 		SetPods(chao.Source.Pods)
 
-	psb.SetSelectMode(ssChao.Annotations[podSelectorMode]).
-		SetValue(ssChao.Annotations[podSelectorValue])
+	psb.SetSelectMode(ssChao.Annotations[AnnoPodSelectorMode]).
+		SetValue(ssChao.Annotations[AnnoPodSelectorValue])
 
 	ncb.SetPodSelector(psb.Build())
 
 	tpsb := NewPodSelectorBuilder()
-
 	tpsb.SetNamespaces(chao.Target.Namespaces).
 		SetExpressionSelectors(chao.Target.ExpressionSelectors).
 		SetNodes(chao.Target.Nodes).
@@ -186,63 +204,35 @@ func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error)
 		SetLabelSelector(chao.Target.LabelSelectors).
 		SetPods(chao.Target.Pods)
 
-	tpsb.SetSelectMode(ssChao.Annotations[targetPodSelectMode]).
-		SetValue(ssChao.Annotations[targetPodSelectValue])
+	tpsb.SetSelectMode(ssChao.Annotations[AnnoTargetPodSelectMode]).
+		SetValue(ssChao.Annotations[AnnoTargetPodSelectValue])
 
 	ncb.SetTarget(tpsb.Build())
+	ncb.SetDevice(ssChao.Annotations[AnnoDevice]).
+		SetTargetDevice(ssChao.Annotations[AnnoTargetDevice])
 
-	ncb.SetDevice(ssChao.Annotations[device]).
-		SetTargetDevice(ssChao.Annotations[targetDevice])
-
-	tcParams := &chaosmeshv1alpha1.TcParameter{}
-
-	if chao.Action == v1alpha1.Delay {
+	switch chao.Action {
+	case v1alpha1.Delay:
 		tcParams.Delay = &chaosmeshv1alpha1.DelaySpec{
 			Latency: chao.Params.Delay.Latency,
 			Jitter:  chao.Params.Delay.Jitter,
 		}
-	}
-
-	if chao.Action == v1alpha1.Corruption {
+	case v1alpha1.Corruption:
 		tcParams.Corrupt = &chaosmeshv1alpha1.CorruptSpec{
 			Corrupt: chao.Params.Corruption.Corruption,
 		}
-	}
-
-	if chao.Action == v1alpha1.Duplication {
+	case v1alpha1.Duplication:
 		tcParams.Duplicate = &chaosmeshv1alpha1.DuplicateSpec{
 			Duplicate: chao.Params.Duplication.Duplication,
 		}
-	}
-
-	if chao.Action == v1alpha1.Loss {
+	case v1alpha1.Loss:
 		tcParams.Loss = &chaosmeshv1alpha1.LossSpec{
 			Loss: chao.Params.Loss.Loss,
 		}
+	case v1alpha1.Partition:
 	}
 
-	if chaosmeshv1alpha1.NetworkChaosAction(act) == chaosmeshv1alpha1.BandwidthAction {
-		bwab := NewBandWidthActionBuilder()
-		if ind1, ok := ssChao.Annotations[rate]; ok {
-			bwab.SetRate(ind1)
-		}
-
-		if ind2, ok := ssChao.Annotations[limit]; ok {
-			bwab.SetLimit(ind2)
-		}
-		if ind3, ok := ssChao.Annotations[buffer]; ok {
-			bwab.SetBuffer(ind3)
-		}
-		if ind4, ok := ssChao.Annotations[peakrate]; ok {
-			bwab.SetPeakRate(ind4)
-		}
-		if ind5, ok := ssChao.Annotations[minburst]; ok {
-			bwab.SetMinBurst(ind5)
-		}
-		tcParams.Bandwidth = bwab.Build()
-	}
 	ncb.SetTcParameter(*tcParams)
-
 	networkChao := ncb.Build()
 
 	return networkChao, nil
@@ -373,13 +363,7 @@ func (p *podChaosBuilder) SetAction(action string) PodChaosBuilder {
 }
 
 func (p *podChaosBuilder) SetDuration(duration *string) PodChaosBuilder {
-	if *duration == "" {
-		//todo: change to default
-		ret := "1m"
-		p.podChaos.Spec.Duration = &ret
-	} else {
-		p.podChaos.Spec.Duration = duration
-	}
+	p.podChaos.Spec.Duration = duration
 	return p
 }
 
@@ -438,7 +422,6 @@ func (n *netWorkChaosBuilder) SetPodSelector(selector *chaosmeshv1alpha1.PodSele
 }
 
 func (n *netWorkChaosBuilder) SetAction(action string) NetworkChaosBuilder {
-	//FIXME
 	if chaosmeshv1alpha1.NetworkChaosAction(action) == chaosmeshv1alpha1.BandwidthAction {
 		n.netWorkChaos.Spec.Action = chaosmeshv1alpha1.BandwidthAction
 	}
@@ -587,6 +570,7 @@ func (p *podSelectorBuilder) Build() *chaosmeshv1alpha1.PodSelector {
 }
 
 func DefaultPodChaos() *chaosmeshv1alpha1.PodChaos {
+	d := "1m"
 	return &chaosmeshv1alpha1.PodChaos{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "shardingsphere-proxy",
@@ -594,7 +578,8 @@ func DefaultPodChaos() *chaosmeshv1alpha1.PodChaos {
 			Labels:    map[string]string{},
 		},
 		Spec: chaosmeshv1alpha1.PodChaosSpec{
-			Action: chaosmeshv1alpha1.ContainerKillAction,
+			Action:   chaosmeshv1alpha1.ContainerKillAction,
+			Duration: &d,
 		},
 	}
 }

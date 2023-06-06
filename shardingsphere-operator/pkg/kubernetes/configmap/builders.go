@@ -117,7 +117,6 @@ func NewConfigMap(obj runtime.Object) *corev1.ConfigMap {
 	return &corev1.ConfigMap{}
 }
 
-// TODO: check if changed first, then decide if need to respawn the Pods
 // UpdateConfigMap returns a new ConfigMap
 func UpdateComputeNodeConfigMap(cn *v1alpha1.ComputeNode, cur *corev1.ConfigMap) *corev1.ConfigMap {
 	exp := &corev1.ConfigMap{}
