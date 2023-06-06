@@ -5,7 +5,7 @@ weight = 1
 chapter = true
 +++
 
-## What is ShardingSphere-on-Cloud?
+## What is ShardingSphere-on-Cloud ?
 
 The ShardingSphere-on-Cloud project is a collection of tools and best practices to take Apache ShardingSphere into the cloud. It helps users to transform any database into a distributed database system, and enhance it with sharding, elastic scaling, encryption features & more. 
 
