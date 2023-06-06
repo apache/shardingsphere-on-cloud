@@ -297,18 +297,36 @@ func updateInitContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment
 
 	for idx := range act.Spec.Template.Spec.InitContainers {
 		if act.Spec.Template.Spec.InitContainers[idx].Name == downloadMySQLConnectorJarContainerName {
-			for i := range act.Spec.Template.Spec.InitContainers[idx].Env {
-				if act.Spec.Template.Spec.InitContainers[idx].Env[i].Name == "VERSION" {
-					if act.Spec.Template.Spec.InitContainers[idx].Env[i].Value != proxy.Spec.MySQLDriver.Version {
-						act.Spec.Template.Spec.InitContainers[idx].Env[i].Value = proxy.Spec.MySQLDriver.Version
-					}
-				}
-			}
+			updateEnv(act.Spec.Template.Spec.InitContainers[idx].Env, proxy.Spec.MySQLDriver.Version)
 			exp = act.Spec.Template.Spec.InitContainers[idx].DeepCopy()
 		}
 	}
 
 	return exp
+}
+
+func updateEnv(envs []corev1.EnvVar, version string) {
+	for i := range envs {
+		if envs[i].Name == "VERSION" {
+			if envs[i].Value != version {
+				envs[i].Value = version
+			}
+		}
+	}
+}
+
+func setProbes(spec *v1alpha1.ProxySpec, act, exp *corev1.Container) {
+	if checkProbe(spec.LivenessProbe, act.LivenessProbe) != nil {
+		exp.LivenessProbe = spec.LivenessProbe
+	}
+
+	if checkProbe(spec.ReadinessProbe, act.ReadinessProbe) != nil {
+		exp.ReadinessProbe = spec.ReadinessProbe
+	}
+
+	if checkProbe(spec.StartupProbe, act.StartupProbe) != nil {
+		exp.StartupProbe = spec.StartupProbe
+	}
 }
 
 func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deployment) *corev1.Container {
@@ -328,17 +346,7 @@ func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deploym
 
 		exp.Resources = proxy.Spec.Resources
 
-		if setProbe(proxy.Spec.LivenessProbe, act.Spec.Template.Spec.Containers[idx].LivenessProbe) != nil {
-			exp.LivenessProbe = proxy.Spec.LivenessProbe
-		}
-
-		if setProbe(proxy.Spec.ReadinessProbe, act.Spec.Template.Spec.Containers[idx].ReadinessProbe) != nil {
-			exp.ReadinessProbe = proxy.Spec.ReadinessProbe
-		}
-
-		if setProbe(proxy.Spec.StartupProbe, act.Spec.Template.Spec.Containers[idx].StartupProbe) != nil {
-			exp.StartupProbe = proxy.Spec.StartupProbe
-		}
+		setProbes(&proxy.Spec, &act.Spec.Template.Spec.Containers[idx], exp)
 
 		for i := range act.Spec.Template.Spec.Containers[idx].Env {
 			if act.Spec.Template.Spec.Containers[idx].Env[i].Name == "PORT" {
@@ -354,7 +362,7 @@ func updateSSProxyContainer(proxy *v1alpha1.ShardingSphereProxy, act *v1.Deploym
 	return exp
 }
 
-func setProbe(proxy, act *corev1.Probe) *corev1.Probe {
+func checkProbe(proxy, act *corev1.Probe) *corev1.Probe {
 	if proxy != nil && !reflect.DeepEqual(act, proxy) {
 		return proxy
 	}
