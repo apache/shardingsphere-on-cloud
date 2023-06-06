@@ -229,6 +229,7 @@ func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error)
 		tcParams.Loss = &chaosmeshv1alpha1.LossSpec{
 			Loss: chao.Params.Loss.Loss,
 		}
+	case v1alpha1.Partition:
 	}
 
 	ncb.SetTcParameter(*tcParams)

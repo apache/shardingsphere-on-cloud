@@ -136,7 +136,7 @@ func MustInt32(s string) (int32, error) {
 }
 
 func MustInt64(s string) (int64, error) {
-	v, err := strconv.ParseInt(v, 10, 64)
+	v, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		return 0, err
 	}
