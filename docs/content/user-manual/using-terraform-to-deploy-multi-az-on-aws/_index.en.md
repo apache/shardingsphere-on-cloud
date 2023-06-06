@@ -1,7 +1,7 @@
 +++
-pre = "<b>4.5 </b>"
+pre = "<b>4.4 </b>"
 title = "Terraform Deploys ShardingSphere Cluster in Multiple AZs On AWS"
-weight = 5
+weight = 4
 chapter = true
 +++
 
