@@ -5,7 +5,7 @@ weight = 1
 chapter = true
 +++
 
-## 什么是 ShardingSphere-on-cloud?
+## 什么是 ShardingSphere-on-cloud ?
 
 ShardingSphere-on-Cloud 项目是面向 Apache ShardingSphere 的云上解决方案集合，帮助用户在云环境下利用 ShardingSphere 将任意数据库转换为分布式数据库，并通过数据分片、弹性伸缩、加密等能力对原有数据库进行增强。
 
