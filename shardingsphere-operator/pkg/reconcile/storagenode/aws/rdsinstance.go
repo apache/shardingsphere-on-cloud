@@ -174,15 +174,6 @@ func (c *RdsClient) GetInstancesByFilters(ctx context.Context, filters map[strin
 // DeleteInstance delete rds instance.
 // aws rds instance status doc: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/accessing-monitoring.html
 func (c *RdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
-	// TODO add more test case.
-	/* TODO set options to skip final snapshot and backup stuff depends on database class ClaimPolicy.
-	"error": "operation error RDS: DeleteDBInstance,
-	https response error StatusCode: 400,
-	RequestID: ae094e3c-d8f1-49ba-aed1-cb0618b3641d,
-	api error InvalidParameterCombination:
-	FinalDBSnapshotIdentifier is required unless SkipFinalSnapshot is specified."
-	*/
-
 	identifier, ok := node.Annotations[v1alpha1.AnnotationsInstanceIdentifier]
 	if !ok {
 		return errors.New("instance identifier is empty")

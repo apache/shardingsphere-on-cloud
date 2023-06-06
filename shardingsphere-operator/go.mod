@@ -8,7 +8,7 @@ require (
 	github.com/antlr/antlr4 v0.0.0-20181218183524-be58ebffde8e
 	github.com/chaos-mesh/chaos-mesh/api v0.0.0-20230517110555-afab5b4a7813
 	github.com/cloudnative-pg/cloudnative-pg v1.20.0
-	github.com/database-mesh/golang-sdk v0.0.0-20230605093335-916ac7abc788
+	github.com/database-mesh/golang-sdk v0.0.0-20230606100535-23037381e4fb
 	github.com/go-logr/logr v1.2.4
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0

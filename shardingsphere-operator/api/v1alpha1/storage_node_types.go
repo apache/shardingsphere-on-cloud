@@ -116,8 +116,16 @@ type StorageNode struct {
 type StorageNodeSpec struct {
 	// +kubebuilder:validation:Required
 	StorageProviderName string `json:"storageProviderName"`
-	// +optional
+	// +optional the default database name of the storage node.
+	// if not set, will NOT create database
 	Schema string `json:"schema"`
+	// +optional
+	// only for cluster provider like AWS RDS Cluster/ AWS Aurora Cluster
+	// The Default value is 1 for cluster provider
+	// will not be effective for single instance, instance will always be 1 for single instance
+	// Example: 2, means 2 instances in the cluster(1 primary + 1 reader)
+	// +kubebuilder:default=1
+	Replicas int32 `json:"replicas"`
 }
 
 // StorageNodeStatus defines the actual state of a set of storage units
