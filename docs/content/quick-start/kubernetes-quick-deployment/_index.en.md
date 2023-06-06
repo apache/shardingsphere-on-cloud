@@ -1,6 +1,6 @@
 +++
 pre = "<b>2.1 </b>"
-title = "ShardingSphere Helm Charts User Manual"
+title = "ShardingSphere Helm Charts Quick Start"
 weight = 1
 chapter = true
 +++

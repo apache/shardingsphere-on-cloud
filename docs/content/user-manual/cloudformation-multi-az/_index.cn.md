@@ -1,7 +1,7 @@
 +++
-pre = "<b>4.4 </b>"
+pre = "<b>4.3 </b>"
 title = "CloudFormation 部署多可用区 ShardingSphere Proxy 集群"
-weight = 4
+weight = 3
 chapter = true
 +++
 

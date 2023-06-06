@@ -1,4 +1,9 @@
-### ShardingSphereChaos说明文档
++++
+pre = "<b>3.1 </b>"
+title = "ShardingSphere Chaos 介绍"
+weight = 1
+chapter = true
++++
 
 #### 配置示例
 
