@@ -189,6 +189,8 @@ type MemoryStressParams struct {
 	Workers int `json:"workers,omitempty"`
 	//+optional
 	Consumption string `json:"consumption,omitempty"`
+}
+
 type PodKillParams struct {
 	// +optional
 	GracePeriod int64 `json:"gracePeriod,omitempty"`

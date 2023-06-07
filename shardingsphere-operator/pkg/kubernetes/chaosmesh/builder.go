@@ -102,7 +102,7 @@ func judgeCondition(condition map[chaosmeshv1alpha1.ChaosConditionType]bool, pha
 	return v1alpha1.Unknown
 }
 
-func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
+func NewPodChaos(ssChao *v1alpha1.Chaos) (PodChaos, error) {
 	chao := ssChao.Spec.PodChaos
 	if chao.Action == v1alpha1.MemoryStress || chao.Action == v1alpha1.CPUStress {
 		return NewStressChaos(ssChao)
@@ -110,8 +110,6 @@ func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 
 	pcb := NewPodChaosBuilder()
 	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
-
-	chao := ssChao.Spec.PodChaos
 	pcb.SetAction(string(chao.Action))
 
 	containerSelector := &chaosmeshv1alpha1.ContainerSelector{}
@@ -149,7 +147,7 @@ func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	return podChao, nil
 }
 
-func NewStressChaos(chaos *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
+func NewStressChaos(chaos *v1alpha1.Chaos) (PodChaos, error) {
 	sc := &chaosmeshv1alpha1.StressChaos{}
 	sc.Namespace = chaos.Namespace
 	sc.Name = chaos.Name
@@ -187,7 +185,7 @@ func NewStressChaos(chaos *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	return sc, nil
 }
 
-func setCPUStressParams(sschaos *v1alpha1.ShardingSphereChaos, chaos *chaosmeshv1alpha1.StressChaos) {
+func setCPUStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.StressChaos) {
 	cpu := chaosmeshv1alpha1.CPUStressor{
 		Stressor: chaosmeshv1alpha1.Stressor{
 			Workers: sschaos.Spec.PodChaos.Params.CPUStress.Cores,
@@ -199,8 +197,7 @@ func setCPUStressParams(sschaos *v1alpha1.ShardingSphereChaos, chaos *chaosmeshv
 	chaos.Spec.Duration = &sschaos.Spec.PodChaos.Params.CPUStress.Duration
 }
 
-func setMemoryStressParams(sschaos *v1alpha1.ShardingSphereChaos, chaos *chaosmeshv1alpha1.StressChaos) error {
-
+func setMemoryStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.StressChaos) error {
 	oom, err := strconv.Atoi(sschaos.Annotations[AnnoOOMScoreAdj])
 	memory := chaosmeshv1alpha1.MemoryStressor{
 		Stressor: chaosmeshv1alpha1.Stressor{
