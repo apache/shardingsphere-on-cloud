@@ -18,7 +18,10 @@
 package aws
 
 import (
+	"encoding/json"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/database-mesh/golang-sdk/aws"
+	"github.com/database-mesh/golang-sdk/aws/client/rds"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,5 +63,24 @@ var _ = Describe("validCreateInstanceParams", func() {
 			Expect(validCreateInstanceParams(node, &params)).To(BeNil())
 			Expect(params["masterUsername"]).To(Equal("test_test-"))
 		})
+	})
+})
+
+var _ = Describe("Test GetInstancesByFilters", func() {
+	It("should success", func() {
+		if region == "" || accessKey == "" || secretKey == "" {
+			Skip("Skip test create aurora cluster")
+		}
+		sess := aws.NewSessions().SetCredential(region, accessKey, secretKey).Build()
+		rdsClient := rds.NewService(sess[region])
+		awsClient := NewRdsClient(rdsClient)
+
+		filters := map[string][]string{
+			"db-cluster-id": {"storage-node-with-aurora-example-1"},
+		}
+		instances, err := awsClient.GetInstancesByFilters(ctx, filters)
+		Expect(err).To(BeNil())
+		d, _ := json.MarshalIndent(instances, "", "  ")
+		println(string(d))
 	})
 })

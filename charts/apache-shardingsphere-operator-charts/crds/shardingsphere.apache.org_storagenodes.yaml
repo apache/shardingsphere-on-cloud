@@ -66,12 +66,23 @@ spec:
             description: StorageNodeSpec defines the desired state of a set of storage
               units
             properties:
-              databaseClassName:
-                type: string
+              replicas:
+                default: 1
+                description: 'only for cluster provider like AWS RDS Cluster/ AWS
+                  Aurora Cluster The Default value is 1 for cluster provider will
+                  not be effective for single instance, instance will always be 1
+                  for single instance Example: 2, means 2 instances in the cluster(1
+                  primary + 1 reader)'
+                format: int32
+                type: integer
               schema:
+                description: if not set, will NOT create database
+                type: string
+              storageProviderName:
                 type: string
             required:
-            - databaseClassName
+            - schema
+            - storageProviderName
             type: object
           status:
             description: StorageNodeStatus defines the actual state of a set of storage

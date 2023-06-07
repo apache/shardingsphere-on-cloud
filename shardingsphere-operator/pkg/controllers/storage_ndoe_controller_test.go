@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -312,6 +311,9 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      deletedStorageNodeName,
 					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsInstanceIdentifier: defaultTestInstanceIdentifier,
+					},
 					Finalizers: []string{
 						FinalizerName,
 					},
@@ -1065,11 +1067,11 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 				},
 			}, nil).Times(1)
 
-			dsName, host, port, username, password := getDatasourceInfoFromCluster(storageNode, provider)
+			host, port, username, password := getDatasourceInfoFromCluster(storageNode, provider)
 
 			// mock shardingsphere
 			mockSS.EXPECT().CreateDatabase(gomock.Any()).Return(nil).Times(1)
-			mockSS.EXPECT().RegisterStorageUnit("test-logic-db", dsName, host, uint(port), "test-instance-db", username, password).Return(nil).Times(1)
+			mockSS.EXPECT().RegisterStorageUnit("test-logic-db", getDSName(storageNode), host, uint(port), "test-instance-db", username, password).Return(nil).Times(1)
 			mockSS.EXPECT().Close().Return(nil).Times(1)
 
 			_, err := reconciler.Reconcile(ctx, req)
@@ -1092,6 +1094,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 					Name:      snName,
 					Namespace: defaultTestNamespace,
 					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier:   "test-aws-aurora",
 						AnnotationKeyRegisterStorageUnitEnabled: "true",
 						AnnotationKeyLogicDatabaseName:          "test-logic-db",
 						v1alpha1.AnnotationsInstanceDBName:      "test-instance-db",
@@ -1143,6 +1146,10 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 				PrimaryEndpoint:     "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
 				Port:                int32(3306),
 				Status:              dbmesh_rds.DBClusterStatusAvailable,
+				DBClusterMembers: []dbmesh_rds.ClusterMember{
+					{DBInstanceIdentifier: "test-aws-aurora-instance-0"},
+					{DBInstanceIdentifier: "test-aws-aurora-instance-1"},
+				},
 			}, nil).Times(2)
 			// mock get instances of aws aurora are available
 			mockAws.EXPECT().GetInstancesByFilters(gomock.Any(), gomock.Any()).Return([]*dbmesh_rds.DescInstance{
@@ -1151,6 +1158,11 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 					DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
 					Endpoint:             dbmesh_rds.Endpoint{Address: "test-aws-aurora-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
 				},
+				{
+					DBInstanceIdentifier: "test-aws-aurora-instance-1",
+					DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
+					Endpoint:             dbmesh_rds.Endpoint{Address: "test-aws-aurora-2.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+				},
 			}, nil).Times(2)
 
 			_, err := reconciler.Reconcile(ctx, req)
@@ -1158,7 +1170,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 
 			Expect(fakeClient.Delete(ctx, storageNode)).Should(Succeed())
 			// mock shardingsphere
-			mockSS.EXPECT().UnRegisterStorageUnit("test-logic-db", fmt.Sprintf("ds_%s", storageNode.GetName())).Return(nil).Times(1)
+			mockSS.EXPECT().UnRegisterStorageUnit("test-logic-db", getDSName(storageNode)).Return(nil).Times(1)
 			mockSS.EXPECT().Close().Return(nil).Times(1)
 
 			// mock delete aws aurora
