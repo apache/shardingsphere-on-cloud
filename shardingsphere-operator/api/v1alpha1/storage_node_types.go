@@ -120,10 +120,9 @@ type StorageNodeSpec struct {
 	// if not set, will NOT create database
 	Schema string `json:"schema"`
 	// +optional
-	// only for cluster provider like AWS RDS Cluster/ AWS Aurora Cluster
-	// The Default value is 1 for cluster provider
-	// will not be effective for single instance, instance will always be 1 for single instance
-	// Example: 2, means 2 instances in the cluster(1 primary + 1 reader)
+	// Only for aws aurora storage provider right now. And the default value is 1.
+	// aws rds instance is always 1.
+	// aws rds cluster will auto create 3 instances(1 primary and 2 replicas).
 	// +kubebuilder:default=1
 	Replicas int32 `json:"replicas"`
 }

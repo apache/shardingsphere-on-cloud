@@ -120,8 +120,8 @@ func (c *RdsClient) DeleteAuroraCluster(ctx context.Context, node *v1alpha1.Stor
 	case v1alpha1.StorageReclaimPolicyRetain:
 		aurora.SetDeleteAutomateBackups(false).SetSkipFinalSnapshot(true)
 	case v1alpha1.StorageReclaimPolicyDeleteWithFinalSnapshot:
+		// TODO set final snapshot name
 		aurora.SetDeleteAutomateBackups(true).SetSkipFinalSnapshot(false)
 	}
-
 	return aurora.Delete(ctx)
 }

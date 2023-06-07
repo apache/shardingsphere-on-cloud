@@ -39,6 +39,10 @@ type IRdsClient interface {
 	GetInstancesByFilters(ctx context.Context, filters map[string][]string) (instances []*rds.DescInstance, err error)
 	DeleteInstance(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error
 
+	CreateRDSCluster(ctx context.Context, node *v1alpha1.StorageNode, params map[string]string) error
+	GetRDSCluster(ctx context.Context, node *v1alpha1.StorageNode) (cluster *rds.DescCluster, err error)
+	DeleteRDSCluster(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error
+
 	CreateAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, params map[string]string) error
 	GetAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode) (cluster *rds.DescCluster, err error)
 	DeleteAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error

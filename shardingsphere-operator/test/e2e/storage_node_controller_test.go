@@ -324,7 +324,7 @@ var _ = Describe("StorageNode Controller Suite Test For AWS Aurora Cluster", fun
 			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetAuroraCluster", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescCluster, error) {
 				return &dbmesh_rds.DescCluster{
 					DBClusterIdentifier: clusterIdentifier,
-					Status:              dbmesh_rds.DBClusterStatusCreating,
+					Status:              string(dbmesh_rds.DBClusterStatusCreating),
 					PrimaryEndpoint:     "test-primary-endpoint",
 					ReaderEndpoint:      "test-reader-endpoint",
 					Port:                3306,
@@ -359,7 +359,7 @@ var _ = Describe("StorageNode Controller Suite Test For AWS Aurora Cluster", fun
 				newSN := &v1alpha1.StorageNode{}
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: snName, Namespace: "default"}, newSN)).Should(Succeed())
 				return newSN.Status.Cluster.Status
-			}, time.Second*10, time.Millisecond*250).Should(Equal(dbmesh_rds.DBClusterStatusCreating))
+			}, time.Second*10, time.Millisecond*250).Should(Equal(string(dbmesh_rds.DBClusterStatusCreating)))
 		})
 
 		It("should success when cluster is available", func() {
@@ -367,7 +367,7 @@ var _ = Describe("StorageNode Controller Suite Test For AWS Aurora Cluster", fun
 			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetAuroraCluster", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescCluster, error) {
 				return &dbmesh_rds.DescCluster{
 					DBClusterIdentifier: clusterIdentifier,
-					Status:              dbmesh_rds.DBClusterStatusAvailable,
+					Status:              string(dbmesh_rds.DBClusterStatusAvailable),
 					PrimaryEndpoint:     "test-primary-endpoint",
 					ReaderEndpoint:      "test-reader-endpoint",
 					Port:                3306,

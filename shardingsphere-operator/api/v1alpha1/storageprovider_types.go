@@ -25,15 +25,16 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 const (
-	AnnotationsVPCSecurityGroupIds = "storageproviders.shardingsphere.apache.org/vpc-security-group-ids"
-	AnnotationsSubnetGroupName     = "storageproviders.shardingsphere.apache.org/vpc-subnet-group-name"
-	AnnotationsAvailabilityZones   = "storageproviders.shardingsphere.apache.org/availability-zones"
-	AnnotationsClusterIdentifier   = "storageproviders.shardingsphere.apache.org/cluster-identifier"
-	AnnotationsInstanceIdentifier  = "storageproviders.shardingsphere.apache.org/instance-identifier"
-	AnnotationsInstanceDBName      = "storageproviders.shardingsphere.apache.org/instance-db-name"
-	AnnotationsSnapshotIdentifier  = "storageproviders.shardingsphere.apache.org/snapshot-identifier"
-	AnnotationsMasterUsername      = "storageproviders.shardingsphere.apache.org/master-username"
-	AnnotationsMasterUserPassword  = "storageproviders.shardingsphere.apache.org/master-user-password"
+	AnnotationsVPCSecurityGroupIds     = "storageproviders.shardingsphere.apache.org/vpc-security-group-ids"
+	AnnotationsSubnetGroupName         = "storageproviders.shardingsphere.apache.org/vpc-subnet-group-name"
+	AnnotationsAvailabilityZones       = "storageproviders.shardingsphere.apache.org/availability-zones"
+	AnnotationsClusterIdentifier       = "storageproviders.shardingsphere.apache.org/cluster-identifier"
+	AnnotationsInstanceIdentifier      = "storageproviders.shardingsphere.apache.org/instance-identifier"
+	AnnotationsInstanceDBName          = "storageproviders.shardingsphere.apache.org/instance-db-name"
+	AnnotationsSnapshotIdentifier      = "storageproviders.shardingsphere.apache.org/snapshot-identifier"
+	AnnotationsMasterUsername          = "storageproviders.shardingsphere.apache.org/master-username"
+	AnnotationsMasterUserPassword      = "storageproviders.shardingsphere.apache.org/master-user-password"
+	AnnotationsFinalSnapshotIdentifier = "storageproviders.shardingsphere.apache.org/final-snapshot-identifier"
 
 	ProvisionerAWSRDSInstance = "storageproviders.shardingsphere.apache.org/aws-rds-instance"
 	ProvisionerAWSRDSCluster  = "storageproviders.shardingsphere.apache.org/aws-rds-cluster"

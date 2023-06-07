@@ -799,7 +799,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 				PrimaryEndpoint:     "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
 				ReaderEndpoint:      "test-aws-aurora.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com",
 				Port:                3306,
-				Status:              dbmesh_rds.DBClusterStatusAvailable,
+				Status:              string(dbmesh_rds.DBClusterStatusAvailable),
 			}
 			descInstance := &dbmesh_rds.DescInstance{
 				DBInstanceIdentifier: "test-aws-aurora-1",
@@ -850,7 +850,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 				Status: v1alpha1.StorageNodeStatus{
 					Phase: v1alpha1.StorageNodePhaseReady,
 					Cluster: v1alpha1.ClusterStatus{
-						Status:          dbmesh_rds.DBClusterStatusAvailable,
+						Status:          string(dbmesh_rds.DBClusterStatusAvailable),
 						PrimaryEndpoint: v1alpha1.Endpoint{Address: "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
 						ReaderEndpoints: []v1alpha1.Endpoint{{Address: "test-aws-aurora.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306}},
 					},
@@ -870,7 +870,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 				PrimaryEndpoint:     "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
 				ReaderEndpoint:      "test-aws-aurora.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com",
 				Port:                3306,
-				Status:              dbmesh_rds.DBClusterStatusAvailable,
+				Status:              string(dbmesh_rds.DBClusterStatusAvailable),
 			}
 
 			descInstance := &dbmesh_rds.DescInstance{
@@ -924,7 +924,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 				Status: v1alpha1.StorageNodeStatus{
 					Phase: v1alpha1.StorageNodePhaseDeleting,
 					Cluster: v1alpha1.ClusterStatus{
-						Status:          dbmesh_rds.DBClusterStatusDeleting,
+						Status:          string(dbmesh_rds.DBClusterStatusDeleting),
 						PrimaryEndpoint: v1alpha1.Endpoint{Address: "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
 						ReaderEndpoints: []v1alpha1.Endpoint{{Address: "test-aws-aurora.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306}},
 					},
@@ -1007,7 +1007,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 				Status: v1alpha1.StorageNodeStatus{
 					Phase: v1alpha1.StorageNodePhaseReady,
 					Cluster: v1alpha1.ClusterStatus{
-						Status:          dbmesh_rds.DBClusterStatusAvailable,
+						Status:          string(dbmesh_rds.DBClusterStatusAvailable),
 						PrimaryEndpoint: v1alpha1.Endpoint{Address: "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
 						ReaderEndpoints: []v1alpha1.Endpoint{{Address: "test-aws-aurora.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306}},
 					},
@@ -1056,7 +1056,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 				DBClusterIdentifier: "test-aws-aurora",
 				PrimaryEndpoint:     "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
 				Port:                int32(3306),
-				Status:              dbmesh_rds.DBClusterStatusAvailable,
+				Status:              string(dbmesh_rds.DBClusterStatusAvailable),
 			}, nil).Times(1)
 			// mock get instances of aws aurora are available
 			mockAws.EXPECT().GetInstancesByFilters(gomock.Any(), gomock.Any()).Return([]*dbmesh_rds.DescInstance{
@@ -1145,7 +1145,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 				DBClusterIdentifier: "test-aws-aurora",
 				PrimaryEndpoint:     "test-aws-aurora.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
 				Port:                int32(3306),
-				Status:              dbmesh_rds.DBClusterStatusAvailable,
+				Status:              string(dbmesh_rds.DBClusterStatusAvailable),
 				DBClusterMembers: []dbmesh_rds.ClusterMember{
 					{DBInstanceIdentifier: "test-aws-aurora-instance-0"},
 					{DBInstanceIdentifier: "test-aws-aurora-instance-1"},
@@ -1183,5 +1183,455 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 			Expect(storageNode.Status.Registered).To(BeFalse())
 		})
 	})
+})
 
+var _ = Describe("StorageNode Controller Mock Test For AWS RDS Cluster", func() {
+	var provider *v1alpha1.StorageProvider
+	var providerName = "aws-rds-cluster"
+	BeforeEach(func() {
+		provider = &v1alpha1.StorageProvider{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: providerName,
+			},
+			Spec: v1alpha1.StorageProviderSpec{
+				Provisioner: v1alpha1.ProvisionerAWSRDSCluster,
+				Parameters: map[string]string{
+					"engine":             "mysql",
+					"engineVersion":      "5.7",
+					"masterUsername":     "root",
+					"masterUserPassword": "root",
+					"allocatedStorage":   "20",
+				},
+			},
+		}
+		Expect(fakeClient.Create(ctx, provider)).Should(Succeed())
+
+		// mock aws client
+		// mock aws rds client
+		mockCtrl = gomock.NewController(GinkgoT())
+		mockAws = mock_aws.NewMockIRdsClient(mockCtrl)
+		monkey.Patch(aws.NewRdsClient, func(rds dbmesh_rds.RDS) aws.IRdsClient {
+			return mockAws
+		})
+		mockSS = mock_shardingsphere.NewMockIServer(mockCtrl)
+		monkey.Patch(shardingsphere.NewServer, func(_, _ string, _ uint, _, _ string) (shardingsphere.IServer, error) {
+			return mockSS, nil
+		})
+	})
+
+	AfterEach(func() {
+		mockCtrl.Finish()
+		monkey.UnpatchAll()
+	})
+
+	Context("reconcile storage node", func() {
+		It("should success when aws rds cluster is not exits", func() {
+			name := "test-aws-rds-cluster-not-exists"
+			namespacedName := types.NamespacedName{
+				Name:      name,
+				Namespace: defaultTestNamespace,
+			}
+			storageNode := v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier: "test-aws-rds-cluster",
+					},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: providerName,
+				},
+			}
+			Expect(fakeClient.Create(ctx, &storageNode)).Should(Succeed())
+
+			descCluster := &dbmesh_rds.DescCluster{
+				DBClusterIdentifier: "test-aws-rds-cluster",
+				PrimaryEndpoint:     "test-aws-rds-cluster.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
+				ReaderEndpoint:      "test-aws-rds-cluster.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com",
+				Port:                3306,
+				Status:              string(dbmesh_rds.DBClusterStatusAvailable),
+			}
+			descInstance := &dbmesh_rds.DescInstance{
+				DBInstanceIdentifier: "test-aws-rds-cluster-instance-1",
+				DBClusterIdentifier:  "test-aws-rds-cluster",
+				Endpoint: dbmesh_rds.Endpoint{
+					Address: "test-aws-rds-cluster-instance-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
+					Port:    3306,
+				},
+				DBInstanceStatus: dbmesh_rds.DBInstanceStatusAvailable,
+			}
+
+			// mock aws rds cluster is not exist
+			mockAws.EXPECT().GetRDSCluster(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+			// mock create aws aurora cluster
+			mockAws.EXPECT().CreateRDSCluster(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			// mock aws aurora cluster is created
+			mockAws.EXPECT().GetRDSCluster(gomock.Any(), gomock.Any()).Return(descCluster, nil).Times(1)
+			// mock aws instance is created
+			mockAws.EXPECT().GetInstancesByFilters(gomock.Any(), gomock.Any()).Return([]*dbmesh_rds.DescInstance{descInstance}, nil).Times(1)
+
+			req := ctrl.Request{NamespacedName: namespacedName}
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+			sn := &v1alpha1.StorageNode{}
+			Expect(fakeClient.Get(ctx, namespacedName, sn)).Should(Succeed())
+			Expect(sn.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseReady))
+		})
+
+		It("should success when storage node been delete", func() {
+			name := "test-aws-rds-cluster-deleted"
+			namespacedName := types.NamespacedName{
+				Name:      name,
+				Namespace: defaultTestNamespace,
+			}
+			req := ctrl.Request{NamespacedName: namespacedName}
+			storageNode := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier: "test-aws-rds-cluster",
+					},
+					Finalizers: []string{FinalizerName},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: providerName,
+				},
+				Status: v1alpha1.StorageNodeStatus{
+					Phase: v1alpha1.StorageNodePhaseReady,
+					Cluster: v1alpha1.ClusterStatus{
+						Status:          string(dbmesh_rds.DBClusterStatusAvailable),
+						PrimaryEndpoint: v1alpha1.Endpoint{Address: "test-aws-rds-cluster.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+						ReaderEndpoints: []v1alpha1.Endpoint{{Address: "test-aws-rds-cluster.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306}},
+					},
+					Instances: []v1alpha1.InstanceStatus{
+						{
+							Status:   string(dbmesh_rds.DBInstanceStatusAvailable),
+							Endpoint: v1alpha1.Endpoint{Address: "test-aws-rds-cluster-instance-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+						},
+					},
+				},
+			}
+
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
+
+			descCluster := &dbmesh_rds.DescCluster{
+				DBClusterIdentifier: "test-aws-rds-cluster",
+				PrimaryEndpoint:     "test-aws-rds-cluster.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
+				ReaderEndpoint:      "test-aws-rds-cluster.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com",
+				Port:                3306,
+				Status:              string(dbmesh_rds.DBClusterStatusAvailable),
+			}
+
+			descInstance := &dbmesh_rds.DescInstance{
+				DBInstanceIdentifier: "test-aws-rds-cluster-1",
+				DBClusterIdentifier:  "test-aws-rds-cluster",
+				Endpoint: dbmesh_rds.Endpoint{
+					Address: "test-aws-rds-cluster-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
+					Port:    3306,
+				},
+				DBInstanceStatus: dbmesh_rds.DBInstanceStatusAvailable,
+			}
+
+			Expect(fakeClient.Delete(ctx, storageNode)).Should(Succeed())
+
+			// mock aws rds cluster is exists
+			mockAws.EXPECT().GetRDSCluster(gomock.Any(), gomock.Any()).Return(descCluster, nil).Times(1)
+			// mock get instances of aws rds cluster
+			mockAws.EXPECT().GetInstancesByFilters(gomock.Any(), gomock.Any()).Return([]*dbmesh_rds.DescInstance{descInstance}, nil).Times(1)
+			// mock delete aws rds cluster
+			mockAws.EXPECT().DeleteRDSCluster(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+
+			Expect(fakeClient.Get(ctx, namespacedName, storageNode)).Should(Succeed())
+			Expect(storageNode.DeletionTimestamp).NotTo(BeNil())
+			Expect(storageNode.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseDeleting))
+		})
+
+		It("should be success when storage node is deleting", func() {
+			name := "test-aws-rds-cluster-deleting"
+			namespacedName := types.NamespacedName{
+				Name:      name,
+				Namespace: defaultTestNamespace,
+			}
+			req := ctrl.Request{NamespacedName: namespacedName}
+			deletionTimestamp := metav1.Now()
+			storageNode := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier: "test-aws-rds-cluster",
+					},
+					Finalizers:        []string{FinalizerName},
+					DeletionTimestamp: &deletionTimestamp,
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: providerName,
+				},
+				Status: v1alpha1.StorageNodeStatus{
+					Phase: v1alpha1.StorageNodePhaseDeleting,
+					Cluster: v1alpha1.ClusterStatus{
+						Status:          string(dbmesh_rds.DBClusterStatusDeleting),
+						PrimaryEndpoint: v1alpha1.Endpoint{Address: "test-aws-rds-cluster.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+						ReaderEndpoints: []v1alpha1.Endpoint{{Address: "test-aws-rds-cluster.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306}},
+					},
+					Instances: []v1alpha1.InstanceStatus{
+						{
+							Status:   string(dbmesh_rds.DBInstanceStatusDeleting),
+							Endpoint: v1alpha1.Endpoint{Address: "test-aws-rds-cluster-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+						},
+					},
+				},
+			}
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
+
+			// mock aws rds cluster is not exists
+			mockAws.EXPECT().GetRDSCluster(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+			// mock get instances of aws rds cluster is not exists
+			mockAws.EXPECT().GetInstancesByFilters(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(fakeClient.Get(ctx, namespacedName, storageNode)).Should(Succeed())
+			Expect(storageNode.Status.Phase).To(Equal(v1alpha1.StorageNodePhaseDeleteComplete))
+		})
+
+		It("should be success when storage node is delete completed", func() {
+			name := "test-aws-rds-cluster-delete-completed"
+			namespacedName := types.NamespacedName{
+				Name:      name,
+				Namespace: defaultTestNamespace,
+			}
+			req := ctrl.Request{NamespacedName: namespacedName}
+			deletionTimestamp := metav1.Now()
+			storageNode := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier: "test-aws-rds-cluster",
+					},
+					Finalizers:        []string{FinalizerName},
+					DeletionTimestamp: &deletionTimestamp,
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: providerName,
+				},
+				Status: v1alpha1.StorageNodeStatus{
+					Phase: v1alpha1.StorageNodePhaseDeleteComplete,
+				},
+			}
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
+
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+			err = fakeClient.Get(ctx, namespacedName, storageNode)
+			Expect(apierrors.IsNotFound(err)).To(BeTrue())
+		})
+
+		It("should be success when storage node is ready for register", func() {
+			name := "test-aws-rds-cluster-ready-for-register"
+			namespacedName := types.NamespacedName{
+				Name:      name,
+				Namespace: defaultTestNamespace,
+			}
+			req := ctrl.Request{NamespacedName: namespacedName}
+			storageNode := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier:   "test-aws-rds-cluster",
+						AnnotationKeyRegisterStorageUnitEnabled: "true",
+						AnnotationKeyLogicDatabaseName:          "test-logic-db",
+						v1alpha1.AnnotationsInstanceDBName:      "test-instance-db",
+						AnnotationKeyComputeNodeName:            "test-compute-node",
+					},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: providerName,
+				},
+				Status: v1alpha1.StorageNodeStatus{
+					Phase: v1alpha1.StorageNodePhaseReady,
+					Cluster: v1alpha1.ClusterStatus{
+						Status:          string(dbmesh_rds.DBClusterStatusAvailable),
+						PrimaryEndpoint: v1alpha1.Endpoint{Address: "test-aws-rds-cluster.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+						ReaderEndpoints: []v1alpha1.Endpoint{{Address: "test-aws-rds-cluster.cluster-ro-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306}},
+					},
+					Instances: []v1alpha1.InstanceStatus{
+						{
+							Status:   string(dbmesh_rds.DBInstanceStatusAvailable),
+							Endpoint: v1alpha1.Endpoint{Address: "test-aws-rds-cluster-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+						},
+					},
+				},
+			}
+			cn := &v1alpha1.ComputeNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-compute-node",
+					Namespace: defaultTestNamespace,
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					Bootstrap: v1alpha1.BootstrapConfig{
+						ServerConfig: v1alpha1.ServerConfig{
+							Authority: v1alpha1.ComputeNodeAuthority{
+								Users: []v1alpha1.ComputeNodeUser{{User: "test-user", Password: "test-password"}},
+							},
+							Mode:  v1alpha1.ComputeNodeServerMode{},
+							Props: nil,
+						},
+					},
+				},
+			}
+			svc := &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-compute-node",
+					Namespace: defaultTestNamespace,
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{Name: "http", Protocol: "TCP", Port: 3307},
+					},
+				},
+			}
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, cn)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, svc)).Should(Succeed())
+
+			// mock aws rds cluster is available
+			mockAws.EXPECT().GetRDSCluster(gomock.Any(), gomock.Any()).Return(&dbmesh_rds.DescCluster{
+				DBClusterIdentifier: "test-aws-rds-cluster",
+				PrimaryEndpoint:     "test-aws-rds-cluster.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
+				Port:                int32(3306),
+				Status:              string(dbmesh_rds.DBClusterStatusAvailable),
+			}, nil).Times(1)
+			// mock get instances of aws aurora are available
+			mockAws.EXPECT().GetInstancesByFilters(gomock.Any(), gomock.Any()).Return([]*dbmesh_rds.DescInstance{
+				{
+					DBInstanceIdentifier: "test-aws-rds-cluster-instance-0",
+					DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
+					Endpoint:             dbmesh_rds.Endpoint{Address: "test-aws-rds-cluster-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+				},
+			}, nil).Times(1)
+
+			host, port, username, password := getDatasourceInfoFromCluster(storageNode, provider)
+
+			// mock shardingsphere
+			mockSS.EXPECT().CreateDatabase(gomock.Any()).Return(nil).Times(1)
+			mockSS.EXPECT().RegisterStorageUnit("test-logic-db", getDSName(storageNode), host, uint(port), "test-instance-db", username, password).Return(nil).Times(1)
+			mockSS.EXPECT().Close().Return(nil).Times(1)
+
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+
+			err = fakeClient.Get(ctx, namespacedName, storageNode)
+			Expect(storageNode.Status.Registered).To(BeTrue())
+		})
+
+		It("should be success unregistered when storage node is deleting", func() {
+			snName := "test-aws-rds-cluster-unregistered"
+			namespacedName := types.NamespacedName{
+				Name:      snName,
+				Namespace: defaultTestNamespace,
+			}
+			req := ctrl.Request{NamespacedName: namespacedName}
+
+			storageNode := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      snName,
+					Namespace: defaultTestNamespace,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier:   "test-aws-rds-cluster",
+						AnnotationKeyRegisterStorageUnitEnabled: "true",
+						AnnotationKeyLogicDatabaseName:          "test-logic-db",
+						v1alpha1.AnnotationsInstanceDBName:      "test-instance-db",
+						AnnotationKeyComputeNodeName:            "test-compute-node",
+					},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: providerName,
+					Replicas:            2,
+				},
+				Status: v1alpha1.StorageNodeStatus{
+					Phase:      v1alpha1.StorageNodePhaseReady,
+					Registered: true,
+				},
+			}
+			cn := &v1alpha1.ComputeNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-compute-node",
+					Namespace: defaultTestNamespace,
+				},
+				Spec: v1alpha1.ComputeNodeSpec{
+					Bootstrap: v1alpha1.BootstrapConfig{
+						ServerConfig: v1alpha1.ServerConfig{
+							Authority: v1alpha1.ComputeNodeAuthority{
+								Users: []v1alpha1.ComputeNodeUser{{User: "test-user", Password: "test-password"}},
+							},
+						},
+					},
+				},
+			}
+			svc := &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-compute-node",
+					Namespace: defaultTestNamespace,
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{Name: "http", Protocol: "TCP", Port: 3307},
+					},
+				},
+			}
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, cn)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, svc)).Should(Succeed())
+
+			// mock aws rds cluster is available
+			mockAws.EXPECT().GetRDSCluster(gomock.Any(), gomock.Any()).Return(&dbmesh_rds.DescCluster{
+				DBClusterIdentifier: "test-aws-rds-cluster",
+				PrimaryEndpoint:     "test-aws-rds-cluster.cluster-xxxxxx.us-east-1.rds.amazonaws.com",
+				Port:                int32(3306),
+				Status:              string(dbmesh_rds.DBClusterStatusAvailable),
+				DBClusterMembers: []dbmesh_rds.ClusterMember{
+					{DBInstanceIdentifier: "test-aws-rds-cluster-instance-0"},
+					{DBInstanceIdentifier: "test-aws-rds-cluster-instance-1"},
+				},
+			}, nil).Times(2)
+			// mock get instances of aws aurora are available
+			mockAws.EXPECT().GetInstancesByFilters(gomock.Any(), gomock.Any()).Return([]*dbmesh_rds.DescInstance{
+				{
+					DBInstanceIdentifier: "test-aws-rds-cluster-instance-0",
+					DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
+					Endpoint:             dbmesh_rds.Endpoint{Address: "test-aws-rds-cluster-1.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+				},
+				{
+					DBInstanceIdentifier: "test-aws-rds-cluster-instance-1",
+					DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
+					Endpoint:             dbmesh_rds.Endpoint{Address: "test-aws-rds-cluster-2.cluster-xxxxxx.us-east-1.rds.amazonaws.com", Port: 3306},
+				},
+			}, nil).Times(2)
+
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+
+			Expect(fakeClient.Delete(ctx, storageNode)).Should(Succeed())
+			// mock shardingsphere
+			mockSS.EXPECT().UnRegisterStorageUnit("test-logic-db", getDSName(storageNode)).Return(nil).Times(1)
+			mockSS.EXPECT().Close().Return(nil).Times(1)
+
+			// mock delete aws rds cluster
+			mockAws.EXPECT().DeleteRDSCluster(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+			_, err = reconciler.Reconcile(ctx, req)
+			Expect(err).To(BeNil())
+
+			err = fakeClient.Get(ctx, namespacedName, storageNode)
+			Expect(storageNode.Status.Registered).To(BeFalse())
+		})
+	})
 })
