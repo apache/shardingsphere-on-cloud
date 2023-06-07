@@ -57,8 +57,8 @@ type chaosClient struct {
 
 // Builder build Chaos from different parameters
 type Builder interface {
-	NewPodChaos(context.Context, *v1alpha1.ShardingSphereChaos) PodChaos
-	NewNetworkChaos(context.Context, *v1alpha1.ShardingSphereChaos) NetworkChaos
+	NewPodChaos(context.Context, *v1alpha1.Chaos) PodChaos
+	NewNetworkChaos(context.Context, *v1alpha1.Chaos) NetworkChaos
 }
 
 // Getter get Chaos from different parameters
@@ -69,12 +69,12 @@ type Getter interface {
 
 // Setter set Chaos from different parameters
 type Setter interface {
-	CreatePodChaos(context.Context, *v1alpha1.ShardingSphereChaos) error
-	UpdatePodChaos(context.Context, PodChaos, *v1alpha1.ShardingSphereChaos) error
+	CreatePodChaos(context.Context, *v1alpha1.Chaos) error
+	UpdatePodChaos(context.Context, PodChaos, *v1alpha1.Chaos) error
 	DeletePodChaos(context.Context, PodChaos) error
 
-	CreateNetworkChaos(context.Context, *v1alpha1.ShardingSphereChaos) error
-	UpdateNetworkChaos(context.Context, NetworkChaos, *v1alpha1.ShardingSphereChaos) error
+	CreateNetworkChaos(context.Context, *v1alpha1.Chaos) error
+	UpdateNetworkChaos(context.Context, NetworkChaos, *v1alpha1.Chaos) error
 	DeleteNetworkChaos(context.Context, NetworkChaos) error
 }
 
@@ -112,12 +112,12 @@ func (cg getter) GetNetworkChaosByNamespacedName(ctx context.Context, namespaced
 
 type builder struct{}
 
-func (blder builder) NewPodChaos(ctx context.Context, sschaos *v1alpha1.ShardingSphereChaos) PodChaos {
+func (blder builder) NewPodChaos(ctx context.Context, sschaos *v1alpha1.Chaos) PodChaos {
 	pc, _ := NewPodChaos(sschaos)
 	return pc
 }
 
-func (blder builder) NewNetworkChaos(ctx context.Context, sschaos *v1alpha1.ShardingSphereChaos) NetworkChaos {
+func (blder builder) NewNetworkChaos(ctx context.Context, sschaos *v1alpha1.Chaos) NetworkChaos {
 	nc, _ := NewNetworkChaos(sschaos)
 	return nc
 }
@@ -127,7 +127,7 @@ type setter struct {
 }
 
 // CreatePodChaos creates a new pod chaos
-func (cs setter) CreatePodChaos(ctx context.Context, sschaos *v1alpha1.ShardingSphereChaos) error {
+func (cs setter) CreatePodChaos(ctx context.Context, sschaos *v1alpha1.Chaos) error {
 	pc, err := NewPodChaos(sschaos)
 	if err != nil {
 		return err
@@ -136,7 +136,7 @@ func (cs setter) CreatePodChaos(ctx context.Context, sschaos *v1alpha1.ShardingS
 }
 
 // UpdatePodChaos updates a pod chaos
-func (cs setter) UpdatePodChaos(ctx context.Context, podChaos PodChaos, sschaos *v1alpha1.ShardingSphereChaos) error {
+func (cs setter) UpdatePodChaos(ctx context.Context, podChaos PodChaos, sschaos *v1alpha1.Chaos) error {
 	pc, err := NewPodChaos(sschaos)
 	if err != nil {
 		return err
@@ -171,7 +171,7 @@ func (cs setter) DeletePodChaos(ctx context.Context, chao PodChaos) error {
 }
 
 // CreateNetworkChaos creates a new network chaos
-func (cs setter) CreateNetworkChaos(ctx context.Context, sschaos *v1alpha1.ShardingSphereChaos) error {
+func (cs setter) CreateNetworkChaos(ctx context.Context, sschaos *v1alpha1.Chaos) error {
 	nc, err := NewNetworkChaos(sschaos)
 	if err != nil {
 		return err
@@ -180,7 +180,7 @@ func (cs setter) CreateNetworkChaos(ctx context.Context, sschaos *v1alpha1.Shard
 }
 
 // UpdateNetworkChaos updates a network chaos
-func (cs setter) UpdateNetworkChaos(ctx context.Context, networkChaos NetworkChaos, sschaos *v1alpha1.ShardingSphereChaos) error {
+func (cs setter) UpdateNetworkChaos(ctx context.Context, networkChaos NetworkChaos, sschaos *v1alpha1.Chaos) error {
 	pc, err := NewNetworkChaos(sschaos)
 	if err != nil {
 		return err

@@ -63,7 +63,7 @@ func MakeJobName(name string, requirement JobType) string {
 	return fmt.Sprintf("%s-%s", name, string(requirement))
 }
 
-func NewJob(ssChaos *v1alpha1.ShardingSphereChaos, requirement JobType) (*v1.Job, error) {
+func NewJob(ssChaos *v1alpha1.Chaos, requirement JobType) (*v1.Job, error) {
 	jbd := NewJobBuilder()
 	jbd.SetNamespace(ssChaos.Namespace).SetLabels(ssChaos.Labels).SetName(MakeJobName(ssChaos.Name, requirement))
 
@@ -143,7 +143,7 @@ func MustInt64(s string) (int64, error) {
 	return int64(v), nil
 }
 
-func IsJobChanged(ssChaos *v1alpha1.ShardingSphereChaos, requirement JobType, cur *v1.Job) (bool, error) {
+func IsJobChanged(ssChaos *v1alpha1.Chaos, requirement JobType, cur *v1.Job) (bool, error) {
 	now, err := NewJob(ssChaos, requirement)
 	if err != nil {
 		return false, err

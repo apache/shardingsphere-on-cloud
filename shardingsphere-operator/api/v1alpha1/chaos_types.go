@@ -22,28 +22,29 @@ import (
 )
 
 // +kubebuilder:object:root=true
-// ShardingSphereChaosList contains a list of ShardingSphereChaos
-type ShardingSphereChaosList struct {
+// ChaosList contains a list of Chaos
+type ChaosList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ShardingSphereChaos `json:"items"`
+	Items           []Chaos `json:"items"`
 }
 
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// ShardingSphereChaos defines a chaos test case for the ShardingSphere Proxy cluster
-type ShardingSphereChaos struct {
+// Chaos defines a chaos test case for the ShardingSphere Proxy cluster
+type Chaos struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              ShardingSphereChaosSpec   `json:"spec,omitempty"`
-	Status            ShardingSphereChaosStatus `json:"status,omitempty"`
+	Spec              ChaosSpec   `json:"spec,omitempty"`
+	Status            ChaosStatus `json:"status,omitempty"`
 }
 
-// ShardingSphereChaosSpec defines the desired state of ShardingSphereChaos
-type ShardingSphereChaosSpec struct {
-	InjectJob   JobSpec `json:"injectJob,omitempty"`
-	EmbedChaos  `json:",inline"`
+// ChaosSpec defines the desired state of Chaos
+type ChaosSpec struct {
+	EmbedChaos `json:",inline"`
+
+	InjectJob   JobSpec     `json:"injectJob,omitempty"`
 	PressureCfg PressureCfg `json:"pressureCfg"`
 }
 
@@ -92,15 +93,15 @@ const (
 	Unknown      ChaosCondition = "Unknown"
 )
 
-// ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
-type ShardingSphereChaosStatus struct {
+// ChaosStatus defines the actual state of Chaos
+type ChaosStatus struct {
 	ChaosCondition ChaosCondition      `json:"chaosCondition"`
 	Phase          ChaosPhase          `json:"phase"`
 	Result         Result              `json:"result"`
 	Conditions     []*metav1.Condition `json:"condition,omitempty"`
 }
 
-// Result represents the result of the ShardingSphereChaos
+// Result represents the result of the Chaos
 type Result struct {
 	Steady Msg `json:"steady"`
 	Chaos  Msg `json:"chaos"`
@@ -189,7 +190,6 @@ type NetworkChaosSpec struct {
 
 	// +optional
 	Action NetworkChaosAction `json:"action"`
-
 	// +optional
 	Duration *string `json:"duration,omitempty"`
 	// +optional
@@ -271,5 +271,5 @@ type PodSelector struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&ShardingSphereChaos{}, &ShardingSphereChaosList{})
+	SchemeBuilder.Register(&Chaos{}, &ChaosList{})
 }

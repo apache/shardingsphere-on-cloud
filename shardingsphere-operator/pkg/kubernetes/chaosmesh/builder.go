@@ -58,7 +58,7 @@ var (
 
 type GenericChaos interface{}
 
-func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) v1alpha1.ChaosCondition {
+func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.Chaos, chaos GenericChaos) v1alpha1.ChaosCondition {
 	var status chaosmeshv1alpha1.ChaosStatus
 	if ssChaos.Spec.EmbedChaos.PodChaos != nil {
 		if podChao, ok := chaos.(*chaosmeshv1alpha1.PodChaos); ok && podChao != nil {
@@ -103,9 +103,7 @@ func judgeCondition(condition map[chaosmeshv1alpha1.ChaosConditionType]bool, pha
 }
 
 func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
-
 	chao := ssChao.Spec.PodChaos
-
 	if chao.Action == v1alpha1.MemoryStress || chao.Action == v1alpha1.CPUStress {
 		return NewStressChaos(ssChao)
 	}
@@ -234,7 +232,7 @@ func getAnnotation(anno map[string]string, k string) string {
 	return ""
 }
 
-func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error) {
+func NewNetworkChaos(ssChao *v1alpha1.Chaos) (NetworkChaos, error) {
 	ncb := NewNetworkChaosBuilder()
 	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 

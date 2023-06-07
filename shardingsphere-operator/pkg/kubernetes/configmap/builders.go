@@ -99,7 +99,7 @@ func NewConfigMap(obj runtime.Object) *corev1.ConfigMap {
 
 	var (
 		cn   *v1alpha1.ComputeNode
-		sc   *v1alpha1.ShardingSphereChaos
+		sc   *v1alpha1.Chaos
 		meta metav1.Object
 		ok   bool
 	)
@@ -109,7 +109,7 @@ func NewConfigMap(obj runtime.Object) *corev1.ConfigMap {
 		return factory.NewConfigMapBuilder(meta, gvk).Build()
 	}
 
-	if sc, ok = obj.(*v1alpha1.ShardingSphereChaos); ok {
+	if sc, ok = obj.(*v1alpha1.Chaos); ok {
 		meta = sc.GetObjectMeta()
 		return factory.NewConfigMapBuilder(meta, gvk).Build()
 	}
@@ -264,10 +264,10 @@ func (c *shardingsphereChaosConfigMapBuilder) SetBinaryData(binary map[string][]
 // Build builds the ConfigMap
 func (c *shardingsphereChaosConfigMapBuilder) Build() *corev1.ConfigMap {
 	var (
-		chaos *v1alpha1.ShardingSphereChaos
+		chaos *v1alpha1.Chaos
 		ok    bool
 	)
-	if chaos, ok = c.obj.(*v1alpha1.ShardingSphereChaos); !ok {
+	if chaos, ok = c.obj.(*v1alpha1.Chaos); !ok {
 		return nil
 	}
 	c.SetName(chaos.Name).SetNamespace(chaos.Namespace).SetLabels(chaos.Labels).SetAnnotations(chaos.Annotations)
@@ -294,7 +294,7 @@ const (
 )
 
 // UpdateConfigMap returns a new ConfigMap
-func UpdateShardingSphereChaosConfigMap(ssChaos *v1alpha1.ShardingSphereChaos, cur *corev1.ConfigMap) *corev1.ConfigMap {
+func UpdateShardingSphereChaosConfigMap(ssChaos *v1alpha1.Chaos, cur *corev1.ConfigMap) *corev1.ConfigMap {
 	exp := &corev1.ConfigMap{}
 	exp.ObjectMeta = cur.ObjectMeta
 	exp.Labels = cur.Labels
