@@ -48,7 +48,6 @@ const (
 	FinalizerName             = "shardingsphere.apache.org/finalizer"
 
 	AnnotationKeyRegisterStorageUnitEnabled = "shardingsphere.apache.org/register-storage-unit-enabled"
-	AnnotationKeyComputeNodeNamespace       = "shardingsphere.apache.org/compute-node-namespace"
 	AnnotationKeyComputeNodeName            = "shardingsphere.apache.org/compute-node-name"
 	AnnotationKeyLogicDatabaseName          = "shardingsphere.apache.org/logic-database-name"
 
@@ -110,6 +109,8 @@ func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) (ctrl.Result, error) {
 	var err error
+	var oldStatus = node.Status.DeepCopy()
+
 	switch node.Status.Phase {
 	case v1alpha1.StorageNodePhaseReady, v1alpha1.StorageNodePhaseNotReady:
 		// set storage node status to deleting
@@ -139,7 +140,7 @@ func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.Sto
 
 	desiredState := computeDesiredState(node.Status)
 
-	if !reflect.DeepEqual(node.Status, desiredState) {
+	if !reflect.DeepEqual(oldStatus, desiredState) {
 		node.Status = desiredState
 		err := r.Status().Update(ctx, node)
 		if err != nil {
@@ -151,39 +152,41 @@ func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.Sto
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 }
 
-func (r *StorageNodeReconciler) reconcile(ctx context.Context, dbClass *v1alpha1.StorageProvider, node *v1alpha1.StorageNode) (ctrl.Result, error) {
+func (r *StorageNodeReconciler) reconcile(ctx context.Context, storageProvider *v1alpha1.StorageProvider, node *v1alpha1.StorageNode) (ctrl.Result, error) {
 	var err error
+	var oldStatus = node.Status.DeepCopy()
+
 	// reconcile storage node with storageProvider
-	switch dbClass.Spec.Provisioner {
+	switch storageProvider.Spec.Provisioner {
 	case v1alpha1.ProvisionerAWSRDSInstance:
-		if err := r.reconcileAwsRdsInstance(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
+		if err := r.reconcileAwsRdsInstance(ctx, aws.NewRdsClient(r.AwsRDS), node, storageProvider); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS RDS Instance %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 		}
 	case v1alpha1.ProvisionerAWSAurora:
-		if err := r.reconcileAwsAurora(ctx, aws.NewRdsClient(r.AwsRDS), node, dbClass); err != nil {
+		if err := r.reconcileAwsAurora(ctx, aws.NewRdsClient(r.AwsRDS), node, storageProvider); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS Aurora %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 		}
 	case v1alpha1.ProvisionerCloudNativePG:
-		if err := r.reconcileCloudNativePG(ctx, node, dbClass); err != nil {
+		if err := r.reconcileCloudNativePG(ctx, node, storageProvider); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile CloudNative PG %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 		}
 	default:
-		r.Recorder.Event(node, corev1.EventTypeWarning, "UnsupportedDatabaseProvisioner", fmt.Sprintf("unsupported database provisioner %s", dbClass.Spec.Provisioner))
+		r.Recorder.Event(node, corev1.EventTypeWarning, "UnsupportedDatabaseProvisioner", fmt.Sprintf("unsupported database provisioner %s", storageProvider.Spec.Provisioner))
 		return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 	}
 
 	// register storage unit if needed.
-	if err := r.registerStorageUnit(ctx, node, dbClass); err != nil {
+	if err := r.registerStorageUnit(ctx, node, storageProvider); err != nil {
 		r.Recorder.Eventf(node, corev1.EventTypeWarning, "RegisterStorageUnitFailed", "unable to register storage unit %s/%s", node.GetNamespace(), node.GetName())
 		return ctrl.Result{Requeue: true}, err
 	}
 
 	desiredState := computeDesiredState(node.Status)
 
-	if !reflect.DeepEqual(node.Status, desiredState) {
+	if !reflect.DeepEqual(oldStatus, desiredState) {
 		node.Status = desiredState
 		err := r.Status().Update(ctx, node)
 		if err != nil {
@@ -323,14 +326,14 @@ func allInstancesReady(instances []v1alpha1.InstanceStatus) bool {
 	return true
 }
 
-func (r *StorageNodeReconciler) reconcileAwsRdsInstance(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, dbClass *v1alpha1.StorageProvider) error {
+func (r *StorageNodeReconciler) reconcileAwsRdsInstance(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	instance, err := client.GetInstance(ctx, node)
 	if err != nil {
 		return err
 	}
 
 	if instance == nil && node.Status.Phase != v1alpha1.StorageNodePhaseDeleting {
-		err = client.CreateInstance(ctx, node, dbClass.Spec.Parameters)
+		err = client.CreateInstance(ctx, node, storageProvider.Spec.Parameters)
 		if err != nil {
 			return err
 		}
@@ -498,7 +501,7 @@ func (r *StorageNodeReconciler) deleteAWSAurora(ctx context.Context, client aws.
 }
 
 // registerStorageUnit
-func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v1alpha1.StorageNode, dbClass *v1alpha1.StorageProvider) error {
+func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	// if register storage unit is not enabled, return
 	if node.Annotations[AnnotationKeyRegisterStorageUnitEnabled] != "true" {
 		return nil
@@ -534,28 +537,55 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 	}
 	r.Recorder.Eventf(node, corev1.EventTypeNormal, "LogicDatabaseCreated", "LogicDatabase %s is created", logicDBName)
 
-	// TODO add cluster
-
-	ins := node.Status.Instances[0]
-	host := ins.Endpoint.Address
-	port := ins.Endpoint.Port
-	username := node.Annotations[v1alpha1.AnnotationsMasterUsername]
-	if username == "" {
-		username = dbClass.Spec.Parameters["masterUsername"]
-	}
-	password := node.Annotations[v1alpha1.AnnotationsMasterUserPassword]
-	if password == "" {
-		password = dbClass.Spec.Parameters["masterUserPassword"]
+	var dsName, host string
+	var port int32
+	var username, password string
+	// get storage unit info from instance
+	if node.Status.Cluster.Status == "" {
+		dsName, host, port, username, password = getDatasourceInfoFromInstance(node, storageProvider)
+	} else {
+		dsName, host, port, username, password = getDatasourceInfoFromCluster(node, storageProvider)
 	}
 
-	// TODO how to set ds name?
-	if err := ssServer.RegisterStorageUnit(logicDBName, "ds_0", host, uint(port), dbName, username, password); err != nil {
+	if err := ssServer.RegisterStorageUnit(logicDBName, dsName, host, uint(port), dbName, username, password); err != nil {
 		return fmt.Errorf("register storage node failed: %w", err)
 	}
 	r.Recorder.Eventf(node, corev1.EventTypeNormal, "StorageUnitRegistered", "StorageUnit %s:%d/%s is registered", host, port, dbName)
 
 	node.Status.Registered = true
 	return nil
+}
+
+func getDatasourceInfoFromInstance(node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) (dsName, host string, port int32, username, password string) {
+	dsName = fmt.Sprintf("ds_%s", node.GetName())
+	ins := node.Status.Instances[0]
+	host = ins.Endpoint.Address
+	port = ins.Endpoint.Port
+	username = node.Annotations[v1alpha1.AnnotationsMasterUsername]
+	if username == "" {
+		username = storageProvider.Spec.Parameters["masterUsername"]
+	}
+	password = node.Annotations[v1alpha1.AnnotationsMasterUserPassword]
+	if password == "" {
+		password = storageProvider.Spec.Parameters["masterUserPassword"]
+	}
+	return
+}
+
+func getDatasourceInfoFromCluster(node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) (dsName, host string, port int32, username, password string) {
+	dsName = fmt.Sprintf("ds_%s", node.GetName())
+	cluster := node.Status.Cluster
+	host = cluster.PrimaryEndpoint.Address
+	port = cluster.PrimaryEndpoint.Port
+	username = node.Annotations[v1alpha1.AnnotationsMasterUsername]
+	if username == "" {
+		username = storageProvider.Spec.Parameters["masterUsername"]
+	}
+	password = node.Annotations[v1alpha1.AnnotationsMasterUserPassword]
+	if password == "" {
+		password = storageProvider.Spec.Parameters["masterUserPassword"]
+	}
+	return
 }
 
 func (r *StorageNodeReconciler) unregisterStorageUnit(ctx context.Context, node *v1alpha1.StorageNode) error {
@@ -575,8 +605,8 @@ func (r *StorageNodeReconciler) unregisterStorageUnit(ctx context.Context, node 
 
 	defer ssServer.Close()
 
-	// TODO how to set ds name?
-	if err := ssServer.UnRegisterStorageUnit(logicDBName, "ds_0"); err != nil {
+	dsName := fmt.Sprintf("ds_%s", node.GetName())
+	if err := ssServer.UnRegisterStorageUnit(logicDBName, dsName); err != nil {
 		return fmt.Errorf("unregister storage unit failed: %w", err)
 	}
 
@@ -590,7 +620,6 @@ func (r *StorageNodeReconciler) validateComputeNodeAnnotations(node *v1alpha1.St
 	requiredAnnos := []string{
 		AnnotationKeyLogicDatabaseName,
 		v1alpha1.AnnotationsInstanceDBName,
-		AnnotationKeyComputeNodeNamespace,
 		AnnotationKeyComputeNodeName,
 	}
 
@@ -614,7 +643,7 @@ func (r *StorageNodeReconciler) getShardingsphereServer(ctx context.Context, nod
 	cn := &v1alpha1.ComputeNode{}
 	if err := r.Client.Get(ctx, types.NamespacedName{
 		Name:      node.Annotations[AnnotationKeyComputeNodeName],
-		Namespace: node.Annotations[AnnotationKeyComputeNodeNamespace],
+		Namespace: node.Namespace,
 	}, cn); err != nil {
 		return nil, fmt.Errorf("get compute node failed: %w", err)
 	}
@@ -637,7 +666,7 @@ func (r *StorageNodeReconciler) getShardingsphereServer(ctx context.Context, nod
 	// get service of compute node
 	svc, err := r.Service.GetByNamespacedName(ctx, types.NamespacedName{
 		Name:      node.Annotations[AnnotationKeyComputeNodeName],
-		Namespace: node.Annotations[AnnotationKeyComputeNodeNamespace],
+		Namespace: node.Namespace,
 	})
 
 	if err != nil || svc == nil {

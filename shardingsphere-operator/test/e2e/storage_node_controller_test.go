@@ -20,6 +20,7 @@ package e2e
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"reflect"
 	"regexp"
 	"time"
@@ -230,7 +231,6 @@ var _ = Describe("StorageNode Controller Suite Test For AWS RDS Instance", func(
 						v1alpha1.AnnotationsInstanceIdentifier:              instanceIdentifier,
 						controllers.AnnotationKeyRegisterStorageUnitEnabled: "true",
 						v1alpha1.AnnotationsInstanceDBName:                  "test-db-name",
-						controllers.AnnotationKeyComputeNodeNamespace:       "default",
 						controllers.AnnotationKeyComputeNodeName:            "test-compute-node",
 						controllers.AnnotationKeyLogicDatabaseName:          "test-logic-db-name",
 					},
@@ -282,6 +282,137 @@ var _ = Describe("StorageNode Controller Suite Test For AWS RDS Instance", func(
 				err := k8sClient.Get(ctx, client.ObjectKey{Name: nodeName, Namespace: "default"}, newSN)
 				return apierrors.IsNotFound(err)
 			}, 20, 2).Should(BeTrue())
+		})
+	})
+})
+
+var _ = Describe("StorageNode Controller Suite Test For AWS Aurora Cluster", func() {
+	storageProviderName := "test-storage-provider"
+	clusterIdentifier := "test-aurora-cluster-identifier"
+
+	BeforeEach(func() {
+		provider := &v1alpha1.StorageProvider{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: storageProviderName,
+			},
+			Spec: v1alpha1.StorageProviderSpec{
+				Provisioner: v1alpha1.ProvisionerAWSAurora,
+				Parameters: map[string]string{
+					"engine":             "aurora-mysql",
+					"engineVersion":      "5.7",
+					"instanceClass":      "db.t2.small",
+					"masterUsername":     "test-user",
+					"masterUserPassword": "test-password",
+				},
+			},
+		}
+		Expect(k8sClient.Create(ctx, provider)).Should(Succeed())
+	})
+
+	AfterEach(func() {
+		monkey.UnpatchAll()
+
+		StorageProvider := &v1alpha1.StorageProvider{}
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: storageProviderName}, StorageProvider)).Should(Succeed())
+		Expect(k8sClient.Delete(ctx, StorageProvider)).Should(Succeed())
+	})
+
+	Context("When Creat StorageNode with Aurora Cluster Not Exist", func() {
+		It("Should Success", func() {
+			snName := "test-storage-node-creating"
+			// monkey patch
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetAuroraCluster", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescCluster, error) {
+				return &dbmesh_rds.DescCluster{
+					DBClusterIdentifier: clusterIdentifier,
+					Status:              dbmesh_rds.DBClusterStatusCreating,
+					PrimaryEndpoint:     "test-primary-endpoint",
+					ReaderEndpoint:      "test-reader-endpoint",
+					Port:                3306,
+				}, nil
+			})
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstancesByFilters", func(_ *aws.RdsClient, _ context.Context, _ map[string][]string) ([]*dbmesh_rds.DescInstance, error) {
+				return []*dbmesh_rds.DescInstance{
+					{
+						DBInstanceIdentifier: fmt.Sprintf("%s-insatnce-0", clusterIdentifier),
+						DBInstanceStatus:     dbmesh_rds.DBInstanceStatusCreating,
+						Endpoint:             dbmesh_rds.Endpoint{Address: "test-instance-0-endpoint", Port: 3306},
+					},
+				}, nil
+			})
+
+			sn := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      snName,
+					Namespace: "default",
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier: clusterIdentifier,
+					},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: storageProviderName,
+					Replicas:            2,
+				},
+			}
+			Expect(k8sClient.Create(ctx, sn)).Should(Succeed())
+
+			Eventually(func() string {
+				newSN := &v1alpha1.StorageNode{}
+				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: snName, Namespace: "default"}, newSN)).Should(Succeed())
+				return newSN.Status.Cluster.Status
+			}, time.Second*10, time.Millisecond*250).Should(Equal(dbmesh_rds.DBClusterStatusCreating))
+		})
+
+		It("should success when cluster is available", func() {
+			snName := "test-storage-node-available"
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetAuroraCluster", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescCluster, error) {
+				return &dbmesh_rds.DescCluster{
+					DBClusterIdentifier: clusterIdentifier,
+					Status:              dbmesh_rds.DBClusterStatusAvailable,
+					PrimaryEndpoint:     "test-primary-endpoint",
+					ReaderEndpoint:      "test-reader-endpoint",
+					Port:                3306,
+				}, nil
+			})
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstancesByFilters", func(_ *aws.RdsClient, _ context.Context, _ map[string][]string) ([]*dbmesh_rds.DescInstance, error) {
+				return []*dbmesh_rds.DescInstance{
+					{
+						DBInstanceIdentifier: fmt.Sprintf("%s-insatnce-0", clusterIdentifier),
+						DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
+						Endpoint:             dbmesh_rds.Endpoint{Address: "test-instance-0-endpoint", Port: 3306},
+					},
+					{
+						DBInstanceIdentifier: fmt.Sprintf("%s-insatnce-1", clusterIdentifier),
+						DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
+						Endpoint:             dbmesh_rds.Endpoint{Address: "test-instance-1-endpoint", Port: 3306},
+					},
+				}, nil
+			})
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "DeleteAuroraCluster", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode, _ *v1alpha1.StorageProvider) error {
+				return nil
+			})
+
+			sn := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      snName,
+					Namespace: "default",
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsClusterIdentifier: clusterIdentifier,
+					},
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: storageProviderName,
+					Replicas:            2,
+				},
+			}
+			Expect(k8sClient.Create(ctx, sn)).Should(Succeed())
+
+			newSN := &v1alpha1.StorageNode{}
+			Eventually(func() v1alpha1.StorageNodePhaseStatus {
+				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: snName, Namespace: "default"}, newSN)).Should(Succeed())
+				return newSN.Status.Phase
+			}, time.Second*10, time.Millisecond*250).Should(Equal(v1alpha1.StorageNodePhaseReady))
+
+			Expect(newSN.Status.Instances).Should(HaveLen(2))
 		})
 	})
 })
