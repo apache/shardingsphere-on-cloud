@@ -29,7 +29,11 @@ import (
 )
 
 var ctx = context.Background()
-
+var (
+	region    string
+	accessKey string
+	secretKey string
+)
 var _ = Describe("Aurora", func() {
 	Context("Test valid create aurora params", func() {
 		It("should be success", func() {
@@ -57,11 +61,6 @@ var _ = Describe("Aurora", func() {
 })
 
 var _ = Describe("Test For AWS Aurora Manually", func() {
-	var (
-		region    string
-		accessKey string
-		secretKey string
-	)
 	Context("Test create aurora cluster with 2 replicas", func() {
 		It("should be success", func() {
 			if region == "" || accessKey == "" || secretKey == "" {

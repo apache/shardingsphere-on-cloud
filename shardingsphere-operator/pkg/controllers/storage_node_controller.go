@@ -69,7 +69,8 @@ type StorageNodeReconciler struct {
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/finalizers,verbs=update
-// +kubebuilder:rbac:groups=core.database-mesh.io,resources=storageProviders,verbs=get;list;watch
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storageproviders,verbs=get;list;watch
+// +kubebuilder:rbac:groups=postgresql.cnpg.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile handles main function of this controller
 // nolint:gocognit
@@ -318,7 +319,7 @@ func allInstancesReady(instances []v1alpha1.InstanceStatus) bool {
 
 	for idx := range instances {
 		instance := &instances[idx]
-		if !(instance.Status == rds.DBClusterStatusAvailable) {
+		if !(instance.Status == string(rds.DBInstanceStatusAvailable)) {
 			return false
 		}
 	}
@@ -373,25 +374,27 @@ func updateAWSRDSInstanceStatus(node *v1alpha1.StorageNode, instance *rds.DescIn
 
 func (r *StorageNodeReconciler) reconcileAwsAurora(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	r.Log.Info("reconcileAwsAurora", "node", node.GetName(), "phase", node.Status.Phase)
-	auroraCluster, err := client.GetAuroraCluster(ctx, node)
+	ac, err := client.GetAuroraCluster(ctx, node)
 	if err != nil {
 		return err
 	}
 
-	if auroraCluster == nil {
+	if ac == nil {
 		// create instance
 		err = client.CreateAuroraCluster(ctx, node, storageProvider.Spec.Parameters)
 		if err != nil {
 			return err
 		}
-		auroraCluster, err = client.GetAuroraCluster(ctx, node)
+		ac, err = client.GetAuroraCluster(ctx, node)
 		if err != nil {
 			return err
 		}
 	}
 
+	// TODO: reconcile instance of aurora
+
 	// update storage node status
-	if err := updateClusterStatus(ctx, client, node, auroraCluster); err != nil {
+	if err := updateClusterStatus(ctx, client, node, ac); err != nil {
 		return fmt.Errorf("updateClusterStatus failed: %w", err)
 	}
 
@@ -459,6 +462,10 @@ func (r *StorageNodeReconciler) deleteDatabaseCluster(ctx context.Context, node 
 }
 
 func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+	if node.Annotations[v1alpha1.AnnotationsInstanceIdentifier] == "" {
+		return nil
+	}
+
 	instance, err := client.GetInstance(ctx, node)
 	if err != nil {
 		return err
@@ -481,6 +488,10 @@ func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client
 }
 
 func (r *StorageNodeReconciler) deleteAWSAurora(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+	if node.Annotations[v1alpha1.AnnotationsClusterIdentifier] == "" {
+		return nil
+	}
+
 	auroraCluster, err := client.GetAuroraCluster(ctx, node)
 	if err != nil {
 		return fmt.Errorf("get aurora cluster failed: %w", err)
@@ -537,17 +548,17 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 	}
 	r.Recorder.Eventf(node, corev1.EventTypeNormal, "LogicDatabaseCreated", "LogicDatabase %s is created", logicDBName)
 
-	var dsName, host string
+	var host string
 	var port int32
 	var username, password string
 	// get storage unit info from instance
 	if node.Status.Cluster.Status == "" {
-		dsName, host, port, username, password = getDatasourceInfoFromInstance(node, storageProvider)
+		host, port, username, password = getDatasourceInfoFromInstance(node, storageProvider)
 	} else {
-		dsName, host, port, username, password = getDatasourceInfoFromCluster(node, storageProvider)
+		host, port, username, password = getDatasourceInfoFromCluster(node, storageProvider)
 	}
 
-	if err := ssServer.RegisterStorageUnit(logicDBName, dsName, host, uint(port), dbName, username, password); err != nil {
+	if err := ssServer.RegisterStorageUnit(logicDBName, getDSName(node), host, uint(port), dbName, username, password); err != nil {
 		return fmt.Errorf("register storage node failed: %w", err)
 	}
 	r.Recorder.Eventf(node, corev1.EventTypeNormal, "StorageUnitRegistered", "StorageUnit %s:%d/%s is registered", host, port, dbName)
@@ -556,8 +567,14 @@ func (r *StorageNodeReconciler) registerStorageUnit(ctx context.Context, node *v
 	return nil
 }
 
-func getDatasourceInfoFromInstance(node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) (dsName, host string, port int32, username, password string) {
-	dsName = fmt.Sprintf("ds_%s", node.GetName())
+// getDSName returns the datasource name of the storage node.
+// datasource name only allows letters, numbers and _, and must start with a letter.
+// ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/distsql/syntax/rdl/storage-unit-definition/register-storage-unit/
+func getDSName(node *v1alpha1.StorageNode) string {
+	return fmt.Sprintf("ds_%s", strings.ReplaceAll(node.GetName(), "-", "_"))
+}
+
+func getDatasourceInfoFromInstance(node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) (host string, port int32, username, password string) {
 	ins := node.Status.Instances[0]
 	host = ins.Endpoint.Address
 	port = ins.Endpoint.Port
@@ -572,8 +589,7 @@ func getDatasourceInfoFromInstance(node *v1alpha1.StorageNode, storageProvider *
 	return
 }
 
-func getDatasourceInfoFromCluster(node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) (dsName, host string, port int32, username, password string) {
-	dsName = fmt.Sprintf("ds_%s", node.GetName())
+func getDatasourceInfoFromCluster(node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) (host string, port int32, username, password string) {
 	cluster := node.Status.Cluster
 	host = cluster.PrimaryEndpoint.Address
 	port = cluster.PrimaryEndpoint.Port
@@ -605,8 +621,7 @@ func (r *StorageNodeReconciler) unregisterStorageUnit(ctx context.Context, node 
 
 	defer ssServer.Close()
 
-	dsName := fmt.Sprintf("ds_%s", node.GetName())
-	if err := ssServer.UnRegisterStorageUnit(logicDBName, dsName); err != nil {
+	if err := ssServer.UnRegisterStorageUnit(logicDBName, getDSName(node)); err != nil {
 		return fmt.Errorf("unregister storage unit failed: %w", err)
 	}
 

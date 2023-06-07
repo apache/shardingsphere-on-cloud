@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
@@ -71,6 +72,20 @@ func (c *RdsClient) CreateAuroraCluster(ctx context.Context, node *v1alpha1.Stor
 		SetMasterUsername(params["masterUsername"]).
 		SetMasterUserPassword(params["masterUserPassword"]).
 		SetInstanceNumber(node.Spec.Replicas)
+
+	if v, ok := node.Annotations[v1alpha1.AnnotationsInstanceDBName]; ok {
+		aurora.SetDBName(v)
+	}
+
+	if v, ok := params["publicAccessible"]; ok && v == "false" {
+		aurora.SetPublicAccessible(false)
+	} else {
+		aurora.SetPublicAccessible(true)
+	}
+
+	if params["vpcSecurityGroupIds"] != "" {
+		aurora.SetVpcSecurityGroupIds(strings.Split(params["vpcSecurityGroupIds"], ","))
+	}
 
 	if err := aurora.Create(ctx); err != nil {
 		return fmt.Errorf("create aurora cluster failed, %v", err)

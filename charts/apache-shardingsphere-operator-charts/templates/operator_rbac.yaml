@@ -163,12 +163,16 @@ rules:
     verbs:
       - get
   - apiGroups:
-      - core.database-mesh.io
+      - postgresql.cnpg.io
     resources:
-      - databaseclasses
+      - clusters
     verbs:
+      - create
+      - delete
       - get
       - list
+      - patch
+      - update
       - watch
   - apiGroups:
       - shardingsphere.apache.org
@@ -294,6 +298,14 @@ rules:
       - get
       - patch
       - update
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
+      - storageproviders
+    verbs:
+      - get
+      - list
+      - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
