@@ -39,7 +39,7 @@ func (m *MockChaos) EXPECT() *MockChaosMockRecorder {
 }
 
 // CreateNetworkChaos mocks base method.
-func (m *MockChaos) CreateNetworkChaos(arg0 context.Context, arg1 *v1alpha1.ShardingSphereChaos) error {
+func (m *MockChaos) CreateNetworkChaos(arg0 context.Context, arg1 *v1alpha1.Chaos) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNetworkChaos", arg0, arg1)
 	ret0, _ := ret[0].(error)
