@@ -233,6 +233,7 @@ func generateMsgFromExec(exec *pressure.Pressure) *v1alpha1.Msg {
 		Result:   fmt.Sprintf("%d/%d", exec.Result.Success, exec.Result.Total),
 		Duration: exec.Result.Duration.String(),
 	}
+
 	if exec.Err != nil {
 		msg.FailureDetails = exec.Err.Error()
 	}

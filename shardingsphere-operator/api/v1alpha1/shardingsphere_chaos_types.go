@@ -130,6 +130,9 @@ type PodChaosAction string
 var (
 	PodFailure    PodChaosAction = "PodFailure"
 	ContainerKill PodChaosAction = "ContainerKill"
+	PodKill       PodChaosAction = "PodKill"
+	CPUStress     PodChaosAction = "CPUStress"
+	MemoryStress  PodChaosAction = "MemoryStress"
 )
 
 // PodChaosSpec Fields that need to be configured for pod type chaos
@@ -147,8 +150,10 @@ type PodChaosParams struct {
 	PodFailure *PodFailureParams `json:"podFailure,omitempty"`
 	// +optional
 	ContainerKill *ContainerKillParams `json:"containerKill,omitempty"`
-	// +optional
-	// PodKill *PodKillParams `json:"containerKill,omitempty"`
+	//+optional
+	CPUStress *CPUStressParams `json:"cpuStress,omitempty"`
+	//+optional
+	MemoryStress *MemoryStressParams `json:"memoryStress,omitempty"`
 }
 
 type PodFailureParams struct {
@@ -159,6 +164,22 @@ type PodFailureParams struct {
 type ContainerKillParams struct {
 	// +optional
 	ContainerNames []string `json:"containerNames,omitempty"`
+}
+
+type CPUStressParams struct {
+	Duration string `json:"duration"`
+	//+optional
+	Cores int `json:"cores,omitempty"`
+	//+optional
+	Load int `json:"load,omitempty"`
+}
+
+type MemoryStressParams struct {
+	Duration string `json:"duration"`
+	//+optional
+	Workers int `json:"workers,omitempty"`
+	//+optional
+	Consumption string `json:"consumption,omitempty"`
 }
 
 // NetworkChaosSpec Fields that need to be configured for network type chaos

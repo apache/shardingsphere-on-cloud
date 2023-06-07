@@ -37,6 +37,8 @@ const (
 
 	AnnoPodAction   = "podchaos.chaos-mesh.org/action"
 	AnnoGracePeriod = "podchaos.chaos-mesh.org/gracePeriod"
+	AnnoStressTime  = "stresschaos.chaos-mesh.org/time"
+	AnnoOOMScoreAdj = "stresschaos.chaos-mesh.org/oomScoreAdj"
 
 	AnnoNetworkAction     = "networkchaos.chaos-mesh.org/action"
 	AnnoDevice            = "networkchaos.chaos-mesh.org/device"
@@ -101,10 +103,16 @@ func judgeCondition(condition map[chaosmeshv1alpha1.ChaosConditionType]bool, pha
 }
 
 func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
+
+	chao := ssChao.Spec.PodChaos
+
+	if chao.Action == v1alpha1.MemoryStress || chao.Action == v1alpha1.CPUStress {
+		return NewStressChaos(ssChao)
+	}
+
 	pcb := NewPodChaosBuilder()
 	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 
-	chao := ssChao.Spec.PodChaos
 	if act, ok := ssChao.Annotations[AnnoPodAction]; ok {
 		pcb.SetAction(act)
 		if gp, ok := ssChao.Annotations[AnnoGracePeriod]; chaosmeshv1alpha1.PodChaosAction(act) == chaosmeshv1alpha1.PodKillAction && ok {
@@ -147,6 +155,76 @@ func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	podChao := pcb.Build()
 
 	return podChao, nil
+}
+
+func NewStressChaos(chaos *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
+	sc := &chaosmeshv1alpha1.StressChaos{}
+	sc.Namespace = chaos.Namespace
+	sc.Name = chaos.Name
+	sc.Labels = chaos.Labels
+
+	chao := chaos.Spec.PodChaos
+
+	psb := NewPodSelectorBuilder()
+
+	psb.SetNamespaces(chao.Namespaces).
+		SetExpressionSelectors(chao.ExpressionSelectors).
+		SetNodes(chao.Nodes).
+		SetNodeSelector(chao.NodeSelectors).
+		SetAnnotationSelectors(chao.AnnotationSelectors).
+		SetLabelSelector(chao.LabelSelectors).
+		SetPods(chao.Pods)
+
+	psb.SetSelectMode(chaos.Annotations[AnnoTargetPodSelectMode]).
+		SetValue(chaos.Annotations[AnnoTargetPodSelectValue])
+
+	sc.Spec.ContainerSelector = chaosmeshv1alpha1.ContainerSelector{
+		PodSelector: *psb.Build(),
+	}
+
+	if chao.Action == v1alpha1.CPUStress {
+		setCPUStressParams(chaos, sc)
+	}
+
+	if chao.Action == v1alpha1.MemoryStress {
+		if err := setMemoryStressParams(chaos, sc); err != nil {
+			return nil, err
+		}
+	}
+
+	return sc, nil
+}
+
+func setCPUStressParams(sschaos *v1alpha1.ShardingSphereChaos, chaos *chaosmeshv1alpha1.StressChaos) {
+	cpu := chaosmeshv1alpha1.CPUStressor{
+		Stressor: chaosmeshv1alpha1.Stressor{
+			Workers: sschaos.Spec.PodChaos.Params.CPUStress.Cores,
+		},
+		Load: &sschaos.Spec.PodChaos.Params.CPUStress.Load,
+	}
+
+	chaos.Spec.Stressors.CPUStressor = &cpu
+	chaos.Spec.Duration = &sschaos.Spec.PodChaos.Params.CPUStress.Duration
+}
+
+func setMemoryStressParams(sschaos *v1alpha1.ShardingSphereChaos, chaos *chaosmeshv1alpha1.StressChaos) error {
+
+	oom, err := strconv.Atoi(sschaos.Annotations[AnnoOOMScoreAdj])
+	memory := chaosmeshv1alpha1.MemoryStressor{
+		Stressor: chaosmeshv1alpha1.Stressor{
+			Workers: sschaos.Spec.PodChaos.Params.MemoryStress.Workers,
+		},
+		Size:        sschaos.Spec.PodChaos.Params.MemoryStress.Consumption,
+		OOMScoreAdj: oom,
+		Options: []string{
+			sschaos.Annotations[AnnoStressTime],
+		},
+	}
+
+	chaos.Spec.Stressors.MemoryStressor = &memory
+	chaos.Spec.Duration = &sschaos.Spec.PodChaos.Params.MemoryStress.Duration
+
+	return err
 }
 
 func getAnnotation(anno map[string]string, k string) string {
