@@ -168,12 +168,12 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 		}
 		return nil
 	},
-	"ShardingSphereChaos": func(mgr manager.Manager) error {
+	"Chaos": func(mgr manager.Manager) error {
 		clientset, err := clientset.NewForConfig(mgr.GetConfig())
 		if err != nil {
 			return err
 		}
-		if err := (&controllers.ShardingSphereChaosReconciler{
+		if err := (&controllers.ChaosReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
 			Log:       mgr.GetLogger(),
@@ -181,10 +181,10 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Job:       job.NewJob(mgr.GetClient()),
 			ExecCtrls: make([]*controllers.ExecCtrl, 0),
 			ConfigMap: configmap.NewConfigMapClient(mgr.GetClient()),
-			Events:    mgr.GetEventRecorderFor("shardingsphere-chaos-controller"),
+			Events:    mgr.GetEventRecorderFor("chaos-controller"),
 			ClientSet: clientset,
 		}).SetupWithManager(mgr); err != nil {
-			logger.Error(err, "unable to create controller", "controller", "ShardingSphereChaos")
+			logger.Error(err, "unable to create controller", "controller", "Chaos")
 			return err
 		}
 		return nil

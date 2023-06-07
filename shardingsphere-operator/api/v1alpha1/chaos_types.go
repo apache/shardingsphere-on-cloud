@@ -44,8 +44,10 @@ type Chaos struct {
 type ChaosSpec struct {
 	EmbedChaos `json:",inline"`
 
-	InjectJob   JobSpec     `json:"injectJob,omitempty"`
-	PressureCfg PressureCfg `json:"pressureCfg"`
+	// +optional
+	InjectJob *JobSpec `json:"injectJob,omitempty" yaml:"injectJob,omitempty"`
+	// +optional
+	PressureCfg *PressureCfg `json:"pressureCfg,omitempty" yaml:"pressureCfg,omitempty"`
 }
 
 type PressureCfg struct {
@@ -68,11 +70,11 @@ type Script string
 // JobSpec specifies the config of job to create
 type JobSpec struct {
 	// +optional
-	Experimental Script `json:"experimental,omitempty"`
+	Experimental Script `json:"experimental,omitempty" yaml:"experimental,omitempty"`
 	// +optional
-	Pressure Script `json:"pressure,omitempty"`
+	Pressure Script `json:"pressure,omitempty" yaml:"pressure,omitempty"`
 	// +optional
-	Verify Script `json:"verify,omitempty"`
+	Verify Script `json:"verify,omitempty" yaml:"verify,omitempty"`
 }
 
 type EmbedChaos struct {
@@ -95,10 +97,14 @@ const (
 
 // ChaosStatus defines the actual state of Chaos
 type ChaosStatus struct {
-	ChaosCondition ChaosCondition      `json:"chaosCondition"`
-	Phase          ChaosPhase          `json:"phase"`
-	Result         Result              `json:"result"`
-	Conditions     []*metav1.Condition `json:"condition,omitempty"`
+	// +optional
+	ChaosCondition ChaosCondition `json:"chaosCondition,omitempty" yaml:"chaosCondition,omitempty"`
+	// +optional
+	Phase ChaosPhase `json:"phase,omitempty" yaml:"phase,omitempty"`
+	// +optional
+	// Result Result `json:"result,omitempty" yaml:"result,omitempty"`
+	// +optional
+	Conditions []*metav1.Condition `json:"conditions,omitempty" yaml:"conditions,omitempty"`
 }
 
 // Result represents the result of the Chaos
@@ -155,6 +161,8 @@ type PodChaosParams struct {
 	CPUStress *CPUStressParams `json:"cpuStress,omitempty"`
 	//+optional
 	MemoryStress *MemoryStressParams `json:"memoryStress,omitempty"`
+	// +optional
+	PodKill *PodKillParams `json:"podKill,omitempty"`
 }
 
 type PodFailureParams struct {
@@ -181,6 +189,9 @@ type MemoryStressParams struct {
 	Workers int `json:"workers,omitempty"`
 	//+optional
 	Consumption string `json:"consumption,omitempty"`
+type PodKillParams struct {
+	// +optional
+	GracePeriod int64 `json:"gracePeriod,omitempty"`
 }
 
 // NetworkChaosSpec Fields that need to be configured for network type chaos
