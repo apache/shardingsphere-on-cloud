@@ -41,6 +41,7 @@ import (
 	"k8s.io/utils/strings/slices"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -108,9 +109,38 @@ func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return r.reconcile(ctx, storageProvider, node)
 }
 
+func (r *StorageNodeReconciler) finalizeCloudNativePG(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) (ctrl.Result, error) {
+	namespacedName := types.NamespacedName{
+		Name:      node.Name,
+		Namespace: node.Namespace,
+	}
+
+	cluster, err := r.CNPG.GetClusterByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	if cluster != nil {
+		if err := r.CNPG.Delete(ctx, cluster); err != nil {
+			return ctrl.Result{Requeue: true}, err
+		}
+	}
+
+	controllerutil.RemoveFinalizer(node, ChaosFinalizerName)
+	if err := r.Update(ctx, node); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
+}
+
 func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) (ctrl.Result, error) {
 	var err error
 	var oldStatus = node.Status.DeepCopy()
+
+	if storageProvider.Spec.Provisioner == v1alpha1.ProvisionerCloudNativePG {
+		return r.finalizeCloudNativePG(ctx, node, storageProvider)
+	}
 
 	switch node.Status.Phase {
 	case v1alpha1.StorageNodePhaseReady, v1alpha1.StorageNodePhaseNotReady:

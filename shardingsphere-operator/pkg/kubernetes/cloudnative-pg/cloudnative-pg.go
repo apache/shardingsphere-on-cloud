@@ -68,6 +68,7 @@ type Getter interface {
 type Setter interface {
 	Create(context.Context, *cnpgv1.Cluster) error
 	Update(context.Context, *cnpgv1.Cluster) error
+	Delete(context.Context, *cnpgv1.Cluster) error
 }
 
 type getter struct {
