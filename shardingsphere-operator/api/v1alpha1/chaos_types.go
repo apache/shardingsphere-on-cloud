@@ -198,7 +198,7 @@ type PodKillParams struct {
 
 // NetworkChaosSpec Fields that need to be configured for network type chaos
 type NetworkChaosSpec struct {
-	Source PodSelector  `json:",inline"`
+	Source PodSelector  `json:"source,omitempty"`
 	Target *PodSelector `json:"target,omitempty"`
 
 	// +optional
@@ -254,6 +254,7 @@ const (
 	Duplication NetworkChaosAction = "Duplication"
 	Corruption  NetworkChaosAction = "Corruption"
 	Partition   NetworkChaosAction = "Partition"
+	Bandwidth   NetworkChaosAction = "Bandwidth"
 )
 
 // Direction specifies the direction of action of network chaos

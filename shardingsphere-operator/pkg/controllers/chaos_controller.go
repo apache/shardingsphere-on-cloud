@@ -107,9 +107,6 @@ func (r *ChaosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 func (r *ChaosReconciler) reconcileChaos(ctx context.Context, chaos *v1alpha1.Chaos) error {
 	logger := r.Log.WithValues("reconcile chaos", fmt.Sprintf("%s/%s", chaos.Namespace, chaos.Name))
 
-	if chaos.Status.Phase == "" || chaos.Status.Phase == v1alpha1.BeforeSteady || chaos.Status.Phase == v1alpha1.AfterSteady {
-		return nil
-	}
 	namespacedName := types.NamespacedName{
 		Namespace: chaos.Namespace,
 		Name:      chaos.Name,

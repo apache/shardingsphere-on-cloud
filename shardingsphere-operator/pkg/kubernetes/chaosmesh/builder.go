@@ -69,8 +69,9 @@ func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.Chaos, chaos Gene
 	} else if ssChaos.Spec.EmbedChaos.NetworkChaos != nil {
 		if networkChaos, ok := chaos.(*chaosmeshv1alpha1.NetworkChaos); ok && networkChaos != nil {
 			status = *networkChaos.GetStatus()
+		} else {
+			return v1alpha1.Unknown
 		}
-		return v1alpha1.Unknown
 	}
 	var conditions = map[chaosmeshv1alpha1.ChaosConditionType]bool{}
 	for i := range status.Conditions {
@@ -224,60 +225,15 @@ func getAnnotation(anno map[string]string, k string) string {
 }
 
 func NewNetworkChaos(ssChao *v1alpha1.Chaos) (NetworkChaos, error) {
+	chao := ssChao.Spec.NetworkChaos
+
 	ncb := NewNetworkChaosBuilder()
-	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
+	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels).
+		SetAction(string(chao.Action)).
+		SetDuration(chao.Duration).
+		SetDirection(string(chao.Direction))
 
 	tcParams := &chaosmeshv1alpha1.TcParameter{}
-
-	chao := ssChao.Spec.NetworkChaos
-	if act, ok := ssChao.Annotations[AnnoNetworkAction]; ok {
-		ncb.SetAction(act)
-
-		if chaosmeshv1alpha1.NetworkChaosAction(act) == chaosmeshv1alpha1.BandwidthAction {
-			bwab := NewBandWidthActionBuilder()
-			bwab.SetRate(getAnnotation(ssChao.Annotations, AnnoBandwidthRate))
-			bwab.SetLimit(getAnnotation(ssChao.Annotations, AnnoBandwidthLimit))
-			bwab.SetBuffer(getAnnotation(ssChao.Annotations, AnnoBandwidthBuffer))
-			bwab.SetPeakRate(getAnnotation(ssChao.Annotations, AnnoBandwidthPeakrate))
-			bwab.SetMinBurst(getAnnotation(ssChao.Annotations, AnnoBandwidthMinBurst))
-			tcParams.Bandwidth = bwab.Build()
-		}
-	} else {
-		ncb.SetAction(string(chao.Action))
-	}
-
-	ncb.SetDuration(chao.Duration).SetDirection(string(chao.Direction))
-
-	psb := NewPodSelectorBuilder()
-	psb.SetNamespaces(chao.Source.Namespaces).
-		SetExpressionSelectors(chao.Source.ExpressionSelectors).
-		SetNodes(chao.Source.Nodes).
-		SetNodeSelector(chao.Source.NodeSelectors).
-		SetAnnotationSelectors(chao.Source.AnnotationSelectors).
-		SetLabelSelector(chao.Source.LabelSelectors).
-		SetPods(chao.Source.Pods)
-
-	psb.SetSelectMode(ssChao.Annotations[AnnoPodSelectorMode]).
-		SetValue(ssChao.Annotations[AnnoPodSelectorValue])
-
-	ncb.SetPodSelector(psb.Build())
-
-	tpsb := NewPodSelectorBuilder()
-	tpsb.SetNamespaces(chao.Target.Namespaces).
-		SetExpressionSelectors(chao.Target.ExpressionSelectors).
-		SetNodes(chao.Target.Nodes).
-		SetNodeSelector(chao.Target.NodeSelectors).
-		SetAnnotationSelectors(chao.Target.AnnotationSelectors).
-		SetLabelSelector(chao.Target.LabelSelectors).
-		SetPods(chao.Target.Pods)
-
-	tpsb.SetSelectMode(ssChao.Annotations[AnnoTargetPodSelectMode]).
-		SetValue(ssChao.Annotations[AnnoTargetPodSelectValue])
-
-	ncb.SetTarget(tpsb.Build())
-	ncb.SetDevice(ssChao.Annotations[AnnoDevice]).
-		SetTargetDevice(ssChao.Annotations[AnnoTargetDevice])
-
 	switch chao.Action {
 	case v1alpha1.Delay:
 		tcParams.Delay = &chaosmeshv1alpha1.DelaySpec{
@@ -296,10 +252,46 @@ func NewNetworkChaos(ssChao *v1alpha1.Chaos) (NetworkChaos, error) {
 		tcParams.Loss = &chaosmeshv1alpha1.LossSpec{
 			Loss: chao.Params.Loss.Loss,
 		}
+	case v1alpha1.Bandwidth:
+		bwab := NewBandWidthActionBuilder()
+		bwab.SetRate(getAnnotation(ssChao.Annotations, AnnoBandwidthRate))
+		bwab.SetLimit(getAnnotation(ssChao.Annotations, AnnoBandwidthLimit))
+		bwab.SetBuffer(getAnnotation(ssChao.Annotations, AnnoBandwidthBuffer))
+		bwab.SetPeakRate(getAnnotation(ssChao.Annotations, AnnoBandwidthPeakrate))
+		bwab.SetMinBurst(getAnnotation(ssChao.Annotations, AnnoBandwidthMinBurst))
+		tcParams.Bandwidth = bwab.Build()
 	case v1alpha1.Partition:
 	}
 
-	ncb.SetTcParameter(*tcParams)
+	psb := NewPodSelectorBuilder()
+	psb.SetNamespaces(chao.Source.Namespaces).
+		SetExpressionSelectors(chao.Source.ExpressionSelectors).
+		SetNodes(chao.Source.Nodes).
+		SetNodeSelector(chao.Source.NodeSelectors).
+		SetAnnotationSelectors(chao.Source.AnnotationSelectors).
+		SetLabelSelector(chao.Source.LabelSelectors).
+		SetPods(chao.Source.Pods)
+
+	psb.SetSelectMode(ssChao.Annotations[AnnoPodSelectorMode]).
+		SetValue(ssChao.Annotations[AnnoPodSelectorValue])
+	ncb.SetPodSelector(psb.Build())
+
+	tpsb := NewPodSelectorBuilder()
+	tpsb.SetNamespaces(chao.Target.Namespaces).
+		SetExpressionSelectors(chao.Target.ExpressionSelectors).
+		SetNodes(chao.Target.Nodes).
+		SetNodeSelector(chao.Target.NodeSelectors).
+		SetAnnotationSelectors(chao.Target.AnnotationSelectors).
+		SetLabelSelector(chao.Target.LabelSelectors).
+		SetPods(chao.Target.Pods).
+		SetSelectMode(ssChao.Annotations[AnnoTargetPodSelectMode]).
+		SetValue(ssChao.Annotations[AnnoTargetPodSelectValue])
+
+	ncb.SetTarget(tpsb.Build()).
+		SetDevice(ssChao.Annotations[AnnoDevice]).
+		SetTargetDevice(ssChao.Annotations[AnnoTargetDevice]).
+		SetTcParameter(*tcParams)
+
 	networkChao := ncb.Build()
 
 	return networkChao, nil
