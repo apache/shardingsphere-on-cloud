@@ -117,11 +117,11 @@ var _ = BeforeSuite(func() {
 	ctl := gomock.NewController(GinkgoT())
 	mockchaos = mockChaos.NewMockChaos(ctl)
 
-	err = (&controllers.ShardingSphereChaosReconciler{
+	err = (&controllers.ChaosReconciler{
 		Client:    k8sManager.GetClient(),
 		Scheme:    k8sManager.GetScheme(),
 		Log:       logf.Log,
-		Events:    k8sManager.GetEventRecorderFor("shardingsphere-chaos-controller"),
+		Events:    k8sManager.GetEventRecorderFor("chaos-controller"),
 		Chaos:     mockchaos,
 		ExecCtrls: make([]*controllers.ExecCtrl, 0),
 		ConfigMap: configmap.NewConfigMapClient(k8sManager.GetClient()),
