@@ -22,29 +22,32 @@ import (
 )
 
 // +kubebuilder:object:root=true
-// ShardingSphereChaosList contains a list of ShardingSphereChaos
-type ShardingSphereChaosList struct {
+// ChaosList contains a list of Chaos
+type ChaosList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ShardingSphereChaos `json:"items"`
+	Items           []Chaos `json:"items"`
 }
 
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// ShardingSphereChaos defines a chaos test case for the ShardingSphere Proxy cluster
-type ShardingSphereChaos struct {
+// Chaos defines a chaos test case for the ShardingSphere Proxy cluster
+type Chaos struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              ShardingSphereChaosSpec   `json:"spec,omitempty"`
-	Status            ShardingSphereChaosStatus `json:"status,omitempty"`
+	Spec              ChaosSpec   `json:"spec,omitempty"`
+	Status            ChaosStatus `json:"status,omitempty"`
 }
 
-// ShardingSphereChaosSpec defines the desired state of ShardingSphereChaos
-type ShardingSphereChaosSpec struct {
-	InjectJob   JobSpec `json:"injectJob,omitempty"`
-	EmbedChaos  `json:",inline"`
-	PressureCfg PressureCfg `json:"pressureCfg"`
+// ChaosSpec defines the desired state of Chaos
+type ChaosSpec struct {
+	EmbedChaos `json:",inline"`
+
+	// +optional
+	InjectJob *JobSpec `json:"injectJob,omitempty" yaml:"injectJob,omitempty"`
+	// +optional
+	PressureCfg *PressureCfg `json:"pressureCfg,omitempty" yaml:"pressureCfg,omitempty"`
 }
 
 type PressureCfg struct {
@@ -67,11 +70,11 @@ type Script string
 // JobSpec specifies the config of job to create
 type JobSpec struct {
 	// +optional
-	Experimental Script `json:"experimental,omitempty"`
+	Experimental Script `json:"experimental,omitempty" yaml:"experimental,omitempty"`
 	// +optional
-	Pressure Script `json:"pressure,omitempty"`
+	Pressure Script `json:"pressure,omitempty" yaml:"pressure,omitempty"`
 	// +optional
-	Verify Script `json:"verify,omitempty"`
+	Verify Script `json:"verify,omitempty" yaml:"verify,omitempty"`
 }
 
 type EmbedChaos struct {
@@ -92,15 +95,19 @@ const (
 	Unknown      ChaosCondition = "Unknown"
 )
 
-// ShardingSphereChaosStatus defines the actual state of ShardingSphereChaos
-type ShardingSphereChaosStatus struct {
-	ChaosCondition ChaosCondition      `json:"chaosCondition"`
-	Phase          ChaosPhase          `json:"phase"`
-	Result         Result              `json:"result"`
-	Conditions     []*metav1.Condition `json:"condition,omitempty"`
+// ChaosStatus defines the actual state of Chaos
+type ChaosStatus struct {
+	// +optional
+	ChaosCondition ChaosCondition `json:"chaosCondition,omitempty" yaml:"chaosCondition,omitempty"`
+	// +optional
+	Phase ChaosPhase `json:"phase,omitempty" yaml:"phase,omitempty"`
+	// +optional
+	// Result Result `json:"result,omitempty" yaml:"result,omitempty"`
+	// +optional
+	Conditions []*metav1.Condition `json:"conditions,omitempty" yaml:"conditions,omitempty"`
 }
 
-// Result represents the result of the ShardingSphereChaos
+// Result represents the result of the Chaos
 type Result struct {
 	Steady Msg `json:"steady"`
 	Chaos  Msg `json:"chaos"`
@@ -154,6 +161,8 @@ type PodChaosParams struct {
 	CPUStress *CPUStressParams `json:"cpuStress,omitempty"`
 	//+optional
 	MemoryStress *MemoryStressParams `json:"memoryStress,omitempty"`
+	// +optional
+	PodKill *PodKillParams `json:"podKill,omitempty"`
 }
 
 type PodFailureParams struct {
@@ -182,6 +191,11 @@ type MemoryStressParams struct {
 	Consumption string `json:"consumption,omitempty"`
 }
 
+type PodKillParams struct {
+	// +optional
+	GracePeriod int64 `json:"gracePeriod,omitempty"`
+}
+
 // NetworkChaosSpec Fields that need to be configured for network type chaos
 type NetworkChaosSpec struct {
 	Source PodSelector  `json:",inline"`
@@ -189,7 +203,6 @@ type NetworkChaosSpec struct {
 
 	// +optional
 	Action NetworkChaosAction `json:"action"`
-
 	// +optional
 	Duration *string `json:"duration,omitempty"`
 	// +optional
@@ -271,5 +284,5 @@ type PodSelector struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&ShardingSphereChaos{}, &ShardingSphereChaosList{})
+	SchemeBuilder.Register(&Chaos{}, &ChaosList{})
 }

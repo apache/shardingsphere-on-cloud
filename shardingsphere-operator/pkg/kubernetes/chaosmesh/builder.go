@@ -58,7 +58,7 @@ var (
 
 type GenericChaos interface{}
 
-func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.ShardingSphereChaos, chaos GenericChaos) v1alpha1.ChaosCondition {
+func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.Chaos, chaos GenericChaos) v1alpha1.ChaosCondition {
 	var status chaosmeshv1alpha1.ChaosStatus
 	if ssChaos.Spec.EmbedChaos.PodChaos != nil {
 		if podChao, ok := chaos.(*chaosmeshv1alpha1.PodChaos); ok && podChao != nil {
@@ -102,62 +102,52 @@ func judgeCondition(condition map[chaosmeshv1alpha1.ChaosConditionType]bool, pha
 	return v1alpha1.Unknown
 }
 
-func NewPodChaos(ssChao *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
-
+func NewPodChaos(ssChao *v1alpha1.Chaos) (PodChaos, error) {
 	chao := ssChao.Spec.PodChaos
-
 	if chao.Action == v1alpha1.MemoryStress || chao.Action == v1alpha1.CPUStress {
 		return NewStressChaos(ssChao)
 	}
 
 	pcb := NewPodChaosBuilder()
 	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
+	pcb.SetAction(string(chao.Action))
 
-	if act, ok := ssChao.Annotations[AnnoPodAction]; ok {
-		pcb.SetAction(act)
-		if gp, ok := ssChao.Annotations[AnnoGracePeriod]; chaosmeshv1alpha1.PodChaosAction(act) == chaosmeshv1alpha1.PodKillAction && ok {
-			gpInt, err := strconv.ParseInt(gp, 10, 64)
-			if err != nil {
-				return nil, err
-			}
-			pcb.SetGracePeriod(gpInt)
-		}
-	} else {
-		pcb.SetAction(string(chao.Action))
-	}
+	containerSelector := &chaosmeshv1alpha1.ContainerSelector{}
 
 	psb := NewPodSelectorBuilder()
-
-	psb.SetNamespaces(chao.Namespaces).
-		SetExpressionSelectors(chao.ExpressionSelectors).
+	psb.SetSelectMode(ssChao.Annotations[AnnoPodSelectorMode]).
+		SetValue(ssChao.Annotations[AnnoPodSelectorValue]).
 		SetNodes(chao.Nodes).
+		SetPods(chao.Pods).
 		SetNodeSelector(chao.NodeSelectors).
-		SetAnnotationSelectors(chao.AnnotationSelectors).
+		// SetPodPhaseSelectors(chao.Pods).
+		SetNamespaces(chao.Namespaces).
+		// SetFieldSelector().
 		SetLabelSelector(chao.LabelSelectors).
-		SetPods(chao.Pods)
+		SetExpressionSelectors(chao.ExpressionSelectors).
+		SetAnnotationSelectors(chao.AnnotationSelectors)
 
-	psb.SetSelectMode(ssChao.Annotations[AnnoTargetPodSelectMode]).
-		SetValue(ssChao.Annotations[AnnoTargetPodSelectValue])
+	podSelector := *psb.Build()
+	containerSelector.PodSelector = podSelector
 
-	containerSelector := &chaosmeshv1alpha1.ContainerSelector{
-		PodSelector: *psb.Build(),
-	}
-
-	if chao.Action == v1alpha1.PodFailure {
+	switch chao.Action {
+	case v1alpha1.PodKill:
+		gp := ssChao.Spec.EmbedChaos.PodChaos.Params.PodKill.GracePeriod
+		pcb.SetGracePeriod(gp)
+	case v1alpha1.PodFailure:
 		pcb.SetDuration(chao.Params.PodFailure.Duration)
-	}
-
-	if chao.Action == v1alpha1.ContainerKill {
-		containerSelector.ContainerNames = chao.Params.ContainerKill.ContainerNames
+	case v1alpha1.ContainerKill:
+		containerSelector.ContainerNames = ssChao.Spec.EmbedChaos.PodChaos.Params.ContainerKill.ContainerNames
 	}
 
 	pcb.SetContainerSelector(containerSelector)
+
 	podChao := pcb.Build()
 
 	return podChao, nil
 }
 
-func NewStressChaos(chaos *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
+func NewStressChaos(chaos *v1alpha1.Chaos) (PodChaos, error) {
 	sc := &chaosmeshv1alpha1.StressChaos{}
 	sc.Namespace = chaos.Namespace
 	sc.Name = chaos.Name
@@ -195,7 +185,7 @@ func NewStressChaos(chaos *v1alpha1.ShardingSphereChaos) (PodChaos, error) {
 	return sc, nil
 }
 
-func setCPUStressParams(sschaos *v1alpha1.ShardingSphereChaos, chaos *chaosmeshv1alpha1.StressChaos) {
+func setCPUStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.StressChaos) {
 	cpu := chaosmeshv1alpha1.CPUStressor{
 		Stressor: chaosmeshv1alpha1.Stressor{
 			Workers: sschaos.Spec.PodChaos.Params.CPUStress.Cores,
@@ -207,8 +197,7 @@ func setCPUStressParams(sschaos *v1alpha1.ShardingSphereChaos, chaos *chaosmeshv
 	chaos.Spec.Duration = &sschaos.Spec.PodChaos.Params.CPUStress.Duration
 }
 
-func setMemoryStressParams(sschaos *v1alpha1.ShardingSphereChaos, chaos *chaosmeshv1alpha1.StressChaos) error {
-
+func setMemoryStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.StressChaos) error {
 	oom, err := strconv.Atoi(sschaos.Annotations[AnnoOOMScoreAdj])
 	memory := chaosmeshv1alpha1.MemoryStressor{
 		Stressor: chaosmeshv1alpha1.Stressor{
@@ -234,7 +223,7 @@ func getAnnotation(anno map[string]string, k string) string {
 	return ""
 }
 
-func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error) {
+func NewNetworkChaos(ssChao *v1alpha1.Chaos) (NetworkChaos, error) {
 	ncb := NewNetworkChaosBuilder()
 	ncb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 
@@ -316,28 +305,6 @@ func NewNetworkChaos(ssChao *v1alpha1.ShardingSphereChaos) (NetworkChaos, error)
 	return networkChao, nil
 }
 
-type PodChaosBuilder interface {
-	SetNamespace(string) PodChaosBuilder
-	SetName(string) PodChaosBuilder
-	SetLabels(map[string]string) PodChaosBuilder
-	SetAnnotations(map[string]string) PodChaosBuilder
-	SetContainerSelector(*chaosmeshv1alpha1.ContainerSelector) PodChaosBuilder
-	SetAction(string) PodChaosBuilder
-	SetDuration(*string) PodChaosBuilder
-	SetGracePeriod(int64) PodChaosBuilder
-	Build() *chaosmeshv1alpha1.PodChaos
-}
-
-func NewPodChaosBuilder() PodChaosBuilder {
-	return &podChaosBuilder{
-		podChaos: DefaultPodChaos(),
-	}
-}
-
-type podChaosBuilder struct {
-	podChaos *chaosmeshv1alpha1.PodChaos
-}
-
 type BandWidthActionBuilder interface {
 	SetRate(string) BandWidthActionBuilder
 	SetLimit(string) BandWidthActionBuilder
@@ -398,6 +365,29 @@ func (b *bandWidthActionBuilder) SetMinBurst(s string) BandWidthActionBuilder {
 
 func (b *bandWidthActionBuilder) Build() *chaosmeshv1alpha1.BandwidthSpec {
 	return b.bandwidth
+}
+
+type PodChaosBuilder interface {
+	SetName(string) PodChaosBuilder
+	SetNamespace(string) PodChaosBuilder
+	SetLabels(map[string]string) PodChaosBuilder
+	SetAnnotations(map[string]string) PodChaosBuilder
+
+	SetContainerSelector(*chaosmeshv1alpha1.ContainerSelector) PodChaosBuilder
+	SetAction(string) PodChaosBuilder
+	SetDuration(*string) PodChaosBuilder
+	SetGracePeriod(int64) PodChaosBuilder
+	Build() *chaosmeshv1alpha1.PodChaos
+}
+
+func NewPodChaosBuilder() PodChaosBuilder {
+	return &podChaosBuilder{
+		podChaos: DefaultPodChaos(),
+	}
+}
+
+type podChaosBuilder struct {
+	podChaos *chaosmeshv1alpha1.PodChaos
 }
 
 func (p *podChaosBuilder) SetNamespace(namespace string) PodChaosBuilder {
@@ -564,17 +554,23 @@ func NewNetworkChaosBuilder() NetworkChaosBuilder {
 }
 
 type PodSelectorBuilder interface {
-	SetNamespaces([]string) PodSelectorBuilder
+	// PodSelector
 	SetSelectMode(string) PodSelectorBuilder
 	SetValue(string) PodSelectorBuilder
+
+	// PodSelectorSpec
 	SetNodes([]string) PodSelectorBuilder
 	SetPods(map[string][]string) PodSelectorBuilder
 	SetNodeSelector(map[string]string) PodSelectorBuilder
 	SetPodPhaseSelectors([]string) PodSelectorBuilder
+
+	// GenericSelectorSpec
+	SetNamespaces([]string) PodSelectorBuilder
 	SetFieldSelectors(map[string]string) PodSelectorBuilder
 	SetLabelSelector(map[string]string) PodSelectorBuilder
 	SetExpressionSelectors([]metav1.LabelSelectorRequirement) PodSelectorBuilder
 	SetAnnotationSelectors(map[string]string) PodSelectorBuilder
+
 	Build() *chaosmeshv1alpha1.PodSelector
 }
 
