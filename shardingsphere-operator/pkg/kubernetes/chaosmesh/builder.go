@@ -198,7 +198,17 @@ func setCPUStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.Stress
 }
 
 func setMemoryStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.StressChaos) error {
-	oom, err := strconv.Atoi(sschaos.Annotations[AnnoOOMScoreAdj])
+	var (
+		oom int
+		err error
+	)
+	if adj, ok := sschaos.Annotations[AnnoOOMScoreAdj]; ok {
+		oom, err = strconv.Atoi(adj)
+		if err != nil {
+			return err
+		}
+	}
+
 	memory := &chaosmeshv1alpha1.MemoryStressor{
 		Stressor: chaosmeshv1alpha1.Stressor{
 			Workers: sschaos.Spec.PodChaos.Params.MemoryStress.Workers,
