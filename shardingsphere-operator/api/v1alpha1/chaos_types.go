@@ -154,15 +154,15 @@ type PodChaosSpec struct {
 // PodActionParams Optional parameters for pod type configuration
 type PodChaosParams struct {
 	// +optional
-	PodFailure *PodFailureParams `json:"podFailure,omitempty"`
+	PodFailure *PodFailureParams `json:"podFailure,omitempty" yaml:"PodFailure,omitempty"`
 	// +optional
-	ContainerKill *ContainerKillParams `json:"containerKill,omitempty"`
+	ContainerKill *ContainerKillParams `json:"containerKill,omitempty" yaml:"containerKill,omitempty"`
 	//+optional
-	CPUStress *CPUStressParams `json:"cpuStress,omitempty"`
+	CPUStress *CPUStressParams `json:"cpuStress,omitempty" yaml:"cpuStress,omitempty"`
 	//+optional
-	MemoryStress *MemoryStressParams `json:"memoryStress,omitempty"`
+	MemoryStress *MemoryStressParams `json:"memoryStress,omitempty" yaml:"memoryStress,omitempty"`
 	// +optional
-	PodKill *PodKillParams `json:"podKill,omitempty"`
+	PodKill *PodKillParams `json:"podKill,omitempty" yaml:"podKill,omitempty"`
 }
 
 type PodFailureParams struct {
