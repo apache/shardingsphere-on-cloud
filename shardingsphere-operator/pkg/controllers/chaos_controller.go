@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh"
@@ -33,8 +32,6 @@ import (
 	"github.com/go-logr/logr"
 	batchV1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
@@ -74,7 +71,6 @@ func (r *ChaosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	logger := r.Log.WithValues(ChaosControllerName, req.NamespacedName)
 
 	ssChaos, err := r.getRuntimeChaos(ctx, req.NamespacedName)
-
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -94,15 +90,14 @@ func (r *ChaosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	var errors []error
 	if err := r.reconcileChaos(ctx, ssChaos); err != nil {
 		errors = append(errors, err)
-
 		logger.Error(err, "reconcile chaos error")
 	}
 
 	if err := r.reconcileStatus(ctx, ssChaos); err != nil {
 		errors = append(errors, err)
-
 		logger.Error(err, "failed to update status")
 	}
+
 	if len(errors) > 0 {
 		return ctrl.Result{Requeue: true}, err
 	}
@@ -112,11 +107,9 @@ func (r *ChaosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 func (r *ChaosReconciler) reconcileChaos(ctx context.Context, chaos *v1alpha1.Chaos) error {
 	logger := r.Log.WithValues("reconcile chaos", fmt.Sprintf("%s/%s", chaos.Namespace, chaos.Name))
 
-	/*
-		if chaos.Status.Phase == "" || chaos.Status.Phase == v1alpha1.BeforeSteady || chaos.Status.Phase == v1alpha1.AfterSteady {
-			return nil
-		}
-	*/
+	if chaos.Status.Phase == "" || chaos.Status.Phase == v1alpha1.BeforeSteady || chaos.Status.Phase == v1alpha1.AfterSteady {
+		return nil
+	}
 	namespacedName := types.NamespacedName{
 		Namespace: chaos.Namespace,
 		Name:      chaos.Name,
@@ -178,150 +171,13 @@ func (r *ChaosReconciler) updateChaosCondition(ctx context.Context, chaos *v1alp
 	return nil
 }
 
-func (r *ChaosReconciler) reconcileTestStatus(ctx context.Context, chaos *v1alpha1.Chaos) error {
-	cur := chaos.Status.DeepCopy()
-
-	setDefaultStatus(chaos)
-	updateCondition(chaos)
-	r.updatePhaseExec(chaos)
-
-	if err := r.updateChaosCondition(ctx, chaos); err != nil {
-		return err
-	}
-
-	if reflect.DeepEqual(cur, chaos.Status) {
-
-		return nil
-	}
-
-	return r.Status().Update(ctx, chaos)
-}
-
 type ExecCtrl struct {
 	cancel   context.CancelFunc
 	pressure *pressure.Pressure
-	ctx      context.Context
-}
-
-func (r *ChaosReconciler) reconcilePressure(ctx context.Context, chao *v1alpha1.Chaos) error {
-	if chao.Status.Phase == "" {
-		return nil
-	}
-	exec := r.getNeedExec(chao)
-
-	//if exec in this phase do not exist,create it
-	if exec == nil {
-		exec := pressure.NewPressure(getExecName(chao), chao.Spec.PressureCfg.DistSQLs)
-
-		//we need to set active to true,prevent it start after we start reconcile status
-		exec.Active = true
-		execCtx, cancel := context.WithCancel(ctx)
-		execCtrl := &ExecCtrl{
-			cancel:   cancel,
-			pressure: exec,
-			ctx:      execCtx,
-		}
-
-		go exec.Run(execCtx, chao.Spec.PressureCfg)
-		r.ExecCtrls = append(r.ExecCtrls, execCtrl)
-	}
-
-	return nil
-}
-
-func updateCondition(chaos *v1alpha1.Chaos) {
-	phase := chaos.Status.Phase
-
-	for i := range chaos.Status.Conditions {
-		condition := chaos.Status.Conditions[i]
-		if string(phase) == condition.Type {
-			if condition.Status == v1alpha1.ConditionStatusFalse {
-				condition.Status = v1alpha1.ConditionStatusTrue
-				condition.LastTransitionTime = metav1.Time{Time: time.Now()}
-			}
-			return
-		}
-	}
-}
-
-func (r *ChaosReconciler) updatePhaseExec(chaos *v1alpha1.Chaos) {
-	exec := r.getNeedExec(chaos)
-
-	//because the goroutine asynchronous,we cant check it start immediately or not
-	if exec == nil || exec.Active {
-		return
-	}
-
-	//todo: judge error
-	// msg := generateMsgFromExec(exec)
-	var nextPhase v1alpha1.ChaosPhase
-	//when exec finished, update phase
-	switch chaos.Status.Phase {
-	case v1alpha1.BeforeSteady:
-		nextPhase = v1alpha1.AfterSteady
-	case v1alpha1.AfterSteady:
-		// chaos.Status.Result.Steady = *msg
-		//todo: add metrics
-
-		nextPhase = v1alpha1.BeforeChaos
-	case v1alpha1.BeforeChaos:
-		// chaos.Status.Result.Chaos = *msg
-		//todo: add metrics
-		nextPhase = v1alpha1.AfterChaos
-	//case v1alpha1.AfterChaos:
-	//	//todo: check result here
-	//	return
-	default:
-		return
-	}
-
-	chaos.Status.Phase = nextPhase
-}
-
-func generateMsgFromExec(exec *pressure.Pressure) *v1alpha1.Msg {
-	//todo: wait to change result compute way
-
-	msg := v1alpha1.Msg{
-		Result:   fmt.Sprintf("%d/%d", exec.Result.Success, exec.Result.Total),
-		Duration: exec.Result.Duration.String(),
-	}
-
-	if exec.Err != nil {
-		msg.FailureDetails = exec.Err.Error()
-	}
-
-	return &msg
-}
-
-func getExecName(chao *v1alpha1.Chaos) string {
-	var execName string
-	nameSpacedName := types.NamespacedName{Namespace: chao.Namespace, Name: chao.Name}
-
-	if chao.Status.Phase == v1alpha1.BeforeSteady || chao.Status.Phase == v1alpha1.AfterSteady {
-		execName = makeExecName(nameSpacedName, string(sschaos.InSteady))
-	}
-	if chao.Status.Phase == v1alpha1.BeforeChaos || chao.Status.Phase == v1alpha1.AfterChaos {
-		execName = makeExecName(nameSpacedName, string(sschaos.InChaos))
-	}
-
-	return execName
 }
 
 func makeExecName(namespacedName types.NamespacedName, execType string) string {
 	return fmt.Sprintf("%s-%s-%s", namespacedName.Namespace, namespacedName.Name, execType)
-}
-
-func (r *ChaosReconciler) getNeedExec(chao *v1alpha1.Chaos) *pressure.Pressure {
-	jobName := getExecName(chao)
-
-	//if pressure do not exist,run it
-	for i := range r.ExecCtrls {
-		if r.ExecCtrls[i].pressure.Name == jobName {
-			return r.ExecCtrls[i].pressure
-		}
-	}
-
-	return nil
 }
 
 func (r *ChaosReconciler) getRuntimeChaos(ctx context.Context, name types.NamespacedName) (*v1alpha1.Chaos, error) {
@@ -481,106 +337,12 @@ func (r *ChaosReconciler) createNetworkChaos(ctx context.Context, chaos *v1alpha
 	return nil
 }
 
-func (r *ChaosReconciler) reconcileConfigMap(ctx context.Context, chaos *v1alpha1.Chaos) error {
-	namespaceName := types.NamespacedName{
-		Namespace: chaos.Namespace,
-		Name:      chaos.Name,
-	}
-
-	cm, err := r.getConfigMapByNamespacedName(ctx, namespaceName)
-	if err != nil {
-		return err
-	}
-
-	if cm != nil {
-		if err := r.updateConfigMap(ctx, chaos, cm); err != nil {
-			fmt.Printf("update configmap error: %s\n", err)
-			return err
-		}
-	}
-
-	if err = r.createConfigMap(ctx, chaos); err != nil {
-		fmt.Printf("create configmap error: %s\n", err)
-		return err
-	}
-
-	return nil
-}
-
-func setDefaultStatus(chaos *v1alpha1.Chaos) {
-	if chaos.Status.Phase == "" {
-		chaos.Status.Phase = v1alpha1.BeforeSteady
-	}
-
-	if len(chaos.Status.Conditions) == 0 {
-		chaos.Status.Conditions = []*metav1.Condition{
-			{
-				Type:               string(v1alpha1.BeforeSteady),
-				Status:             metav1.ConditionTrue,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             "InSteadyExperiment",
-			},
-			{
-				Type:               string(v1alpha1.AfterSteady),
-				Status:             metav1.ConditionFalse,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             "AfterSteadyExperiment",
-			},
-			{
-				Type:               string(v1alpha1.BeforeChaos),
-				Status:             metav1.ConditionFalse,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             "InChaoExperiment",
-			},
-			{
-				Type:               string(v1alpha1.AfterChaos),
-				Status:             metav1.ConditionFalse,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             "AfterChaosExperiment",
-			},
-		}
-	}
-}
-
 func (r *ChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (chaosmesh.NetworkChaos, error) {
 	nc, err := r.Chaos.GetNetworkChaosByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return nil, err
 	}
 	return nc, nil
-}
-
-func (r *ChaosReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.ConfigMap, error) {
-	config, err := r.ConfigMap.GetByNamespacedName(ctx, namespacedName)
-	if err != nil {
-		return nil, err
-	}
-
-	return config, nil
-}
-
-func (r *ChaosReconciler) updateConfigMap(ctx context.Context, chaos *v1alpha1.Chaos, cur *corev1.ConfigMap) error {
-	// exp := sschaos.UpdateShardingSphereChaosConfigMap(chao, cur)
-	exp := r.ConfigMap.Build(ctx, chaos)
-	exp.ObjectMeta = cur.ObjectMeta
-	exp.ObjectMeta.ResourceVersion = ""
-	exp.Labels = cur.Labels
-	exp.Annotations = cur.Annotations
-	return r.ConfigMap.Update(ctx, exp)
-}
-
-func (r *ChaosReconciler) createConfigMap(ctx context.Context, chaos *v1alpha1.Chaos) error {
-	cm := r.ConfigMap.Build(ctx, chaos)
-	if err := ctrl.SetControllerReference(chaos, cm, r.Scheme); err != nil {
-		return err
-	}
-
-	err := r.Create(ctx, cm)
-	if err != nil && apierrors.IsAlreadyExists(err) {
-		return nil
-	}
-
-	return err
 }
 
 // SetupWithManager sets up the controller with the Manager.
