@@ -116,6 +116,7 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHECK_LINT?= $(LOCALBIN)/golangci-lint
+CHECK_MOCKGEN ?= $(LOCALBIN)/mockgen
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v4.5.7
@@ -145,3 +146,12 @@ lint: check-lint
 check-lint: $(CHECK_LINT) ## Download golangci-lint-setup locally if necessary.
 $(CHECK_LINT): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+.PHONY: mockgen
+mockgen: check-mockgen
+	GOBIN=$(LOCALBIN) mockgen -package mockChaos -destination pkg/kubernetes/chaosmesh/mocks/store.go github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh Chaos
+
+.PHONY: check-mockgen
+check-mockgen: $(CHECK_MOCKGEN)
+$(CHECK_MOCKGEN): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install github.com/golang/mock/mockgen@v1.6.0
