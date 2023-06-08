@@ -58,23 +58,31 @@ var (
 
 type GenericChaos interface{}
 
-func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.Chaos, chaos GenericChaos) v1alpha1.ChaosCondition {
-	var status chaosmeshv1alpha1.ChaosStatus
+func getStatus(ssChaos *v1alpha1.Chaos, chaos GenericChaos) *chaosmeshv1alpha1.ChaosStatus {
+	var status *chaosmeshv1alpha1.ChaosStatus
 	if ssChaos.Spec.EmbedChaos.PodChaos != nil {
 		if podChao, ok := chaos.(*chaosmeshv1alpha1.PodChaos); ok && podChao != nil {
-			status = *podChao.GetStatus()
+			status = podChao.GetStatus()
 		} else if ssChao, ok := chaos.(*chaosmeshv1alpha1.StressChaos); ok && ssChao != nil {
-			status = *ssChao.GetStatus()
-		} else {
-			return v1alpha1.Unknown
-		}
-	} else if ssChaos.Spec.EmbedChaos.NetworkChaos != nil {
-		if networkChaos, ok := chaos.(*chaosmeshv1alpha1.NetworkChaos); ok && networkChaos != nil {
-			status = *networkChaos.GetStatus()
-		} else {
-			return v1alpha1.Unknown
+			status = ssChao.GetStatus()
 		}
 	}
+
+	if ssChaos.Spec.EmbedChaos.NetworkChaos != nil {
+		if networkChaos, ok := chaos.(*chaosmeshv1alpha1.NetworkChaos); ok && networkChaos != nil {
+			status = networkChaos.GetStatus()
+		}
+	}
+
+	return status
+}
+
+func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.Chaos, chaos GenericChaos) v1alpha1.ChaosCondition {
+	status := getStatus(ssChaos, chaos)
+	if status == nil {
+		return v1alpha1.Unknown
+	}
+
 	var conditions = map[chaosmeshv1alpha1.ChaosConditionType]bool{}
 	for i := range status.Conditions {
 		conditions[status.Conditions[i].Type] = status.Conditions[i].Status == corev1.ConditionTrue

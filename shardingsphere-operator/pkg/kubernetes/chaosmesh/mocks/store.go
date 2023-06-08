@@ -65,6 +65,20 @@ func (mr *MockChaosMockRecorder) CreatePodChaos(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePodChaos", reflect.TypeOf((*MockChaos)(nil).CreatePodChaos), arg0, arg1)
 }
 
+// CreateStressChaos mocks base method.
+func (m *MockChaos) CreateStressChaos(arg0 context.Context, arg1 *v1alpha1.Chaos) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateStressChaos", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateStressChaos indicates an expected call of CreateStressChaos.
+func (mr *MockChaosMockRecorder) CreateStressChaos(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStressChaos", reflect.TypeOf((*MockChaos)(nil).CreateStressChaos), arg0, arg1)
+}
+
 // DeleteNetworkChaos mocks base method.
 func (m *MockChaos) DeleteNetworkChaos(arg0 context.Context, arg1 chaosmesh.NetworkChaos) error {
 	m.ctrl.T.Helper()
@@ -91,6 +105,20 @@ func (m *MockChaos) DeletePodChaos(arg0 context.Context, arg1 chaosmesh.PodChaos
 func (mr *MockChaosMockRecorder) DeletePodChaos(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePodChaos", reflect.TypeOf((*MockChaos)(nil).DeletePodChaos), arg0, arg1)
+}
+
+// DeleteStressChaos mocks base method.
+func (m *MockChaos) DeleteStressChaos(arg0 context.Context, arg1 chaosmesh.StressChaos) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteStressChaos", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteStressChaos indicates an expected call of DeleteStressChaos.
+func (mr *MockChaosMockRecorder) DeleteStressChaos(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStressChaos", reflect.TypeOf((*MockChaos)(nil).DeleteStressChaos), arg0, arg1)
 }
 
 // GetNetworkChaosByNamespacedName mocks base method.
@@ -123,6 +151,21 @@ func (mr *MockChaosMockRecorder) GetPodChaosByNamespacedName(arg0, arg1 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPodChaosByNamespacedName", reflect.TypeOf((*MockChaos)(nil).GetPodChaosByNamespacedName), arg0, arg1)
 }
 
+// GetStressChaosByNamespacedName mocks base method.
+func (m *MockChaos) GetStressChaosByNamespacedName(arg0 context.Context, arg1 types.NamespacedName) (chaosmesh.StressChaos, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStressChaosByNamespacedName", arg0, arg1)
+	ret0, _ := ret[0].(chaosmesh.StressChaos)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStressChaosByNamespacedName indicates an expected call of GetStressChaosByNamespacedName.
+func (mr *MockChaosMockRecorder) GetStressChaosByNamespacedName(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStressChaosByNamespacedName", reflect.TypeOf((*MockChaos)(nil).GetStressChaosByNamespacedName), arg0, arg1)
+}
+
 // NewNetworkChaos mocks base method.
 func (m *MockChaos) NewNetworkChaos(arg0 context.Context, arg1 *v1alpha1.Chaos) chaosmesh.NetworkChaos {
 	m.ctrl.T.Helper()
@@ -151,6 +194,20 @@ func (mr *MockChaosMockRecorder) NewPodChaos(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewPodChaos", reflect.TypeOf((*MockChaos)(nil).NewPodChaos), arg0, arg1)
 }
 
+// NewStressChaos mocks base method.
+func (m *MockChaos) NewStressChaos(arg0 context.Context, arg1 *v1alpha1.Chaos) chaosmesh.StressChaos {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewStressChaos", arg0, arg1)
+	ret0, _ := ret[0].(chaosmesh.StressChaos)
+	return ret0
+}
+
+// NewStressChaos indicates an expected call of NewStressChaos.
+func (mr *MockChaosMockRecorder) NewStressChaos(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewStressChaos", reflect.TypeOf((*MockChaos)(nil).NewStressChaos), arg0, arg1)
+}
+
 // UpdateNetworkChaos mocks base method.
 func (m *MockChaos) UpdateNetworkChaos(arg0 context.Context, arg1 chaosmesh.NetworkChaos, arg2 *v1alpha1.Chaos) error {
 	m.ctrl.T.Helper()
@@ -177,6 +234,20 @@ func (m *MockChaos) UpdatePodChaos(arg0 context.Context, arg1 chaosmesh.PodChaos
 func (mr *MockChaosMockRecorder) UpdatePodChaos(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePodChaos", reflect.TypeOf((*MockChaos)(nil).UpdatePodChaos), arg0, arg1, arg2)
+}
+
+// UpdateStressChaos mocks base method.
+func (m *MockChaos) UpdateStressChaos(arg0 context.Context, arg1 chaosmesh.StressChaos, arg2 *v1alpha1.Chaos) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStressChaos", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateStressChaos indicates an expected call of UpdateStressChaos.
+func (mr *MockChaosMockRecorder) UpdateStressChaos(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStressChaos", reflect.TypeOf((*MockChaos)(nil).UpdateStressChaos), arg0, arg1, arg2)
 }
 
 // MockBuilder is a mock of Builder interface.
@@ -228,6 +299,20 @@ func (m *MockBuilder) NewPodChaos(arg0 context.Context, arg1 *v1alpha1.Chaos) ch
 func (mr *MockBuilderMockRecorder) NewPodChaos(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewPodChaos", reflect.TypeOf((*MockBuilder)(nil).NewPodChaos), arg0, arg1)
+}
+
+// NewStressChaos mocks base method.
+func (m *MockBuilder) NewStressChaos(arg0 context.Context, arg1 *v1alpha1.Chaos) chaosmesh.StressChaos {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewStressChaos", arg0, arg1)
+	ret0, _ := ret[0].(chaosmesh.StressChaos)
+	return ret0
+}
+
+// NewStressChaos indicates an expected call of NewStressChaos.
+func (mr *MockBuilderMockRecorder) NewStressChaos(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewStressChaos", reflect.TypeOf((*MockBuilder)(nil).NewStressChaos), arg0, arg1)
 }
 
 // MockGetter is a mock of Getter interface.
@@ -283,6 +368,21 @@ func (mr *MockGetterMockRecorder) GetPodChaosByNamespacedName(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPodChaosByNamespacedName", reflect.TypeOf((*MockGetter)(nil).GetPodChaosByNamespacedName), arg0, arg1)
 }
 
+// GetStressChaosByNamespacedName mocks base method.
+func (m *MockGetter) GetStressChaosByNamespacedName(arg0 context.Context, arg1 types.NamespacedName) (chaosmesh.StressChaos, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStressChaosByNamespacedName", arg0, arg1)
+	ret0, _ := ret[0].(chaosmesh.StressChaos)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStressChaosByNamespacedName indicates an expected call of GetStressChaosByNamespacedName.
+func (mr *MockGetterMockRecorder) GetStressChaosByNamespacedName(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStressChaosByNamespacedName", reflect.TypeOf((*MockGetter)(nil).GetStressChaosByNamespacedName), arg0, arg1)
+}
+
 // MockSetter is a mock of Setter interface.
 type MockSetter struct {
 	ctrl     *gomock.Controller
@@ -334,6 +434,20 @@ func (mr *MockSetterMockRecorder) CreatePodChaos(arg0, arg1 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePodChaos", reflect.TypeOf((*MockSetter)(nil).CreatePodChaos), arg0, arg1)
 }
 
+// CreateStressChaos mocks base method.
+func (m *MockSetter) CreateStressChaos(arg0 context.Context, arg1 *v1alpha1.Chaos) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateStressChaos", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateStressChaos indicates an expected call of CreateStressChaos.
+func (mr *MockSetterMockRecorder) CreateStressChaos(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStressChaos", reflect.TypeOf((*MockSetter)(nil).CreateStressChaos), arg0, arg1)
+}
+
 // DeleteNetworkChaos mocks base method.
 func (m *MockSetter) DeleteNetworkChaos(arg0 context.Context, arg1 chaosmesh.NetworkChaos) error {
 	m.ctrl.T.Helper()
@@ -362,6 +476,20 @@ func (mr *MockSetterMockRecorder) DeletePodChaos(arg0, arg1 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePodChaos", reflect.TypeOf((*MockSetter)(nil).DeletePodChaos), arg0, arg1)
 }
 
+// DeleteStressChaos mocks base method.
+func (m *MockSetter) DeleteStressChaos(arg0 context.Context, arg1 chaosmesh.StressChaos) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteStressChaos", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteStressChaos indicates an expected call of DeleteStressChaos.
+func (mr *MockSetterMockRecorder) DeleteStressChaos(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStressChaos", reflect.TypeOf((*MockSetter)(nil).DeleteStressChaos), arg0, arg1)
+}
+
 // UpdateNetworkChaos mocks base method.
 func (m *MockSetter) UpdateNetworkChaos(arg0 context.Context, arg1 chaosmesh.NetworkChaos, arg2 *v1alpha1.Chaos) error {
 	m.ctrl.T.Helper()
@@ -388,6 +516,20 @@ func (m *MockSetter) UpdatePodChaos(arg0 context.Context, arg1 chaosmesh.PodChao
 func (mr *MockSetterMockRecorder) UpdatePodChaos(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePodChaos", reflect.TypeOf((*MockSetter)(nil).UpdatePodChaos), arg0, arg1, arg2)
+}
+
+// UpdateStressChaos mocks base method.
+func (m *MockSetter) UpdateStressChaos(arg0 context.Context, arg1 chaosmesh.StressChaos, arg2 *v1alpha1.Chaos) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStressChaos", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateStressChaos indicates an expected call of UpdateStressChaos.
+func (mr *MockSetterMockRecorder) UpdateStressChaos(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStressChaos", reflect.TypeOf((*MockSetter)(nil).UpdateStressChaos), arg0, arg1, arg2)
 }
 
 // MockPodChaos is a mock of PodChaos interface.
@@ -433,5 +575,28 @@ func NewMockNetworkChaos(ctrl *gomock.Controller) *MockNetworkChaos {
 
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockNetworkChaos) EXPECT() *MockNetworkChaosMockRecorder {
+	return m.recorder
+}
+
+// MockStressChaos is a mock of StressChaos interface.
+type MockStressChaos struct {
+	ctrl     *gomock.Controller
+	recorder *MockStressChaosMockRecorder
+}
+
+// MockStressChaosMockRecorder is the mock recorder for MockStressChaos.
+type MockStressChaosMockRecorder struct {
+	mock *MockStressChaos
+}
+
+// NewMockStressChaos creates a new mock instance.
+func NewMockStressChaos(ctrl *gomock.Controller) *MockStressChaos {
+	mock := &MockStressChaos{ctrl: ctrl}
+	mock.recorder = &MockStressChaosMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockStressChaos) EXPECT() *MockStressChaosMockRecorder {
 	return m.recorder
 }

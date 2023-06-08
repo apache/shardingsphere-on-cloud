@@ -338,18 +338,6 @@ func (r *ChaosReconciler) reconcilePodChaos(ctx context.Context, chaos *v1alpha1
 	return nil
 }
 
-func (r *ChaosReconciler) reconcileStressChaos(ctx context.Context, chaos *v1alpha1.Chaos, namespacedName types.NamespacedName) error {
-	sc, err := r.getStressChaosByNamespacedName(ctx, namespacedName)
-	if err != nil {
-		return err
-	}
-
-	if sc != nil {
-		return r.updateStressChaos(ctx, chaos, sc)
-	}
-	return r.createStressChaos(ctx, chaos)
-}
-
 func (r *ChaosReconciler) getPodChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (chaosmesh.PodChaos, error) {
 	pc, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
 	if err != nil {
