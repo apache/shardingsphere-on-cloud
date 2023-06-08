@@ -63,6 +63,8 @@ func ConvertChaosStatus(ctx context.Context, ssChaos *v1alpha1.Chaos, chaos Gene
 	if ssChaos.Spec.EmbedChaos.PodChaos != nil {
 		if podChao, ok := chaos.(*chaosmeshv1alpha1.PodChaos); ok && podChao != nil {
 			status = *podChao.GetStatus()
+		} else if ssChao, ok := chaos.(*chaosmeshv1alpha1.StressChaos); ok && ssChao != nil {
+			status = *ssChao.GetStatus()
 		} else {
 			return v1alpha1.Unknown
 		}

@@ -150,11 +150,27 @@ func (r *ChaosReconciler) updateChaosCondition(ctx context.Context, chaos *v1alp
 	}
 
 	if chaos.Spec.EmbedChaos.PodChaos != nil {
-		pc, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
-		if err != nil {
-			return err
+		switch chaos.Spec.EmbedChaos.PodChaos.Action {
+		case v1alpha1.CPUStress:
+			fallthrough
+		case v1alpha1.MemoryStress:
+			sc, err := r.Chaos.GetStressChaosByNamespacedName(ctx, namespacedName)
+			if err != nil {
+				return err
+			}
+			chaos.Status.ChaosCondition = chaosmesh.ConvertChaosStatus(ctx, chaos, sc)
+		case v1alpha1.PodFailure:
+			fallthrough
+		case v1alpha1.PodKill:
+			fallthrough
+		case v1alpha1.ContainerKill:
+			pc, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
+			if err != nil {
+				return err
+			}
+			chaos.Status.ChaosCondition = chaosmesh.ConvertChaosStatus(ctx, chaos, pc)
 		}
-		chaos.Status.ChaosCondition = chaosmesh.ConvertChaosStatus(ctx, chaos, pc)
+
 	}
 
 	if chaos.Spec.EmbedChaos.NetworkChaos != nil {
@@ -205,10 +221,22 @@ func (r *ChaosReconciler) finalize(ctx context.Context, ssChaos *v1alpha1.Chaos)
 func (r *ChaosReconciler) deleteExternalResources(ctx context.Context, chao *v1alpha1.Chaos) error {
 	nameSpacedName := types.NamespacedName{Namespace: chao.Namespace, Name: chao.Name}
 	if chao.Spec.EmbedChaos.PodChaos != nil {
-		if err := r.deletePodChaos(ctx, nameSpacedName); err != nil {
-			return err
+		switch chao.Spec.EmbedChaos.PodChaos.Action {
+		case v1alpha1.CPUStress:
+			fallthrough
+		case v1alpha1.MemoryStress:
+			if err := r.deleteStressChaos(ctx, nameSpacedName); err != nil {
+				return err
+			}
+		case v1alpha1.PodFailure:
+			fallthrough
+		case v1alpha1.PodKill:
+			fallthrough
+		case v1alpha1.ContainerKill:
+			if err := r.deletePodChaos(ctx, nameSpacedName); err != nil {
+				return err
+			}
 		}
-
 		return nil
 	}
 
@@ -216,7 +244,6 @@ func (r *ChaosReconciler) deleteExternalResources(ctx context.Context, chao *v1a
 		if err := r.deleteNetworkChaos(ctx, nameSpacedName); err != nil {
 			return err
 		}
-
 		return nil
 	}
 
@@ -258,6 +285,20 @@ func (r *ChaosReconciler) deleteNetworkChaos(ctx context.Context, namespacedName
 	}
 	if networkchao != nil {
 		if err := r.Chaos.DeleteNetworkChaos(ctx, networkchao); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *ChaosReconciler) deleteStressChaos(ctx context.Context, namespacedName types.NamespacedName) error {
+	sc, err := r.getStressChaosByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return err
+	}
+	if sc != nil {
+		if err := r.Chaos.DeleteStressChaos(ctx, sc); err != nil {
 			return err
 		}
 	}
@@ -375,7 +416,7 @@ func (r *ChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, n
 }
 
 func (r *ChaosReconciler) getStressChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (chaosmesh.StressChaos, error) {
-	pc, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
+	pc, err := r.Chaos.GetStressChaosByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return nil, err
 	}
