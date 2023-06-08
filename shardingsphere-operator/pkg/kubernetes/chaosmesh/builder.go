@@ -252,7 +252,6 @@ func NewNetworkChaos(ssChao *v1alpha1.Chaos) (NetworkChaos, error) {
 		tcParams.Loss = &chaosmeshv1alpha1.LossSpec{
 			Loss: chao.Params.Loss.Loss,
 		}
-	// case v1alpha1.Partition:
 	case v1alpha1.Bandwidth:
 		bwab := NewBandWidthActionBuilder()
 		bwab.SetRate(getAnnotation(ssChao.Annotations, AnnoBandwidthRate))
@@ -261,6 +260,7 @@ func NewNetworkChaos(ssChao *v1alpha1.Chaos) (NetworkChaos, error) {
 		bwab.SetPeakRate(getAnnotation(ssChao.Annotations, AnnoBandwidthPeakrate))
 		bwab.SetMinBurst(getAnnotation(ssChao.Annotations, AnnoBandwidthMinBurst))
 		tcParams.Bandwidth = bwab.Build()
+	case v1alpha1.Partition:
 	}
 
 	psb := NewPodSelectorBuilder()
