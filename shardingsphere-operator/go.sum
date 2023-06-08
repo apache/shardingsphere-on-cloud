@@ -64,12 +64,10 @@ github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGX
 github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
 github.com/cncf/xds/go v0.0.0-20210312221358-fbca930ec8ed/go.mod h1:eXthEFrGJvWHgFFCl3hGmgk+/aYT6PnTQLykKQRLhEs=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
-github.com/database-mesh/golang-sdk v0.0.0-20230606100535-23037381e4fb h1:p3tpHo24HjA7rW/JMjD9/6klWAVMn4fIefHXKgggVAg=
-github.com/database-mesh/golang-sdk v0.0.0-20230606100535-23037381e4fb/go.mod h1:yUEdo+aGdROl9oC7A1GeDB9/ubUtV2k73uLL+qC3PC4=
-github.com/database-mesh/golang-sdk v0.0.0-20230607065347-ac17e15902a6 h1:qm4zHib+RLX02dX+V8jpY5Zti0GBBZxoIBEceu/AuCQ=
-github.com/database-mesh/golang-sdk v0.0.0-20230607065347-ac17e15902a6/go.mod h1:yUEdo+aGdROl9oC7A1GeDB9/ubUtV2k73uLL+qC3PC4=
-github.com/database-mesh/golang-sdk v0.0.0-20230607082802-81e878c57517 h1:qS2ZfFpV+Vq3um8WYxWkgTpuoYT9ki63H2tA/Tb9SWw=
-github.com/database-mesh/golang-sdk v0.0.0-20230607082802-81e878c57517/go.mod h1:yUEdo+aGdROl9oC7A1GeDB9/ubUtV2k73uLL+qC3PC4=
+github.com/database-mesh/golang-sdk v0.0.0-20230608033816-2b0eafd08bb8 h1:ykLnu04rJx6qLn4QL0XcWpL3AoIGYDYLqRX7qpPB+Rw=
+github.com/database-mesh/golang-sdk v0.0.0-20230608033816-2b0eafd08bb8/go.mod h1:yUEdo+aGdROl9oC7A1GeDB9/ubUtV2k73uLL+qC3PC4=
+github.com/database-mesh/golang-sdk v0.0.0-20230608051131-717115b848ac h1:XxVNCAoMMSaDgKrPKV6jhXsknsXnHJ9PphpE/0DQldY=
+github.com/database-mesh/golang-sdk v0.0.0-20230608051131-717115b848ac/go.mod h1:yUEdo+aGdROl9oC7A1GeDB9/ubUtV2k73uLL+qC3PC4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

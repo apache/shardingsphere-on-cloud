@@ -92,6 +92,20 @@ func (mr *MockIRdsClientMockRecorder) CreateInstance(ctx, node, params interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInstance", reflect.TypeOf((*MockIRdsClient)(nil).CreateInstance), ctx, node, params)
 }
 
+// CreateRDSCluster mocks base method.
+func (m *MockIRdsClient) CreateRDSCluster(ctx context.Context, node *v1alpha1.StorageNode, params map[string]string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateRDSCluster", ctx, node, params)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateRDSCluster indicates an expected call of CreateRDSCluster.
+func (mr *MockIRdsClientMockRecorder) CreateRDSCluster(ctx, node, params interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRDSCluster", reflect.TypeOf((*MockIRdsClient)(nil).CreateRDSCluster), ctx, node, params)
+}
+
 // DeleteAuroraCluster mocks base method.
 func (m *MockIRdsClient) DeleteAuroraCluster(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	m.ctrl.T.Helper()
@@ -118,6 +132,20 @@ func (m *MockIRdsClient) DeleteInstance(ctx context.Context, node *v1alpha1.Stor
 func (mr *MockIRdsClientMockRecorder) DeleteInstance(ctx, node, storageProvider interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInstance", reflect.TypeOf((*MockIRdsClient)(nil).DeleteInstance), ctx, node, storageProvider)
+}
+
+// DeleteRDSCluster mocks base method.
+func (m *MockIRdsClient) DeleteRDSCluster(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteRDSCluster", ctx, node, storageProvider)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRDSCluster indicates an expected call of DeleteRDSCluster.
+func (mr *MockIRdsClientMockRecorder) DeleteRDSCluster(ctx, node, storageProvider interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRDSCluster", reflect.TypeOf((*MockIRdsClient)(nil).DeleteRDSCluster), ctx, node, storageProvider)
 }
 
 // GetAuroraCluster mocks base method.
@@ -178,6 +206,21 @@ func (m *MockIRdsClient) GetInstancesByFilters(ctx context.Context, filters map[
 func (mr *MockIRdsClientMockRecorder) GetInstancesByFilters(ctx, filters interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstancesByFilters", reflect.TypeOf((*MockIRdsClient)(nil).GetInstancesByFilters), ctx, filters)
+}
+
+// GetRDSCluster mocks base method.
+func (m *MockIRdsClient) GetRDSCluster(ctx context.Context, node *v1alpha1.StorageNode) (*rds.DescCluster, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRDSCluster", ctx, node)
+	ret0, _ := ret[0].(*rds.DescCluster)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRDSCluster indicates an expected call of GetRDSCluster.
+func (mr *MockIRdsClientMockRecorder) GetRDSCluster(ctx, node interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRDSCluster", reflect.TypeOf((*MockIRdsClient)(nil).GetRDSCluster), ctx, node)
 }
 
 // Instance mocks base method.
