@@ -59,12 +59,14 @@ type chaosClient struct {
 type Builder interface {
 	NewPodChaos(context.Context, *v1alpha1.Chaos) PodChaos
 	NewNetworkChaos(context.Context, *v1alpha1.Chaos) NetworkChaos
+	NewStressChaos(context.Context, *v1alpha1.Chaos) StressChaos
 }
 
 // Getter get Chaos from different parameters
 type Getter interface {
 	GetPodChaosByNamespacedName(context.Context, types.NamespacedName) (PodChaos, error)
 	GetNetworkChaosByNamespacedName(context.Context, types.NamespacedName) (NetworkChaos, error)
+	GetStressChaosByNamespacedName(context.Context, types.NamespacedName) (StressChaos, error)
 }
 
 // Setter set Chaos from different parameters
@@ -76,6 +78,10 @@ type Setter interface {
 	CreateNetworkChaos(context.Context, *v1alpha1.Chaos) error
 	UpdateNetworkChaos(context.Context, NetworkChaos, *v1alpha1.Chaos) error
 	DeleteNetworkChaos(context.Context, NetworkChaos) error
+
+	CreateStressChaos(context.Context, *v1alpha1.Chaos) error
+	UpdateStressChaos(context.Context, StressChaos, *v1alpha1.Chaos) error
+	DeleteStressChaos(context.Context, StressChaos) error
 }
 
 type getter struct {
@@ -110,6 +116,20 @@ func (cg getter) GetNetworkChaosByNamespacedName(ctx context.Context, namespaced
 	}
 }
 
+type StressChaos interface{}
+
+func (cg getter) GetStressChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (StressChaos, error) {
+	chaos := &chaosmeshv1alpha1.StressChaos{}
+	if err := cg.Get(ctx, namespacedName, chaos); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	} else {
+		return chaos, nil
+	}
+}
+
 type builder struct{}
 
 func (blder builder) NewPodChaos(ctx context.Context, sschaos *v1alpha1.Chaos) PodChaos {
@@ -120,6 +140,11 @@ func (blder builder) NewPodChaos(ctx context.Context, sschaos *v1alpha1.Chaos) P
 func (blder builder) NewNetworkChaos(ctx context.Context, sschaos *v1alpha1.Chaos) NetworkChaos {
 	nc, _ := NewNetworkChaos(sschaos)
 	return nc
+}
+
+func (blder builder) NewStressChaos(ctx context.Context, sschaos *v1alpha1.Chaos) StressChaos {
+	sc, _ := NewStressChaos(sschaos)
+	return sc
 }
 
 type setter struct {
@@ -207,6 +232,50 @@ func (cs setter) DeleteNetworkChaos(ctx context.Context, chao NetworkChaos) erro
 		return ErrConvert
 	}
 	if err := cs.Client.Delete(ctx, networkChaos); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateStressChaos creates a new stress chaos
+func (cs setter) CreateStressChaos(ctx context.Context, sschaos *v1alpha1.Chaos) error {
+	pc, err := NewStressChaos(sschaos)
+	if err != nil {
+		return err
+	}
+	return cs.Client.Create(ctx, pc.(*chaosmeshv1alpha1.StressChaos))
+}
+
+// UpdateStressChaos updates a stress chaos
+func (cs setter) UpdateStressChaos(ctx context.Context, stress StressChaos, sschaos *v1alpha1.Chaos) error {
+	pc, err := NewStressChaos(sschaos)
+	if err != nil {
+		return err
+	}
+	s, ok := pc.(*chaosmeshv1alpha1.StressChaos)
+	if !ok {
+		return ErrConvert
+	}
+	t, ok := stress.(*chaosmeshv1alpha1.StressChaos)
+	if !ok {
+		return ErrConvert
+	}
+	if reflect.DeepEqual(s.Spec, t.Spec) {
+		return nil
+	}
+	t.Spec = s.Spec
+
+	return cs.Client.Update(ctx, t)
+}
+
+// DeleteStressChaos deletes a stress chaos
+func (cs setter) DeleteStressChaos(ctx context.Context, chao StressChaos) error {
+	sc, ok := chao.(*chaosmeshv1alpha1.StressChaos)
+	if !ok {
+		return ErrConvert
+	}
+	if err := cs.Client.Delete(ctx, sc); err != nil {
 		return err
 	}
 

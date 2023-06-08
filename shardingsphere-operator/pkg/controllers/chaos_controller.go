@@ -266,15 +266,47 @@ func (r *ChaosReconciler) deleteNetworkChaos(ctx context.Context, namespacedName
 }
 
 func (r *ChaosReconciler) reconcilePodChaos(ctx context.Context, chaos *v1alpha1.Chaos, namespacedName types.NamespacedName) error {
-	pc, err := r.getPodChaosByNamespacedName(ctx, namespacedName)
+	switch chaos.Spec.EmbedChaos.PodChaos.Action {
+	case v1alpha1.PodFailure:
+		fallthrough
+	case v1alpha1.ContainerKill:
+		fallthrough
+	case v1alpha1.PodKill:
+		pc, err := r.getPodChaosByNamespacedName(ctx, namespacedName)
+		if err != nil {
+			return err
+		}
+		if pc != nil {
+			return r.updatePodChaos(ctx, chaos, pc)
+		}
+
+		return r.createPodChaos(ctx, chaos)
+	case v1alpha1.CPUStress:
+		fallthrough
+	case v1alpha1.MemoryStress:
+		sc, err := r.getStressChaosByNamespacedName(ctx, namespacedName)
+		if err != nil {
+			return err
+		}
+		if sc != nil {
+			return r.updateStressChaos(ctx, chaos, sc)
+		}
+
+		return r.createStressChaos(ctx, chaos)
+	}
+	return nil
+}
+
+func (r *ChaosReconciler) reconcileStressChaos(ctx context.Context, chaos *v1alpha1.Chaos, namespacedName types.NamespacedName) error {
+	sc, err := r.getStressChaosByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return err
 	}
-	if pc != nil {
-		return r.updatePodChaos(ctx, chaos, pc)
-	}
 
-	return r.createPodChaos(ctx, chaos)
+	if sc != nil {
+		return r.updateStressChaos(ctx, chaos, sc)
+	}
+	return r.createStressChaos(ctx, chaos)
 }
 
 func (r *ChaosReconciler) getPodChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (chaosmesh.PodChaos, error) {
@@ -330,7 +362,7 @@ func (r *ChaosReconciler) createNetworkChaos(ctx context.Context, chaos *v1alpha
 		return err
 	}
 
-	r.Events.Event(chaos, "Normal", "created", fmt.Sprintf("networkChaos %s", "  is created successfully"))
+	r.Events.Event(chaos, "Normal", "created", fmt.Sprintf("NetworkChaos %s", "  is created successfully"))
 	return nil
 }
 
@@ -340,6 +372,32 @@ func (r *ChaosReconciler) getNetworkChaosByNamespacedName(ctx context.Context, n
 		return nil, err
 	}
 	return nc, nil
+}
+
+func (r *ChaosReconciler) getStressChaosByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (chaosmesh.StressChaos, error) {
+	pc, err := r.Chaos.GetPodChaosByNamespacedName(ctx, namespacedName)
+	if err != nil {
+		return nil, err
+	}
+	return pc, nil
+}
+
+func (r *ChaosReconciler) createStressChaos(ctx context.Context, chaos *v1alpha1.Chaos) error {
+	err := r.Chaos.CreateStressChaos(ctx, chaos)
+	if err != nil {
+		return err
+	}
+	r.Events.Event(chaos, "Normal", "Created", fmt.Sprintf("StressChaos %s", " is created successfully"))
+	return nil
+}
+
+func (r *ChaosReconciler) updateStressChaos(ctx context.Context, chaos *v1alpha1.Chaos, stress chaosmesh.StressChaos) error {
+	err := r.Chaos.UpdateStressChaos(ctx, stress, chaos)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

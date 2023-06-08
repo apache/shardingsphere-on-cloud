@@ -105,10 +105,6 @@ func judgeCondition(condition map[chaosmeshv1alpha1.ChaosConditionType]bool, pha
 
 func NewPodChaos(ssChao *v1alpha1.Chaos) (PodChaos, error) {
 	chao := ssChao.Spec.PodChaos
-	if chao.Action == v1alpha1.MemoryStress || chao.Action == v1alpha1.CPUStress {
-		return NewStressChaos(ssChao)
-	}
-
 	pcb := NewPodChaosBuilder()
 	pcb.SetName(ssChao.Name).SetNamespace(ssChao.Namespace).SetLabels(ssChao.Labels)
 	pcb.SetAction(string(chao.Action))
@@ -148,7 +144,7 @@ func NewPodChaos(ssChao *v1alpha1.Chaos) (PodChaos, error) {
 	return podChao, nil
 }
 
-func NewStressChaos(chaos *v1alpha1.Chaos) (PodChaos, error) {
+func NewStressChaos(chaos *v1alpha1.Chaos) (StressChaos, error) {
 	sc := &chaosmeshv1alpha1.StressChaos{}
 	sc.Namespace = chaos.Namespace
 	sc.Name = chaos.Name
@@ -157,7 +153,6 @@ func NewStressChaos(chaos *v1alpha1.Chaos) (PodChaos, error) {
 	chao := chaos.Spec.PodChaos
 
 	psb := NewPodSelectorBuilder()
-
 	psb.SetNamespaces(chao.Namespaces).
 		SetExpressionSelectors(chao.ExpressionSelectors).
 		SetNodes(chao.Nodes).
@@ -166,8 +161,8 @@ func NewStressChaos(chaos *v1alpha1.Chaos) (PodChaos, error) {
 		SetLabelSelector(chao.LabelSelectors).
 		SetPods(chao.Pods)
 
-	psb.SetSelectMode(chaos.Annotations[AnnoTargetPodSelectMode]).
-		SetValue(chaos.Annotations[AnnoTargetPodSelectValue])
+	psb.SetSelectMode(chaos.Annotations[AnnoPodSelectorMode]).
+		SetValue(chaos.Annotations[AnnoPodSelectorValue])
 
 	sc.Spec.ContainerSelector = chaosmeshv1alpha1.ContainerSelector{
 		PodSelector: *psb.Build(),
@@ -187,20 +182,22 @@ func NewStressChaos(chaos *v1alpha1.Chaos) (PodChaos, error) {
 }
 
 func setCPUStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.StressChaos) {
-	cpu := chaosmeshv1alpha1.CPUStressor{
+	cpu := &chaosmeshv1alpha1.CPUStressor{
 		Stressor: chaosmeshv1alpha1.Stressor{
 			Workers: sschaos.Spec.PodChaos.Params.CPUStress.Cores,
 		},
 		Load: &sschaos.Spec.PodChaos.Params.CPUStress.Load,
 	}
 
-	chaos.Spec.Stressors.CPUStressor = &cpu
+	chaos.Spec.Stressors = &chaosmeshv1alpha1.Stressors{
+		CPUStressor: cpu,
+	}
 	chaos.Spec.Duration = &sschaos.Spec.PodChaos.Params.CPUStress.Duration
 }
 
 func setMemoryStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.StressChaos) error {
 	oom, err := strconv.Atoi(sschaos.Annotations[AnnoOOMScoreAdj])
-	memory := chaosmeshv1alpha1.MemoryStressor{
+	memory := &chaosmeshv1alpha1.MemoryStressor{
 		Stressor: chaosmeshv1alpha1.Stressor{
 			Workers: sschaos.Spec.PodChaos.Params.MemoryStress.Workers,
 		},
@@ -211,7 +208,9 @@ func setMemoryStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.Str
 		},
 	}
 
-	chaos.Spec.Stressors.MemoryStressor = &memory
+	chaos.Spec.Stressors = &chaosmeshv1alpha1.Stressors{
+		MemoryStressor: memory,
+	}
 	chaos.Spec.Duration = &sschaos.Spec.PodChaos.Params.MemoryStress.Duration
 
 	return err
