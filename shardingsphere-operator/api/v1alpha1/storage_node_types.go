@@ -95,10 +95,10 @@ type StorageNodeList struct {
 	Items           []StorageNode `json:"items"`
 }
 
-// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.cluster.status",name=ClusterStatus,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.registered",name=registered,type=boolean,priority=1
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
