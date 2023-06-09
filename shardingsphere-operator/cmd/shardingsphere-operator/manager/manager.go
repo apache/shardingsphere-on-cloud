@@ -54,7 +54,7 @@ func SetupWithOptions(opts *Options) *Manager {
 		Scheme: mgr.GetScheme(),
 		Log:    mgr.GetLogger(),
 	}).SetupWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create controller", "controller", "ShardingSphereProxy")
+		logger.Error(err, "unable to create controller", "controller", "Proxy")
 		os.Exit(1)
 	}
 	if err = (&controllers.ProxyConfigReconciler{
@@ -62,7 +62,7 @@ func SetupWithOptions(opts *Options) *Manager {
 		Scheme: mgr.GetScheme(),
 		Log:    mgr.GetLogger(),
 	}).SetupWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create controller", "controller", "ShardingSphereProxyServerConfig")
+		logger.Error(err, "unable to create controller", "controller", "ProxyConfig")
 		os.Exit(1)
 	}
 

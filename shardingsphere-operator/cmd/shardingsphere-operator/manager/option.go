@@ -23,7 +23,7 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/controllers"
-	sschaos "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/chaosmesh"
 	cloudnativepg "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/cloudnative-pg"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
@@ -69,7 +69,7 @@ type Options struct {
 }
 
 var (
-	AwsAccessKeyID     string
+	AwsAccessKey       string
 	AwsSecretAccessKey string
 	AwsRegion          string
 )
@@ -97,7 +97,7 @@ func ParseOptionsFromCmdFlags() *Options {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&opt.FeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for alpha/experimental features.")
 	// aws client options
-	flag.StringVar(&AwsAccessKeyID, "aws-access-key-id", "", "The AWS access key ID.")
+	flag.StringVar(&AwsAccessKeyID, "aws-access-key", "", "The AWS access key.")
 	flag.StringVar(&AwsSecretAccessKey, "aws-secret-access-key", "", "The AWS secret access key.")
 	flag.StringVar(&AwsRegion, "aws-region", "", "The AWS region.")
 
@@ -157,8 +157,8 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 		}
 
 		// init aws client if aws credentials are provided
-		if AwsRegion != "" && AwsAccessKeyID != "" && AwsSecretAccessKey != "" {
-			sess := aws.NewSessions().SetCredential(AwsRegion, AwsAccessKeyID, AwsSecretAccessKey).Build()
+		if AwsRegion != "" && AwsAccessKey != "" && AwsSecretAccessKey != "" {
+			sess := aws.NewSessions().SetCredential(AwsRegion, AwsAccessKey, AwsSecretAccessKey).Build()
 			reconciler.AwsRDS = rds.NewService(sess[AwsRegion])
 		}
 
@@ -177,7 +177,7 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
 			Log:       mgr.GetLogger(),
-			Chaos:     sschaos.NewChaos(mgr.GetClient()),
+			Chaos:     chaosmesh.NewChaos(mgr.GetClient()),
 			Job:       job.NewJob(mgr.GetClient()),
 			ExecCtrls: make([]*controllers.ExecCtrl, 0),
 			ConfigMap: configmap.NewConfigMapClient(mgr.GetClient()),
