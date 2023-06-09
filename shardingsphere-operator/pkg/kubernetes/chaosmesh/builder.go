@@ -30,24 +30,22 @@ import (
 )
 
 const (
-	AnnoPodSelectorMode      = "selector.chaos-mesh.org/mode"
-	AnnoPodSelectorValue     = "selector.chaos-mesh.org/value"
-	AnnoTargetPodSelectMode  = "target-selector.chaos-mesh.org/mode"
-	AnnoTargetPodSelectValue = "target-selector.chaos-mesh.org/value"
+	AnnoPodSelectorMode        = "selector.chaos-mesh.org/mode"
+	AnnoPodSelectorValue       = "selector.chaos-mesh.org/value"
+	AnnoTargetPodSelectorMode  = "target-selector.chaos-mesh.org/mode"
+	AnnoTargetPodSelectorValue = "target-selector.chaos-mesh.org/value"
 
-	AnnoPodAction   = "podchaos.chaos-mesh.org/action"
-	AnnoGracePeriod = "podchaos.chaos-mesh.org/gracePeriod"
-	AnnoStressTime  = "stresschaos.chaos-mesh.org/time"
-	AnnoOOMScoreAdj = "stresschaos.chaos-mesh.org/oomScoreAdj"
+	AnnoStressTime        = "stresschaos.chaos-mesh.org/time"
+	AnnoStressOOMScoreAdj = "stresschaos.chaos-mesh.org/oomScoreAdj"
 
-	AnnoNetworkAction     = "networkchaos.chaos-mesh.org/action"
-	AnnoDevice            = "networkchaos.chaos-mesh.org/device"
-	AnnoTargetDevice      = "networkchaos.chaos-mesh.org/targetDevice"
-	AnnoBandwidthRate     = "networkchaos.chaos-mesh.org/bandwidth:rate"
-	AnnoBandwidthLimit    = "networkchaos.chaos-mesh.org/bandwidth:limit"
-	AnnoBandwidthBuffer   = "networkchaos.chaos-mesh.org/bandwidth:buffer"
-	AnnoBandwidthPeakrate = "networkchaos.chaos-mesh.org/bandwidth:peakrate"
-	AnnoBandwidthMinBurst = "networkchaos.chaos-mesh.org/bandwidth:minburst"
+	AnnoNetworkAction            = "networkchaos.chaos-mesh.org/action"
+	AnnoNetworkDevice            = "networkchaos.chaos-mesh.org/device"
+	AnnoNetworkTargetDevice      = "networkchaos.chaos-mesh.org/targetDevice"
+	AnnoNetworkBandwidthRate     = "networkchaos.chaos-mesh.org/bandwidth:rate"
+	AnnoNetworkBandwidthLimit    = "networkchaos.chaos-mesh.org/bandwidth:limit"
+	AnnoNetworkBandwidthBuffer   = "networkchaos.chaos-mesh.org/bandwidth:buffer"
+	AnnoNetworkBandwidthPeakrate = "networkchaos.chaos-mesh.org/bandwidth:peakrate"
+	AnnoNetworkBandwidthMinBurst = "networkchaos.chaos-mesh.org/bandwidth:minburst"
 )
 
 var (
@@ -210,7 +208,7 @@ func setMemoryStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.Str
 		oom int
 		err error
 	)
-	if adj, ok := sschaos.Annotations[AnnoOOMScoreAdj]; ok {
+	if adj, ok := sschaos.Annotations[AnnoStressOOMScoreAdj]; ok {
 		oom, err = strconv.Atoi(adj)
 		if err != nil {
 			return err
@@ -273,11 +271,11 @@ func NewNetworkChaos(ssChao *v1alpha1.Chaos) (NetworkChaos, error) {
 		}
 	case v1alpha1.Bandwidth:
 		bwab := NewBandWidthActionBuilder()
-		bwab.SetRate(getAnnotation(ssChao.Annotations, AnnoBandwidthRate))
-		bwab.SetLimit(getAnnotation(ssChao.Annotations, AnnoBandwidthLimit))
-		bwab.SetBuffer(getAnnotation(ssChao.Annotations, AnnoBandwidthBuffer))
-		bwab.SetPeakRate(getAnnotation(ssChao.Annotations, AnnoBandwidthPeakrate))
-		bwab.SetMinBurst(getAnnotation(ssChao.Annotations, AnnoBandwidthMinBurst))
+		bwab.SetRate(getAnnotation(ssChao.Annotations, AnnoNetworkBandwidthRate))
+		bwab.SetLimit(getAnnotation(ssChao.Annotations, AnnoNetworkBandwidthLimit))
+		bwab.SetBuffer(getAnnotation(ssChao.Annotations, AnnoNetworkBandwidthBuffer))
+		bwab.SetPeakRate(getAnnotation(ssChao.Annotations, AnnoNetworkBandwidthPeakrate))
+		bwab.SetMinBurst(getAnnotation(ssChao.Annotations, AnnoNetworkBandwidthMinBurst))
 		tcParams.Bandwidth = bwab.Build()
 	case v1alpha1.Partition:
 	}
@@ -303,12 +301,12 @@ func NewNetworkChaos(ssChao *v1alpha1.Chaos) (NetworkChaos, error) {
 		SetAnnotationSelectors(chao.Target.AnnotationSelectors).
 		SetLabelSelector(chao.Target.LabelSelectors).
 		SetPods(chao.Target.Pods).
-		SetSelectMode(ssChao.Annotations[AnnoTargetPodSelectMode]).
-		SetValue(ssChao.Annotations[AnnoTargetPodSelectValue])
+		SetSelectMode(ssChao.Annotations[AnnoTargetPodSelectorMode]).
+		SetValue(ssChao.Annotations[AnnoTargetPodSelectorValue])
 
 	ncb.SetTarget(tpsb.Build()).
-		SetDevice(ssChao.Annotations[AnnoDevice]).
-		SetTargetDevice(ssChao.Annotations[AnnoTargetDevice]).
+		SetDevice(ssChao.Annotations[AnnoNetworkDevice]).
+		SetTargetDevice(ssChao.Annotations[AnnoNetworkTargetDevice]).
 		SetTcParameter(*tcParams)
 
 	networkChao := ncb.Build()

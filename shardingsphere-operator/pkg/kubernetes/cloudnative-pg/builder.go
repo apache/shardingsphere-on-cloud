@@ -99,11 +99,6 @@ func DefaultCluster(meta metav1.Object, gvk schema.GroupVersionKind) *cnpgv1.Clu
 			Name:      "shardingsphere-proxy-cnpg",
 			Namespace: "default",
 			Labels:    map[string]string{},
-			/*
-				OwnerReferences: []metav1.OwnerReference{
-					*metav1.NewControllerRef(meta, gvk),
-				},
-			*/
 		},
 		Spec: cnpgv1.ClusterSpec{
 			Instances:             3,
