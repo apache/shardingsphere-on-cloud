@@ -84,7 +84,7 @@ func getPreferedConditionFromPod(pod *corev1.Pod) []v1alpha1.ComputeNodeConditio
 	}
 
 	podConditions := getPreferedConditionFromPodConditions(pod.Status.Conditions)
-	if pod.Status.Phase == corev1.PodPending {
+	if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning && len(podConditions) == 4 {
 		computenodeConditions = append(computenodeConditions, v1alpha1.ComputeNodeCondition{
 			Type: v1alpha1.ComputeNodeConditionPending,
 		})
