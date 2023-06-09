@@ -15,102 +15,264 @@
  * limitations under the License.
  */
 
-package computenode
+package computenode_test
 
 import (
-	"testing"
-
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/stretchr/testify/assert"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func Test_getPreferedConditionFromPodConditions(t *testing.T) {
-	cases := []struct {
-		pcs     []corev1.PodCondition
-		expect  []v1alpha1.ComputeNodeCondition
-		message string
-	}{
-		{
-			pcs: []corev1.PodCondition{
-				corev1.PodCondition{
-					Type:   corev1.PodScheduled,
-					Status: corev1.ConditionTrue,
-				},
-			},
-			expect: []v1alpha1.ComputeNodeCondition{
-				{
-					Type: v1alpha1.ComputeNodeConditionDeployed,
-				},
-			},
-			message: "scheduled pod condition should get deployed condition",
-		},
-	}
-	for _, c := range cases {
-		act := getPreferedConditionFromPodConditions(c.pcs)
-		assert.Equal(t, len(c.expect), len(act), c.message)
-		for i := range act {
-			assert.Equal(t, c.expect[i].Type, act[i].Type, c.message)
-		}
-	}
-}
+var _ = Describe("GetConditionFromPods", func() {
+	Context("Empty Pod list", func() {
+		podlist := &corev1.PodList{Items: []corev1.Pod{}}
+		conditions := computenode.GetConditionFromPods(podlist)
+		It("should be one unknown condition", func() {
+			Expect(len(conditions)).To(Equal(1))
+		})
 
-func Test_getPreferedConditionFromPod(t *testing.T) {
-	cases := []struct {
-		pod     corev1.Pod
-		expect  []v1alpha1.ComputeNodeCondition
-		message string
-	}{
-		{
-			pod: corev1.Pod{
+		It("unknown condition should be true", func() {
+			Expect(conditions[0].Type).To(Equal(v1alpha1.ComputeNodeConditionUnknown))
+			Expect(conditions[0].Status).To(Equal(v1alpha1.ConditionStatusTrue))
+		})
+	})
+
+	Context("One Pod Pending", func() {
+		podlist := &corev1.PodList{Items: []corev1.Pod{
+			{
 				Status: corev1.PodStatus{
 					Phase: corev1.PodPending,
 				},
 			},
-			expect: []v1alpha1.ComputeNodeCondition{
-				{
-					Type:   v1alpha1.ComputeNodeConditionPending,
-					Status: v1alpha1.ConditionStatusTrue,
+		}}
+		conditions := computenode.GetConditionFromPods(podlist)
+
+		It("should be one pending condition", func() {
+			Expect(len(conditions)).To(Equal(1))
+		})
+
+		It("unknown condition should be true", func() {
+			Expect(conditions[0].Type).To(Equal(v1alpha1.ComputeNodeConditionPending))
+			Expect(conditions[0].Status).To(Equal(v1alpha1.ConditionStatusTrue))
+		})
+	})
+
+	Context("One Pod Scheduled", func() {
+		podlist := &corev1.PodList{Items: []corev1.Pod{
+			{
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+					Conditions: []corev1.PodCondition{
+						{
+							Type:   corev1.PodReady,
+							Status: corev1.ConditionFalse,
+						},
+						{
+							Type:   corev1.ContainersReady,
+							Status: corev1.ConditionFalse,
+						},
+						{
+							Type:   corev1.PodInitialized,
+							Status: corev1.ConditionFalse,
+						},
+						{
+							Type:   corev1.PodScheduled,
+							Status: corev1.ConditionTrue,
+						},
+					},
 				},
 			},
-			message: "pending pod should get pending condition",
-		},
-	}
+		}}
+		conditions := computenode.GetConditionFromPods(podlist)
 
-	for _, c := range cases {
-		act := getPreferedConditionFromPod(&c.pod)
-		assert.Equal(t, len(c.expect), len(act), c.message)
-		for i := range act {
-			assert.Equal(t, c.expect[i].Type, act[i].Type, c.message)
-		}
-	}
-}
+		It("should be two conditions", func() {
+			Expect(len(conditions)).To(Equal(2))
+		})
 
-func Test_GetConditionFromPods(t *testing.T) {
-	cases := []struct {
-		podlist *corev1.PodList
-		expect  []v1alpha1.ComputeNodeCondition
-		message string
-	}{
-		{
-			podlist: &corev1.PodList{Items: []corev1.Pod{}},
-			expect: []v1alpha1.ComputeNodeCondition{
-				{
-					Type:   v1alpha1.ComputeNodeConditionUnknown,
-					Status: v1alpha1.ConditionStatusTrue,
+		It("condition status should be correct", func() {
+			Expect(containConditionType(conditions, v1alpha1.ComputeNodeConditionPending, v1alpha1.ComputeNodeConditionDeployed)).To(BeTrue())
+			for _, cond := range conditions {
+				if cond.Type == v1alpha1.ComputeNodeConditionPending {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionDeployed {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+			}
+		})
+	})
+
+	Context("One Pod Initialized", func() {
+		podlist := &corev1.PodList{Items: []corev1.Pod{
+			{
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+					Conditions: []corev1.PodCondition{
+						{
+							Type:   corev1.PodReady,
+							Status: corev1.ConditionFalse,
+						},
+						{
+							Type:   corev1.ContainersReady,
+							Status: corev1.ConditionFalse,
+						},
+						{
+							Type:   corev1.PodInitialized,
+							Status: corev1.ConditionTrue,
+						},
+						{
+							Type:   corev1.PodScheduled,
+							Status: corev1.ConditionTrue,
+						},
+					},
 				},
 			},
-			message: "empty podlist should get unknown condition",
-		},
+		}}
+		conditions := computenode.GetConditionFromPods(podlist)
+
+		It("should be three conditions", func() {
+			Expect(len(conditions)).To(Equal(3))
+		})
+
+		It("condition status should be correct", func() {
+			Expect(containConditionType(conditions, v1alpha1.ComputeNodeConditionPending, v1alpha1.ComputeNodeConditionDeployed, v1alpha1.ComputeNodeConditionInitialized)).To(BeTrue())
+			for _, cond := range conditions {
+				if cond.Type == v1alpha1.ComputeNodeConditionPending {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionDeployed {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionInitialized {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+			}
+		})
+	})
+
+	Context("One Pod Ready", func() {
+		podlist := &corev1.PodList{Items: []corev1.Pod{
+			{
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+					Conditions: []corev1.PodCondition{
+						{
+							Type:   corev1.PodReady,
+							Status: corev1.ConditionTrue,
+						},
+						{
+							Type:   corev1.ContainersReady,
+							Status: corev1.ConditionTrue,
+						},
+						{
+							Type:   corev1.PodInitialized,
+							Status: corev1.ConditionTrue,
+						},
+						{
+							Type:   corev1.PodScheduled,
+							Status: corev1.ConditionTrue,
+						},
+					},
+				},
+			},
+		}}
+		conditions := computenode.GetConditionFromPods(podlist)
+		It("should be five conditions", func() {
+			Expect(len(conditions)).To(Equal(5))
+		})
+
+		It("condition status should be correct", func() {
+			Expect(containConditionType(conditions, v1alpha1.ComputeNodeConditionPending, v1alpha1.ComputeNodeConditionDeployed, v1alpha1.ComputeNodeConditionInitialized, v1alpha1.ComputeNodeConditionStarted, v1alpha1.ComputeNodeConditionReady)).To(BeTrue())
+			for _, cond := range conditions {
+				if cond.Type == v1alpha1.ComputeNodeConditionPending {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionDeployed {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionInitialized {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionStarted {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionReady {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+			}
+		})
+	})
+
+	Context("One Pod Running", func() {
+		podlist := &corev1.PodList{Items: []corev1.Pod{
+			{
+				Status: corev1.PodStatus{
+					Phase: corev1.PodRunning,
+					Conditions: []corev1.PodCondition{
+						{
+							Type:   corev1.PodReady,
+							Status: corev1.ConditionTrue,
+						},
+						{
+							Type:   corev1.ContainersReady,
+							Status: corev1.ConditionTrue,
+						},
+						{
+							Type:   corev1.PodInitialized,
+							Status: corev1.ConditionTrue,
+						},
+						{
+							Type:   corev1.PodScheduled,
+							Status: corev1.ConditionTrue,
+						},
+					},
+				},
+			},
+		}}
+		conditions := computenode.GetConditionFromPods(podlist)
+		It("should be five conditions", func() {
+			Expect(len(conditions)).To(Equal(5))
+		})
+
+		It("condition status should be correct", func() {
+			Expect(containConditionType(conditions, v1alpha1.ComputeNodeConditionPending, v1alpha1.ComputeNodeConditionDeployed, v1alpha1.ComputeNodeConditionInitialized, v1alpha1.ComputeNodeConditionStarted, v1alpha1.ComputeNodeConditionReady)).To(BeTrue())
+			for _, cond := range conditions {
+				if cond.Type == v1alpha1.ComputeNodeConditionPending {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionDeployed {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionInitialized {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionStarted {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+				if cond.Type == v1alpha1.ComputeNodeConditionReady {
+					Expect(cond.Status).To(Equal(v1alpha1.ConditionStatusTrue))
+				}
+			}
+		})
+	})
+})
+
+func containConditionType(conds []v1alpha1.ComputeNodeCondition, ts ...v1alpha1.ComputeNodeConditionType) bool {
+	if len(conds) != len(ts) {
+		return false
 	}
 
-	for _, c := range cases {
-		act := GetConditionFromPods(c.podlist)
-		assert.Equal(t, len(c.expect), len(act), c.message)
-		for i := range act {
-			assert.Equal(t, c.expect[i].Type, act[i].Type, c.message)
-			assert.Equal(t, c.expect[i].Status, act[i].Status, c.message)
+	contains := map[v1alpha1.ComputeNodeConditionType]bool{}
+	for _, t := range ts {
+		contains[t] = true
+	}
+
+	for _, c := range conds {
+		if !contains[c.Type] {
+			return false
 		}
 	}
-
+	return true
 }
