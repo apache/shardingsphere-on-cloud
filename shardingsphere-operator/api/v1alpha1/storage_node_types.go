@@ -95,10 +95,10 @@ type StorageNodeList struct {
 	Items           []StorageNode `json:"items"`
 }
 
-// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.cluster.status",name=ClusterStatus,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.registered",name=registered,type=boolean,priority=1
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
@@ -116,7 +116,8 @@ type StorageNode struct {
 type StorageNodeSpec struct {
 	// +kubebuilder:validation:Required
 	StorageProviderName string `json:"storageProviderName"`
-	// +optional the default database name of the storage node.
+	// +optional
+	// the default database name of the storage node.
 	// if not set, will NOT create database
 	Schema string `json:"schema"`
 	// +optional

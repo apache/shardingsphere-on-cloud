@@ -30,6 +30,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/shardingsphere"
 
 	cnpg "github.com/cloudnative-pg/cloudnative-pg/api/v1"
+	cnpgutils "github.com/cloudnative-pg/cloudnative-pg/pkg/utils"
 	"github.com/database-mesh/golang-sdk/aws/client/rds"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -138,10 +139,6 @@ func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.Sto
 	var err error
 	var oldStatus = node.Status.DeepCopy()
 
-	if storageProvider.Spec.Provisioner == v1alpha1.ProvisionerCloudNativePG {
-		return r.finalizeCloudNativePG(ctx, node, storageProvider)
-	}
-
 	switch node.Status.Phase {
 	case v1alpha1.StorageNodePhaseReady, v1alpha1.StorageNodePhaseNotReady:
 		// set storage node status to deleting
@@ -156,6 +153,10 @@ func (r *StorageNodeReconciler) finalize(ctx context.Context, node *v1alpha1.Sto
 			r.Log.Error(err, "failed to remove finalizer")
 		}
 		return ctrl.Result{}, nil
+	}
+
+	if storageProvider.Spec.Provisioner == v1alpha1.ProvisionerCloudNativePG {
+		return r.finalizeCloudNativePG(ctx, node, storageProvider)
 	}
 
 	// Try to unregister storage unit in shardingsphere.
@@ -800,10 +801,66 @@ func (r *StorageNodeReconciler) reconcileCloudNativePG(ctx context.Context, sn *
 	if err != nil {
 		return err
 	}
+
+	if err := updateCloudNativePGCluster(ctx, sn, cluster); err != nil {
+		return err
+	}
+
 	if cluster != nil {
 		return r.updateCloudNativePGCluster(ctx, sn, sp, cluster)
 	}
 	return r.createCloudNativePGCluster(ctx, sn, sp)
+}
+
+func updateCloudNativePGCluster(ctx context.Context, node *v1alpha1.StorageNode, cluster *cnpg.Cluster) error {
+	if cluster == nil {
+		return nil
+	}
+	var cs string
+	if cluster.Status.Phase == cnpg.PhaseHealthy {
+		node.Status.Phase = v1alpha1.StorageNodePhaseReady
+		cs = "available"
+	} else {
+		node.Status.Phase = v1alpha1.StorageNodePhaseNotReady
+	}
+
+	node.Status.Cluster = v1alpha1.ClusterStatus{
+		Status: cs,
+		PrimaryEndpoint: v1alpha1.Endpoint{
+			Address: cluster.Status.WriteService,
+			Port:    5432,
+		},
+		ReaderEndpoints: []v1alpha1.Endpoint{
+			{
+				Address: cluster.Status.ReadService,
+				Port:    5432,
+			},
+		},
+	}
+
+	node.Status.Instances = []v1alpha1.InstanceStatus{}
+
+	for s, pgins := range cluster.Status.InstancesStatus {
+		var stat string
+		if s == cnpgutils.PodHealthy {
+			stat = "available"
+		} else {
+			stat = string(s)
+		}
+		for _, pg := range pgins {
+			ins := v1alpha1.InstanceStatus{
+				Status: stat,
+				Endpoint: v1alpha1.Endpoint{
+					Address: pg,
+					Port:    5432,
+				},
+			}
+
+			node.Status.Instances = append(node.Status.Instances, ins)
+		}
+	}
+
+	return nil
 }
 
 func (r *StorageNodeReconciler) getCloudNativePGCluster(ctx context.Context, namespacedName types.NamespacedName) (*cnpg.Cluster, error) {
