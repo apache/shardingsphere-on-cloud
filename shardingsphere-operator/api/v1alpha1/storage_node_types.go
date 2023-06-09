@@ -116,7 +116,8 @@ type StorageNode struct {
 type StorageNodeSpec struct {
 	// +kubebuilder:validation:Required
 	StorageProviderName string `json:"storageProviderName"`
-	// +optional the default database name of the storage node.
+	// +optional
+	// the default database name of the storage node.
 	// if not set, will NOT create database
 	Schema string `json:"schema"`
 	// +optional
