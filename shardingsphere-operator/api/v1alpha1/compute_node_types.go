@@ -362,9 +362,9 @@ const (
 type ConditionStatus string
 
 const (
-	ConditionStatusTrue    = "True"
-	ConditionStatusFalse   = "False"
-	ConditionStatusUnknown = "Unknown"
+	ConditionStatusTrue    ConditionStatus = "True"
+	ConditionStatusFalse   ConditionStatus = "False"
+	ConditionStatusUnknown ConditionStatus = "Unknown"
 )
 
 // ComputeNodeCondition defines a condition template
