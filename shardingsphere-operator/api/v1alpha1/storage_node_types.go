@@ -97,8 +97,8 @@ type StorageNodeList struct {
 
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
-// +kubebuilder:printcolumn:JSONPath=".status.Cluster.Status",name=ClusterStatus,type=string
-// +kubebuilder:printcolumn:JSONPath=".status.Registered",name=Registered,type=boolean,priority=1
+// +kubebuilder:printcolumn:JSONPath=".status.cluster.status",name=ClusterStatus,type=string
+// +kubebuilder:printcolumn:JSONPath=".status.registered",name=registered,type=boolean,priority=1
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 

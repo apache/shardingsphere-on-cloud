@@ -1,0 +1,33 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+---
+apiVersion: shardingsphere.apache.org/v1alpha1
+kind: StorageNode
+metadata:
+  name: storage-node-with-rds-cluster-1
+  namespace: xwt
+  annotations:
+    "storageproviders.shardingsphere.apache.org/cluster-identifier": "storage-node-with-rds-cluster-1"
+    "storageproviders.shardingsphere.apache.org/instance-db-name": "test_db"
+
+    # annos about register storage unit
+    "shardingsphere.apache.org/register-storage-unit-enabled": "false" # set ture if you want to test auto register storage unit.
+    "shardingsphere.apache.org/logic-database-name": "sharding_db"
+    "shardingsphere.apache.org/compute-node-name": "shardingsphere-operator-shardingsphere-proxy"
+spec:
+  schema: "test_db"
+  storageProviderName: aws-rds-cluster-mysql-8.0.32
