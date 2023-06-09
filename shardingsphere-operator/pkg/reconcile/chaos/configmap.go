@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package shardingspherechaos
+package chaos
 
 const (
 	configExperimental = "experimental.sh"
