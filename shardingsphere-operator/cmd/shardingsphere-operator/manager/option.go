@@ -69,7 +69,7 @@ type Options struct {
 }
 
 var (
-	AwsAccessKey       string
+	AwsAccessKeyID     string
 	AwsSecretAccessKey string
 	AwsRegion          string
 )
@@ -97,7 +97,7 @@ func ParseOptionsFromCmdFlags() *Options {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&opt.FeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for alpha/experimental features.")
 	// aws client options
-	flag.StringVar(&AwsAccessKeyID, "aws-access-key", "", "The AWS access key.")
+	flag.StringVar(&AwsAccessKeyID, "aws-access-key-id", "", "The AWS access key.")
 	flag.StringVar(&AwsSecretAccessKey, "aws-secret-access-key", "", "The AWS secret access key.")
 	flag.StringVar(&AwsRegion, "aws-region", "", "The AWS region.")
 
@@ -157,8 +157,8 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 		}
 
 		// init aws client if aws credentials are provided
-		if AwsRegion != "" && AwsAccessKey != "" && AwsSecretAccessKey != "" {
-			sess := aws.NewSessions().SetCredential(AwsRegion, AwsAccessKey, AwsSecretAccessKey).Build()
+		if AwsRegion != "" && AwsAccessKeyID != "" && AwsSecretAccessKey != "" {
+			sess := aws.NewSessions().SetCredential(AwsRegion, AwsAccessKeyID, AwsSecretAccessKey).Build()
 			reconciler.AwsRDS = rds.NewService(sess[AwsRegion])
 		}
 

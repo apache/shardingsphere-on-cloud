@@ -208,7 +208,7 @@ func setMemoryStressParams(sschaos *v1alpha1.Chaos, chaos *chaosmeshv1alpha1.Str
 		oom int
 		err error
 	)
-	if adj, ok := sschaos.Annotations[AnnoOOMScoreAdj]; ok {
+	if adj, ok := sschaos.Annotations[AnnoStressOOMScoreAdj]; ok {
 		oom, err = strconv.Atoi(adj)
 		if err != nil {
 			return err
