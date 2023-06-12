@@ -21,3 +21,22 @@ helm repo update
 ```shell
 helm install shardingsphere-proxy shardingsphere/apache-shardingsphere-proxy-charts 
 ```
+
+### 源码安装
+
+1. 同步 Git 仓库
+
+```shell
+git clone git@github.com:apache/shardingsphere-on-cloud.git
+```
+
+2. 可以使用如下命令进行默认配置安装：
+
+```shell
+cd charts/apache-shardingsphere-proxy-charts/charts/governance
+helm dependency build 
+cd ../..
+helm dependency build 
+cd ..
+helm install shardingsphere-proxy apache-shardingsphere-proxy-charts
+```
