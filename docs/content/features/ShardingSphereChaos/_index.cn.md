@@ -45,4 +45,4 @@ spec:
     action: "CPUStress"
 ```
 
-如果采用 Chaos Mesh 作为混沌平台，那么用户需要在用于测试的 Kubernetes 环境中预先部署 Chaos Mesh 组件，然后编写并提交 ShardingSphere Chaos 配置文件并执行实验。
+如果采用 Chaos Mesh 作为混沌平台，那么用户需要在用于测试的 Kubernetes 环境中预先部署 Chaos Mesh 组件，然后编写并提交 ShardingSphere Chaos 配置文件并执行实验。详细说明参见用户手册。
