@@ -72,3 +72,4 @@ chapter = true
 
 默认创建的内部域名为 [proxy.shardingsphere.org](proxy.shardingsphere.org)，端口为 3307，用户名和密码为 root。
 
+7. 应用配置数据库连接信息为 ShardingSphere Proxy
