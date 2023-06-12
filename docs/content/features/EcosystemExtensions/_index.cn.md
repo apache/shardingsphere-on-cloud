@@ -12,5 +12,3 @@ WebAssembly 起初是为了解决 JavaScript 在浏览器上的一些性能瓶�
 ShardingSphere 的插件（SPI）只支持 java 生态，把 WASM 引入到 ShardingSphere 中可以进一步开放生态，吸引更多的社区开发者。例如，社区针对自定义分片场景，创建了简单的 demo， 增加了 WasmShardingAlgorithm.java 模块，用于加载和运行用户提供的 wasm 自定义分片逻辑。
 
 此外由于 ShardingSphere 定义分片规则只支持 Java 生态中的 Groovy 语法，通过 WASM 用户可以使用自己熟悉的语言生态来定义分片逻辑。WASM-sharding-js 则演示了如何通过 JavaScript 定义 CRC32MOD 分片算法。
-
-

@@ -1,114 +1,48 @@
 +++
-pre = "<b>3.1 </b>"
-title = "ShardingSphere Chaos 介绍"
-weight = 1
+pre = "<b>3.3 </b>"
+title = "ShardingSphere 混沌工程"
+weight = 3
 chapter = true
 +++
 
-#### 配置示例
+## 概述
+
+系统可用性是衡量一个系统正确地对外提供服务（可工作）的能力，在实际生产中有很多方法来保证系统可用性： 韧性工程、反脆弱等。而故障是不可避免的，且可能在任意时间发生。不管是物理的、硬件的故障，还是软件的 Bug，最终都可能会损坏系统的可用性和健壮性。混沌工程是一种实践，它的目的是发现生产环境的弱点，并提升应对故障的能力，从而提高系统的健壮性。
+
+混沌工程在 https://principleofchaos.org 的定义如下:
+> 混沌工程是在系统上进行实验的学科， 目的是提升系统抵御生产环境中失控条件的能力以及增加信心
+
+## 一般原则
+
+混沌工程的执行一般需要按照稳态定义、提出假设、混沌实验、结果验证、修正提升五个步骤进行。整个实验的过程可以被重复进行，为了及时修正健壮性问题以及节约人力，推荐将混沌实验的过程设置为持续混沌验证，过程类似持续集成。
+
+除此之外，混沌实验的执行还希望尽可能在生产环境进行，尽可能引入现实世界的事件，需要注意的是，在执行过程中要控制好爆炸半径，以免影响大量的生产用户。
+
+
+## 自定义资源对象 Chaos
+
+ShardingSphere Operator 支持自定义资源对象 Chaos，现支持 Pod Kill、Pod Failure 、CPU 压力、 Memory 压力等 Pod 混沌，同时支持延迟、丢包等网络混沌注入。Chaos 定义基本的混沌参数，并由 Operator 负责转换为对应的 Chaos 实现。例如：
 
 ```yaml
 apiVersion: shardingsphere.apache.org/v1alpha1
-kind: ShardingSphereChaos
+kind: Chaos
 metadata:
-  labels:
-    app.kubernetes.io/name: shardingsphereChaos
-  name: shardingspherechaos-lala
-  namespace: default
+  name: cpu-chaos
   annotations:
-    selector.chaos-mesh.org/mode: "all"
+    selector.chaos-mesh.org/mode: one
 spec:
-  chaosKind: podChaos
   podChaos:
     selector:
       labelSelectors:
-        app.kubernetes.io/component: zookeeper-new
-      namespaces: [ "mesh-test" ]
+        app: foo
+      namespaces: 
+      - foo-chaos
     params:
-      podFailure:
-        duration: 2m
-    action: "podFailure"
+      cpuStress:
+        duration: 1m
+        cores: 2
+        load: 50
+    action: "CPUStress"
 ```
 
-#### spec
-
-* 注入故障
-  `.spec.chaosKind`用于指定注入故障的类型
-  在spec中配置的是故障的通用字段,在接入平台提供的故障时,需要在annoations里面写入平台类型,并将针对于这个平台的,故障spec中没有提到的字段,写入annoations中
-
-    * 通用配置字段
-
-        * Selector
-          故障目标选择器,它以`(,inline)`的形式在chaos的spec配置
-
-
-      | namespaces          | 指定命名空间               |
-      | --------------------- | ---------------------------- |
-      | labelSelectors      | 指定选择标签               |
-      | annotationSelectors | 指定注释                   |
-      | nodes               | 指定节点                   |
-      | pods                | 以命名空间-pod名的方式指定 |
-      | nodeSelectors       | 以label和node来选择节点    |
-    * PodChaosSpec
-
-    这部分声明在.`spec.podChaos`中
-    定义pod类型的故障,action字段声明了注入pod故障的类型
-
-
-    | action                       | 指定pod的故障类型,分为podFailure,containerKill |
-    | ------------------------------ | ------------------------------------------------ |
-    | podFailure.Duration          | 指定PodFailureAction的生效时间                 |
-    | containerKill.containerNames | 指定要杀掉的容器                               |
-* networkSpec
-  这部分声明在`.spec.networkChaos`中
-
-    1. 定义network类型的故障
-
-
-    | Action                                                       | 指定network的故障类型,分为delay,duplicate,corrupt,partition,loss                                            |
-    | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-    | Duration                                                     | 指定故障的持续时长                                                                                          |
-    | Direction                                                    | 用于指定网络故障的方向,在不指定时默认为to,分为to(->target),from(target<-),both(<->target)                   |
-    | target                                                       | selector选择器,用于选择目标对象                                                                             |
-    | Source                                                       | selector选择器,用于选择起始对象                                                                             |
-    | delay.latency<br /><br />delay.correlation<br />delay.jitter | latency: 指示网络延迟<br />correlation: 当前延迟与上一延迟之间的相关性jitter: 表示网络延迟的范围<br />      |
-    |                                                              |                                                                                                             |
-    | loss.correlation<br />loss.loss                              | loss: 丢包的概率<br />correlation: 表示当前丢包概率与上次丢包概率之间的相关性                               |
-    |                                                              |                                                                                                             |
-    | duplicate.correlation<br />duplicate.duplicate               | correlation: 指示当前报文复制概率之间的相关性<br />duplicate: 指示数据包复制的概率                          |
-    |                                                              |                                                                                                             |
-    | corrupt.corrupt<br />corrupt.correlation                     | corrupt: 指示数据包损坏的概率<br />correlation:  指示当前数据包损坏概率与上一次数据包损坏概率之间的相关性。 |
-    |                                                              |                                                                                                             |
-
-    * 特定配置字段
-      这部分需要声明在annoations里或env中
-
-      * chaos-mesh
-
-
-        | podchaos的配置字段<br/>     | spec/mode   <----->      selector.mode<br />spec/value    <----->       selector.value<br />spec/pod/action <----->   specify .action<br />spec/pod/gracePeriod     <-----> specify .gracePeriod                                                                                                                                                                                                                                                                               |
-        | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-        | networkchaos的配置字段<br/> | spec/device  <-----> .device<br />spec/targetDevice <-----> .targetDevice<br />spec/target/mode <-----> .selector.mode<br />spec/target/value <-----> .value<br />spec/network/action <-----> specify .action<br />spec/network/rate <-----> .bandwidth.rate<br />spec/network/limit <-----> .bandwidth.limit<br />spec/network/buffer <-----> .bandwidth.buffer<br />spec/network/peakrate <-----> .bandwidth.peakrate<br />spec/network/minburst <-----> .bandwidth.minburst |
-        |                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-      * Litmus chaos
-
-
-        | podchaos的配置字段     | * pod-delete<br />spec/random  <-------> RANDOMNESS  <br />spec/force <-----> FORCE<br />* Container-kill  <br />spec/signal <------> SIGNAL  <br />spec/chaos_interval <-----> CHAOS_INTERVAL                                       |
-        | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-        | networkchaos的配置字段 | <br/>                                                                                                                                                                                                                                |
-        | 公共配置字段           | spec/action <----> .spec.experiments.name<br />spec/ramp_time <-----> RAMP_TIME<br />spec/duration <-------> TOTAL_CHAOS_DURATION<br />spec/sequence <-----> SEQUENCE<br />spec/lib_image <-----> LIB_IMAGE<br />spec/lib <----> LIB |
-        |                        |                                                                                                                                                                                                                                      |
-
-### Status
-
-
-* DeploymentCondition
-  该字段记录了注入故障的进度,它有以下四个阶段
-
-
-    | Creating     | 代表chaos在创建阶段,还没完成注入                            |
-    | -------------- | ------------------------------------------------------------- |
-    | AllRecovered | 代表环境已从故障中恢复                                      |
-    | Paused       | 实验暂停,可能是因为选择的节点不存在,考虑是否crd的定义有问题     |
-    | AllInjected  | 该阶段代表故障已经成功注入到环境中                           |
-    |              |                                                          |
+如果采用 Chaos Mesh 作为混沌平台，那么用户需要在用于测试的 Kubernetes 环境中预先部署 Chaos Mesh 组件，然后编写并提交 ShardingSphere Chaos 配置文件并执行实验。
