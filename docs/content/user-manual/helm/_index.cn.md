@@ -1,6 +1,6 @@
 +++
 pre = "<b>4.1 </b>"
-title = "ShardingSphere Helm Charts 简明用户手册"
+title = "ShardingSphere Helm Charts 用户手册"
 weight = 1
 chapter = true
 +++
