@@ -234,6 +234,10 @@ func execRestore(lsBackup *model.LsBackup) error {
 
 	t.Render()
 
+	if restoreFinalStatus == "Failed" {
+		return xerr.NewCliErr("restore failed, please check the log for more details.")
+	}
+
 	return nil
 }
 

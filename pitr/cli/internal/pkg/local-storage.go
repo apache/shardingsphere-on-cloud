@@ -43,6 +43,7 @@ type (
 		ReadAll() ([]*model.LsBackup, error)
 		ReadByID(id string) (*model.LsBackup, error)
 		ReadByCSN(csn string) (*model.LsBackup, error)
+		DeleteByName(name string) error
 	}
 
 	Extension string
@@ -211,4 +212,12 @@ func (ls *localStorage) GenFilename(extn Extension) string {
 	default:
 		return fmt.Sprintf("%s_%s", prefix, suffix)
 	}
+}
+
+func (ls *localStorage) DeleteByName(name string) error {
+	path := fmt.Sprintf("%s/%s", ls.backupDir, name)
+	if err := os.Remove(path); err != nil {
+		return xerr.NewCliErr(fmt.Sprintf("delete file failed,err=%s", err))
+	}
+	return nil
 }

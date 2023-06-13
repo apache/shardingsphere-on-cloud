@@ -402,6 +402,10 @@ var _ = Describe("test backup mock", func() {
 	})
 
 	Context("test delete backup data", func() {
+		var (
+			ls *mock_pkg.MockILocalStorage
+		)
+
 		bak := &model.LsBackup{
 			Info: nil,
 			DnList: []*model.DataNode{
@@ -419,8 +423,22 @@ var _ = Describe("test backup mock", func() {
 				},
 			},
 		}
+		BeforeEach(func() {
+			ctrl = gomock.NewController(GinkgoT())
+			ls = mock_pkg.NewMockILocalStorage(ctrl)
+
+			monkey.Patch(pkg.NewLocalStorage, func(rootDir string) (pkg.ILocalStorage, error) {
+				return ls, nil
+			})
+		})
+		AfterEach(func() {
+			monkey.UnpatchAll()
+			ctrl.Finish()
+		})
+
 		It("should delete failed", func() {
-			deleteBackupFiles(bak)
+			ls.EXPECT().DeleteByName(gomock.Any()).Return(errors.New("failed"))
+			deleteBackupFiles(ls, bak)
 		})
 
 		It("should delete success", func() {
@@ -433,7 +451,8 @@ var _ = Describe("test backup mock", func() {
 			defer monkey.UnpatchAll()
 			defer ctrl.Finish()
 			as.EXPECT().DeleteBackup(gomock.Any()).Return(nil)
-			deleteBackupFiles(bak)
+			ls.EXPECT().DeleteByName(gomock.Any()).Return(nil)
+			deleteBackupFiles(ls, bak)
 		})
 	})
 })
