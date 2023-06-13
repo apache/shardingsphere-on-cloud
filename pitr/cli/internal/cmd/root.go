@@ -107,10 +107,10 @@ func checkAgentServerStatus(lsBackup *model.LsBackup) bool {
 			Password: sn.Password,
 		}
 		if err := as.CheckStatus(in); err != nil {
-			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Port: sn.Port, Status: "Unavailable"})
+			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Port: AgentPort, Status: "Unavailable"})
 			available = false
 		} else {
-			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Port: sn.Port, Status: "Available"})
+			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Port: AgentPort, Status: "Available"})
 		}
 	}
 

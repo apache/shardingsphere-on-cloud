@@ -53,6 +53,7 @@ func Restore(ctx *fiber.Ctx) (err error) {
 		err = fmt.Errorf("stop openGauss failure,err=%w", err)
 		return
 	}
+
 	defer func() {
 		if err != nil {
 			err2 := pkg.OG.Start()
@@ -69,16 +70,22 @@ func Restore(ctx *fiber.Ctx) (err error) {
 		return
 	}
 
+	var status = "restoring"
+	defer func() {
+		if status != "restore success" {
+			err2 := pkg.OG.MvTempToPgData()
+			err = fmt.Errorf("resotre failre[err=%s],pkg.OG.MvTempToPgData return err=%w", err, err2)
+		}
+	}()
+
 	// restore data from backup
 	if err = pkg.OG.Restore(in.DnBackupPath, in.Instance, in.DnBackupID); err != nil {
 		efmt := "pkg.OG.Restore failure[path=%s,instance=%s,backupID=%s],err=%w"
 		err = fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupID, err)
-
-		err2 := pkg.OG.MvTempToPgData()
-		err = fmt.Errorf("resotre failre[err=%s],pkg.OG.MvTempToPgData return err=%w", err, err2)
-
+		status = "restore failure"
 		return
 	}
+	status = "restore success"
 
 	// clean temp
 	if err = pkg.OG.CleanPgDataTemp(); err != nil {

@@ -124,7 +124,7 @@ func backup() error {
 
 			if lsBackup != nil {
 				logging.Warn("Try to delete backup data ...")
-				deleteBackupFiles(lsBackup)
+				deleteBackupFiles(ls, lsBackup)
 			}
 		}
 	}()
@@ -424,7 +424,7 @@ func doCheck(as pkg.IAgentServer, sn *model.StorageNode, backupID string, retrie
 	return backupInfo.Status, nil
 }
 
-func deleteBackupFiles(lsBackup *model.LsBackup) {
+func deleteBackupFiles(ls pkg.ILocalStorage, lsBackup *model.LsBackup) {
 	var (
 		dataNodeMap = make(map[string]*model.DataNode)
 		totalNum    = len(lsBackup.SsBackup.StorageNodes)
@@ -478,6 +478,10 @@ func deleteBackupFiles(lsBackup *model.LsBackup) {
 	}
 
 	t.Render()
+
+	if err := ls.DeleteByName(filename); err != nil {
+		logging.Warn("Delete backup info file failed")
+	}
 
 	logging.Info("Delete backup files finished")
 }
