@@ -97,13 +97,13 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 
 ##### 常用的 ServerConfig Repository Props 配置
 配置项 |  描述 | 示例 
------------------- | --------------------------|------------------------------------------------------ | ----------------------------------------
-`spec.bootstrap.serverConfig.mode.repository.props.timeToLiveSeconds`            | TTL                                        | `600`                                                                  |
-`spec.bootstrap.serverConfig.mode.repository.props.serverlists`                 | 治理中心列表                                     | `zookeeper.default:2181` |
-`spec.bootstrap.serverConfig.mode.repository.props.retryIntervalMilliseconds`    | 重试间隔                                      | `500`                                                                  |
-`spec.bootstrap.serverConfig.mode.repository.props.operationTimeoutMilliseconds` | 超时时间                                   | `5000`                                                                 |
-`spec.bootstrap.serverConfig.mode.repository.props.namespace`                    | 治理中心命名空间（非 K8s 命名空间）                                        | `governance_ds`                                                        |
-`spec.bootstrap.serverConfig.mode.repository.props.maxRetries`                   | 客户端最大重试次数                                   | `3`                                                                    |
+------------------ | -------------------------------------------------------------------------------- | ----------------------------------------
+`spec.bootstrap.serverConfig.mode.repository.props.timeToLiveSeconds`            | TTL                                        | `600`
+`spec.bootstrap.serverConfig.mode.repository.props.serverlists`                 | 治理中心列表                                     | `zookeeper.default:2181` 
+`spec.bootstrap.serverConfig.mode.repository.props.retryIntervalMilliseconds`    | 重试间隔                                      | `500`
+`spec.bootstrap.serverConfig.mode.repository.props.operationTimeoutMilliseconds` | 超时时间                                   | `5000`
+`spec.bootstrap.serverConfig.mode.repository.props.namespace`                    | 治理中心命名空间（非 K8s 命名空间）                                        | `governance_ds`
+`spec.bootstrap.serverConfig.mode.repository.props.maxRetries`                   | 客户端最大重试次数                                   | `3`
 
 
 ##### 选填配置 
