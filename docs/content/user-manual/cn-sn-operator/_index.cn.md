@@ -39,20 +39,33 @@ helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n sha
 ### Charts 参数说明
 
 #### 通用参数
-| Name              | Description                                                                                               | Value                                 |
+| 名称 |  描述  | 默认值 |
 |-------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------|
-| `nameOverride`    | nameOverride String to partially override common.names.fullname template (will maintain the release name) | `shardingsphere-proxy` |
+| `nameOverride`    | nameOverride 参数会使用 common.names.fullname 模板覆盖名称 | `shardingsphere-proxy` |
 
 #### ShardingSphere Operator 参数
-| Name                              | Description                                                                                                | Value                                                                   |
+| 名称 | 描述 | 默认值|
 |-----------------------------------|------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
-| `operator.replicaCount`           | operator replica count                                                                                     | `2`                                                                     |
-| `operator.image.repository`       | operator image name                                                                                        | `apache/shardingsphere-operator` |
-| `operator.image.pullPolicy`       | image pull policy                                                                                          | `IfNotPresent`                                                          |
-| `operator.image.tag`              | image tag                                                                                                  | `0.3.0`                                                                 |
-| `operator.imagePullSecrets`       | image pull secret of private repository                                                                    | `[]`                                                                    |
-| `operator.resources`              | operator Resources required by the operator                                                                | `{}`                                                                    |
-| `operator.health.healthProbePort` | operator health check port                                                                                 | `8080`                                                                  |
+| `operator.replicaCount`           | 副本数| `2`                                                                     |
+| `operator.image.repository`       | 镜像名称| `apache/shardingsphere-operator` |
+| `operator.image.pullPolicy`       | 镜像拉取策略                                                                                         | `IfNotPresent`                                                          |
+| `operator.image.tag`              | 镜像版本| `0.3.0`                                                                 |
+| `operator.imagePullSecrets`       | 私有镜像仓库密钥| `[]`                                                                    |
+| `operator.resources`              | 资源配置| `{}`                                                                    |
+| `operator.health.healthProbePort` | 健康检查端口| `8080`                                                                  |
+
+在利用 Operator Charts 进行安装的时候用户可以根据需要选择是否安装配套的治理中心，相关参数如下：
+
+| 名称 | 描述 | 默认值|
+| ------------------------------------ | ---------------------------------------------------- | ------------------- |
+| `zookeeper.enabled`                  | 同时部署 Zookeeper 的开关 | `true`              |
+| `zookeeper.replicaCount`             | 副本数                            | `1`                 |
+| `zookeeper.persistence.enabled`      | 是否持久化         | `false`             |
+| `zookeeper.persistence.storageClass` | 持久卷 StorageClass | `""`                |
+| `zookeeper.persistence.accessModes`  | 持久卷访问模式| `["ReadWriteOnce"]` |
+| `zookeeper.persistence.size`         | 持久卷大小| `8Gi`               |
+
+注意：目前通过 Charts 安装的治理中心仅支持 Bitnami Zookeeper Charts。
 
 ## CRD 介绍
 
@@ -195,6 +208,8 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 
 配置项 |  描述 | 类型 | 示例 
 ------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
+`metadata.name` | 计划部署的名称 |  string | `foo` 
+`metadata.namespace` | 计划部署的命名空间，默认为 default | string |                                      | `shardingsphere-system`
 `spec.storageProviderName` | StorageProvider 名称 |  string  | `aws-rds-instance` 
 
 ##### 选填配置
@@ -235,6 +250,7 @@ StorageProvider 声明了不同的 StorageNode 提供方，比如 AWS RDS 和 Cl
 
 配置项 |  描述 | 类型 | 示例 
 ------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
+`metadata.name` | 计划部署的名称 |  string | `foo` 
 `spec.storageProviderName` | StorageProvider 名称 |  string  | `aws-rds-instance` 
 
 #### 示例
