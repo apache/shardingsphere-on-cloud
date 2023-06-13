@@ -75,7 +75,7 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 ##### 必填配置 
 
 配置项 |  描述 | 类型 | 示例 
------------------- | --------------------------------------------------------------------------------- | ----------------------------------------
+------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
 `metadata.name` | 计划部署的名称 |  string | `foo` 
 `metadata.namespace` | 计划部署的命名空间，默认为 default | string |                                      | `shardingsphere-system`
 `spec.storageNodeConnector.type`     | 后端驱动类型 | string | `mysql`
@@ -97,7 +97,7 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 
 ##### 常用的 ServerConfig Repository Props 配置
 配置项 |  描述 | 示例 
------------------- | --------------------------------------------------------------------------------- | ----------------------------------------
+------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
 `spec.bootstrap.serverConfig.mode.repository.props.timeToLiveSeconds`            | TTL                                        | `600`                                                                  |
 `spec.bootstrap.serverConfig.mode.repository.props.serverlists`                 | 治理中心列表                                     | `zookeeper.default:2181` |
 `spec.bootstrap.serverConfig.mode.repository.props.retryIntervalMilliseconds`    | 重试间隔                                      | `500`                                                                  |
@@ -109,7 +109,7 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 ##### 选填配置 
 
 配置项 |  描述 | 类型 | 示例 
------------------- | --------------------------------------------------------------------------------- | ----------------------------------------
+------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
 `spec.probes.livenessProbe` | 健康检查探针 |  corev1.Probe | 
 `spec.probes.readinessProbe` | 就绪检查探针 |  corev1.Probe | 
 `spec.probes.startupProbe` | 启动检查探针 |  corev1.Probe | 
@@ -192,13 +192,13 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 ##### 必填配置 
 
 配置项 |  描述 | 类型 | 示例 
------------------- | --------------------------------------------------------------------------------- | ----------------------------------------
+------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
 `spec.storageProviderName` | StorageProvider 名称 |  string  | `aws-rds-instance` 
 
 ##### 选填配置
 
 配置项 |  描述 | 类型 | 示例 
------------------- | --------------------------------------------------------------------------------- | ----------------------------------------
+------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
 `spec.storageProviderSchema` | 初始化 Schema  | string | `sharding_db`
 `spec.replicas` | Aurora 集群规模  | number | 2
 
@@ -232,7 +232,7 @@ StorageProvider 声明了不同的 StorageNode 提供方，比如 AWS RDS 和 Cl
 ##### 必填配置 
 
 配置项 |  描述 | 类型 | 示例 
------------------- | --------------------------------------------------------------------------------- | ----------------------------------------
+------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
 `spec.storageProviderName` | StorageProvider 名称 |  string  | `aws-rds-instance` 
 
 #### 示例
