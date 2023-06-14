@@ -33,8 +33,8 @@ Java 语言实现的 ShardingSphere 有着良好的社区生态。ShardingSphere
 
 * 希望快速了解、试用或验证 ShardingSphere Proxy 的功能特性，可以选择在 AWS 上使用 CloudFormation 和 Terraform 进行部署。或者选择在 Kubernetes 上使用 Helm Charts 和 Operator 进行部署。
 
-* 希望在 Kubernetes 环境能实现数据分片并管理数据库，可以选择 ShardingSphere Operator 为您同时管理计算节点和存储阶段。
+* 希望在 Kubernetes 环境能实现数据分片并管理数据库，可以选择 ShardingSphere Operator 为您同时管理计算节点和存储节点。
 
 * 希望在 Kubernetes 解决数据库可靠性工程相关问题，可以选择 ShardingSphere Operator 提供的自动化运维能力。
 
-* 希望对 ShardingSphere 生态进行扩展，编写自定义的 WebAssembly 插件实现自定义算法。
+* 希望对 ShardingSphere 能力进行自定义，编写自定义的 WebAssembly 插件实现扩展。
