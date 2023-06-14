@@ -69,11 +69,128 @@ helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n sha
 
 ## CRD 介绍
 
+### ShardingSphereProxy 和 ShardingSphereProxyServerConfig
+
+注意：ShardingSphereProxy 和 ShardingSphereProxyServerConfig 计划于 0.4.0 版本起停止支持。
+
+ShardingSphereProxy 和 ShardingSphereProxyServerConfig 提供了对 ShardingSphereProxy 部署和配置的基本描述，Operator 会将 CRD 中提供的配置转换为对应的 Kubernetes 负载并提交创建。其中 ShardingSphereProxy 主要影响基础资源相关配置，ShardingSphereProxyServerConfig 影响 `server.yaml` 等运行时配置。
+ 
+#### 字段说明
+
+##### 必填配置 
+
+ShardingSphereProxy
+
+配置项 |  描述 | 类型 | 示例 
+------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
+`.spec.version`  | ShardingSphere Proxy 版本 | string | `5.4.0`
+`.spec.serviceType.type` | 服务类型 |  string | `ClusterIP`
+`.spec.serviceType.nodePort` | 服务 NodePort | number | `33307`
+`.spec.replicas` | 副本数 | number | `3` 
+`.spec.proxyConfigName` | 挂载的目标配置 | string  |
+`.spec.port` | 暴露的端口 | number |
+
+##### 可选配置 
+
+配置项 |  描述 | 类型 | 示例 
+------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
+`.spec.automaticScaling.enable` | 自动扩容开关 | bool | `false` 
+`.spec.automaticScaling.scaleUpWindows` | 自动扩容上限 | number | 
+`.spec.automaticScaling.scaleDownWindows` | 自动扩容下限 | number |
+`.spec.automaticScaling.target` | 自动扩容目标值 | number |
+`.spec.automaticScaling.maxInstance` | 自动扩容最大实例数 | number |
+`.spec.automaticScaling.minInstance` | 自动扩容最小实例数 | number |
+`.spec.customMetrics` | 自定义指标 | []autoscalingv2beta2.MetricSpec | 
+`.spec.imagePullSecrets` | 镜像仓库密钥 | v1.Local,ObjectReference | 
+`.spec.mySQLDriver.version` | MySQL 驱动版本 | string |  
+`.spec.resources` | 资源配置| v1.ResourceRequirements | 
+`.spec.livenssProbe` | 健康检查 | v1.Probe |
+`.spec.readinessProbe` | 就绪检查 | v1.Probe |
+`.spec.startupProbe` |  启动检查 | v1.Probe |
+
+
+ShardingSphereProxyServerConfig
+
+配置项 |  描述 | 类型 | 示例 
+------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
+`.spec.mode.type` | string |  运行模式配置，支持 Standalone 和 Cluster           | string | `Cluster`
+`.spec.mode.repository.type` | string  | 治理中心类型，支持 ZooKeeper 和 Etcd  |string              | `ZooKeeper`
+`.spec.mode.repository.props.namespace` | string  |治理中心命名空间（非 K8s 命名空间）                                        | `governance_ds`
+`.spec.mode.repository.props.server-lists` |  string  | 治理中心列表                                     | `zookeeper.default:2181` 
+`.spec.mode.repository.props.retryIntervalMilliseconds` | number  | 重试间隔                                      | `500`
+`.spec.mode.repository.props.maxRetries` | number  | 客户端最大重试次数                                   | `3`
+`.spec.mode.repository.props.timeToLiveSeconds` | number  | TTL                                        | `600`
+`.spec.mode.repository.props.operationTimetoutMilliseconds` | number |  超时时间                                   | `5000`
+`.spec.mode.repository.props.digest` | 摘要 | string |  
+`.spec.authority.users[0].user` |  计算节点用户名，格式: <username>@<hostname> ，将 hostname 设置为 % 或为空表示不关心来源主机|string |`root@%`
+`.spec.authority.users[0].password` |  计算节点用户名，格式: <username>@<hostname> ，将 hostname 设置为 % 或为空表示不关心来源主机|string |`root@%`
+`.spec.authority.priviliege.type`  | 计算节点权限设置，默认值为 ALL_PRIVILEGES_PERMITTED  | string                                                                        | `ALL_PRIVILEGES_PERMITTED` 
+`.spec.props.kernel-executor-size` | 内核执行大小 | number | 
+`.spec.props.check-table-metadata-enabled` | 表元数据检查开关 | bool | 
+`.spec.props.proxy-backend-query-fetch-size` | 后端查询大小 | number | 
+`.spec.props.check-duplicate-table-enabled`|重复表检查开关 | bool| 
+`.spec.props.proxy-frontend-executeor-size` | 前端执行大小 | number | 
+`.spec.props.proxy-backend-executor-suitable` |后端执行器 | string | 
+`.spec.props.proxy-backend-driver-type` |后端驱动类型 | string | 
+`.spec.props.proxy-frontend-database-protocol-type` | 前端数据库协议类型  | string | 
+
+#### 示例
+
+ShardingSphereProxy 示例：
+
+```yaml
+apiVersion: shardingsphere.apache.org/v1alpha1
+kind: ShardingSphereProxy
+metadata:
+  name: shardingsphere-cluster-shardingsphere-proxy
+  namespace: shardingsphere-operator
+spec:
+  version: 5.3.1
+  serviceType:
+    type: ClusterIP
+  replicas: 3
+  proxyConfigName: "shardingsphere-cluster-shardingsphere-proxy-configuration"
+  port: 3307
+  mySQLDriver:
+    version: "5.1.47"
+```
+
+ShardingSphereProxyServerConfig 示例：
+
+```yaml
+apiVersion: shardingsphere.apache.org/v1alpha1
+kind: ShardingSphereProxyServerConfig
+metadata:
+  name: shardingsphere-cluster-shardingsphere-proxy-configuration
+  namespace: shardingsphere-operator
+spec:
+  authority:
+    privilege:
+      type: ALL_PERMITTED
+    users:
+    - password: root
+      user: root@%
+  mode:
+    repository:
+      props:
+        maxRetries: 3
+        namespace: governance_ds
+        operationTimeoutMilliseconds: 5000
+        retryIntervalMilliseconds: 500
+        server-lists: 'shardingsphere-cluster-zookeeper.shardingsphere-operator:2181'
+        timeToLiveSeconds: 600
+      type: ZooKeeper
+    type: Cluster
+  props:
+    proxy-frontend-database-protocol-type: MySQL
+```
+
+
 ### ComputeNode 
 
 ComputeNode 用来描述 ShardingSphere 集群中的计算节点，通常指的是 Proxy。由于 ShardingSphere Proxy 是无状态应用，所以可以利用 Kubernetes 原生的工作负载 Deployment 进行管理，同时使用 ConfigMap 和 Service 实现对于启动配置和服务发现的配置。利用 ComputeNode 不仅可以将 Deployment、ConfigMap 和 Service 中的关键配置统一，还匹配了 ShardingSphere 的语义，帮助 Operator 快速锁定工作负载。如图：
 
-![](../../../img/cn-concepts-1.png)
+![](../../../img/user-manual/cn-concepts-1.png)
 
 #### Operator 配置
 
@@ -190,7 +307,7 @@ spec:
 
 StorageNode 是 Operator 对于数据源的描述，提供对数据源的生命周期管理。它的使用需要配合 StorageProvider，现在支持 AWS RDS 和 CloudNative PG 。如图：
 
-![](../../../img/sn-concepts-1.png)
+![](../../../img/user-manual/sn-concepts-1.png)
 
 注意：StorageNode 是可选 CRD，用户可根据实际场景决定是否需要通过 StorageNode 管理数据源。
 
