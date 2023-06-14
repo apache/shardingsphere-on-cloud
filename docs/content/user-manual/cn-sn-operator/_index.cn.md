@@ -73,7 +73,7 @@ helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n sha
 
 ComputeNode 用来描述 ShardingSphere 集群中的计算节点，通常指的是 Proxy。由于 ShardingSphere Proxy 是无状态应用，所以可以利用 Kubernetes 原生的工作负载 Deployment 进行管理，同时使用 ConfigMap 和 Service 实现对于启动配置和服务发现的配置。利用 ComputeNode 不仅可以将 Deployment、ConfigMap 和 Service 中的关键配置统一，还匹配了 ShardingSphere 的语义，帮助 Operator 快速锁定工作负载。如图：
 
-![](../../../img/cn-concepts-1.png)
+![](../../../img/user-manual/cn-concepts-1.png)
 
 #### Operator 配置
 
@@ -190,7 +190,7 @@ spec:
 
 StorageNode 是 Operator 对于数据源的描述，提供对数据源的生命周期管理。它的使用需要配合 StorageProvider，现在支持 AWS RDS 和 CloudNative PG 。如图：
 
-![](../../../img/sn-concepts-1.png)
+![](../../../img/user-manual/sn-concepts-1.png)
 
 注意：StorageNode 是可选 CRD，用户可根据实际场景决定是否需要通过 StorageNode 管理数据源。
 
