@@ -5,8 +5,6 @@ weight = 4
 chapter = true
 +++
 
-## 概述
-
 ## WebAssembly 扩展
 
 WebAssembly 起初是为了解决 JavaScript 在浏览器上的一些性能瓶颈，目前已经不局限于浏览器, Wasi 规范使得其可以运行在更多的场景中，例如可信计算、边缘计算等。目前主流的语言基本都支持编译到 Wasm。ShardingSphere 的插件（SPI）只支持 Java 生态，把 Wasm 引入到 ShardingSphere 中可以进一步开放扩展，可以更加丰富其可插拔生态，吸引更多的社区开发者。
