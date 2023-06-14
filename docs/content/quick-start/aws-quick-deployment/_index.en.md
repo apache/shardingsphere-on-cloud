@@ -1,7 +1,7 @@
 +++
-pre = "<b>2.2 </b>"
+pre = "<b>2.1 </b>"
 title = "ShardingSphere CloudFormation Quick Start"
-weight = 2
+weight = 1
 chapter = true
 +++
 
