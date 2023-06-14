@@ -81,6 +81,45 @@ public final class WasmShardingAlgorithm implements StandardShardingAlgorithm<Co
 
 ```
 
-### 利用 Wasm 实现自定义分片表达式
+### 利用 Wasm 扩展自定义分片表达式
 
-由于 ShardingSphere 定义分片规则只支持 Java 生态中的 Groovy 语法，通过 WASM 用户可以使用自己熟悉的语言生态来定义分片逻辑。WASM-sharding-js 则演示了如何通过 JavaScript 定义 CRC32MOD 分片算法。
+由于 ShardingSphere 定义分片规则只支持 Java 生态中的 Groovy 语法，通过 Wasm 用户可以使用自己熟悉的语言生态来定义分片逻辑。WASM-sharding-js 则演示了如何通过 JavaScript 定义 CRC32MOD 分片算法。
+
+在当前 ShardingSphere 生态中，分片算法是通过 Groovy 的语法扩展的。为方便更多技术栈的用户使用，通过 Wasm 技术可以让用户使用自己熟悉的语言生态来定义分片逻辑，扩展分片算法。在 [wasm-sharding-js](https://github.com/apache/shardingsphere-on-cloud/tree/main/wasm/wasm-sharding-js) 目录下提供了将 JavaScript 实现的分片算法编译成 Wasm 扩展的示例。
+
+目录结构如下：
+```shell
+├── Cargo.lock
+├── Cargo.toml
+├── README.md
+├── build.rs
+├── lib
+│   └── binding.rs
+├── package-lock.json
+├── package.json
+├── sharding
+│   ├── config.js
+│   ├── crc32.js
+│   ├── sharding.js
+│   └── strgen.js
+└── src
+```
+其中在  `sharding/config.js` 文件中，定义了两个分片的资源点表达式，分别为：`t_order_00${0..2}` 和 `ms_ds00${crc32(field_id)}`。对于 `t_order_00${0..2}` 表达式，期望通过解析后，最终生成 `t_order_000`、`t_order_001` 和 `t_order_002` 三个分片表。而对于 `ms_ds00${crc32(field_id)}` 表达式，期望对 `field_id` 字段进行 `crc32` 计算后进行分片：
+
+```javascript
+export let cc = "t_order_00${0..2}"
+export let cc_crc32 = "ms_ds00${crc32(field_id)}"
+```
+
+另外在 `sharding/sharding.js` 文件声明的`pisa_crc32` 函数中，展示了通过 JavaScript 代码实现的对上述两个表达式的解析：
+
+```javascript
+//...
+function pisa_crc32(str, mod) {
+    let c2 = crc32_str(str)
+    let m = c2 % mod
+    return m < 256 ? 0 : m < 512 ? 1: m<768 ? 2 : 3
+}
+//...
+```
+可以看到，通过 Wasm 用户不仅可以扩张 ShardingSphere 本身对功能，还可以扩展更多的技术栈。
