@@ -69,11 +69,12 @@ helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n sha
 
 ## CRD 介绍
 
-### ShardingSphereProxy 和 ShardingSphereProxyServerConfig
+### ShardingSphereProxy 
+
+ShardingSphereProxy 和 ShardingSphereProxyServerConfig 提供了对 ShardingSphereProxy 部署和配置的基本描述，Operator 会将 CRD 中提供的配置转换为对应的 Kubernetes 负载并提交创建。其中 ShardingSphereProxy 主要影响基础资源相关配置，ShardingSphereProxyServerConfig 影响 `server.yaml` 等运行时配置。
 
 注意：ShardingSphereProxy 和 ShardingSphereProxyServerConfig 计划于 0.4.0 版本起停止支持。
 
-ShardingSphereProxy 和 ShardingSphereProxyServerConfig 提供了对 ShardingSphereProxy 部署和配置的基本描述，Operator 会将 CRD 中提供的配置转换为对应的 Kubernetes 负载并提交创建。其中 ShardingSphereProxy 主要影响基础资源相关配置，ShardingSphereProxyServerConfig 影响 `server.yaml` 等运行时配置。
  
 #### 字段说明
 

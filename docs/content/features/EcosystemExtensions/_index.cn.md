@@ -120,4 +120,4 @@ function pisa_crc32(str, mod) {
 }
 //...
 ```
-可以看到，通过 Wasm 用户不仅可以扩张 ShardingSphere 本身对功能，还可以扩展更多的技术栈。
+可以看到，通过 Wasm 用户不仅可以扩展 ShardingSphere 本身的功能，还可以扩展更多的技术栈。
