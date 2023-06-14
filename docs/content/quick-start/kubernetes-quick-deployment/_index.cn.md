@@ -7,6 +7,8 @@ chapter = true
 
 ## 操作说明
 
+在 Kubernetes 上使用 Helm Charts 安装，可以使用 Charts 仓库在线安装，或者下载源码后本地编译安装。 
+
 ### 在线安装
 
 1. 添加 ShardingSphere-Proxy 到本地 Helm 仓库：
