@@ -55,7 +55,6 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 `spec.podChaos.params.memoryStress.duration` | 内存压力持续压力 |  string | `1m` 
 `spec.podChaos.params.memoryStress.workers` | 内存压力并发度 |  numbers | `2`
 `spec.podChaos.params.memoryStress.consumption` | 内存压力消耗比重 |  string | `50`
-
 `spec.networkChaos.source.namespaces` | Pod 选择器：命名空间|  []string | 
 `spec.networkChaos.soruce.labelSelectors` | Pod 选择器：标签|  map[string]string | 
 `spec.networkChaos.source.annotationSelectors` | Pod 选择器：注解|  map[string]string | 
