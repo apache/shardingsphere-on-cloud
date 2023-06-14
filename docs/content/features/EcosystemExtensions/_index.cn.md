@@ -9,7 +9,7 @@ chapter = true
 
 ## WebAssembly 扩展
 
-WebAssembly 起初是为了解决 JavaScript 在浏览器上的一些性能瓶颈，目前已经不局限于浏览器, Wasi 规范使得其可以运行在更多的场景中，例如可信计算、边缘计算等。目前主流的语言基本都支持编译到 Wasm。ShardingSphere 的插件（SPI）只支持 java 生态，把 Wasm 引入到 ShardingSphere 中可以进一步开放扩展，可以更加丰富其可插拔生态，吸引更多的社区开发者。
+WebAssembly 起初是为了解决 JavaScript 在浏览器上的一些性能瓶颈，目前已经不局限于浏览器, Wasi 规范使得其可以运行在更多的场景中，例如可信计算、边缘计算等。目前主流的语言基本都支持编译到 Wasm。ShardingSphere 的插件（SPI）只支持 Java 生态，把 Wasm 引入到 ShardingSphere 中可以进一步开放扩展，可以更加丰富其可插拔生态，吸引更多的社区开发者。
 
 ### 利用 Wasm 实现自定义分片算法
 
@@ -17,7 +17,7 @@ WebAssembly 起初是为了解决 JavaScript 在浏览器上的一些性能瓶�
 
 针对自定义分片场景，使用 WebAssembly 实现了自定义的分片 Demo。Demo 中演示了 `sharding_count` 为`3`的自定义分片逻辑，实现步骤如下：
 
-1. 从 Apache ShardingSphere 中抽取数据分片 SPI 的相关逻辑，比如[文档](https://shardingsphere.apache.org/document/current/cn/dev-manual/sharding/)中提到的`MOD`自动分片算法，将其整理到单独的[目录](https://github.com/apache/shardingsphere-on-cloud/tree/main/wasm/wasm-sharding-java/src/main/java/org/apache/shardingsphere)中：
+1. 从 Apache ShardingSphere 中抽取数据分片 SPI 的相关逻辑，比如[文档](https://shardingsphere.apache.org/document/current/cn/dev-manual/sharding/)中提到的 `MOD` 自动分片算法，将其整理到单独的[目录](https://github.com/apache/shardingsphere-on-cloud/tree/main/wasm/wasm-sharding-java/src/main/java/org/apache/shardingsphere)中：
 
 ```shell
 ├── pom.xml
@@ -32,7 +32,7 @@ WebAssembly 起初是为了解决 JavaScript 在浏览器上的一些性能瓶�
 
 ```
 
-2. 在上述目录下增加 [demo.java](https://github.com/apache/shardingsphere-on-cloud/blob/main/wasm/wasm-sharding-java/src/main/java/org/apache/shardingsphere/demo.java) ，用 Wasm 提供的分片算法`WasmShardingAlgorithm`实例化`StandardShardingAlgorithm`， 运行自定义的分片逻辑并输出结果。
+2. 在上述目录下增加 [demo.java](https://github.com/apache/shardingsphere-on-cloud/blob/main/wasm/wasm-sharding-java/src/main/java/org/apache/shardingsphere/demo.java) ，用 Wasm 提供的分片算法 `WasmShardingAlgorithm` 实例化 `StandardShardingAlgorithm`， 运行自定义的分片逻辑并输出结果。
 
 ```java
 // ...
@@ -62,7 +62,7 @@ pub unsafe extern "C" fn do_work() -> i64 {
 }
 ```
 
-4. 在`src/main/java/org/apache/shardingsphere/sharding/`下创建 [WasmShardingAlgorithm.java](https://github.com/apache/shardingsphere-on-cloud/blob/main/wasm/wasm-sharding-java/src/main/java/org/apache/shardingsphere/sharding/WasmShardingAlgorithm.java)， 以和 Wasm 中的自定义分片逻辑通信并获得结果：
+4. 在 `src/main/java/org/apache/shardingsphere/sharding/` 下创建 [WasmShardingAlgorithm.java](https://github.com/apache/shardingsphere-on-cloud/blob/main/wasm/wasm-sharding-java/src/main/java/org/apache/shardingsphere/sharding/WasmShardingAlgorithm.java)， 以和 Wasm 中的自定义分片逻辑通信并获得结果：
 
 ```java
 //...
