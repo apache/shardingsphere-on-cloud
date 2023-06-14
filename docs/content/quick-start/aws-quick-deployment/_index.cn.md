@@ -1,5 +1,5 @@
 +++
-pre = "<b>2.2 </b>"
+pre = "<b>2.1 </b>"
 title = "ShardingSphere CloudFormation 一键安装"
 weight = 1
 chapter = true
@@ -68,7 +68,7 @@ chapter = true
 
 ![](../../../img/operation-guide/4-13.PNG)
 
-其中 `ssinernaldomain` 对应的值就是我们需要的域名。
+其中 `ssinternaldomain` 对应的值就是我们需要的域名。
 
 默认创建的内部域名为 [proxy.shardingsphere.org](proxy.shardingsphere.org)，端口为 3307，用户名和密码为 root。
 

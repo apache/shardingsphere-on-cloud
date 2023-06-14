@@ -1,11 +1,13 @@
 +++
-pre = "<b>2.1 </b>"
+pre = "<b>2.2 </b>"
 title = "ShardingSphere Helm Charts 一键安装"
-weight = 1
+weight = 2
 chapter = true
 +++
 
 ## 操作说明
+
+在 Kubernetes 上使用 Helm Charts 安装，可以使用 Charts 仓库在线安装，或者下载源码后本地编译安装。 
 
 ### 在线安装
 

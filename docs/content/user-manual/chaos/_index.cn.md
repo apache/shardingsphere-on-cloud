@@ -75,6 +75,8 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 `spec.networkChaos.direction.` | 流量方向，包括 to、from 和 both |  string | `both`
 `spec.networkChaos.params.deplay.latency` |延迟时间 |  string | `100`
 `spec.networkChaos.params.loss.loss` |丢包率 |  string | `80`
+`spec.networkChaos.params.duplicate.duplicate` |包重复 |  string | `80`
+`spec.networkChaos.params.corrupt.corrupt` |包错误|  string | `80`
 
 ##### Annotations 说明
 
