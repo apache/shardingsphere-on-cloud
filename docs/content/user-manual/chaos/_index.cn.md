@@ -7,7 +7,9 @@ chapter = true
 
 ## 概述
 
-为了实现自动化的混沌测试，ShardingSphere Operator 支持名为 Chaos 的 CRD，并根据其中配置的混沌类型和相关参数，生成对应的混沌平台 CRD 配置并执行测试。目前 Chaos 支持 ChaosMesh，下一步计划支持 LitmusChaos。
+为了实现自动化的混沌测试，ShardingSphere Operator 支持名为 Chaos 的 CRD，并根据其中配置的混沌类型和相关参数，生成对应的混沌平台 CRD 配置并执行测试。目前 Chaos 支持 ChaosMesh，下一步计划支持 LitmusChaos。基本示意如图：
+
+![](../../../img/user-manual/chaos-concepts-1.png)
 
 ## 安装 Operator
 
