@@ -576,7 +576,7 @@ var _ = Describe("GetNamespacedByName", func() {
 							},
 						},
 						AgentConfig: v1alpha1.AgentConfig{
-							Plugins: v1alpha1.AgentPlugin{
+							Plugins: &v1alpha1.AgentPlugin{
 								Logging: &v1alpha1.PluginLogging{
 									File: v1alpha1.LoggingFile{
 										Props: v1alpha1.Properties{
@@ -1011,7 +1011,7 @@ var _ = Describe("Agent Config", func() {
 				Spec: v1alpha1.ComputeNodeSpec{
 					Bootstrap: v1alpha1.BootstrapConfig{
 						AgentConfig: v1alpha1.AgentConfig{
-							Plugins: v1alpha1.AgentPlugin{
+							Plugins: &v1alpha1.AgentPlugin{
 								Logging: &v1alpha1.PluginLogging{
 									File: v1alpha1.LoggingFile{
 										Props: v1alpha1.Properties{
