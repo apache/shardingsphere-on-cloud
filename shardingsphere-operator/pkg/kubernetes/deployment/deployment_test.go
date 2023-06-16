@@ -252,7 +252,7 @@ func Test_NewDeployment(t *testing.T) {
 					ServiceType: corev1.ServiceTypeClusterIP,
 					Bootstrap: v1alpha1.BootstrapConfig{
 						AgentConfig: v1alpha1.AgentConfig{
-							Plugins: v1alpha1.AgentPlugin{
+							Plugins: &v1alpha1.AgentPlugin{
 								Metrics: &v1alpha1.PluginMetrics{
 									Prometheus: v1alpha1.Prometheus{
 										Host:  "localhost",

@@ -32,6 +32,7 @@ type ContainerBuilder interface {
 	SetStartupProbe(probe *v1.Probe) ContainerBuilder
 	SetEnv(envs []v1.EnvVar) ContainerBuilder
 	SetCommand(cmds []string) ContainerBuilder
+	SetArgs(args []string) ContainerBuilder
 	SetVolumeMount(mount *v1.VolumeMount) ContainerBuilder
 	Build() *v1.Container
 }
@@ -124,6 +125,14 @@ func (c *containerBuilder) SetEnv(envs []v1.EnvVar) ContainerBuilder {
 func (c *containerBuilder) SetCommand(cmds []string) ContainerBuilder {
 	if cmds != nil {
 		c.container.Command = cmds
+	}
+	return c
+}
+
+// SetArgs set the args of the container
+func (c *containerBuilder) SetArgs(args []string) ContainerBuilder {
+	if args != nil {
+		c.container.Command = args
 	}
 	return c
 }

@@ -56,7 +56,7 @@ const (
 
 // ComputeNodePrivilege for storage node, the default value is ALL_PERMITTED
 type ComputeNodePrivilege struct {
-	Type PrivilegeType `json:"type" yaml:"type"`
+	Type PrivilegeType `json:"type,omitempty" yaml:"type,omitempty"`
 }
 
 // ComputeNodeUser is a slice about authorized host and password for compute node.
@@ -87,7 +87,7 @@ const (
 type Repository struct {
 	// +kubebuilder:validation:Enum=ZooKeeper;Etcd
 	// type of metadata repository
-	Type RepositoryType `json:"type" yaml:"type"`
+	Type RepositoryType `json:"type,omitempty" yaml:"type,omitempty"`
 	// properties of metadata repository
 	// +optional
 	Props Properties `json:"props,omitempty" yaml:"props,omitempty"`
@@ -172,7 +172,7 @@ type AgentPlugin struct {
 
 // AgentConfig defines the config for ShardingSphere-Agent, renderred as agent.yaml
 type AgentConfig struct {
-	Plugins AgentPlugin `json:"plugins,omitempty" yaml:"plugins,omitempty"`
+	Plugins *AgentPlugin `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 
 // ServiceType defines the Service in Kubernetes of ShardingSphere-Proxy
