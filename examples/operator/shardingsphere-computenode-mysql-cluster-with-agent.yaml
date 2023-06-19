@@ -18,6 +18,11 @@
 apiVersion: shardingsphere.apache.org/v1alpha1
 kind: ComputeNode 
 metadata:
+  annotations:
+    shardingsphere.apache.org/java-agent-enabled: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/scrape: "true" 
+    prometheus.io/port: "9090"
   labels:
     app: foo 
   name: foo 
@@ -25,7 +30,7 @@ spec:
   storageNodeConnector: 
     type: mysql
     version: 5.1.47
-  serverVersion: 5.3.1
+  serverVersion: 5.3.2
   replicas: 1
   selector:
     matchLabels:
@@ -50,10 +55,18 @@ spec:
           type: ZooKeeper
           props:
             timeToLiveSeconds: "600"
-            server-lists: test-zookeeper.test1:2181 
+            server-lists: ${PLEASE_REPLACE_THIS_WITH_YOUR_ZOOKEEPER_SERVICE} 
             retryIntervalMilliseconds: "500"
             operationTimeoutMilliseconds: "5000"
             namespace: governance_ds
             maxRetries: "3"
       props:
         proxy-frontend-database-protocol-type: MySQL
+    agentConfig:
+      plugins:
+        metrics:
+          prometheus:
+            host: "0.0.0.0"
+            port: 9090
+            props:
+              jvm-information-collector-enabled: "true"
