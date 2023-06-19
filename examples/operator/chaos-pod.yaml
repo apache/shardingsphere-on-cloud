@@ -1,0 +1,17 @@
+apiVersion: shardingsphere.apache.org/v1alpha1
+kind: Chaos
+metadata:
+  name: test-chaos 
+  namespace: sschaos-test 
+  annotations:
+    selector.chaos-mesh.org/mode: one 
+spec:
+  podChaos:
+    selector:
+      labelSelectors:
+        app: foo-sphereex-dbplusengine-proxy
+      namespaces: [ "foo-chaos" ]
+    params:
+      podFailure:
+        duration: 1m
+    action: "PodFailure"

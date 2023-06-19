@@ -1,0 +1,20 @@
+apiVersion: shardingsphere.apache.org/v1alpha1
+kind: Chaos
+metadata:
+  name: mem-chaos 
+  namespace: sschaos-test 
+  annotations:
+    selector.chaos-mesh.org/mode: one 
+spec:
+  podChaos:
+    selector:
+      labelSelectors:
+        app: foo-sphereex-dbplusengine-proxy
+      namespaces: [ "foo-chaos" ]
+    params:
+      podFailure:
+      memoryStress:
+        duration: 1m
+        workers: 2
+        consumption: "75%" 
+    action: "MemoryStress"
