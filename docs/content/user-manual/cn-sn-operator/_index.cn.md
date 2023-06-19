@@ -46,7 +46,7 @@ helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n sha
 #### ShardingSphere Operator 参数
 | 名称 | 描述 | 默认值|
 |-----------------------------------|------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
-| `operator.replicaCount`           | 副本数| `2`                                                                     |
+| `operator.replicaCount`           | 副本数| `1`                                                                     |
 | `operator.image.repository`       | 镜像名称| `apache/shardingsphere-operator` |
 | `operator.image.pullPolicy`       | 镜像拉取策略                                                                                         | `IfNotPresent`                                                          |
 | `operator.image.tag`              | 镜像版本| `0.3.0`                                                                 |
@@ -72,6 +72,7 @@ helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n sha
 ### ShardingSphereProxy 
 
 ShardingSphereProxy 和 ShardingSphereProxyServerConfig 提供了对 ShardingSphereProxy 部署和配置的基本描述，Operator 会将 CRD 中提供的配置转换为对应的 Kubernetes 负载并提交创建。其中 ShardingSphereProxy 主要影响基础资源相关配置，ShardingSphereProxyServerConfig 影响 `server.yaml` 等运行时配置。
+
 
 注意：ShardingSphereProxy 和 ShardingSphereProxyServerConfig 计划于 0.4.0 版本起停止支持。
 
