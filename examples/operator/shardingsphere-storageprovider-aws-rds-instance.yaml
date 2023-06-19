@@ -19,32 +19,14 @@
 apiVersion: shardingsphere.apache.org/v1alpha1
 kind: StorageProvider
 metadata:
-  name: aws-aurora-cluster-mysql-5.7
+  name: aws-rds-instance-mysql-5.7
 spec:
-  provisioner: storageproviders.shardingsphere.apache.org/aws-aurora
+  provisioner: storageproviders.shardingsphere.apache.org/aws-rds-instance
   reclaimPolicy: Delete
   parameters:
+    allocatedStorage: "20"
     masterUsername: "root"
     masterUserPassword: "root123456"
-    instanceClass: "db.t3.small"
-    engine: "aurora-mysql"
-    engineVersion: "5.7"
-
----
-apiVersion: shardingsphere.apache.org/v1alpha1
-kind: StorageNode
-metadata:
-  name: storage-node-with-aurora-example-1
-  namespace: xwt
-  annotations:
-    "storageproviders.shardingsphere.apache.org/cluster-identifier": "storage-node-with-aurora-example-1"
-    "storageproviders.shardingsphere.apache.org/instance-db-name": "test_db"
-
-    # annos about register storage unit
-    "shardingsphere.apache.org/register-storage-unit-enabled": "false" # set ture if you want to test auto register storage unit.
-    "shardingsphere.apache.org/logic-database-name": "sharding_db"
-    "shardingsphere.apache.org/compute-node-name": "shardingsphere-operator-shardingsphere-proxy"
-spec:
-  schema: "test_db"
-  storageProviderName: aws-aurora-cluster-mysql-5.7
-  replicas: 2
+    instanceClass: "db.t3.micro"
+    engine: "mysql"
+ 

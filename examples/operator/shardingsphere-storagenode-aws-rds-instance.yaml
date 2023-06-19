@@ -17,22 +17,6 @@
 
 ---
 apiVersion: shardingsphere.apache.org/v1alpha1
-kind: StorageProvider
-metadata:
-  name: aws-rds-instance-mysql-5.7
-spec:
-  provisioner: storageproviders.shardingsphere.apache.org/aws-rds-instance
-  reclaimPolicy: Delete
-  parameters:
-    allocatedStorage: "20"
-    masterUsername: "root"
-    masterUserPassword: "root123456"
-    instanceClass: "db.t3.micro"
-    engine: "mysql"
-    engineVersion: "5.7"
-
----
-apiVersion: shardingsphere.apache.org/v1alpha1
 kind: StorageNode
 metadata:
   name: storage-node-example-1
