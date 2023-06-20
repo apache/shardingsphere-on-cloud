@@ -65,7 +65,7 @@ jobs:
           kubectl apply -f examples/operator/shardingsphere-computenode-mysql-cluster.yaml 
           kubectl get computenode foo -o yaml
           kubectl get pod -A  
-          op=$(kubectl get pod -n sharidngsphere-operator | grep -vE "zookeeper|NAME" | awk '{print $1}')
+          op=$(kubectl get pod -n shardingsphere-operator | grep -vE "zookeeper|NAME" | awk '{print $1}')
           kubectl logs --tail 300 $op -n shardingsphere-operator
           kubectl wait --timeout=120s --for=condition=Ready --all pod -n default 
           kubectl get pod -n default --show-labels
