@@ -50,7 +50,7 @@ spec:
           type: ZooKeeper
           props:
             timeToLiveSeconds: "600"
-            server-lists: test-zookeeper.test1:2181 
+            server-lists: ${PLEASE_REPLACE_THIS_WITH_YOUR_ZOOKEEPER_SERVICE}
             retryIntervalMilliseconds: "500"
             operationTimeoutMilliseconds: "5000"
             namespace: governance_ds
