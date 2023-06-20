@@ -90,8 +90,8 @@ func ParseOptionsFromCmdFlags() *Options {
 	}
 
 	// Declaring flags for command-line arguments
-	flag.StringVar(&opt.MetricsBindAddress, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&opt.HealthProbeBindAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&opt.MetricsBindAddress, "metrics-bind-address", ":9090", "The address the metric endpoint binds to.")
+	flag.StringVar(&opt.HealthProbeBindAddress, "health-probe-bind-address", ":8080", "The address the probe endpoint binds to.")
 	flag.BoolVar(&opt.LeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
