@@ -117,7 +117,7 @@ func NewBootstrapContainerBuilderForMysqlJar() BootstrapContainerBuilder {
 	return &bootstrapContainerBuilder{
 		ContainerBuilder: common.NewContainerBuilder().
 			SetName("download-mysql-jar").
-			SetImage("busybox:1.35.0").
+			SetImage("busybox:1.36").
 			SetCommand([]string{"/bin/sh", "-c", downloadMysqlJarScript}),
 	}
 }
@@ -128,7 +128,7 @@ func NewBootstrapContainerBuilderForAgentBin() BootstrapContainerBuilder {
 	return &bootstrapContainerBuilder{
 		ContainerBuilder: common.NewContainerBuilder().
 			SetName("download-agent-bin-jar").
-			SetImage("busybox:1.35.0").
+			SetImage("busybox:1.36").
 			SetCommand([]string{"/bin/sh", "-c", downloadAgentJarScript}),
 	}
 }
