@@ -468,6 +468,8 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 		metricsAnnos[commonAnnotationPrometheusMetricsScheme] = cn.Annotations[commonAnnotationPrometheusMetricsScheme]
 
 		builder.SetShardingSphereProxyPodTemplateAnnotations(metricsAnnos)
+
+		scb.SetCommand([]string{"/opt/shardingsphere-proxy/bin/start.sh"}).SetArgs([]string{"-g"})
 	}
 
 	if cn.Spec.StorageNodeConnector != nil {
