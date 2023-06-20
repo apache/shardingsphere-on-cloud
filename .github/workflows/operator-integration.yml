@@ -54,7 +54,7 @@ jobs:
           cd charts/apache-shardingsphere-operator-charts/
           helm dependency build
           cd ../
-          helm install shardingsphere-operator apache-shardingsphere-operator-charts -n shardingsphere-operator --set replicaCount=1
+          helm install shardingsphere-operator apache-shardingsphere-operator-charts -n shardingsphere-operator --set replicaCount=1 --set operator.featureGates.computeNode=true 
           sleep 60
           kubectl wait --timeout=120s --for=condition=Ready --all pod -n shardingsphere-operator 
           kubectl get pod -n shardingsphere-operator --show-labels
