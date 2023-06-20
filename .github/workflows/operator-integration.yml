@@ -61,8 +61,8 @@ jobs:
           #    kubectl port-forward svc/shardingsphere-operator-shardingsphere-proxy 3307:3307 -n shardingsphere-operator &
       - name: "Install ComputeNode"
         run: |
-          sed -i 's#${PLEASE_REPLACE_THIS_WITH_YOUR_ZOOKEEPER_SERVICE}#shardingsphere-operator-zookeeper.shardingsphere-operator:2181#g' ../examples/operator/shardingsphere-computenode-mysql-cluster.yaml
-          kubectl apply -f ../examples/operator/shardingsphere-computenode-mysql-cluster.yaml 
+          sed -i 's#${PLEASE_REPLACE_THIS_WITH_YOUR_ZOOKEEPER_SERVICE}#shardingsphere-operator-zookeeper.shardingsphere-operator:2181#g' examples/operator/shardingsphere-computenode-mysql-cluster.yaml
+          kubectl apply -f examples/operator/shardingsphere-computenode-mysql-cluster.yaml 
           kubectl wait --timeout=120s --for=condition=Ready --all pod -n shardingsphere-operator 
           kubectl get pod -n shardingsphere-operator --show-labels
           kubectl port-forward svc/foo 3307:3307 -n shardingsphere-operator &
