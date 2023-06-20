@@ -62,8 +62,8 @@ jobs:
       - name: "Install ComputeNode"
         run: |
           sed -i 's#${PLEASE_REPLACE_THIS_WITH_YOUR_ZOOKEEPER_SERVICE}#shardingsphere-operator-zookeeper.shardingsphere-operator:2181#g' examples/operator/shardingsphere-computenode-mysql-cluster.yaml
-          kubectl get computenode foo -o yaml
           kubectl apply -f examples/operator/shardingsphere-computenode-mysql-cluster.yaml 
+          kubectl get computenode foo -o yaml
           kubectl wait --timeout=120s --for=condition=Ready --all pod -n default 
           kubectl get pod -n default --show-labels
           kubectl port-forward svc/foo 3307:3307 &
