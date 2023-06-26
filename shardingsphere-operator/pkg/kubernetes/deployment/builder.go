@@ -529,7 +529,7 @@ func setProbes(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) {
 
 // SetMySQLConnector will set an init container to download mysql jar and mount files for proxy container.
 func (d *deploymentBuilder) SetMySQLConnector(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder {
-	scb.SetEnv([]corev1.EnvVar{
+	scb.AppendEnv([]corev1.EnvVar{
 		{
 			Name:  defaultMySQLDriverEnvName,
 			Value: cn.Spec.StorageNodeConnector.Version,
@@ -548,7 +548,7 @@ func (d *deploymentBuilder) SetMySQLConnector(scb common.ContainerBuilder, cn *v
 	d.SetVolume(v)
 	scb.SetVolumeMount(vms[1])
 
-	cb := NewBootstrapContainerBuilderForMysqlJar().SetVolumeMount(vms[0]).SetEnv([]corev1.EnvVar{
+	cb := NewBootstrapContainerBuilderForMysqlJar().SetVolumeMount(vms[0]).AppendEnv([]corev1.EnvVar{
 		{
 			Name:  defaultMySQLDriverEnvName,
 			Value: cn.Spec.StorageNodeConnector.Version,
@@ -568,7 +568,7 @@ func (d *deploymentBuilder) SetAgentBin(scb common.ContainerBuilder, cn *v1alpha
 	// set env JAVA_TOOL_OPTIONS to proxy container, make sure proxy will apply agent-bin.jar
 	// agent-bin's version is always equals to shardingsphere proxy image's version
 
-	scb.SetEnv([]corev1.EnvVar{
+	scb.AppendEnv([]corev1.EnvVar{
 		{
 			Name:  defaultJavaToolOptionsName,
 			Value: fmt.Sprintf(defaultJavaAgentEnvValue, cn.Spec.ServerVersion),
@@ -595,7 +595,7 @@ func (d *deploymentBuilder) SetAgentBin(scb common.ContainerBuilder, cn *v1alpha
 	d.SetVolume(vc)
 	scb.SetVolumeMount(vmc[0])
 
-	cb := NewBootstrapContainerBuilderForAgentBin().SetVolumeMount(vma[0]).SetEnv([]corev1.EnvVar{
+	cb := NewBootstrapContainerBuilderForAgentBin().SetVolumeMount(vma[0]).AppendEnv([]corev1.EnvVar{
 		{
 			Name:  defaultAgentBinVersionEnvName,
 			Value: cn.Spec.ServerVersion,
