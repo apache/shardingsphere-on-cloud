@@ -31,6 +31,7 @@ type ContainerBuilder interface {
 	SetReadinessProbe(probe *v1.Probe) ContainerBuilder
 	SetStartupProbe(probe *v1.Probe) ContainerBuilder
 	SetEnv(envs []v1.EnvVar) ContainerBuilder
+	AppendEnv(envs []v1.EnvVar) ContainerBuilder
 	SetCommand(cmds []string) ContainerBuilder
 	SetArgs(args []string) ContainerBuilder
 	SetVolumeMount(mount *v1.VolumeMount) ContainerBuilder
@@ -112,14 +113,26 @@ func (c *containerBuilder) SetStartupProbe(probe *v1.Probe) ContainerBuilder {
 
 // SetEnv set the env of the container
 func (c *containerBuilder) SetEnv(envs []v1.EnvVar) ContainerBuilder {
-	if envs == nil {
-		return c
-	}
-
 	if c.container.Env == nil {
 		c.container.Env = []v1.EnvVar{}
 	}
-	c.container.Env = append(c.container.Env, envs...)
+
+	if envs != nil {
+		c.container.Env = envs
+	}
+
+	return c
+}
+
+// AppendEnv append the env of the container
+func (c *containerBuilder) AppendEnv(envs []v1.EnvVar) ContainerBuilder {
+	if c.container.Env == nil {
+		c.container.Env = []v1.EnvVar{}
+	}
+
+	if envs != nil {
+		c.container.Env = append(c.container.Env, envs...)
+	}
 
 	return c
 }
