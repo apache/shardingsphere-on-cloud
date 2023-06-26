@@ -37,7 +37,7 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 | `operator.image.tag`              | image tag                                   | `0.2.0`                                                                 |
 | `operator.imagePullSecrets`       | image pull secret of private repository     | `[]`                                                                    |
 | `operator.resources`              | operator Resources required by the operator | `{}`                                                                    |
-| `operator.health.healthProbePort` | operator health check port                  | `8081`                                                                  |
+| `operator.health.healthProbePort` | operator health check port                  | `8080`                                                                  |
 
 ### ShardingSphere ProxyCluster Parameters
 

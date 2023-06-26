@@ -18,16 +18,15 @@
 apiVersion: shardingsphere.apache.org/v1alpha1
 kind: Chaos
 metadata:
-  name: cpu-chaos 
-  namespace: sschaos-test 
+  name: chaos-cpu 
   annotations:
     selector.chaos-mesh.org/mode: one 
 spec:
   podChaos:
     selector:
       labelSelectors:
-        app: foo-sphereex-dbplusengine-proxy
-      namespaces: [ "foo-chaos" ]
+        app: foo
+      namespaces: [ "default" ]
     params:
       cpuStress:
         duration: 1m

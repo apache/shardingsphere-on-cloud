@@ -53,11 +53,11 @@ operator:
   ## @param health.healthProbePort operator health check port
   ##
   health:
-    healthProbePort: 8081
+    healthProbePort: 8080
   ## @param metrics.metricsBindAddress operator metrics port
   ##
   metrics:
-    metricsBindAddress: 8080
+    metricsBindAddress: 9090 
   ## @param featureGates.computeNode operator health check port
   ## @param featureGates.storageNode operator health check port
   ##

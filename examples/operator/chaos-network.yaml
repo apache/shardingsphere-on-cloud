@@ -16,22 +16,27 @@
  #
 
 apiVersion: shardingsphere.apache.org/v1alpha1
-kind: ShardingSphereChaos
+kind: Chaos
 metadata:
-  labels:
-    app.kubernetes.io/name: shardingsphereChaos
-  name: test-chaos 
-  namespace: default
+  name: chaos-network
   annotations:
-    selector.chaos-mesh.org/mode: all
+    target-selector.chaos-mesh.org/mode: "all"
+    selector.chaos-mesh.org/mode: one 
 spec:
-  chaosKind: podChaos
-  podChaos:
-    selector:
+  networkChaos:
+    source:
       labelSelectors:
-        app: foo 
-      namespaces: [ "default" ]
+         app: foo
+      namespaces: 
+      - default 
+    target: 
+      labelSelectors:
+        app.kubernetes.io/name: zookeeper
+      namespaces:
+      - default 
+    action: Loss
+    duration: "2m"
+    direction: "to"
     params:
-      podFailure:
-        duration: 1m
-    action: "podFailure"
+      loss:
+        loss: "80"

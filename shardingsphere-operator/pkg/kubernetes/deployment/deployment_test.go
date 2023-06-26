@@ -145,7 +145,7 @@ func Test_NewDeployment(t *testing.T) {
 							InitContainers: []corev1.Container{
 								{
 									Name:    "download-mysql-jar",
-									Image:   "busybox:1.35.0",
+									Image:   "busybox:1.36",
 									Command: []string{"/bin/sh", "-c", downloadMysqlJarScript},
 									Env: []corev1.EnvVar{
 										{
@@ -300,7 +300,7 @@ func Test_NewDeployment(t *testing.T) {
 							InitContainers: []corev1.Container{
 								{
 									Name:    "download-mysql-jar",
-									Image:   "busybox:1.35.0",
+									Image:   "busybox:1.36",
 									Command: []string{"/bin/sh", "-c", downloadMysqlJarScript},
 									Env: []corev1.EnvVar{
 										{
@@ -317,7 +317,7 @@ func Test_NewDeployment(t *testing.T) {
 								},
 								{
 									Name:    "download-agent-bin-jar",
-									Image:   "busybox:1.35.0",
+									Image:   "busybox:1.36",
 									Command: []string{"/bin/sh", "-c", downloadAgentJarScript},
 									Env: []corev1.EnvVar{
 										{
@@ -348,6 +348,10 @@ func Test_NewDeployment(t *testing.T) {
 										{
 											Name:  defaultMySQLDriverEnvName,
 											Value: "5.1.47",
+										},
+										{
+											Name:  "JAVA_TOOL_OPTIONS",
+											Value: "-javaagent:/opt/shardingsphere-proxy/agent/shardingsphere-agent-5.3.1.jar",
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{

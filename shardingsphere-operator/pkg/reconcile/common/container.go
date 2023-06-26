@@ -113,11 +113,14 @@ func (c *containerBuilder) SetStartupProbe(probe *v1.Probe) ContainerBuilder {
 // SetEnv set the env of the container
 func (c *containerBuilder) SetEnv(envs []v1.EnvVar) ContainerBuilder {
 	if envs == nil {
+		return c
+	}
+
+	if c.container.Env == nil {
 		c.container.Env = []v1.EnvVar{}
 	}
-	if envs != nil {
-		c.container.Env = envs
-	}
+	c.container.Env = append(c.container.Env, envs...)
+
 	return c
 }
 
@@ -132,7 +135,7 @@ func (c *containerBuilder) SetCommand(cmds []string) ContainerBuilder {
 // SetArgs set the args of the container
 func (c *containerBuilder) SetArgs(args []string) ContainerBuilder {
 	if args != nil {
-		c.container.Command = args
+		c.container.Args = args
 	}
 	return c
 }

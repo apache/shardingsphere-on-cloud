@@ -25,7 +25,7 @@ spec:
   storageNodeConnector: 
     type: mysql
     version: 5.1.47
-  serverVersion: 5.3.1
+  serverVersion: 5.3.2
   replicas: 1
   selector:
     matchLabels:
@@ -50,7 +50,7 @@ spec:
           type: ZooKeeper
           props:
             timeToLiveSeconds: "600"
-            server-lists: ${PLEASE_REPLACE_THIS_WITH_YOUR_ZOOKEEPER_SERVICE}
+            server-lists: ${PLEASE_REPLACE_THIS_WITH_YOUR_ZOOKEEPER_SERVICE} 
             retryIntervalMilliseconds: "500"
             operationTimeoutMilliseconds: "5000"
             namespace: governance_ds
