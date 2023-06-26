@@ -29,4 +29,5 @@ spec:
     masterUserPassword: "root123456"
     instanceClass: "db.t3.micro"
     engine: "mysql"
+    engineVersion: "5.7"
  
