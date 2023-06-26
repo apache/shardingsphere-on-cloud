@@ -491,6 +491,7 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 			builder.SetVolume(va)
 			scb.SetVolumeMount(vma[0])
 
+			// NOTE: This mountpath is not same with init container
 			vma[0].MountPath = "/opt/shardingsphere-proxy/tmpbin"
 			cb := NewBootstrapContainerBuilderForStartScripts().SetVolumeMount(vma[0])
 			con := cb.Build()
