@@ -62,6 +62,8 @@ const (
  else echo failed;exit 1;fi;mv /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar /opt/shardingsphere-proxy/ext-lib`
 	downloadAgentJarScript = `wget https://archive.apache.org/dist/shardingsphere/${AGENT_BIN_VERSION}/apache-shardingsphere-${AGENT_BIN_VERSION}-shardingsphere-agent-bin.tar.gz;
  tar -zxvf apache-shardingsphere-${AGENT_BIN_VERSION}-shardingsphere-agent-bin.tar.gz -C /opt/shardingsphere-proxy/agent --strip-component 1;`
+	replaceStartScript = `sed -i 's#exec \$JAVA \${JAVA_OPTS} \${JAVA_MEM_OPTS} -classpath \${CLASS_PATH} \${MAIN_CLASS}#exec \$JAVA \${JAVA_OPTS} \${JAVA_MEM_OPTS} -classpath \${CLASS_PATH} \${AGENT_PARAM} \${MAIN_CLASS}#g' /opt/shardingsphere-proxy/bin/start.sh;
+	cp /opt/shardingsphere-proxy/bin/start.sh /opt/shardingsphere-proxy/tmpbin/start.sh;`
 )
 
 func relativeMySQLDriverMountName(v string) string {
@@ -130,6 +132,16 @@ func NewBootstrapContainerBuilderForAgentBin() BootstrapContainerBuilder {
 			SetName("download-agent-bin-jar").
 			SetImage("busybox:1.36").
 			SetCommand([]string{"/bin/sh", "-c", downloadAgentJarScript}),
+	}
+}
+
+// NewBootstrapContainerBuilderForStartScript will return a builder for ShardingSphere-Proxy modify container start.sh
+func NewBootstrapContainerBuilderForStartScripts() BootstrapContainerBuilder {
+	return &bootstrapContainerBuilder{
+		ContainerBuilder: common.NewContainerBuilder().
+			SetName("replace-start-script").
+			SetImage(fmt.Sprintf("%s:%s", defaultImageName, "5.3.2")).
+			SetCommand([]string{"/bin/sh", "-c", replaceStartScript}),
 	}
 }
 
@@ -469,7 +481,21 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 
 		builder.SetShardingSphereProxyPodTemplateAnnotations(metricsAnnos)
 
-		scb.SetCommand([]string{"/opt/shardingsphere-proxy/bin/start.sh"}).SetArgs([]string{"-g"})
+		if cn.Spec.ServerVersion == "5.3.2" {
+			sv := NewSharedVolumeAndMountBuilder().
+				SetVolumeMountSize(1).
+				SetName("replace-start-script").
+				SetVolumeSourceEmptyDir().
+				SetMountPath(0, "/opt/shardingsphere-proxy/bin")
+			va, vma := sv.Build()
+			builder.SetVolume(va)
+			scb.SetVolumeMount(vma[0])
+
+			vma[0].MountPath = "/opt/shardingsphere-proxy/tmpbin"
+			cb := NewBootstrapContainerBuilderForStartScripts().SetVolumeMount(vma[0])
+			con := cb.Build()
+			builder.SetInitContainer(con)
+		}
 	}
 
 	if cn.Spec.StorageNodeConnector != nil {
@@ -541,6 +567,7 @@ func (d *deploymentBuilder) SetMySQLConnector(scb common.ContainerBuilder, cn *v
 func (d *deploymentBuilder) SetAgentBin(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) DeploymentBuilder {
 	// set env JAVA_TOOL_OPTIONS to proxy container, make sure proxy will apply agent-bin.jar
 	// agent-bin's version is always equals to shardingsphere proxy image's version
+
 	scb.SetEnv([]corev1.EnvVar{
 		{
 			Name:  defaultJavaToolOptionsName,
