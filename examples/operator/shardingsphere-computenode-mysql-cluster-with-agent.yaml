@@ -64,6 +64,10 @@ spec:
         proxy-frontend-database-protocol-type: MySQL
     agentConfig:
       plugins:
+        logging:
+          file:
+            props:
+              level: "INFO"
         metrics:
           prometheus:
             host: "0.0.0.0"
