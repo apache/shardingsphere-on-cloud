@@ -20,7 +20,6 @@ apiVersion: shardingsphere.apache.org/v1alpha1
 kind: StorageNode
 metadata:
   name: storage-node-with-aurora-example-1
-  namespace: xwt
   annotations:
     "storageproviders.shardingsphere.apache.org/cluster-identifier": "storage-node-with-aurora-example-1"
     "storageproviders.shardingsphere.apache.org/instance-db-name": "test_db"

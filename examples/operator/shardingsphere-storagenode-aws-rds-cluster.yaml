@@ -19,7 +19,6 @@ apiVersion: shardingsphere.apache.org/v1alpha1
 kind: StorageNode
 metadata:
   name: storage-node-with-rds-cluster-1
-  namespace: xwt
   annotations:
     "storageproviders.shardingsphere.apache.org/cluster-identifier": "storage-node-with-rds-cluster-1"
     "storageproviders.shardingsphere.apache.org/instance-db-name": "test_db"
@@ -27,7 +26,7 @@ metadata:
     # annos about register storage unit
     "shardingsphere.apache.org/register-storage-unit-enabled": "false" # set ture if you want to test auto register storage unit.
     "shardingsphere.apache.org/logic-database-name": "sharding_db"
-    "shardingsphere.apache.org/compute-node-name": "shardingsphere-operator-shardingsphere-proxy"
+    "shardingsphere.apache.org/compute-node-name": "foo"
 spec:
   schema: "test_db"
   storageProviderName: aws-rds-cluster-mysql-8.0.32
