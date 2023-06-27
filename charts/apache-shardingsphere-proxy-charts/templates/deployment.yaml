@@ -43,14 +43,14 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "9090"
         prometheus.io/scrape: "true"
-        {{- end}}
+        {{- end }}
       labels:
         app: {{ template "common.names.fullname" . }}
     spec:
       {{- if .Values.compute.mysqlConnector.version }}
       initContainers:
         - name: download-mysql-jar
-          image: busybox:1.35.0
+          image: busybox:1.36
           command: ["sh","-c","wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{.Values.compute.mysqlConnector.version}}/mysql-connector-java-{{.Values.compute.mysqlConnector.version}}.jar;
           wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{.Values.compute.mysqlConnector.version}}/mysql-connector-java-{{.Values.compute.mysqlConnector.version}}.jar.md5;
           if [ $(md5sum /mysql-connector-java-{{.Values.compute.mysqlConnector.version}}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-{{.Values.compute.mysqlConnector.version}}.jar.md5) ];
@@ -62,14 +62,22 @@ spec:
       {{- end }}
         {{- if .Values.compute.agent.enabled }}
         - name: agent-metrics-jar
-          image: busybox:1.35.0
+          image: busybox:1.36
           command: ["sh","-c","wget https://archive.apache.org/dist/shardingsphere/{{ .Values.compute.image.tag | default .Chart.AppVersion }}/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz;
           mkdir /opt/shardingsphere-proxy/agent;
-          tar -zxvf apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz -C /opt/shardingsphere-proxy/agent"]
+          tar -zxvf apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz -C /opt/shardingsphere-proxy/agent --strip-component 1"]
           volumeMounts:
             - name: metrics-jar
               mountPath: /opt/shardingsphere-proxy/agent
-        {{- end}}
+        {{- if eq .Values.compute.image.tag "5.3.2" }}
+        - name: replace-start-script 
+          image: "{{ .Values.compute.image.repository }}:{{ .Values.compute.image.tag | default .Chart.AppVersion }}"
+          command: ["sh","-c","sed -i 's#exec $JAVA ${JAVA_OPTS} ${JAVA_MEM_OPTS} -classpath ${CLASS_PATH} ${MAIN_CLASS}#exec $JAVA ${JAVA_OPTS} ${JAVA_MEM_OPTS} -classpath ${CLASS_PATH} ${AGENT_PARAM} ${MAIN_CLASS}#g' /opt/shardingsphere-proxy/bin/start.sh; cp /opt/shardingsphere-proxy/bin/start.sh /opt/shardingsphere-proxy/tmpbin/start.sh;"]
+          volumeMounts:
+            - name: replace-start-script 
+              mountPath: /opt/shardingsphere-proxy/tmpbin
+        {{- end }}
+        {{- end }}
       containers:
         - image: "{{ .Values.compute.image.repository }}:{{ .Values.compute.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.compute.image.pullPolicy }}
@@ -79,7 +87,6 @@ spec:
               port: {{ .Values.compute.startPort }}
             failureThreshold: 6
             periodSeconds: 10
-
           livenessProbe:
             periodSeconds: 5
             tcpSocket:
@@ -91,10 +98,10 @@ spec:
           env:
             - name: PORT
               value: "{{ .Values.compute.startPort }}"
-              {{- if  .Values.compute.agent.enabled}}
+            {{- if  .Values.compute.agent.enabled}}
             - name: "JAVA_TOOL_OPTIONS"
-              value: "-javaagent:/opt/shardingsphere-proxy/agent/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin/shardingsphere-agent-{{ .Values.compute.image.tag | default .Chart.AppVersion }}.jar"
-              {{- end }}
+              value: "-javaagent:/opt/shardingsphere-proxy/agent/shardingsphere-agent-{{ .Values.compute.image.tag | default .Chart.AppVersion }}.jar"
+            {{- end }}
           ports:
             - name: start-port
               containerPort: {{ .Values.compute.startPort }}
@@ -102,21 +109,31 @@ spec:
           resources: {{- toYaml .Values.compute.resources | nindent 12 }}
           {{- end }}
           volumeMounts:
+            {{- if .Values.compute.agent.enabled}}
+            - name: metrics-jar
+              mountPath: /opt/shardingsphere-proxy/agent
+            - name: agent-config
+              mountPath: /opt/shardingsphere-proxy/agent/conf
+            {{- if eq .Values.compute.image.tag "5.3.2" }}
+            - name: replace-start-script 
+              mountPath: /opt/shardingsphere-proxy/bin
+            {{- end  }}
+            {{- end  }}
             - name: config
               mountPath: /opt/shardingsphere-proxy/conf
             {{- if .Values.compute.mysqlConnector.version }}
             - name: mysql-connect-jar
               mountPath: /opt/shardingsphere-proxy/ext-lib
             {{- end }}
-            {{- if .Values.compute.agent.enabled}}
-            - name: metrics-jar
-              mountPath: /opt/shardingsphere-proxy/agent
-            - name: agent-config
-              mountPath: /opt/shardingsphere-proxy/agent/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin/conf
-            {{- end }}
       imagePullSecrets:
       {{- toYaml .Values.compute.imagePullSecrets | nindent 8 }}
       volumes:
+       {{- if .Values.compute.agent.enabled}}
+       {{- if eq .Values.compute.image.tag "5.3.2" }}
+        - name: replace-start-script 
+          emptyDir: { }     
+       {{- end  }}
+       {{- end  }}
         - name: config
           configMap:
             name: {{ printf "%s-configuration" (include "common.names.fullname" .) }}

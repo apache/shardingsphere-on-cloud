@@ -179,7 +179,7 @@ compute:
               level: "INFO"
         metrics:
           Prometheus:
-            host: "localhost"
+            host: "0.0.0.0"
             port: 9090
             props:
               jvm-information-collector-enabled: "true"
