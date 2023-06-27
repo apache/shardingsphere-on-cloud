@@ -44,7 +44,7 @@ spec:
             - --health-probe-bind-address=:{{ .Values.operator.health.healthProbePort }}
             - --leader-elect
               {{- if eq .Values.operator.featureGates.computeNode true }}
-            - --feature-gates=ComputeNode=true{{- if eq .Values.operator.featureGates.storageNode true }},StorageNode=true{{- end }}
+            - --feature-gates=ComputeNode=true{{- if eq .Values.operator.featureGates.storageNode true }},StorageNode=true{{- end }}{{- if eq .Values.operator.featureGates.chaos true }},Chaos=true {{- end }}
               {{- end }}
             {{- if eq .Values.operator.storageNodeProviders.aws.enabled true }}
             - --aws-region={{ .Values.operator.storageNodeProviders.aws.region }}
