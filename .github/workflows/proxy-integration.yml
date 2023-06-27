@@ -89,9 +89,11 @@ jobs:
       - name: "Create sharding table" 
         run: | 
           mysql -h127.0.0.1 -P3307 -uroot -proot -e 'USE sharding_db; CREATE TABLE `t_order` (`order_id` int NOT NULL,`user_id` int NOT NULL,`status` varchar(45) DEFAULT NULL,PRIMARY KEY (`order_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;'
-      - name: "Check table"
+      - name: "Check ds1 table"
         run: |
           mysql -h127.0.0.1 -P3316 -uroot -proot -e 'USE ds_1; SHOW TABLES;'
+      - name: "Check ds2 table"
+        run: |
           mysql -h127.0.0.1 -P3326 -uroot -proot -e 'USE ds_2; SHOW TABLES;'
       - name: "Insert data into sharding db" 
         run: | 
