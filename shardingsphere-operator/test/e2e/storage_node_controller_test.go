@@ -31,7 +31,7 @@ import (
 
 	"bou.ke/monkey"
 	"github.com/DATA-DOG/go-sqlmock"
-	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
+	dbmeshawsrds "github.com/database-mesh/golang-sdk/aws/client/rds"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -77,10 +77,10 @@ var _ = Describe("StorageNode Controller Suite Test For AWS RDS Instance", func(
 
 		It("should create success", func() {
 			// mock get instance func returns success
-			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
-				return &dbmesh_rds.DescInstance{
-					DBInstanceStatus: dbmesh_rds.DBInstanceStatusAvailable,
-					Endpoint: dbmesh_rds.Endpoint{
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmeshawsrds.DescInstance, error) {
+				return &dbmeshawsrds.DescInstance{
+					DBInstanceStatus: dbmeshawsrds.DBInstanceStatusAvailable,
+					Endpoint: dbmeshawsrds.Endpoint{
 						Address: "127.0.0.1",
 						Port:    3306,
 					},
@@ -153,10 +153,10 @@ var _ = Describe("StorageNode Controller Suite Test For AWS RDS Instance", func(
 			Expect(err).Should(Succeed())
 			Expect(dbmock).ShouldNot(BeNil())
 			// mock rds DescribeDBInstances func returns success
-			g := monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
-				return &dbmesh_rds.DescInstance{
-					DBInstanceStatus: dbmesh_rds.DBInstanceStatusAvailable,
-					Endpoint: dbmesh_rds.Endpoint{
+			g := monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmeshawsrds.DescInstance, error) {
+				return &dbmeshawsrds.DescInstance{
+					DBInstanceStatus: dbmeshawsrds.DBInstanceStatusAvailable,
+					Endpoint: dbmeshawsrds.Endpoint{
 						Address: "127.0.0.1",
 						Port:    3306,
 					},
@@ -273,7 +273,7 @@ var _ = Describe("StorageNode Controller Suite Test For AWS RDS Instance", func(
 			}, 20, 2).Should(Equal(v1alpha1.StorageNodePhaseDeleting))
 
 			g.Unpatch()
-			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescInstance, error) {
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstance", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmeshawsrds.DescInstance, error) {
 				return nil, nil
 			})
 
@@ -321,21 +321,21 @@ var _ = Describe("StorageNode Controller Suite Test For AWS Aurora Cluster", fun
 		It("Should Success", func() {
 			snName := "test-storage-node-creating"
 			// monkey patch
-			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetAuroraCluster", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescCluster, error) {
-				return &dbmesh_rds.DescCluster{
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetAuroraCluster", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmeshawsrds.DescCluster, error) {
+				return &dbmeshawsrds.DescCluster{
 					DBClusterIdentifier: clusterIdentifier,
-					Status:              string(dbmesh_rds.DBClusterStatusCreating),
+					Status:              string(dbmeshawsrds.DBClusterStatusCreating),
 					PrimaryEndpoint:     "test-primary-endpoint",
 					ReaderEndpoint:      "test-reader-endpoint",
 					Port:                3306,
 				}, nil
 			})
-			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstancesByFilters", func(_ *aws.RdsClient, _ context.Context, _ map[string][]string) ([]*dbmesh_rds.DescInstance, error) {
-				return []*dbmesh_rds.DescInstance{
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstancesByFilters", func(_ *aws.RdsClient, _ context.Context, _ map[string][]string) ([]*dbmeshawsrds.DescInstance, error) {
+				return []*dbmeshawsrds.DescInstance{
 					{
 						DBInstanceIdentifier: fmt.Sprintf("%s-insatnce-0", clusterIdentifier),
-						DBInstanceStatus:     dbmesh_rds.DBInstanceStatusCreating,
-						Endpoint:             dbmesh_rds.Endpoint{Address: "test-instance-0-endpoint", Port: 3306},
+						DBInstanceStatus:     dbmeshawsrds.DBInstanceStatusCreating,
+						Endpoint:             dbmeshawsrds.Endpoint{Address: "test-instance-0-endpoint", Port: 3306},
 					},
 				}, nil
 			})
@@ -359,31 +359,31 @@ var _ = Describe("StorageNode Controller Suite Test For AWS Aurora Cluster", fun
 				newSN := &v1alpha1.StorageNode{}
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: snName, Namespace: "default"}, newSN)).Should(Succeed())
 				return newSN.Status.Cluster.Status
-			}, time.Second*10, time.Millisecond*250).Should(Equal(string(dbmesh_rds.DBClusterStatusCreating)))
+			}, time.Second*10, time.Millisecond*250).Should(Equal(string(dbmeshawsrds.DBClusterStatusCreating)))
 		})
 
 		It("should success when cluster is available", func() {
 			snName := "test-storage-node-available"
-			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetAuroraCluster", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmesh_rds.DescCluster, error) {
-				return &dbmesh_rds.DescCluster{
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetAuroraCluster", func(_ *aws.RdsClient, _ context.Context, _ *v1alpha1.StorageNode) (*dbmeshawsrds.DescCluster, error) {
+				return &dbmeshawsrds.DescCluster{
 					DBClusterIdentifier: clusterIdentifier,
-					Status:              string(dbmesh_rds.DBClusterStatusAvailable),
+					Status:              string(dbmeshawsrds.DBClusterStatusAvailable),
 					PrimaryEndpoint:     "test-primary-endpoint",
 					ReaderEndpoint:      "test-reader-endpoint",
 					Port:                3306,
 				}, nil
 			})
-			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstancesByFilters", func(_ *aws.RdsClient, _ context.Context, _ map[string][]string) ([]*dbmesh_rds.DescInstance, error) {
-				return []*dbmesh_rds.DescInstance{
+			monkey.PatchInstanceMethod(reflect.TypeOf(&aws.RdsClient{}), "GetInstancesByFilters", func(_ *aws.RdsClient, _ context.Context, _ map[string][]string) ([]*dbmeshawsrds.DescInstance, error) {
+				return []*dbmeshawsrds.DescInstance{
 					{
 						DBInstanceIdentifier: fmt.Sprintf("%s-insatnce-0", clusterIdentifier),
-						DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
-						Endpoint:             dbmesh_rds.Endpoint{Address: "test-instance-0-endpoint", Port: 3306},
+						DBInstanceStatus:     dbmeshawsrds.DBInstanceStatusAvailable,
+						Endpoint:             dbmeshawsrds.Endpoint{Address: "test-instance-0-endpoint", Port: 3306},
 					},
 					{
 						DBInstanceIdentifier: fmt.Sprintf("%s-insatnce-1", clusterIdentifier),
-						DBInstanceStatus:     dbmesh_rds.DBInstanceStatusAvailable,
-						Endpoint:             dbmesh_rds.Endpoint{Address: "test-instance-1-endpoint", Port: 3306},
+						DBInstanceStatus:     dbmeshawsrds.DBInstanceStatusAvailable,
+						Endpoint:             dbmeshawsrds.Endpoint{Address: "test-instance-1-endpoint", Port: 3306},
 					},
 				}, nil
 			})

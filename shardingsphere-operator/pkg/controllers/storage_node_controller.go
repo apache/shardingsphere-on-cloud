@@ -31,7 +31,8 @@ import (
 
 	cnpg "github.com/cloudnative-pg/cloudnative-pg/api/v1"
 	cnpgutils "github.com/cloudnative-pg/cloudnative-pg/pkg/utils"
-	"github.com/database-mesh/golang-sdk/aws/client/rds"
+	dbmeshaws "github.com/database-mesh/golang-sdk/aws"
+	dbmeshawsrds "github.com/database-mesh/golang-sdk/aws/client/rds"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -62,10 +63,14 @@ type StorageNodeReconciler struct {
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
 	Recorder record.EventRecorder
-	AwsRDS   rds.RDS
-	CNPG     cloudnativepg.CloudNativePG
+	Service  service.Service
 
-	Service service.Service
+	AwsRegion          string
+	AwsAccessKeyID     string
+	AwsSecretAccessKey string
+	AwsSessions        dbmeshaws.Sessions
+
+	CNPG cloudnativepg.CloudNativePG
 }
 
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes,verbs=get;list;watch;create;update;patch;delete
@@ -73,6 +78,7 @@ type StorageNodeReconciler struct {
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/finalizers,verbs=update
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storageproviders,verbs=get;list;watch
 // +kubebuilder:rbac:groups=postgresql.cnpg.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=event,verbs=create;patch
 
 // Reconcile handles main function of this controller
 // nolint:gocognit
@@ -191,17 +197,17 @@ func (r *StorageNodeReconciler) reconcile(ctx context.Context, storageProvider *
 	// reconcile storage node with storageProvider
 	switch storageProvider.Spec.Provisioner {
 	case v1alpha1.ProvisionerAWSRDSInstance:
-		if err := r.reconcileAwsRdsInstance(ctx, aws.NewRdsClient(r.AwsRDS), node, storageProvider); err != nil {
+		if err := r.reconcileAwsRdsInstance(ctx, r.getAwsRdsClient(), node, storageProvider); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS RDS Instance %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 		}
 	case v1alpha1.ProvisionerAWSRDSCluster:
-		if err := r.reconcileAwsRDSCluster(ctx, aws.NewRdsClient(r.AwsRDS), node, storageProvider); err != nil {
+		if err := r.reconcileAwsRDSCluster(ctx, r.getAwsRdsClient(), node, storageProvider); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS RDS Cluster %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 		}
 	case v1alpha1.ProvisionerAWSAurora:
-		if err := r.reconcileAwsAurora(ctx, aws.NewRdsClient(r.AwsRDS), node, storageProvider); err != nil {
+		if err := r.reconcileAwsAurora(ctx, r.getAwsRdsClient(), node, storageProvider); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "Reconcile Failed", fmt.Sprintf("unable to reconcile AWS Aurora %s/%s, err:%s", node.GetNamespace(), node.GetName(), err.Error()))
 			return ctrl.Result{RequeueAfter: defaultRequeueTime}, err
 		}
@@ -254,9 +260,9 @@ func (r *StorageNodeReconciler) getStorageProvider(ctx context.Context, node *v1
 	if storageProvider.Spec.Provisioner == v1alpha1.ProvisionerAWSRDSInstance ||
 		storageProvider.Spec.Provisioner == v1alpha1.ProvisionerAWSAurora ||
 		storageProvider.Spec.Provisioner == v1alpha1.ProvisionerAWSRDSCluster {
-		if r.AwsRDS == nil {
-			r.Recorder.Event(node, corev1.EventTypeWarning, "AwsRdsClientIsNil", "aws rds client is nil, please check your aws credentials")
-			return nil, fmt.Errorf("aws rds client is nil, please check your aws credentials")
+		if r.AwsRegion == "" || r.AwsAccessKeyID == "" || r.AwsSecretAccessKey == "" {
+			r.Recorder.Eventf(node, corev1.EventTypeWarning, "awsCredentialsNotSet", "aws credentials not set")
+			return nil, fmt.Errorf("aws credentials not set")
 		}
 	}
 
@@ -276,7 +282,7 @@ func computeDesiredState(status v1alpha1.StorageNodeStatus) v1alpha1.StorageNode
 		}
 	} else {
 		// If the storage node is not being deleted, check if all instances are ready.
-		if (clusterStatus == "" || clusterStatus == string(rds.DBClusterStatusAvailable)) && allInstancesReady(status.Instances) {
+		if (clusterStatus == "" || clusterStatus == string(dbmeshawsrds.DBClusterStatusAvailable)) && allInstancesReady(status.Instances) {
 			desiredState.Phase = v1alpha1.StorageNodePhaseReady
 		} else {
 			desiredState.Phase = v1alpha1.StorageNodePhaseNotReady
@@ -294,7 +300,7 @@ func computeNewConditions(desiredState, status v1alpha1.StorageNodeStatus, clust
 
 	// Update the cluster ready condition if the cluster status is not empty
 	if clusterStatus != "" {
-		if clusterStatus == string(rds.DBClusterStatusAvailable) {
+		if clusterStatus == string(dbmeshawsrds.DBClusterStatusAvailable) {
 			newSNConditions.UpsertCondition(&v1alpha1.StorageNodeCondition{
 				Type:           v1alpha1.StorageNodeConditionTypeClusterReady,
 				Status:         corev1.ConditionTrue,
@@ -357,7 +363,7 @@ func allInstancesReady(instances []v1alpha1.InstanceStatus) bool {
 
 	for idx := range instances {
 		instance := &instances[idx]
-		if !(instance.Status == string(rds.DBInstanceStatusAvailable)) {
+		if !(instance.Status == string(dbmeshawsrds.DBInstanceStatusAvailable)) {
 			return false
 		}
 	}
@@ -365,19 +371,27 @@ func allInstancesReady(instances []v1alpha1.InstanceStatus) bool {
 	return true
 }
 
-func (r *StorageNodeReconciler) reconcileAwsRdsInstance(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
-	instance, err := client.GetInstance(ctx, node)
+func (r *StorageNodeReconciler) getAwsRdsClient() aws.IRdsClient {
+	if _, ok := r.AwsSessions[r.AwsRegion]; !ok {
+		sessions := dbmeshaws.NewSessions().SetCredential(r.AwsRegion, r.AwsAccessKeyID, r.AwsSecretAccessKey).Build()
+		r.AwsSessions = sessions
+	}
+	return aws.NewRdsClient(dbmeshawsrds.NewService(r.AwsSessions[r.AwsRegion]))
+}
+
+func (r *StorageNodeReconciler) reconcileAwsRdsInstance(ctx context.Context, rdsClient aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+	instance, err := rdsClient.GetInstance(ctx, node)
 	if err != nil {
 		return err
 	}
 
 	if instance == nil && node.Status.Phase != v1alpha1.StorageNodePhaseDeleting {
-		err = client.CreateInstance(ctx, node, storageProvider.Spec.Parameters)
+		err = rdsClient.CreateInstance(ctx, node, storageProvider.Spec.Parameters)
 		if err != nil {
 			return err
 		}
 
-		instance, err = client.GetInstance(ctx, node)
+		instance, err = rdsClient.GetInstance(ctx, node)
 		if err != nil {
 			return err
 		}
@@ -390,7 +404,7 @@ func (r *StorageNodeReconciler) reconcileAwsRdsInstance(ctx context.Context, cli
 	return nil
 }
 
-func updateAWSRDSInstanceStatus(node *v1alpha1.StorageNode, instance *rds.DescInstance) error {
+func updateAWSRDSInstanceStatus(node *v1alpha1.StorageNode, instance *dbmeshawsrds.DescInstance) error {
 	instances := make([]v1alpha1.InstanceStatus, 0)
 
 	if instance == nil {
@@ -410,64 +424,61 @@ func updateAWSRDSInstanceStatus(node *v1alpha1.StorageNode, instance *rds.DescIn
 	return nil
 }
 
-func (r *StorageNodeReconciler) reconcileAwsRDSCluster(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
-	ac, err := client.GetRDSCluster(ctx, node)
+// nolint:dupl
+func (r *StorageNodeReconciler) reconcileAwsRDSCluster(ctx context.Context, rdsClient aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+	rc, err := rdsClient.GetRDSCluster(ctx, node)
 	if err != nil {
 		return err
 	}
 
-	if ac == nil {
+	if rc == nil {
 		// create instance
-		err = client.CreateRDSCluster(ctx, node, storageProvider.Spec.Parameters)
+		err = rdsClient.CreateRDSCluster(ctx, node, storageProvider.Spec.Parameters)
 		if err != nil {
 			return err
 		}
-		ac, err = client.GetRDSCluster(ctx, node)
+		rc, err = rdsClient.GetRDSCluster(ctx, node)
 		if err != nil {
 			return err
 		}
 	}
 
-	// TODO: reconcile instance of aurora
-
 	// update storage node status
-	if err := updateClusterStatus(ctx, client, node, ac); err != nil {
+	if err := updateClusterStatus(ctx, rdsClient, node, rc); err != nil {
 		return fmt.Errorf("updateClusterStatus failed: %w", err)
 	}
 
 	return nil
 }
 
-func (r *StorageNodeReconciler) reconcileAwsAurora(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
-	r.Log.Info("reconcileAwsAurora", "node", node.GetName(), "phase", node.Status.Phase)
-	ac, err := client.GetAuroraCluster(ctx, node)
+// nolint:dupl
+func (r *StorageNodeReconciler) reconcileAwsAurora(ctx context.Context, rdsClient aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+	ac, err := rdsClient.GetAuroraCluster(ctx, node)
 	if err != nil {
 		return err
 	}
 
 	if ac == nil {
 		// create instance
-		err = client.CreateAuroraCluster(ctx, node, storageProvider.Spec.Parameters)
+		err = rdsClient.CreateAuroraCluster(ctx, node, storageProvider.Spec.Parameters)
 		if err != nil {
 			return err
 		}
-		ac, err = client.GetAuroraCluster(ctx, node)
+		ac, err = rdsClient.GetAuroraCluster(ctx, node)
 		if err != nil {
 			return err
 		}
 	}
 
-	// TODO: reconcile instance of aurora
-
 	// update storage node status
-	if err := updateClusterStatus(ctx, client, node, ac); err != nil {
+	if err := updateClusterStatus(ctx, rdsClient, node, ac); err != nil {
 		return fmt.Errorf("updateClusterStatus failed: %w", err)
 	}
 
 	return nil
 }
 
-func updateClusterStatus(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, cluster *rds.DescCluster) error {
+func updateClusterStatus(ctx context.Context, rdsClient aws.IRdsClient, node *v1alpha1.StorageNode, cluster *dbmeshawsrds.DescCluster) error {
 	// update cluster status
 	clusterStatus := v1alpha1.ClusterStatus{}
 	if cluster != nil {
@@ -492,7 +503,7 @@ func updateClusterStatus(ctx context.Context, client aws.IRdsClient, node *v1alp
 	filters := map[string][]string{
 		"db-cluster-id": {identifier},
 	}
-	instances, err := client.GetInstancesByFilters(ctx, filters)
+	instances, err := rdsClient.GetInstancesByFilters(ctx, filters)
 	if err != nil {
 		return fmt.Errorf("GetInstances failed, err:%w", err)
 	}
@@ -514,15 +525,15 @@ func updateClusterStatus(ctx context.Context, client aws.IRdsClient, node *v1alp
 func (r *StorageNodeReconciler) deleteDatabaseCluster(ctx context.Context, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	switch storageProvider.Spec.Provisioner {
 	case v1alpha1.ProvisionerAWSRDSInstance:
-		if err := r.deleteAWSRDSInstance(ctx, aws.NewRdsClient(r.AwsRDS), node, storageProvider); err != nil {
+		if err := r.deleteAWSRDSInstance(ctx, r.getAwsRdsClient(), node, storageProvider); err != nil {
 			return fmt.Errorf("delete aws rds instance failed: %w", err)
 		}
 	case v1alpha1.ProvisionerAWSRDSCluster:
-		if err := r.deleteAWSRDSCluster(ctx, aws.NewRdsClient(r.AwsRDS), node, storageProvider); err != nil {
+		if err := r.deleteAWSRDSCluster(ctx, r.getAwsRdsClient(), node, storageProvider); err != nil {
 			return fmt.Errorf("delete aws rds cluster failed: %w", err)
 		}
 	case v1alpha1.ProvisionerAWSAurora:
-		if err := r.deleteAWSAurora(ctx, aws.NewRdsClient(r.AwsRDS), node, storageProvider); err != nil {
+		if err := r.deleteAWSAurora(ctx, r.getAwsRdsClient(), node, storageProvider); err != nil {
 			return fmt.Errorf("delete aws aurora cluster failed: %w", err)
 		}
 	default:
@@ -531,18 +542,18 @@ func (r *StorageNodeReconciler) deleteDatabaseCluster(ctx context.Context, node 
 	return nil
 }
 
-func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, rdsClient aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	if node.Annotations[v1alpha1.AnnotationsInstanceIdentifier] == "" {
 		return nil
 	}
 
-	instance, err := client.GetInstance(ctx, node)
+	instance, err := rdsClient.GetInstance(ctx, node)
 	if err != nil {
 		return err
 	}
 
-	if instance != nil && instance.DBInstanceStatus != rds.DBInstanceStatusDeleting {
-		if err := client.DeleteInstance(ctx, node, storageProvider); err != nil {
+	if instance != nil && instance.DBInstanceStatus != dbmeshawsrds.DBInstanceStatusDeleting {
+		if err := rdsClient.DeleteInstance(ctx, node, storageProvider); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "DeleteFailed", "Failed to delete instance %s: %s", node.Annotations[v1alpha1.AnnotationsInstanceIdentifier], err.Error())
 			return err
 		}
@@ -558,17 +569,17 @@ func (r *StorageNodeReconciler) deleteAWSRDSInstance(ctx context.Context, client
 }
 
 // nolint:dupl
-func (r *StorageNodeReconciler) deleteAWSRDSCluster(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+func (r *StorageNodeReconciler) deleteAWSRDSCluster(ctx context.Context, rdsClient aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	if node.Annotations[v1alpha1.AnnotationsClusterIdentifier] == "" {
 		return nil
 	}
 
-	cluster, err := client.GetRDSCluster(ctx, node)
+	cluster, err := rdsClient.GetRDSCluster(ctx, node)
 	if err != nil {
 		return fmt.Errorf("get rds cluster failed: %w", err)
 	}
-	if cluster != nil && cluster.Status != string(rds.DBClusterStatusDeleting) {
-		if err := client.DeleteRDSCluster(ctx, node, storageProvider); err != nil {
+	if cluster != nil && cluster.Status != string(dbmeshawsrds.DBClusterStatusDeleting) {
+		if err := rdsClient.DeleteRDSCluster(ctx, node, storageProvider); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "DeleteFailed", "Failed to delete rds cluster %s: %s", node.Annotations[v1alpha1.AnnotationsClusterIdentifier], err.Error())
 			return err
 		}
@@ -576,24 +587,24 @@ func (r *StorageNodeReconciler) deleteAWSRDSCluster(ctx context.Context, client 
 	}
 
 	// update storage node status
-	if err := updateClusterStatus(ctx, client, node, cluster); err != nil {
+	if err := updateClusterStatus(ctx, rdsClient, node, cluster); err != nil {
 		return fmt.Errorf("updateClusterStatus failed: %w", err)
 	}
 	return nil
 }
 
 // nolint:dupl
-func (r *StorageNodeReconciler) deleteAWSAurora(ctx context.Context, client aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+func (r *StorageNodeReconciler) deleteAWSAurora(ctx context.Context, rdsClient aws.IRdsClient, node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
 	if node.Annotations[v1alpha1.AnnotationsClusterIdentifier] == "" {
 		return nil
 	}
 
-	auroraCluster, err := client.GetAuroraCluster(ctx, node)
+	auroraCluster, err := rdsClient.GetAuroraCluster(ctx, node)
 	if err != nil {
 		return fmt.Errorf("get aurora cluster failed: %w", err)
 	}
-	if auroraCluster != nil && auroraCluster.Status != string(rds.DBClusterStatusDeleting) {
-		if err := client.DeleteAuroraCluster(ctx, node, storageProvider); err != nil {
+	if auroraCluster != nil && auroraCluster.Status != string(dbmeshawsrds.DBClusterStatusDeleting) {
+		if err := rdsClient.DeleteAuroraCluster(ctx, node, storageProvider); err != nil {
 			r.Recorder.Eventf(node, corev1.EventTypeWarning, "DeleteFailed", "Failed to delete aurora cluster %s: %s", node.Annotations[v1alpha1.AnnotationsClusterIdentifier], err.Error())
 			return err
 		}
@@ -601,7 +612,7 @@ func (r *StorageNodeReconciler) deleteAWSAurora(ctx context.Context, client aws.
 	}
 
 	// update storage node status
-	if err := updateClusterStatus(ctx, client, node, auroraCluster); err != nil {
+	if err := updateClusterStatus(ctx, rdsClient, node, auroraCluster); err != nil {
 		return fmt.Errorf("updateClusterStatus failed: %w", err)
 	}
 	return nil

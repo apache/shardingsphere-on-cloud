@@ -30,8 +30,6 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 
-	dbmesh_aws "github.com/database-mesh/golang-sdk/aws"
-	dbmesh_rds "github.com/database-mesh/golang-sdk/aws/client/rds"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -93,14 +91,15 @@ var _ = BeforeSuite(func() {
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{})
 	Expect(err).ToNot(HaveOccurred())
 	// print k8sManager Options
-	sess := dbmesh_aws.NewSessions().SetCredential("AwsRegion", "AwsAccessKeyID", "AwsSecretAccessKey").Build()
 	err = (&controllers.StorageNodeReconciler{
-		Client:   k8sManager.GetClient(),
-		Scheme:   k8sManager.GetScheme(),
-		Log:      ctrl.Log.WithName("controllers").WithName("StorageNode"),
-		Recorder: k8sManager.GetEventRecorderFor("StorageNode"),
-		AwsRDS:   dbmesh_rds.NewService(sess["AwsRegion"]),
-		Service:  service.NewServiceClient(k8sManager.GetClient()),
+		Client:             k8sManager.GetClient(),
+		Scheme:             k8sManager.GetScheme(),
+		Log:                ctrl.Log.WithName("controllers").WithName("StorageNode"),
+		Recorder:           k8sManager.GetEventRecorderFor("StorageNode"),
+		AwsRegion:          "AwsRegion",
+		AwsAccessKeyID:     "AwsAccessKeyID",
+		AwsSecretAccessKey: "AwsSecretAccessKey",
+		Service:            service.NewServiceClient(k8sManager.GetClient()),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
