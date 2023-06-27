@@ -90,6 +90,13 @@ rules:
       - update
       - watch
   - apiGroups:
+      - ""
+    resources:
+      - event
+    verbs:
+      - create
+      - patch
+  - apiGroups:
       - apps
     resources:
       - deployments
@@ -189,6 +196,32 @@ rules:
   - apiGroups:
       - shardingsphere.apache.org
     resources:
+      - chaos
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
+      - chaos/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
+      - chaos/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - shardingsphere.apache.org
+    resources:
       - computenodes
     verbs:
       - create
@@ -202,32 +235,6 @@ rules:
       - shardingsphere.apache.org
     resources:
       - computenodes/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - shardingspherechaos
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - shardingspherechaos/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - shardingspherechaos/status
     verbs:
       - get
       - patch

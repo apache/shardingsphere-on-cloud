@@ -32,8 +32,6 @@ import (
 
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	cnpgv1 "github.com/cloudnative-pg/cloudnative-pg/api/v1"
-	"github.com/database-mesh/golang-sdk/aws"
-	"github.com/database-mesh/golang-sdk/aws/client/rds"
 	dbmeshv1alpha1 "github.com/database-mesh/golang-sdk/kubernetes/api/v1alpha1"
 	"go.uber.org/zap/zapcore"
 	batchV1 "k8s.io/api/batch/v1"
@@ -148,18 +146,15 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 	},
 	"StorageNode": func(mgr manager.Manager) error {
 		reconciler := &controllers.StorageNodeReconciler{
-			Client:   mgr.GetClient(),
-			Scheme:   mgr.GetScheme(),
-			Log:      mgr.GetLogger(),
-			Recorder: mgr.GetEventRecorderFor(controllers.StorageNodeControllerName),
-			Service:  service.NewServiceClient(mgr.GetClient()),
-			CNPG:     cloudnativepg.NewCloudNativePGClient(mgr.GetClient()),
-		}
-
-		// init aws client if aws credentials are provided
-		if AwsRegion != "" && AwsAccessKeyID != "" && AwsSecretAccessKey != "" {
-			sess := aws.NewSessions().SetCredential(AwsRegion, AwsAccessKeyID, AwsSecretAccessKey).Build()
-			reconciler.AwsRDS = rds.NewService(sess[AwsRegion])
+			Client:             mgr.GetClient(),
+			Scheme:             mgr.GetScheme(),
+			Log:                mgr.GetLogger(),
+			Recorder:           mgr.GetEventRecorderFor(controllers.StorageNodeControllerName),
+			Service:            service.NewServiceClient(mgr.GetClient()),
+			CNPG:               cloudnativepg.NewCloudNativePGClient(mgr.GetClient()),
+			AwsAccessKeyID:     AwsAccessKeyID,
+			AwsSecretAccessKey: AwsSecretAccessKey,
+			AwsRegion:          AwsRegion,
 		}
 
 		if err := reconciler.SetupWithManager(mgr); err != nil {
