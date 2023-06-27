@@ -77,254 +77,302 @@ kind: ClusterRole
 metadata:
   name: {{ template "operator.name" . }}
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - event
-    verbs:
-      - create
-      - patch
-  - apiGroups:
-      - apps
-    resources:
-      - deployments
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - apps
-    resources:
-      - deployments/status
-    verbs:
-      - get
-  - apiGroups:
-      - autoscaling
-    resources:
-      - horizontalpodautoscalers
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - autoscaling
-    resources:
-      - horizontalpodautoscalers/status
-    verbs:
-      - get
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - pods
-    verbs:
-      - create
-      - delete
-      - deletecollection
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - pods/status
-    verbs:
-      - get
-  - apiGroups:
-      - ""
-    resources:
-      - services
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - services/status
-    verbs:
-      - get
-  - apiGroups:
-      - postgresql.cnpg.io
-    resources:
-      - clusters
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - chaos
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - chaos/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - chaos/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - computenodes
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - computenodes/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - shardingsphereproxies
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - shardingsphereproxies/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - shardingsphereproxies/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - shardingsphereproxyserverconfigs
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - shardingsphereproxyserverconfigs/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - shardingsphereproxyserverconfigs/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - storagenodes
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - storagenodes/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - storagenodes/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - shardingsphere.apache.org
-    resources:
-      - storageproviders
-    verbs:
-      - get
-      - list
-      - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - event
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments/status
+  verbs:
+  - get
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers/status
+  verbs:
+  - get
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - chaos-mesh.org
+  resources:
+  - networkchaos
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - chaos-mesh.org
+  resources:
+  - podchaos
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - chaos-mesh.org
+  resources:
+  - stresschaos
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services/status
+  verbs:
+  - get
+- apiGroups:
+  - postgresql.cnpg.io
+  resources:
+  - clusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - chaos
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - chaos/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - chaos/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - computenodes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - computenodes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - shardingsphereproxies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - shardingsphereproxies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - shardingsphereproxies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - shardingsphereproxyserverconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - shardingsphereproxyserverconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - shardingsphereproxyserverconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - storagenodes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - storagenodes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - storagenodes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - shardingsphere.apache.org
+  resources:
+  - storageproviders
+  verbs:
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
