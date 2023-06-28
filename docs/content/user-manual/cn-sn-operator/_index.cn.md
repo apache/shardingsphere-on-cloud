@@ -147,7 +147,7 @@ metadata:
   name: shardingsphere-cluster-shardingsphere-proxy
   namespace: shardingsphere-operator
 spec:
-  version: 5.3.1
+  version: 5.4.0
   serviceType:
     type: ClusterIP
   replicas: 3
@@ -270,7 +270,7 @@ spec:
   storageNodeConnector:
     type: mysql
     version: 5.1.47
-  serverVersion: 5.3.1
+  serverVersion: 5.4.0
   replicas: 3
   selector:
     matchLabels:
@@ -318,7 +318,7 @@ StorageNode 是 Operator 对于数据源的描述，提供对数据源的生命�
 目前 Operator 想要使用 StorageNode 需要打开相应的 FeatureGate：
 
 ```shell
-helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts --set operator.featureGates.storageNode=true
+helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts --set operator.featureGates.storageNode=true --set operator.storageNodeProviders.aws.region='' --set operator.storageNodeProviders.aws.accessKeyId='' --set operator.storageNodeProviders.aws.secretAccessKey='' --set operator.storageNodeProviders.aws.enabled=true
 ```
 
 #### 字段说明
