@@ -507,6 +507,11 @@ func TestDeploymentBuilder_SetShardingSphereProxyContainer(t *testing.T) {
 		},
 	}
 
+	ssbuilder := &shardingsphereDeploymentBuilder{
+		deployment:        builder.deployment,
+		DeploymentBuilder: builder,
+	}
+
 	// 2. define a container to be set as a proxy container
 	proxy := &corev1.Container{
 		Name:  "shardingsphere-proxy",
@@ -514,7 +519,7 @@ func TestDeploymentBuilder_SetShardingSphereProxyContainer(t *testing.T) {
 	}
 
 	// 3. call the SetShardingSphereProxyContainer function
-	builder.SetShardingSphereProxyContainer(proxy)
+	ssbuilder.SetContainer(proxy)
 
 	// 4. check whether the proxy container was added or replaced in the Containers slice
 	if len(builder.deployment.Spec.Template.Spec.Containers) != 2 {
