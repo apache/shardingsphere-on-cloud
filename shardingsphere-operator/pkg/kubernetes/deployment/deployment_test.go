@@ -469,7 +469,7 @@ func assertContainers(t *testing.T, exp, act []corev1.Container, message string)
 }
 
 func assertContainer(t *testing.T, exp, act corev1.Container) bool {
-	return assert.Equal(t, exp.Name, act.Name, "name should be equal") &&
+	return assert.Equal(t, exp.Name, act.Name, "container name should be equal") &&
 		assert.ElementsMatch(t, exp.Command, act.Command, "command should be equal") &&
 		assert.ElementsMatch(t, exp.Args, act.Args, "args should be equal") &&
 		assert.ElementsMatch(t, exp.Env, act.Env, "env should be equal") &&
