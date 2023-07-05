@@ -18,37 +18,45 @@
 package pod
 
 import (
-	// appsv1 "k8s.io/api/apps/v1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/metadata"
 	corev1 "k8s.io/api/core/v1"
-	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PodBuilder represents the configuration of a pod
 // nolint:unused
 type PodBuilder interface {
-	SetName(name string) PodBuilder
-	SetNamespace(namespace string) PodBuilder
-	SetLabels(labels map[string]string) PodBuilder
-	SetAnnotations(annos map[string]string) PodBuilder
-
-	SetVolumes(vs []corev1.Volume) PodBuilder
-	AppendVolumes(vs []corev1.Volume) PodBuilder
-
-	SetInitContainers(cs []corev1.Container) PodBuilder
-	AppendInitContainers(cs []corev1.Container) PodBuilder
-
-	SetContainers(cs []corev1.Container) PodBuilder
-	AppendContainers(cs []corev1.Container) PodBuilder
-
-	SetTerminationGracePeriodSeconds(secs *int64) PodBuilder
-	SetImagePullSecrets(secs []corev1.LocalObjectReference) PodBuilder
+	// SetName(name string) PodBuilder
+	// SetNamespace(namespace string) PodBuilder
+	// SetLabels(labels map[string]string) PodBuilder
+	// SetAnnotations(annos map[string]string) PodBuilder
+	metadata.MetadataBuilder
+	PodSpecBuilder
+	BuildPod() *corev1.Pod
 }
 
 // nolint:unused
 type podBuilder struct {
 	pod *corev1.Pod
+	metadata.MetadataBuilder
+	PodSpecBuilder
 }
 
+// NewPodBuilder returns a new pod builder
+func NewPodBuilder() PodBuilder {
+	return &podBuilder{
+		pod:             &corev1.Pod{},
+		MetadataBuilder: metadata.NewMetadataBuilder(),
+		PodSpecBuilder:  NewPodSpecBuilder(),
+	}
+}
+
+func (b *podBuilder) BuildPod() *corev1.Pod {
+	b.pod.ObjectMeta = *b.BuildMetadata()
+	b.pod.Spec = *b.BuildPodSpec()
+	return b.pod
+}
+
+/*
 // SetName sets the name of the pod
 // nolint:unused
 func (b *podBuilder) SetName(name string) PodBuilder {
@@ -82,83 +90,113 @@ func (b *podBuilder) SetAnnotations(annos map[string]string) PodBuilder {
 	b.pod.Annotations = annos
 	return b
 }
+*/
+
+type PodSpecBuilder interface {
+	SetVolumes(vs []corev1.Volume) PodSpecBuilder
+	AppendVolumes(vs []corev1.Volume) PodSpecBuilder
+
+	SetInitContainers(cs []corev1.Container) PodSpecBuilder
+	AppendInitContainers(cs []corev1.Container) PodSpecBuilder
+
+	SetContainers(cs []corev1.Container) PodSpecBuilder
+	AppendContainers(cs []corev1.Container) PodSpecBuilder
+
+	SetTerminationGracePeriodSeconds(secs *int64) PodSpecBuilder
+	SetImagePullSecrets(secs []corev1.LocalObjectReference) PodSpecBuilder
+
+	BuildPodSpec() *corev1.PodSpec
+}
+
+type podSpecBuilder struct {
+	spec *corev1.PodSpec
+}
+
+func NewPodSpecBuilder() PodSpecBuilder {
+	return &podSpecBuilder{}
+}
 
 // SetVolumes sets the volumes
 // nolint:unused
-func (b *podBuilder) SetVolumes(vs []corev1.Volume) PodBuilder {
-	if b.pod.Spec.Volumes == nil {
-		b.pod.Spec.Volumes = []corev1.Volume{}
+func (b *podSpecBuilder) SetVolumes(vs []corev1.Volume) PodSpecBuilder {
+	if b.spec.Volumes == nil {
+		b.spec.Volumes = []corev1.Volume{}
 	}
 
-	b.pod.Spec.Volumes = vs
+	b.spec.Volumes = vs
 	return b
 }
 
 // AppendVolumes append volumes to the container
 // nolint:unused
-func (b *podBuilder) AppendVolumes(vs []corev1.Volume) PodBuilder {
-	if b.pod.Spec.Volumes == nil {
-		b.pod.Spec.Volumes = []corev1.Volume{}
+func (b *podSpecBuilder) AppendVolumes(vs []corev1.Volume) PodSpecBuilder {
+	if b.spec.Volumes == nil {
+		b.spec.Volumes = []corev1.Volume{}
 	}
 
-	b.pod.Spec.Volumes = append(b.pod.Spec.Volumes, vs...)
+	b.spec.Volumes = append(b.spec.Volumes, vs...)
 	return b
 }
 
 // SetInintContainers sets the int containers to the container
 // nolint:unused
-func (b *podBuilder) SetInitContainers(cs []corev1.Container) PodBuilder {
-	if b.pod.Spec.InitContainers == nil {
-		b.pod.Spec.InitContainers = cs
+func (b *podSpecBuilder) SetInitContainers(cs []corev1.Container) PodSpecBuilder {
+	if b.spec.InitContainers == nil {
+		b.spec.InitContainers = cs
 	}
-	b.pod.Spec.InitContainers = cs
+	b.spec.InitContainers = cs
 	return b
 }
 
 // AppendInitContainers append init containers to the container
 // nolint:unused
-func (b *podBuilder) AppendInitContainers(cs []corev1.Container) PodBuilder {
-	if b.pod.Spec.InitContainers == nil {
-		b.pod.Spec.InitContainers = cs
+func (b *podSpecBuilder) AppendInitContainers(cs []corev1.Container) PodSpecBuilder {
+	if b.spec.InitContainers == nil {
+		b.spec.InitContainers = cs
 	}
-	b.pod.Spec.InitContainers = append(b.pod.Spec.InitContainers, cs...)
+	b.spec.InitContainers = append(b.spec.InitContainers, cs...)
 	return b
 }
 
 // SetContainer set the container to the pod
 // nolint:unused
-func (b *podBuilder) SetContainers(cs []corev1.Container) PodBuilder {
-	if b.pod.Spec.Containers == nil {
-		b.pod.Spec.Containers = cs
+func (b *podSpecBuilder) SetContainers(cs []corev1.Container) PodSpecBuilder {
+	if b.spec.Containers == nil {
+		b.spec.Containers = cs
 	}
-	b.pod.Spec.Containers = cs
+	b.spec.Containers = cs
 	return b
 }
 
 // AppendContainers appends containers to the pod
 // nolint:unused
-func (b *podBuilder) AppendContainers(cs []corev1.Container) PodBuilder {
-	if b.pod.Spec.Containers == nil {
-		b.pod.Spec.Containers = cs
+func (b *podSpecBuilder) AppendContainers(cs []corev1.Container) PodSpecBuilder {
+	if b.spec.Containers == nil {
+		b.spec.Containers = cs
 	}
-	b.pod.Spec.Containers = append(b.pod.Spec.Containers, cs...)
+	b.spec.Containers = append(b.spec.Containers, cs...)
 	return b
 }
 
 // SetImagePullSecrets sets the image pull secrets
 // nolint:unused
-func (b *podBuilder) SetImagePullSecrets(secs []corev1.LocalObjectReference) PodBuilder {
-	if b.pod.Spec.ImagePullSecrets == nil {
-		b.pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
+func (b *podSpecBuilder) SetImagePullSecrets(secs []corev1.LocalObjectReference) PodSpecBuilder {
+	if b.spec.ImagePullSecrets == nil {
+		b.spec.ImagePullSecrets = []corev1.LocalObjectReference{}
 	}
 
-	b.pod.Spec.ImagePullSecrets = secs
+	b.spec.ImagePullSecrets = secs
 	return b
 }
 
 // SetTerminationGracePeriodSeconds sets the grace period
 // nolint:unused
-func (b *podBuilder) SetTerminationGracePeriodSeconds(secs *int64) PodBuilder {
-	b.pod.Spec.TerminationGracePeriodSeconds = secs
+func (b *podSpecBuilder) SetTerminationGracePeriodSeconds(secs *int64) PodSpecBuilder {
+	b.spec.TerminationGracePeriodSeconds = secs
 	return b
+}
+
+// Build returns a PodSpec
+func (b *podSpecBuilder) BuildPodSpec() *corev1.PodSpec {
+	return b.spec
 }
