@@ -24,6 +24,7 @@ import (
 )
 
 // PodBuilder represents the configuration of a pod
+// nolint:unused
 type PodBuilder interface {
 	SetName(name string) PodBuilder
 	SetNamespace(namespace string) PodBuilder
@@ -43,23 +44,27 @@ type PodBuilder interface {
 	SetImagePullSecrets(secs []corev1.LocalObjectReference) PodBuilder
 }
 
+// nolint:unused
 type podBuilder struct {
 	pod *corev1.Pod
 }
 
 // SetName sets the name of the pod
+// nolint:unused
 func (b *podBuilder) SetName(name string) PodBuilder {
 	b.pod.Name = name
 	return b
 }
 
 // SetNamespace sets the namespace of the pod
+// nolint:unused
 func (b *podBuilder) SetNamespace(namespace string) PodBuilder {
 	b.pod.Namespace = namespace
 	return b
 }
 
 // SetLabels sets the labels of the pod
+// nolint:unused
 func (b *podBuilder) SetLabels(labels map[string]string) PodBuilder {
 	if b.pod.Labels == nil {
 		b.pod.Labels = map[string]string{}
@@ -69,6 +74,7 @@ func (b *podBuilder) SetLabels(labels map[string]string) PodBuilder {
 }
 
 // SetAnnotations set the annotations of the pod
+// nolint:unused
 func (b *podBuilder) SetAnnotations(annos map[string]string) PodBuilder {
 	if b.pod.Annotations == nil {
 		b.pod.Annotations = map[string]string{}
@@ -78,6 +84,7 @@ func (b *podBuilder) SetAnnotations(annos map[string]string) PodBuilder {
 }
 
 // SetVolumes sets the volumes
+// nolint:unused
 func (b *podBuilder) SetVolumes(vs []corev1.Volume) PodBuilder {
 	if b.pod.Spec.Volumes == nil {
 		b.pod.Spec.Volumes = []corev1.Volume{}
@@ -88,6 +95,7 @@ func (b *podBuilder) SetVolumes(vs []corev1.Volume) PodBuilder {
 }
 
 // AppendVolumes append volumes to the container
+// nolint:unused
 func (b *podBuilder) AppendVolumes(vs []corev1.Volume) PodBuilder {
 	if b.pod.Spec.Volumes == nil {
 		b.pod.Spec.Volumes = []corev1.Volume{}
@@ -98,6 +106,7 @@ func (b *podBuilder) AppendVolumes(vs []corev1.Volume) PodBuilder {
 }
 
 // SetInintContainers sets the int containers to the container
+// nolint:unused
 func (b *podBuilder) SetInitContainers(cs []corev1.Container) PodBuilder {
 	if b.pod.Spec.InitContainers == nil {
 		b.pod.Spec.InitContainers = cs
@@ -107,6 +116,7 @@ func (b *podBuilder) SetInitContainers(cs []corev1.Container) PodBuilder {
 }
 
 // AppendInitContainers append init containers to the container
+// nolint:unused
 func (b *podBuilder) AppendInitContainers(cs []corev1.Container) PodBuilder {
 	if b.pod.Spec.InitContainers == nil {
 		b.pod.Spec.InitContainers = cs
@@ -116,6 +126,7 @@ func (b *podBuilder) AppendInitContainers(cs []corev1.Container) PodBuilder {
 }
 
 // SetContainer set the container to the pod
+// nolint:unused
 func (b *podBuilder) SetContainers(cs []corev1.Container) PodBuilder {
 	if b.pod.Spec.Containers == nil {
 		b.pod.Spec.Containers = cs
@@ -125,6 +136,7 @@ func (b *podBuilder) SetContainers(cs []corev1.Container) PodBuilder {
 }
 
 // AppendContainers appends containers to the pod
+// nolint:unused
 func (b *podBuilder) AppendContainers(cs []corev1.Container) PodBuilder {
 	if b.pod.Spec.Containers == nil {
 		b.pod.Spec.Containers = cs
@@ -134,6 +146,7 @@ func (b *podBuilder) AppendContainers(cs []corev1.Container) PodBuilder {
 }
 
 // SetImagePullSecrets sets the image pull secrets
+// nolint:unused
 func (b *podBuilder) SetImagePullSecrets(secs []corev1.LocalObjectReference) PodBuilder {
 	if b.pod.Spec.ImagePullSecrets == nil {
 		b.pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
@@ -144,6 +157,7 @@ func (b *podBuilder) SetImagePullSecrets(secs []corev1.LocalObjectReference) Pod
 }
 
 // SetTerminationGracePeriodSeconds sets the grace period
+// nolint:unused
 func (b *podBuilder) SetTerminationGracePeriodSeconds(secs *int64) PodBuilder {
 	b.pod.Spec.TerminationGracePeriodSeconds = secs
 	return b
