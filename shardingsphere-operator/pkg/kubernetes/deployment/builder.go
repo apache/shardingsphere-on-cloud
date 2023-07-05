@@ -21,6 +21,8 @@ import (
 	"fmt"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/metadata"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/pod"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
@@ -152,31 +154,44 @@ func (b *bootstrapContainerBuilder) Build() *corev1.Container {
 
 // DeploymentBuilder returns a deployment builder
 type DeploymentBuilder interface {
-	SetName(name string) DeploymentBuilder
-	SetNamespace(namespace string) DeploymentBuilder
-	SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder
-	SetAnnotations(annos map[string]string) DeploymentBuilder
+	/*
+		SetName(name string) DeploymentBuilder
+		SetNamespace(namespace string) DeploymentBuilder
+		SetAnnotations(annos map[string]string) DeploymentBuilder
+	*/
 
-	SetPodTemplateLabels(labels map[string]string) DeploymentBuilder
-	SetPodTemplateAnnotations(annos map[string]string) DeploymentBuilder
-	SetPodTemplateSpec(tpl *corev1.PodTemplateSpec) DeploymentBuilder
-	SetVolume(volume *corev1.Volume) DeploymentBuilder
+	metadata.MetadataBuilder
+	pod.PodSpecBuilder
+
+	// SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder
+	SetSelectors(selectors *metav1.LabelSelector) DeploymentBuilder
 	SetReplicas(r *int32) DeploymentBuilder
 
-	Build() *appsv1.Deployment
+	// SetPodTemplateLabels(labels map[string]string) DeploymentBuilder
+	// SetPodTemplateAnnotations(annos map[string]string) DeploymentBuilder
+	SetPodTemplateSpec(tpl *corev1.PodTemplateSpec) DeploymentBuilder
+	SetPodTemplateMetadata(obj *metav1.ObjectMeta) DeploymentBuilder
+	SetVolume(volume *corev1.Volume) DeploymentBuilder
+
+	BuildDeployment() *appsv1.Deployment
 }
 
 // NewDeploymentBuilder creates a new DeploymentBuilder
 func NewDeploymentBuilder(meta metav1.Object, gvk schema.GroupVersionKind) DeploymentBuilder {
 	return &deploymentBuilder{
-		deployment: DefaultDeployment(meta, gvk),
+		deployment:      DefaultDeployment(meta, gvk),
+		PodSpecBuilder:  pod.NewPodBuilder(),
+		MetadataBuilder: metadata.NewMetadataBuilder(),
 	}
 }
 
 type deploymentBuilder struct {
 	deployment *appsv1.Deployment
+	pod.PodSpecBuilder
+	metadata.MetadataBuilder
 }
 
+/*
 // SetName sets Deployment name
 func (d *deploymentBuilder) SetName(name string) DeploymentBuilder {
 	d.deployment.Name = name
@@ -188,21 +203,26 @@ func (d *deploymentBuilder) SetNamespace(namespace string) DeploymentBuilder {
 	d.deployment.Namespace = namespace
 	return d
 }
+*/
 
 // SetLabelsAndSelectors sets labels and selectors to Deployment labels, spec.selectors
 // and spec.template.labels
-func (d *deploymentBuilder) SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder {
-	d.deployment.Labels = labels
+// func (d *deploymentBuilder) SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder {
+func (d *deploymentBuilder) SetSelectors(selectors *metav1.LabelSelector) DeploymentBuilder {
+	// d.deployment.Labels = labels
 	d.deployment.Spec.Selector = selectors
-	d.deployment.Spec.Template.Labels = labels
+	// d.deployment.Spec.Template.Labels = labels
+
 	return d
 }
 
+/*
 // SetAnnotations sets Deployment annotations
 func (d *deploymentBuilder) SetAnnotations(annos map[string]string) DeploymentBuilder {
 	d.deployment.Annotations = annos
 	return d
 }
+*/
 
 // SetReplicas sets Deployment replicas
 func (d *deploymentBuilder) SetReplicas(r *int32) DeploymentBuilder {
@@ -210,7 +230,13 @@ func (d *deploymentBuilder) SetReplicas(r *int32) DeploymentBuilder {
 	return d
 }
 
-// SetPodTemplate sets Deployment PodTemplateSpec for ShardingSphereProxy Pod
+// SetPodTemplateMetadata sets Deployment PodTemplateMetadata for ShardingSphereProxy Pod
+func (d *deploymentBuilder) SetPodTemplateMetadata(obj *metav1.ObjectMeta) DeploymentBuilder {
+	d.deployment.Spec.Template.ObjectMeta = *obj
+	return d
+}
+
+// SetPodTemplateSpec sets Deployment PodTemplateSpec for ShardingSphereProxy Pod
 func (d *deploymentBuilder) SetPodTemplateSpec(tpl *corev1.PodTemplateSpec) DeploymentBuilder {
 	d.deployment.Spec.Template = *tpl
 	return d
@@ -246,7 +272,8 @@ func (d *deploymentBuilder) SetVolume(vol *corev1.Volume) DeploymentBuilder {
 }
 
 // Build returns a Deployment
-func (d *deploymentBuilder) Build() *appsv1.Deployment {
+func (d *deploymentBuilder) BuildDeployment() *appsv1.Deployment {
+	d.deployment.ObjectMeta = *d.MetadataBuilder.BuildMetadata()
 	return d.deployment
 }
 
@@ -259,6 +286,7 @@ type ShardingSphereDeploymentBuilder interface {
 
 	SetMySQLConnector(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
 	SetAgentBin(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
+	BuildShardingSphereDeployment() *appsv1.Deployment
 }
 
 // NewShardingSphereDeploymentBuilder creates a new ShardingSphereDeploymentBuilder
@@ -267,7 +295,9 @@ func NewShardingSphereDeploymentBuilder(meta metav1.Object, gvk schema.GroupVers
 
 	return &shardingsphereDeploymentBuilder{
 		DeploymentBuilder: &deploymentBuilder{
-			deployment: dp,
+			deployment:      dp,
+			PodSpecBuilder:  pod.NewPodBuilder(),
+			MetadataBuilder: metadata.NewMetadataBuilder(),
 		},
 		deployment: dp,
 	}
@@ -396,8 +426,9 @@ func (d *shardingsphereDeploymentBuilder) SetAgentBin(scb common.ContainerBuilde
 	return d
 }
 
-func (d *shardingsphereDeploymentBuilder) Build() *appsv1.Deployment {
-	return d.DeploymentBuilder.Build()
+func (d *shardingsphereDeploymentBuilder) BuildShardingSphereDeployment() *appsv1.Deployment {
+	// return d.DeploymentBuilder.BuildDeployment()
+	return d.deployment
 }
 
 // SharedVolumeAndMountBuilder build a Volume which could be mounted by different containers
@@ -552,11 +583,16 @@ func (b *volumeAndMountBuilder) Build() (*corev1.Volume, *corev1.VolumeMount) {
 
 // NewDeployment creates a new Deployment
 func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
-	// builder := NewDeploymentBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
 	ssbuilder := NewShardingSphereDeploymentBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
-	// builder := ssbuilder.DeploymentBuilder
-	// builder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetReplicas(&cn.Spec.Replicas)
-	ssbuilder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetReplicas(&cn.Spec.Replicas)
+	// ssbuilder.SetName(cn.Name).SetNamespace(cn.Namespace).SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations).SetReplicas(&cn.Spec.Replicas)
+	ssbuilder.SetName(cn.Name).SetNamespace(cn.Namespace)
+	// ssbuilder.SetLabelsAndSelectors(cn.Labels, cn.Spec.Selector).SetAnnotations(cn.Annotations)
+	ssbuilder.SetLabels(cn.Labels).SetAnnotations(cn.Annotations)
+	ssbuilder.SetSelectors(cn.Spec.Selector)
+	ssbuilder.SetReplicas(&cn.Spec.Replicas)
+
+	tm := metadata.NewMetadataBuilder()
+	tm.SetLabels(cn.Labels)
 
 	ports := []corev1.ContainerPort{}
 	for idx := range cn.Spec.PortBindings {
@@ -595,8 +631,8 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 		metricsAnnos[commonAnnotationPrometheusMetricsScrape] = cn.Annotations[commonAnnotationPrometheusMetricsScrape]
 		metricsAnnos[commonAnnotationPrometheusMetricsScheme] = cn.Annotations[commonAnnotationPrometheusMetricsScheme]
 
-		// builder.SetShardingSphereProxyPodTemplateAnnotations(metricsAnnos)
-		ssbuilder.SetPodTemplateAnnotations(metricsAnnos)
+		// ssbuilder.SetPodTemplateAnnotations(metricsAnnos)
+		tm.SetAnnotations(metricsAnnos)
 
 		if cn.Spec.ServerVersion == "5.3.2" {
 			sv := NewSharedVolumeAndMountBuilder().
@@ -616,6 +652,8 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 		}
 	}
 
+	ssbuilder.SetPodTemplateMetadata(tm.BuildMetadata())
+
 	if cn.Spec.StorageNodeConnector != nil {
 		switch cn.Spec.StorageNodeConnector.Type {
 		case v1alpha1.ConnectorTypeMySQL:
@@ -626,7 +664,7 @@ func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 		}
 	}
 
-	return ssbuilder.Build()
+	return ssbuilder.BuildShardingSphereDeployment()
 }
 
 func setProbes(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) {
