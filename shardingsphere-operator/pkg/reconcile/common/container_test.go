@@ -35,7 +35,7 @@ func TestContainerBuilder_BuildDefaultContainer(t *testing.T) {
 		t.Errorf("NewContainerBuilder() failed to create a new container builder")
 	}
 
-	con := c.Build()
+	con := c.BuildContainer()
 
 	// check if the container is initialized
 	if con == nil {
@@ -116,12 +116,14 @@ func TestContainerBUilder_BuildFullContainer(t *testing.T) {
 		SetCommand([]string{
 			"echo",
 		}).
-		SetVolumeMount(&v1.VolumeMount{
-			Name:      "test-mount",
-			MountPath: "/test",
+		AppendVolumeMounts([]v1.VolumeMount{
+			{
+				Name:      "test-mount",
+				MountPath: "/test",
+			},
 		})
 
-	con := c.Build()
+	con := c.BuildContainer()
 	assert.Equal(t, "test", con.Name, "Build() failed to set the container name")
 	assert.Equal(t, "nginx:1.9.7", con.Image, "Build() failed to set the container image")
 	assert.EqualValues(t, &v1.Probe{
@@ -207,7 +209,7 @@ func TestContainerBuilder_SetVolumeMount(t *testing.T) {
 		Name:      "test-mount",
 		MountPath: "/test",
 	}
-	c.SetVolumeMount(mount)
+	c.AppendVolumeMounts([]corev1.VolumeMount{*mount})
 
 	// check if the volume mount has been added
 	for _, v := range c.container.VolumeMounts {
@@ -225,7 +227,7 @@ func TestContainerBuilder_SetVolumeMount(t *testing.T) {
 		Name:      "test-mount",
 		MountPath: "/new-test",
 	}
-	c.SetVolumeMount(updatedMount)
+	c.UpdateVolumeMountByName(updatedMount)
 
 	// check if the volume mount has been updated
 	for _, v := range c.container.VolumeMounts {

@@ -34,14 +34,23 @@ type ContainerBuilder interface {
 	AppendEnv(envs []v1.EnvVar) ContainerBuilder
 	SetCommand(cmds []string) ContainerBuilder
 	SetArgs(args []string) ContainerBuilder
-	SetVolumeMount(mount *v1.VolumeMount) ContainerBuilder
-	Build() *v1.Container
+	UpdateVolumeMountByName(mount *v1.VolumeMount) ContainerBuilder
+	SetVolumeMounts(mounts []v1.VolumeMount) ContainerBuilder
+	AppendVolumeMounts(mounts []v1.VolumeMount) ContainerBuilder
+	BuildContainer() *v1.Container
 }
 
 // NewContainerBuilder return a builder for Container
 func NewContainerBuilder() ContainerBuilder {
 	return &containerBuilder{
 		container: DefaultContainer(),
+	}
+}
+
+// NewContainerBuilderFromContainer creates a new ContainerBuilder
+func NewContainerBuilderFromContainer(c *v1.Container) ContainerBuilder {
+	return &containerBuilder{
+		container: c,
 	}
 }
 
@@ -154,7 +163,7 @@ func (c *containerBuilder) SetArgs(args []string) ContainerBuilder {
 }
 
 // SetVolumeMount set the mount point of the container
-func (c *containerBuilder) SetVolumeMount(mount *v1.VolumeMount) ContainerBuilder {
+func (c *containerBuilder) UpdateVolumeMountByName(mount *v1.VolumeMount) ContainerBuilder {
 	if c.container.VolumeMounts == nil {
 		c.container.VolumeMounts = []v1.VolumeMount{*mount}
 	} else {
@@ -170,8 +179,28 @@ func (c *containerBuilder) SetVolumeMount(mount *v1.VolumeMount) ContainerBuilde
 	return c
 }
 
+// SetVolumeMount set the mount point of the container
+func (c *containerBuilder) SetVolumeMounts(mounts []v1.VolumeMount) ContainerBuilder {
+	if c.container.VolumeMounts == nil {
+		c.container.VolumeMounts = []v1.VolumeMount{}
+	}
+
+	c.container.VolumeMounts = mounts
+	return c
+}
+
+// AppendVolumeMount mount a volume to the container
+func (c *containerBuilder) AppendVolumeMounts(mounts []v1.VolumeMount) ContainerBuilder {
+	if c.container.VolumeMounts == nil {
+		c.container.VolumeMounts = []v1.VolumeMount{}
+	}
+
+	c.container.VolumeMounts = append(c.container.VolumeMounts, mounts...)
+	return c
+}
+
 // Build returns a Container
-func (c *containerBuilder) Build() *v1.Container {
+func (c *containerBuilder) BuildContainer() *v1.Container {
 	return c.container
 }
 

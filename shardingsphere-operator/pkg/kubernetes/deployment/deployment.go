@@ -21,7 +21,10 @@ import (
 	"context"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/metadata"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -102,7 +105,97 @@ type Builder interface {
 
 type builder struct{}
 
+func (b builder) buildProbes(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) {
+	if cn.Spec.Probes == nil {
+		return
+	}
+
+	if cn.Spec.Probes.LivenessProbe != nil {
+		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
+	}
+	if cn.Spec.Probes.ReadinessProbe != nil {
+		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
+	}
+	if cn.Spec.Probes.StartupProbe != nil {
+		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
+	}
+}
+
+func (b builder) buildMetadata(ssbuilder ShardingSphereDeploymentBuilder, cn *v1alpha1.ComputeNode) {
+	ssbuilder.SetName(cn.Name).
+		SetNamespace(cn.Namespace).
+		SetLabels(cn.Labels).
+		SetAnnotations(cn.Annotations)
+}
+
+func getContainerPortsFromComputeNode(cn *v1alpha1.ComputeNode) []corev1.ContainerPort {
+	ports := []corev1.ContainerPort{}
+	for idx := range cn.Spec.PortBindings {
+		ports = append(ports, corev1.ContainerPort{
+			Name:          cn.Spec.PortBindings[idx].Name,
+			HostIP:        cn.Spec.PortBindings[idx].HostIP,
+			ContainerPort: cn.Spec.PortBindings[idx].ContainerPort,
+			Protocol:      cn.Spec.PortBindings[idx].Protocol,
+		})
+	}
+	return ports
+}
+
+func (b builder) buildSpec(ssbuilder ShardingSphereDeploymentBuilder, cn *v1alpha1.ComputeNode) {
+	ssbuilder.SetSelectors(cn.Spec.Selector)
+	ssbuilder.SetReplicas(&cn.Spec.Replicas)
+
+	tpl := &corev1.PodTemplateSpec{}
+	tm := metadata.NewMetadataBuilder()
+	tm.SetLabels(cn.Labels)
+
+	ports := getContainerPortsFromComputeNode(cn)
+
+	scb := NewShardingSphereProxyContainerBuilder().
+		SetVersion(cn.Spec.ServerVersion).
+		SetPorts(ports).
+		SetResources(cn.Spec.Resources)
+
+	b.buildProbes(scb, cn)
+
+	vcb := NewSharedVolumeAndMountBuilder().
+		SetVolumeMountSize(1).
+		SetName(defaultConfigVolumeName).
+		SetVolumeSourceConfigMap(cn.Name).
+		SetMountPath(0, defaultConfigVolumeMountPath)
+	vc, vmc := vcb.Build()
+
+	ssbuilder.AppendVolumes([]corev1.Volume{
+		*vc,
+	})
+	scb.AppendVolumeMounts([]corev1.VolumeMount{*vmc[0]})
+
+	sc := scb.BuildContainer()
+	ssbuilder.AppendContainers([]corev1.Container{
+		*sc,
+	})
+
+	if enabled, ok := cn.Annotations[DefaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
+		ssbuilder.SetAgentBin(cn)
+	}
+
+	if cn.Spec.StorageNodeConnector != nil {
+		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypeMySQL {
+			ssbuilder.SetMySQLConnector(cn)
+		}
+	}
+
+	tpl.ObjectMeta = *tm.BuildMetadata()
+	tpl.Spec = *ssbuilder.BuildPodSpec()
+	ssbuilder.SetPodTemplateSpec(tpl)
+}
+
 // Build returns a new Deployment
-func (db builder) Build(ctx context.Context, cn *v1alpha1.ComputeNode) *appsv1.Deployment {
-	return NewDeployment(cn)
+func (b builder) Build(ctx context.Context, cn *v1alpha1.ComputeNode) *appsv1.Deployment {
+	ssbuilder := NewShardingSphereDeploymentBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
+
+	b.buildMetadata(ssbuilder, cn)
+	b.buildSpec(ssbuilder, cn)
+
+	return ssbuilder.BuildShardingSphereDeployment()
 }
