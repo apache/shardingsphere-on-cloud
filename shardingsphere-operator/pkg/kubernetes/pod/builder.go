@@ -25,10 +25,6 @@ import (
 // PodBuilder represents the configuration of a pod
 // nolint:unused
 type PodBuilder interface {
-	// SetName(name string) PodBuilder
-	// SetNamespace(namespace string) PodBuilder
-	// SetLabels(labels map[string]string) PodBuilder
-	// SetAnnotations(annos map[string]string) PodBuilder
 	metadata.MetadataBuilder
 	PodSpecBuilder
 	BuildPod() *corev1.Pod
@@ -44,7 +40,7 @@ type podBuilder struct {
 // NewPodBuilder returns a new pod builder
 func NewPodBuilder() PodBuilder {
 	return &podBuilder{
-		pod:             &corev1.Pod{},
+		pod:             DefauiltPod(),
 		MetadataBuilder: metadata.NewMetadataBuilder(),
 		PodSpecBuilder:  NewPodSpecBuilder(),
 	}
@@ -56,41 +52,15 @@ func (b *podBuilder) BuildPod() *corev1.Pod {
 	return b.pod
 }
 
-/*
-// SetName sets the name of the pod
-// nolint:unused
-func (b *podBuilder) SetName(name string) PodBuilder {
-	b.pod.Name = name
-	return b
-}
-
-// SetNamespace sets the namespace of the pod
-// nolint:unused
-func (b *podBuilder) SetNamespace(namespace string) PodBuilder {
-	b.pod.Namespace = namespace
-	return b
-}
-
-// SetLabels sets the labels of the pod
-// nolint:unused
-func (b *podBuilder) SetLabels(labels map[string]string) PodBuilder {
-	if b.pod.Labels == nil {
-		b.pod.Labels = map[string]string{}
+func DefauiltPod() *corev1.Pod {
+	return &corev1.Pod{
+		Spec: corev1.PodSpec{
+			InitContainers: []corev1.Container{},
+			Containers:     []corev1.Container{},
+			Volumes:        []corev1.Volume{},
+		},
 	}
-	b.pod.Labels = labels
-	return b
 }
-
-// SetAnnotations set the annotations of the pod
-// nolint:unused
-func (b *podBuilder) SetAnnotations(annos map[string]string) PodBuilder {
-	if b.pod.Annotations == nil {
-		b.pod.Annotations = map[string]string{}
-	}
-	b.pod.Annotations = annos
-	return b
-}
-*/
 
 type PodSpecBuilder interface {
 	SetVolumes(vs []corev1.Volume) PodSpecBuilder
@@ -113,7 +83,13 @@ type podSpecBuilder struct {
 }
 
 func NewPodSpecBuilder() PodSpecBuilder {
-	return &podSpecBuilder{}
+	return &podSpecBuilder{
+		spec: &corev1.PodSpec{
+			InitContainers: []corev1.Container{},
+			Containers:     []corev1.Container{},
+			Volumes:        []corev1.Volume{},
+		},
+	}
 }
 
 // SetVolumes sets the volumes
