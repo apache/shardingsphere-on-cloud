@@ -149,29 +149,19 @@ func NewBootstrapContainerBuilderForStartScripts() BootstrapContainerBuilder {
 
 // Build returns a Container
 func (b *bootstrapContainerBuilder) Build() *corev1.Container {
-	return b.ContainerBuilder.Build()
+	return b.ContainerBuilder.BuildContainer()
 }
 
 // DeploymentBuilder returns a deployment builder
 type DeploymentBuilder interface {
-	/*
-		SetName(name string) DeploymentBuilder
-		SetNamespace(namespace string) DeploymentBuilder
-		SetAnnotations(annos map[string]string) DeploymentBuilder
-	*/
-
 	metadata.MetadataBuilder
 	pod.PodSpecBuilder
 
-	// SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder
 	SetSelectors(selectors *metav1.LabelSelector) DeploymentBuilder
 	SetReplicas(r *int32) DeploymentBuilder
 
-	// SetPodTemplateLabels(labels map[string]string) DeploymentBuilder
-	// SetPodTemplateAnnotations(annos map[string]string) DeploymentBuilder
-	SetPodTemplateSpec(tpl *corev1.PodTemplateSpec) DeploymentBuilder
 	SetPodTemplateMetadata(obj *metav1.ObjectMeta) DeploymentBuilder
-	SetVolume(volume *corev1.Volume) DeploymentBuilder
+	SetPodTemplateSpec(tpl *corev1.PodTemplateSpec) DeploymentBuilder
 
 	BuildDeployment() *appsv1.Deployment
 }
@@ -191,38 +181,13 @@ type deploymentBuilder struct {
 	metadata.MetadataBuilder
 }
 
-/*
-// SetName sets Deployment name
-func (d *deploymentBuilder) SetName(name string) DeploymentBuilder {
-	d.deployment.Name = name
-	return d
-}
-
-// SetNamespace sets Deployment namespace
-func (d *deploymentBuilder) SetNamespace(namespace string) DeploymentBuilder {
-	d.deployment.Namespace = namespace
-	return d
-}
-*/
-
 // SetLabelsAndSelectors sets labels and selectors to Deployment labels, spec.selectors
 // and spec.template.labels
-// func (d *deploymentBuilder) SetLabelsAndSelectors(labels map[string]string, selectors *metav1.LabelSelector) DeploymentBuilder {
 func (d *deploymentBuilder) SetSelectors(selectors *metav1.LabelSelector) DeploymentBuilder {
-	// d.deployment.Labels = labels
 	d.deployment.Spec.Selector = selectors
-	// d.deployment.Spec.Template.Labels = labels
 
 	return d
 }
-
-/*
-// SetAnnotations sets Deployment annotations
-func (d *deploymentBuilder) SetAnnotations(annos map[string]string) DeploymentBuilder {
-	d.deployment.Annotations = annos
-	return d
-}
-*/
 
 // SetReplicas sets Deployment replicas
 func (d *deploymentBuilder) SetReplicas(r *int32) DeploymentBuilder {
@@ -254,23 +219,6 @@ func (d *deploymentBuilder) SetPodTemplateLabels(labels map[string]string) Deplo
 	return d
 }
 
-// SetVolume sets a volume for Deployment
-func (d *deploymentBuilder) SetVolume(vol *corev1.Volume) DeploymentBuilder {
-	if d.deployment.Spec.Template.Spec.Volumes == nil {
-		d.deployment.Spec.Template.Spec.Volumes = []corev1.Volume{*vol}
-	}
-
-	for idx := range d.deployment.Spec.Template.Spec.Volumes {
-		if d.deployment.Spec.Template.Spec.Volumes[idx].Name == vol.Name {
-			d.deployment.Spec.Template.Spec.Volumes[idx] = *vol
-			return d
-		}
-	}
-
-	d.deployment.Spec.Template.Spec.Volumes = append(d.deployment.Spec.Template.Spec.Volumes, *vol)
-	return d
-}
-
 // Build returns a Deployment
 func (d *deploymentBuilder) BuildDeployment() *appsv1.Deployment {
 	d.deployment.ObjectMeta = *d.MetadataBuilder.BuildMetadata()
@@ -280,12 +228,10 @@ func (d *deploymentBuilder) BuildDeployment() *appsv1.Deployment {
 type ShardingSphereDeploymentBuilder interface {
 	DeploymentBuilder
 
-	// FIXME: this should be refactored into PodBuilder
-	SetContainer(con *corev1.Container) ShardingSphereDeploymentBuilder
-	SetInitContainer(con *corev1.Container) ShardingSphereDeploymentBuilder
+	SetMySQLConnector(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
+	SetAgentBin(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
+	SetAgentScript(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
 
-	SetMySQLConnector(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
-	SetAgentBin(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
 	BuildShardingSphereDeployment() *appsv1.Deployment
 }
 
@@ -308,44 +254,22 @@ type shardingsphereDeploymentBuilder struct {
 	deployment *appsv1.Deployment
 }
 
-// SetShardingSphereProxyContainer sets a container for ShardingSphereProxy
-func (d *shardingsphereDeploymentBuilder) SetContainer(proxy *corev1.Container) ShardingSphereDeploymentBuilder {
-	if d.deployment.Spec.Template.Spec.Containers == nil {
-		d.deployment.Spec.Template.Spec.Containers = []corev1.Container{*proxy}
-	}
-
-	for idx := range d.deployment.Spec.Template.Spec.Containers {
-		if d.deployment.Spec.Template.Spec.Containers[idx].Name == defaultContainerName {
-			d.deployment.Spec.Template.Spec.Containers[idx] = *proxy
-			return d
-		}
-	}
-
-	d.deployment.Spec.Template.Spec.Containers = append(d.deployment.Spec.Template.Spec.Containers, *proxy)
-	return d
-}
-
-// SetInitContainer sets the a init container for bootstrapping
-func (d *shardingsphereDeploymentBuilder) SetInitContainer(init *corev1.Container) ShardingSphereDeploymentBuilder {
-	if d.deployment.Spec.Template.Spec.InitContainers == nil {
-		d.deployment.Spec.Template.Spec.InitContainers = []corev1.Container{}
-	}
-
-	for idx := range d.deployment.Spec.Template.Spec.InitContainers {
-		if d.deployment.Spec.Template.Spec.InitContainers[idx].Name == init.Name {
-			d.deployment.Spec.Template.Spec.InitContainers[idx] = *init
-			return d
-		}
-	}
-
-	d.deployment.Spec.Template.Spec.InitContainers = append(d.deployment.Spec.Template.Spec.InitContainers, *init)
-
-	return d
-}
-
 // SetMySQLConnector will set an init container to download mysql jar and mount files for proxy container.
-func (d *shardingsphereDeploymentBuilder) SetMySQLConnector(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder {
-	scb.AppendEnv([]corev1.EnvVar{
+func (d *shardingsphereDeploymentBuilder) SetMySQLConnector(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder {
+	proxy := d.FindContainerByName("shardingsphere-proxy")
+	proxy.AppendEnv([]corev1.EnvVar{
+		{
+			Name:  defaultMySQLDriverEnvName,
+			Value: cn.Spec.StorageNodeConnector.Version,
+		},
+	})
+
+	cb := d.FindInitContainerByName("download-mysql-jar")
+	if cb == nil {
+		cb = NewBootstrapContainerBuilderForMysqlJar()
+	}
+
+	cb.AppendEnv([]corev1.EnvVar{
 		{
 			Name:  defaultMySQLDriverEnvName,
 			Value: cn.Spec.StorageNodeConnector.Version,
@@ -359,93 +283,109 @@ func (d *shardingsphereDeploymentBuilder) SetMySQLConnector(scb common.Container
 		SetMountPath(0, defaultExtlibPath).
 		SetMountPath(1, absoluteMySQLDriverMountName(defaultExtlibPath, cn.Spec.StorageNodeConnector.Version)).
 		SetSubPath(1, relativeMySQLDriverMountName(cn.Spec.StorageNodeConnector.Version))
-
 	v, vms := vb.Build()
-	// d.SetVolume(v)
-	d.AppendVolumes([]corev1.Volume{
-		*v,
-	})
-	scb.SetVolumeMount(vms[1])
 
-	cb := NewBootstrapContainerBuilderForMysqlJar().SetVolumeMount(vms[0]).AppendEnv([]corev1.EnvVar{
-		{
-			Name:  defaultMySQLDriverEnvName,
-			Value: cn.Spec.StorageNodeConnector.Version,
-		},
-	})
-	con := cb.Build()
-	// d.SetInitContainer(con)
-	d.AppendInitContainers([]corev1.Container{
-		*con,
-	})
+	cb.AppendVolumeMounts([]corev1.VolumeMount{*vms[0]})
+	proxy.AppendVolumeMounts([]corev1.VolumeMount{*vms[1]})
 
-	sc := scb.Build()
-	// d.SetContainer(sc)
-	d.AppendContainers([]corev1.Container{
-		*sc,
-	})
+	d.UpdateContainerByName(*proxy.BuildContainer())
+	d.UpdateInitContainerByName(*cb.BuildContainer())
+	d.AppendVolumes([]corev1.Volume{*v})
 
 	return d
 }
 
 // SetAgentBin set `agent bin` for ShardingSphereProxy with [observability](https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/observability/)
-func (d *shardingsphereDeploymentBuilder) SetAgentBin(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder {
+func (d *shardingsphereDeploymentBuilder) SetAgentBin(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder {
 	// set env JAVA_TOOL_OPTIONS to proxy container, make sure proxy will apply agent-bin.jar
 	// agent-bin's version is always equals to shardingsphere proxy image's version
 
-	scb.AppendEnv([]corev1.EnvVar{
+	metricsAnnos := map[string]string{}
+	metricsAnnos[commonAnnotationPrometheusMetricsPath] = cn.Annotations[commonAnnotationPrometheusMetricsPath]
+	metricsAnnos[commonAnnotationPrometheusMetricsPort] = cn.Annotations[commonAnnotationPrometheusMetricsPort]
+	metricsAnnos[commonAnnotationPrometheusMetricsScrape] = cn.Annotations[commonAnnotationPrometheusMetricsScrape]
+	metricsAnnos[commonAnnotationPrometheusMetricsScheme] = cn.Annotations[commonAnnotationPrometheusMetricsScheme]
+
+	d.deployment.Spec.Template.Annotations = metricsAnnos
+
+	proxy := d.FindContainerByName("shardingsphere-proxy")
+	proxy.AppendEnv([]corev1.EnvVar{
 		{
 			Name:  defaultJavaToolOptionsName,
 			Value: fmt.Sprintf(defaultJavaAgentEnvValue, cn.Spec.ServerVersion),
 		},
 	})
 
-	// mount agent-bin dir
-	vbAgent := NewSharedVolumeAndMountBuilder().
-		SetVolumeMountSize(1).
-		SetName(defaultJavaAgentVolumeName).
-		SetVolumeSourceEmptyDir().
-		SetMountPath(0, defaultJavaAgentVolumeMountPath)
-	va, vma := vbAgent.Build()
-	// d.SetVolume(va)
-	d.AppendVolumes([]corev1.Volume{
-		*va,
-	})
-	scb.SetVolumeMount(vma[0])
-
-	// mount agent config to overwrite agent-bin's config
 	vbAgentConf := NewSharedVolumeAndMountBuilder().
 		SetVolumeMountSize(1).
 		SetName(defaultJavaAgentConfigVolumeName).
 		SetVolumeSourceConfigMap(cn.Name, corev1.KeyToPath{Key: configmap.ConfigDataKeyForAgent, Path: configmap.ConfigDataKeyForAgent}).
 		SetMountPath(0, defaultJavaAgentConfigVolumeMountPath)
 	vc, vmc := vbAgentConf.Build()
-	d.SetVolume(vc)
-	scb.SetVolumeMount(vmc[0])
 
-	cb := NewBootstrapContainerBuilderForAgentBin().SetVolumeMount(vma[0]).AppendEnv([]corev1.EnvVar{
-		{
-			Name:  defaultAgentBinVersionEnvName,
-			Value: cn.Spec.ServerVersion,
-		},
-	})
-	con := cb.Build()
-	// d.SetInitContainer(con)
-	d.AppendInitContainers([]corev1.Container{
-		*con,
+	vbAgent := NewSharedVolumeAndMountBuilder().
+		SetVolumeMountSize(1).
+		SetName(defaultJavaAgentVolumeName).
+		SetVolumeSourceEmptyDir().
+		SetMountPath(0, defaultJavaAgentVolumeMountPath)
+	va, vma := vbAgent.Build()
+
+	d.AppendVolumes([]corev1.Volume{*vc, *va})
+
+	cb := d.FindInitContainerByName("download-agent-bin-jar")
+	if cb == nil {
+		cb = NewBootstrapContainerBuilderForAgentBin()
+	}
+	cb.AppendVolumeMounts([]corev1.VolumeMount{*vma[0]}).
+		AppendEnv([]corev1.EnvVar{
+			{
+				Name:  defaultAgentBinVersionEnvName,
+				Value: cn.Spec.ServerVersion,
+			},
+		})
+
+	d.UpdateInitContainerByName(*cb.BuildContainer())
+
+	proxy.AppendVolumeMounts([]corev1.VolumeMount{*vmc[0], *vma[0]})
+
+	if cn.Spec.ServerVersion == "5.3.2" {
+		d.SetAgentScript(cn)
+	}
+	d.UpdateContainerByName(*proxy.BuildContainer())
+	return d
+}
+
+func (d *shardingsphereDeploymentBuilder) SetAgentScript(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder {
+	proxy := d.FindContainerByName("shardingsphere-proxy")
+
+	sv := NewSharedVolumeAndMountBuilder().
+		SetVolumeMountSize(1).
+		SetName("replace-start-script").
+		SetVolumeSourceEmptyDir().
+		SetMountPath(0, "/opt/shardingsphere-proxy/bin")
+	va, vma := sv.Build()
+	d.AppendVolumes([]corev1.Volume{
+		*va,
 	})
 
-	sc := scb.Build()
-	// d.SetContainer(sc)
-	d.AppendContainers([]corev1.Container{
-		*sc,
-	})
+	proxy.AppendVolumeMounts([]corev1.VolumeMount{*vma[0]})
 
+	// NOTE: This mountpath is not same with init container
+	vma[0].MountPath = "/opt/shardingsphere-proxy/tmpbin"
+
+	cb := d.FindInitContainerByName("replace-start-script")
+	if cb == nil {
+		cb = NewBootstrapContainerBuilderForStartScripts()
+	}
+	cb.AppendVolumeMounts([]corev1.VolumeMount{*vma[0]})
+
+	d.UpdateInitContainerByName(*cb.BuildContainer())
 	return d
 }
 
 func (d *shardingsphereDeploymentBuilder) BuildShardingSphereDeployment() *appsv1.Deployment {
 	dp := d.DeploymentBuilder.BuildDeployment()
+
 	return dp
 }
 
@@ -613,163 +553,6 @@ func setProbes(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) {
 	if cn.Spec.Probes.StartupProbe != nil {
 		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
 	}
-}
-
-func NewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
-	ssbuilder := NewShardingSphereDeploymentBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
-
-	// Deployment Metadata
-	ssbuilder.SetName(cn.Name).SetNamespace(cn.Namespace)
-	ssbuilder.SetLabels(cn.Labels).SetAnnotations(cn.Annotations)
-
-	// Deployment Spec
-	ssbuilder.SetSelectors(cn.Spec.Selector)
-	ssbuilder.SetReplicas(&cn.Spec.Replicas)
-
-	// DeploymentSpecPodTemplate
-	tpl := &corev1.PodTemplateSpec{}
-	tm := metadata.NewMetadataBuilder()
-	tm.SetLabels(cn.Labels)
-
-	ports := []corev1.ContainerPort{}
-	for idx := range cn.Spec.PortBindings {
-		ports = append(ports, corev1.ContainerPort{
-			Name:          cn.Spec.PortBindings[idx].Name,
-			HostIP:        cn.Spec.PortBindings[idx].HostIP,
-			ContainerPort: cn.Spec.PortBindings[idx].ContainerPort,
-			Protocol:      cn.Spec.PortBindings[idx].Protocol,
-		})
-	}
-	scb := NewShardingSphereProxyContainerBuilder().
-		SetVersion(cn.Spec.ServerVersion).
-		SetPorts(ports).
-		SetResources(cn.Spec.Resources)
-
-	setProbes(scb, cn)
-
-	vcb := NewSharedVolumeAndMountBuilder().
-		SetVolumeMountSize(1).
-		SetName(defaultConfigVolumeName).
-		SetVolumeSourceConfigMap(cn.Name).
-		SetMountPath(0, defaultConfigVolumeMountPath)
-	vc, vmc := vcb.Build()
-
-	ssbuilder.AppendVolumes([]corev1.Volume{
-		*vc,
-	})
-	scb.SetVolumeMount(vmc[0])
-
-	// set agent for proxy
-	if enabled, ok := cn.Annotations[DefaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
-		metricsAnnos := map[string]string{}
-		metricsAnnos[commonAnnotationPrometheusMetricsPath] = cn.Annotations[commonAnnotationPrometheusMetricsPath]
-		metricsAnnos[commonAnnotationPrometheusMetricsPort] = cn.Annotations[commonAnnotationPrometheusMetricsPort]
-		metricsAnnos[commonAnnotationPrometheusMetricsScrape] = cn.Annotations[commonAnnotationPrometheusMetricsScrape]
-		metricsAnnos[commonAnnotationPrometheusMetricsScheme] = cn.Annotations[commonAnnotationPrometheusMetricsScheme]
-
-		tm.SetAnnotations(metricsAnnos)
-
-		scb.AppendEnv([]corev1.EnvVar{
-			{
-				Name:  defaultJavaToolOptionsName,
-				Value: fmt.Sprintf(defaultJavaAgentEnvValue, cn.Spec.ServerVersion),
-			},
-		})
-
-		vbAgentConf := NewSharedVolumeAndMountBuilder().
-			SetVolumeMountSize(1).
-			SetName(defaultJavaAgentConfigVolumeName).
-			SetVolumeSourceConfigMap(cn.Name, corev1.KeyToPath{Key: configmap.ConfigDataKeyForAgent, Path: configmap.ConfigDataKeyForAgent}).
-			SetMountPath(0, defaultJavaAgentConfigVolumeMountPath)
-		vc, vmc := vbAgentConf.Build()
-
-		vbAgent := NewSharedVolumeAndMountBuilder().
-			SetVolumeMountSize(1).
-			SetName(defaultJavaAgentVolumeName).
-			SetVolumeSourceEmptyDir().
-			SetMountPath(0, defaultJavaAgentVolumeMountPath)
-		va, vma := vbAgent.Build()
-
-		ssbuilder.AppendVolumes([]corev1.Volume{*vc, *va})
-
-		cb := NewBootstrapContainerBuilderForAgentBin().
-			SetVolumeMount(vma[0]).
-			AppendEnv([]corev1.EnvVar{
-				{
-					Name:  defaultAgentBinVersionEnvName,
-					Value: cn.Spec.ServerVersion,
-				},
-			})
-		con := cb.Build()
-		ssbuilder.AppendInitContainers([]corev1.Container{*con})
-
-		scb.AppendVolumeMounts([]corev1.VolumeMount{*vmc[0], *vma[0]})
-
-		//TODO: 5.3.2
-		if cn.Spec.ServerVersion == "5.3.2" {
-			sv := NewSharedVolumeAndMountBuilder().
-				SetVolumeMountSize(1).
-				SetName("replace-start-script").
-				SetVolumeSourceEmptyDir().
-				SetMountPath(0, "/opt/shardingsphere-proxy/bin")
-			va, vma := sv.Build()
-			ssbuilder.AppendVolumes([]corev1.Volume{
-				*va,
-			})
-			scb.SetVolumeMount(vma[0])
-
-			// NOTE: This mountpath is not same with init container
-			vma[0].MountPath = "/opt/shardingsphere-proxy/tmpbin"
-			cb := NewBootstrapContainerBuilderForStartScripts().SetVolumeMount(vma[0])
-			con := cb.Build()
-			ssbuilder.AppendInitContainers([]corev1.Container{
-				*con,
-			})
-		}
-	}
-
-	if cn.Spec.StorageNodeConnector != nil {
-		if cn.Spec.StorageNodeConnector.Type == v1alpha1.ConnectorTypeMySQL {
-			scb.AppendEnv([]corev1.EnvVar{
-				{
-					Name:  defaultMySQLDriverEnvName,
-					Value: cn.Spec.StorageNodeConnector.Version,
-				},
-			})
-			cb := NewBootstrapContainerBuilderForMysqlJar().
-				AppendEnv([]corev1.EnvVar{
-					{
-						Name:  defaultMySQLDriverEnvName,
-						Value: cn.Spec.StorageNodeConnector.Version,
-					},
-				})
-
-			vb := NewSharedVolumeAndMountBuilder().
-				SetVolumeMountSize(2).
-				SetName(defaultMySQLDriverVolumeName).
-				SetVolumeSourceEmptyDir().
-				SetMountPath(0, defaultExtlibPath).
-				SetMountPath(1, absoluteMySQLDriverMountName(defaultExtlibPath, cn.Spec.StorageNodeConnector.Version)).
-				SetSubPath(1, relativeMySQLDriverMountName(cn.Spec.StorageNodeConnector.Version))
-			v, vms := vb.Build()
-			cb.AppendVolumeMounts([]corev1.VolumeMount{*vms[0]})
-			scb.AppendVolumeMounts([]corev1.VolumeMount{*vms[1]})
-			c := cb.Build()
-			ssbuilder.AppendInitContainers([]corev1.Container{*c})
-			ssbuilder.AppendVolumes([]corev1.Volume{*v})
-		}
-	}
-
-	sc := scb.Build()
-	ssbuilder.AppendContainers([]corev1.Container{
-		*sc,
-	})
-
-	tpl.ObjectMeta = *tm.BuildMetadata()
-	tpl.Spec = *ssbuilder.BuildPodSpec()
-	ssbuilder.SetPodTemplateSpec(tpl)
-
-	return ssbuilder.BuildShardingSphereDeployment()
 }
 
 // DefaultDeployment describes the default deployment
