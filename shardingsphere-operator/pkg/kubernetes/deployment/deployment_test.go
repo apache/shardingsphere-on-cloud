@@ -433,7 +433,7 @@ func Test_NewDeployment(t *testing.T) {
 func assertObjectMeta(t *testing.T, exp, act metav1.ObjectMeta) bool {
 	return assert.Equal(t, exp.Name, act.Name, "name should be equal") &&
 		assert.Equal(t, exp.Namespace, act.Namespace, "namespace should be equal") &&
-		assert.Equal(t, exp.Labels, act.Labels, "labels should be equal")
+		assert.EqualValues(t, exp.Labels, act.Labels, "labels should be equal")
 }
 
 func assertDeploymentSpec(t *testing.T, exp, act appsv1.DeploymentSpec) bool {
@@ -455,6 +455,7 @@ func assertTemplateSpec(t *testing.T, exp, act corev1.PodTemplateSpec) bool {
 
 func assertPodSpec(t *testing.T, exp, act corev1.PodSpec) bool {
 	return assert.ElementsMatch(t, exp.InitContainers, act.InitContainers, "init containers should be equal") &&
+		// return assertContainers(t, exp.InitContainers, act.InitContainers, "init containers should be equal") &&
 		// assert.ElementsMatch(t, exp.Containers, act.Containers, "containers should be equal") &&
 		assertContainers(t, exp.Containers, act.Containers, "containers should be equal") &&
 		assert.ElementsMatch(t, exp.Volumes, act.Volumes, "volumes should be equal")
