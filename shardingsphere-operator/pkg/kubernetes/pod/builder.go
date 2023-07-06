@@ -19,7 +19,9 @@ package pod
 
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/metadata"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // PodBuilder represents the configuration of a pod
@@ -40,19 +42,21 @@ type podBuilder struct {
 // NewPodBuilder returns a new pod builder
 func NewPodBuilder() PodBuilder {
 	return &podBuilder{
-		pod:             DefauiltPod(),
+		pod:             DefaultPod(),
 		MetadataBuilder: metadata.NewMetadataBuilder(),
 		PodSpecBuilder:  NewPodSpecBuilder(),
 	}
 }
 
+// BuildPod creates a new pod
 func (b *podBuilder) BuildPod() *corev1.Pod {
 	b.pod.ObjectMeta = *b.BuildMetadata()
 	b.pod.Spec = *b.BuildPodSpec()
 	return b.pod
 }
 
-func DefauiltPod() *corev1.Pod {
+// DefaultPod returns a default pod
+func DefaultPod() *corev1.Pod {
 	return &corev1.Pod{
 		Spec: corev1.PodSpec{
 			InitContainers: []corev1.Container{},
@@ -62,14 +66,20 @@ func DefauiltPod() *corev1.Pod {
 	}
 }
 
+// PodSpecBuilder build PodSpec
 type PodSpecBuilder interface {
 	SetVolumes(vs []corev1.Volume) PodSpecBuilder
+	UpdateVolumeByName(v corev1.Volume) PodSpecBuilder
 	AppendVolumes(vs []corev1.Volume) PodSpecBuilder
 
 	SetInitContainers(cs []corev1.Container) PodSpecBuilder
+	UpdateInitContainerByName(c corev1.Container) PodSpecBuilder
+	FindInitContainerByName(name string) common.ContainerBuilder
 	AppendInitContainers(cs []corev1.Container) PodSpecBuilder
 
 	SetContainers(cs []corev1.Container) PodSpecBuilder
+	UpdateContainerByName(c corev1.Container) PodSpecBuilder
+	FindContainerByName(name string) common.ContainerBuilder
 	AppendContainers(cs []corev1.Container) PodSpecBuilder
 
 	SetTerminationGracePeriodSeconds(secs *int64) PodSpecBuilder
@@ -82,6 +92,7 @@ type podSpecBuilder struct {
 	spec *corev1.PodSpec
 }
 
+// NewPodSpecBuilder returns a PodSpecBuilder
 func NewPodSpecBuilder() PodSpecBuilder {
 	return &podSpecBuilder{
 		spec: &corev1.PodSpec{
@@ -114,6 +125,22 @@ func (b *podSpecBuilder) AppendVolumes(vs []corev1.Volume) PodSpecBuilder {
 	return b
 }
 
+// UpdateVolumeByName updates the volume by name
+func (b *podSpecBuilder) UpdateVolumeByName(vol corev1.Volume) PodSpecBuilder {
+	if b.spec.Volumes == nil {
+		b.spec.Volumes = []v1.Volume{vol}
+	} else {
+		for idx := range b.spec.Volumes {
+			if b.spec.Volumes[idx].Name == vol.Name {
+				b.spec.Volumes[idx] = vol
+				return b
+			}
+		}
+		b.spec.Volumes = append(b.spec.Volumes, vol)
+	}
+	return b
+}
+
 // SetInintContainers sets the int containers to the container
 // nolint:unused
 func (b *podSpecBuilder) SetInitContainers(cs []corev1.Container) PodSpecBuilder {
@@ -134,6 +161,32 @@ func (b *podSpecBuilder) AppendInitContainers(cs []corev1.Container) PodSpecBuil
 	return b
 }
 
+// FindInitContainerByName returns a builder for this init container
+func (b *podSpecBuilder) FindInitContainerByName(name string) common.ContainerBuilder {
+	for idx := range b.spec.InitContainers {
+		if b.spec.InitContainers[idx].Name == name {
+			return common.NewContainerBuilderFromContainer(&b.spec.InitContainers[idx])
+		}
+	}
+	return nil
+}
+
+// UpdateInitContainerByName will add or update the container with the specified name
+func (b *podSpecBuilder) UpdateInitContainerByName(c corev1.Container) PodSpecBuilder {
+	if b.spec.InitContainers == nil {
+		b.spec.InitContainers = []v1.Container{c}
+	} else {
+		for idx := range b.spec.InitContainers {
+			if b.spec.InitContainers[idx].Name == c.Name {
+				b.spec.InitContainers[idx] = c
+				return b
+			}
+		}
+		b.spec.InitContainers = append(b.spec.InitContainers, c)
+	}
+	return b
+}
+
 // SetContainer set the container to the pod
 // nolint:unused
 func (b *podSpecBuilder) SetContainers(cs []corev1.Container) PodSpecBuilder {
@@ -151,6 +204,32 @@ func (b *podSpecBuilder) AppendContainers(cs []corev1.Container) PodSpecBuilder 
 		b.spec.Containers = cs
 	}
 	b.spec.Containers = append(b.spec.Containers, cs...)
+	return b
+}
+
+// FindContainerByName returns a builder for this container
+func (b *podSpecBuilder) FindContainerByName(name string) common.ContainerBuilder {
+	for idx := range b.spec.Containers {
+		if b.spec.Containers[idx].Name == name {
+			return common.NewContainerBuilderFromContainer(&b.spec.Containers[idx])
+		}
+	}
+	return nil
+}
+
+// UpdateContainerByName will add or update the container with the specified name
+func (b *podSpecBuilder) UpdateContainerByName(c corev1.Container) PodSpecBuilder {
+	if b.spec.Containers == nil {
+		b.spec.Containers = []v1.Container{c}
+	} else {
+		for idx := range b.spec.Containers {
+			if b.spec.Containers[idx].Name == c.Name {
+				b.spec.Containers[idx] = c
+				return b
+			}
+		}
+		b.spec.Containers = append(b.spec.Containers, c)
+	}
 	return b
 }
 
