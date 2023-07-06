@@ -288,8 +288,8 @@ func (d *shardingsphereDeploymentBuilder) SetMySQLConnector(cn *v1alpha1.Compute
 	cb.AppendVolumeMounts([]corev1.VolumeMount{*vms[0]})
 	proxy.AppendVolumeMounts([]corev1.VolumeMount{*vms[1]})
 
-	d.UpdateContainerByName(*proxy.BuildContainer())
-	d.UpdateInitContainerByName(*cb.BuildContainer())
+	d.UpdateContainerByName(proxy.BuildContainer())
+	d.UpdateInitContainerByName(cb.BuildContainer())
 	d.AppendVolumes([]corev1.Volume{*v})
 
 	return d
@@ -344,14 +344,14 @@ func (d *shardingsphereDeploymentBuilder) SetAgentBin(cn *v1alpha1.ComputeNode) 
 			},
 		})
 
-	d.UpdateInitContainerByName(*cb.BuildContainer())
+	d.UpdateInitContainerByName(cb.BuildContainer())
 
 	proxy.AppendVolumeMounts([]corev1.VolumeMount{*vmc[0], *vma[0]})
 
 	if cn.Spec.ServerVersion == "5.3.2" {
 		d.SetAgentScript(cn)
 	}
-	d.UpdateContainerByName(*proxy.BuildContainer())
+	d.UpdateContainerByName(proxy.BuildContainer())
 	return d
 }
 
@@ -379,7 +379,7 @@ func (d *shardingsphereDeploymentBuilder) SetAgentScript(cn *v1alpha1.ComputeNod
 	}
 	cb.AppendVolumeMounts([]corev1.VolumeMount{*vma[0]})
 
-	d.UpdateInitContainerByName(*cb.BuildContainer())
+	d.UpdateInitContainerByName(cb.BuildContainer())
 	return d
 }
 
@@ -537,22 +537,6 @@ func (b *volumeAndMountBuilder) SetVolumeSourceConfigMap(name string) VolumeAndM
 // Build builds a Volume and VolumeMount
 func (b *volumeAndMountBuilder) Build() (*corev1.Volume, *corev1.VolumeMount) {
 	return b.volume, b.volumemount
-}
-
-func setProbes(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) {
-	if cn.Spec.Probes == nil {
-		return
-	}
-
-	if cn.Spec.Probes.LivenessProbe != nil {
-		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
-	}
-	if cn.Spec.Probes.ReadinessProbe != nil {
-		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
-	}
-	if cn.Spec.Probes.StartupProbe != nil {
-		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
-	}
 }
 
 // DefaultDeployment describes the default deployment

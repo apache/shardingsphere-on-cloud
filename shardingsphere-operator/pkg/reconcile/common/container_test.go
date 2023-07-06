@@ -227,7 +227,7 @@ func TestContainerBuilder_SetVolumeMount(t *testing.T) {
 		Name:      "test-mount",
 		MountPath: "/new-test",
 	}
-	c.UpdateVolumeMountByName(*updatedMount)
+	c.UpdateVolumeMountByName(updatedMount)
 
 	// check if the volume mount has been updated
 	for _, v := range c.container.VolumeMounts {

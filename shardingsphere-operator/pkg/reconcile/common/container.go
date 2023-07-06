@@ -34,7 +34,7 @@ type ContainerBuilder interface {
 	AppendEnv(envs []v1.EnvVar) ContainerBuilder
 	SetCommand(cmds []string) ContainerBuilder
 	SetArgs(args []string) ContainerBuilder
-	UpdateVolumeMountByName(mount v1.VolumeMount) ContainerBuilder
+	UpdateVolumeMountByName(mount *v1.VolumeMount) ContainerBuilder
 	SetVolumeMounts(mounts []v1.VolumeMount) ContainerBuilder
 	AppendVolumeMounts(mounts []v1.VolumeMount) ContainerBuilder
 	BuildContainer() *v1.Container
@@ -163,17 +163,17 @@ func (c *containerBuilder) SetArgs(args []string) ContainerBuilder {
 }
 
 // SetVolumeMount set the mount point of the container
-func (c *containerBuilder) UpdateVolumeMountByName(mount v1.VolumeMount) ContainerBuilder {
+func (c *containerBuilder) UpdateVolumeMountByName(mount *v1.VolumeMount) ContainerBuilder {
 	if c.container.VolumeMounts == nil {
-		c.container.VolumeMounts = []v1.VolumeMount{mount}
+		c.container.VolumeMounts = []v1.VolumeMount{*mount}
 	} else {
 		for idx := range c.container.VolumeMounts {
 			if c.container.VolumeMounts[idx].Name == mount.Name {
-				c.container.VolumeMounts[idx] = mount
+				c.container.VolumeMounts[idx] = *mount
 				return c
 			}
 		}
-		c.container.VolumeMounts = append(c.container.VolumeMounts, mount)
+		c.container.VolumeMounts = append(c.container.VolumeMounts, *mount)
 	}
 
 	return c

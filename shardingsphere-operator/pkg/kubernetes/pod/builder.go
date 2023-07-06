@@ -21,7 +21,6 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/metadata"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 )
 
 // PodBuilder represents the configuration of a pod
@@ -69,16 +68,16 @@ func DefaultPod() *corev1.Pod {
 // PodSpecBuilder build PodSpec
 type PodSpecBuilder interface {
 	SetVolumes(vs []corev1.Volume) PodSpecBuilder
-	UpdateVolumeByName(v corev1.Volume) PodSpecBuilder
+	UpdateVolumeByName(v *corev1.Volume) PodSpecBuilder
 	AppendVolumes(vs []corev1.Volume) PodSpecBuilder
 
 	SetInitContainers(cs []corev1.Container) PodSpecBuilder
-	UpdateInitContainerByName(c corev1.Container) PodSpecBuilder
+	UpdateInitContainerByName(c *corev1.Container) PodSpecBuilder
 	FindInitContainerByName(name string) common.ContainerBuilder
 	AppendInitContainers(cs []corev1.Container) PodSpecBuilder
 
 	SetContainers(cs []corev1.Container) PodSpecBuilder
-	UpdateContainerByName(c corev1.Container) PodSpecBuilder
+	UpdateContainerByName(c *corev1.Container) PodSpecBuilder
 	FindContainerByName(name string) common.ContainerBuilder
 	AppendContainers(cs []corev1.Container) PodSpecBuilder
 
@@ -126,17 +125,17 @@ func (b *podSpecBuilder) AppendVolumes(vs []corev1.Volume) PodSpecBuilder {
 }
 
 // UpdateVolumeByName updates the volume by name
-func (b *podSpecBuilder) UpdateVolumeByName(vol corev1.Volume) PodSpecBuilder {
+func (b *podSpecBuilder) UpdateVolumeByName(vol *corev1.Volume) PodSpecBuilder {
 	if b.spec.Volumes == nil {
-		b.spec.Volumes = []v1.Volume{vol}
+		b.spec.Volumes = []corev1.Volume{*vol}
 	} else {
 		for idx := range b.spec.Volumes {
 			if b.spec.Volumes[idx].Name == vol.Name {
-				b.spec.Volumes[idx] = vol
+				b.spec.Volumes[idx] = *vol
 				return b
 			}
 		}
-		b.spec.Volumes = append(b.spec.Volumes, vol)
+		b.spec.Volumes = append(b.spec.Volumes, *vol)
 	}
 	return b
 }
@@ -172,17 +171,17 @@ func (b *podSpecBuilder) FindInitContainerByName(name string) common.ContainerBu
 }
 
 // UpdateInitContainerByName will add or update the container with the specified name
-func (b *podSpecBuilder) UpdateInitContainerByName(c corev1.Container) PodSpecBuilder {
+func (b *podSpecBuilder) UpdateInitContainerByName(c *corev1.Container) PodSpecBuilder {
 	if b.spec.InitContainers == nil {
-		b.spec.InitContainers = []v1.Container{c}
+		b.spec.InitContainers = []corev1.Container{*c}
 	} else {
 		for idx := range b.spec.InitContainers {
 			if b.spec.InitContainers[idx].Name == c.Name {
-				b.spec.InitContainers[idx] = c
+				b.spec.InitContainers[idx] = *c
 				return b
 			}
 		}
-		b.spec.InitContainers = append(b.spec.InitContainers, c)
+		b.spec.InitContainers = append(b.spec.InitContainers, *c)
 	}
 	return b
 }
@@ -218,17 +217,17 @@ func (b *podSpecBuilder) FindContainerByName(name string) common.ContainerBuilde
 }
 
 // UpdateContainerByName will add or update the container with the specified name
-func (b *podSpecBuilder) UpdateContainerByName(c corev1.Container) PodSpecBuilder {
+func (b *podSpecBuilder) UpdateContainerByName(c *corev1.Container) PodSpecBuilder {
 	if b.spec.Containers == nil {
-		b.spec.Containers = []v1.Container{c}
+		b.spec.Containers = []corev1.Container{*c}
 	} else {
 		for idx := range b.spec.Containers {
 			if b.spec.Containers[idx].Name == c.Name {
-				b.spec.Containers[idx] = c
+				b.spec.Containers[idx] = *c
 				return b
 			}
 		}
-		b.spec.Containers = append(b.spec.Containers, c)
+		b.spec.Containers = append(b.spec.Containers, *c)
 	}
 	return b
 }
