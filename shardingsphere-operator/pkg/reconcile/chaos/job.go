@@ -104,10 +104,11 @@ func NewJob(ssChaos *v1alpha1.Chaos, requirement JobType) (*v1.Job, error) {
 	cbd := common.NewContainerBuilder()
 	cbd.SetImage(DefaultImageName)
 	cbd.SetName(DefaultContainerName)
-	cbd.SetVolumeMount(vm)
+	// cbd.SetVolumeMount(vm)
+	cbd.AppendVolumeMounts([]corev1.VolumeMount{*vm})
 	cbd.SetCommand([]string{"sh", "-c"})
 
-	container := cbd.Build()
+	container := cbd.BuildContainer()
 	container.Args = NewCmds(requirement)
 	jbd.SetContainers(container)
 
