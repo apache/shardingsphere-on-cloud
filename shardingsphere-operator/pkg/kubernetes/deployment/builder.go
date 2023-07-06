@@ -21,9 +21,9 @@ import (
 	"fmt"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/container"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/metadata"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/pod"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -80,14 +80,14 @@ func absoluteMySQLDriverMountName(p, v string) string {
 // and several different Proxy related attributes
 type ShardingSphereProxyContainerBuilder interface {
 	// A default container builder
-	common.ContainerBuilder
+	container.ContainerBuilder
 
 	// set the version of ShardingSphere Proxy
 	SetVersion(version string) ShardingSphereProxyContainerBuilder
 }
 
 type shardingSphereProxyContainerBuilder struct {
-	common.ContainerBuilder
+	container.ContainerBuilder
 }
 
 // SetVersion sets the version of ShardingSphere Proxy
@@ -100,7 +100,7 @@ func (c *shardingSphereProxyContainerBuilder) SetVersion(version string) Shardin
 // This will set default container name
 func NewShardingSphereProxyContainerBuilder() ShardingSphereProxyContainerBuilder {
 	return &shardingSphereProxyContainerBuilder{
-		ContainerBuilder: common.NewContainerBuilder().
+		ContainerBuilder: container.NewContainerBuilder().
 			SetName(defaultContainerName),
 	}
 }
@@ -108,18 +108,18 @@ func NewShardingSphereProxyContainerBuilder() ShardingSphereProxyContainerBuilde
 // BootstrapContainerBuilder returns a Container for initialization
 // The container will handle initilialization in Pod's InitContainer
 type BootstrapContainerBuilder interface {
-	common.ContainerBuilder
+	container.ContainerBuilder
 }
 
 type bootstrapContainerBuilder struct {
-	common.ContainerBuilder
+	container.ContainerBuilder
 }
 
 // NewBootstrapContainerBuilderForMysqlJar will return a builder for MysqlJar download container
 // This will set the default container name, image and commands
 func NewBootstrapContainerBuilderForMysqlJar() BootstrapContainerBuilder {
 	return &bootstrapContainerBuilder{
-		ContainerBuilder: common.NewContainerBuilder().
+		ContainerBuilder: container.NewContainerBuilder().
 			SetName("download-mysql-jar").
 			SetImage("busybox:1.36").
 			SetCommand([]string{"/bin/sh", "-c", downloadMysqlJarScript}),
@@ -130,7 +130,7 @@ func NewBootstrapContainerBuilderForMysqlJar() BootstrapContainerBuilder {
 // This will set the default container name, image and commands
 func NewBootstrapContainerBuilderForAgentBin() BootstrapContainerBuilder {
 	return &bootstrapContainerBuilder{
-		ContainerBuilder: common.NewContainerBuilder().
+		ContainerBuilder: container.NewContainerBuilder().
 			SetName("download-agent-bin-jar").
 			SetImage("busybox:1.36").
 			SetCommand([]string{"/bin/sh", "-c", downloadAgentJarScript}),
@@ -140,7 +140,7 @@ func NewBootstrapContainerBuilderForAgentBin() BootstrapContainerBuilder {
 // NewBootstrapContainerBuilderForStartScript will return a builder for ShardingSphere-Proxy modify container start.sh
 func NewBootstrapContainerBuilderForStartScripts() BootstrapContainerBuilder {
 	return &bootstrapContainerBuilder{
-		ContainerBuilder: common.NewContainerBuilder().
+		ContainerBuilder: container.NewContainerBuilder().
 			SetName("replace-start-script").
 			SetImage(fmt.Sprintf("%s:%s", defaultImageName, "5.3.2")).
 			SetCommand([]string{"/bin/sh", "-c", replaceStartScript}),

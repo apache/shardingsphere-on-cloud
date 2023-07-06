@@ -21,8 +21,8 @@ import (
 	"context"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/container"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/metadata"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -105,7 +105,7 @@ type Builder interface {
 
 type builder struct{}
 
-func (b builder) buildProbes(scb common.ContainerBuilder, cn *v1alpha1.ComputeNode) {
+func (b builder) buildProbes(scb container.ContainerBuilder, cn *v1alpha1.ComputeNode) {
 	if cn.Spec.Probes == nil {
 		return
 	}
