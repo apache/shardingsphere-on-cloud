@@ -35,6 +35,7 @@ type ContainerBuilder interface {
 	SetCommand(cmds []string) ContainerBuilder
 	SetArgs(args []string) ContainerBuilder
 	SetVolumeMount(mount *v1.VolumeMount) ContainerBuilder
+	AppendVolumeMounts(mounts []v1.VolumeMount) ContainerBuilder
 	Build() *v1.Container
 }
 
@@ -167,6 +168,15 @@ func (c *containerBuilder) SetVolumeMount(mount *v1.VolumeMount) ContainerBuilde
 		c.container.VolumeMounts = append(c.container.VolumeMounts, *mount)
 	}
 
+	return c
+}
+
+func (c *containerBuilder) AppendVolumeMounts(mounts []v1.VolumeMount) ContainerBuilder {
+	if c.container.VolumeMounts == nil {
+		c.container.VolumeMounts = []v1.VolumeMount{}
+	}
+
+	c.container.VolumeMounts = append(c.container.VolumeMounts, mounts...)
 	return c
 }
 
