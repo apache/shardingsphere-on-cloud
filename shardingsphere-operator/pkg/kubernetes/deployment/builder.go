@@ -24,7 +24,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -263,67 +262,4 @@ func (b *volumeAndMountBuilder) SetVolumeSourceConfigMap(name string) VolumeAndM
 // Build builds a Volume and VolumeMount
 func (b *volumeAndMountBuilder) Build() (*corev1.Volume, *corev1.VolumeMount) {
 	return b.volume, b.volumemount
-}
-
-// DefaultDeployment describes the default deployment
-func DefaultDeployment(meta metav1.Object, gvk schema.GroupVersionKind) *appsv1.Deployment {
-	defaultMaxUnavailable := intstr.FromInt(0)
-	defaultMaxSurge := intstr.FromInt(3)
-
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "shardingsphere-proxy",
-			Namespace:   "default",
-			Labels:      map[string]string{},
-			Annotations: map[string]string{},
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(meta, gvk),
-			},
-		},
-		Spec: appsv1.DeploymentSpec{
-			Strategy: appsv1.DeploymentStrategy{
-				Type: appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{
-					MaxUnavailable: &defaultMaxUnavailable,
-					MaxSurge:       &defaultMaxSurge,
-				},
-			},
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      map[string]string{},
-					Annotations: map[string]string{},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:            "busybox",
-							Image:           "busybox:1.36",
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "busybox-config",
-									MountPath: "busybox-vm",
-								},
-							},
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "busybox-config",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "busybox-config-ref",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
 }
