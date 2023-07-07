@@ -33,66 +33,40 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-const (
-	defaultExtlibPath            = "/opt/shardingsphere-proxy/ext-lib"
-	defaultImageName             = "apache/shardingsphere-proxy"
-	defaultImage                 = "apache/shardingsphere-proxy:5.3.0"
-	defaultContainerName         = "shardingsphere-proxy"
-	defaultConfigVolumeName      = "shardingsphere-proxy-config"
-	defaultConfigVolumeMountPath = "/opt/shardingsphere-proxy/conf"
-	defaultMySQLDriverEnvName    = "MYSQL_CONNECTOR_VERSION"
-	defaultMySQLDriverVolumeName = "mysql-connector-java"
+// Build returns a new Deployment
+func (b builder) BuildDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) *appsv1.Deployment {
+	ssbuilder := NewShardingSphereDeploymentBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
 
-	DefaultAnnotationJavaAgentEnabled       = "shardingsphere.apache.org/java-agent-enabled"
-	commonAnnotationPrometheusMetricsPath   = "prometheus.io/path"
-	commonAnnotationPrometheusMetricsPort   = "prometheus.io/port"
-	commonAnnotationPrometheusMetricsScrape = "prometheus.io/scrape"
-	commonAnnotationPrometheusMetricsScheme = "prometheus.io/scheme"
+	b.buildMetadata(ssbuilder, cn)
+	b.buildSpec(ssbuilder, cn)
 
-	defaultJavaAgentVolumeName            = "java-agent-bin"
-	defaultJavaAgentVolumeMountPath       = "/opt/shardingsphere-proxy/agent"
-	defaultJavaAgentConfigVolumeName      = "java-agent-config"
-	defaultJavaAgentConfigVolumeMountPath = "/opt/shardingsphere-proxy/agent/conf"
-	defaultJavaToolOptionsName            = "JAVA_TOOL_OPTIONS"
-	defaultJavaAgentEnvValue              = "-javaagent:/opt/shardingsphere-proxy/agent/shardingsphere-agent-%s.jar"
-	defaultAgentBinVersionEnvName         = "AGENT_BIN_VERSION"
-
-	downloadMysqlJarScript = `wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar;
- wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5;
- if [ $(md5sum /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar.md5) ];
- then echo success;
- else echo failed;exit 1;fi;mv /mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar /opt/shardingsphere-proxy/ext-lib`
-	downloadAgentJarScript = `wget https://archive.apache.org/dist/shardingsphere/${AGENT_BIN_VERSION}/apache-shardingsphere-${AGENT_BIN_VERSION}-shardingsphere-agent-bin.tar.gz;
- tar -zxvf apache-shardingsphere-${AGENT_BIN_VERSION}-shardingsphere-agent-bin.tar.gz -C /opt/shardingsphere-proxy/agent --strip-component 1;`
-	replaceStartScript = `sed -i 's#exec \$JAVA \${JAVA_OPTS} \${JAVA_MEM_OPTS} -classpath \${CLASS_PATH} \${MAIN_CLASS}#exec \$JAVA \${JAVA_OPTS} \${JAVA_MEM_OPTS} -classpath \${CLASS_PATH} \${AGENT_PARAM} \${MAIN_CLASS}#g' /opt/shardingsphere-proxy/bin/start.sh;
-	cp /opt/shardingsphere-proxy/bin/start.sh /opt/shardingsphere-proxy/tmpbin/start.sh;`
-)
-
-// Builder build Deployment from given ComputeNode
-type Builder interface {
-	Build(context.Context, *v1alpha1.ComputeNode) *appsv1.Deployment
+	return ssbuilder.BuildShardingSphereDeployment()
 }
 
-func NewBuilder() Builder {
-	return &builder{}
+type ShardingSphereDeploymentBuilder interface {
+	deployment.DeploymentBuilder
+
+	SetMySQLConnector(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
+	SetAgentBin(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
+	SetAgentScript(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
+
+	BuildShardingSphereDeployment() *appsv1.Deployment
 }
 
-type builder struct{}
+// NewShardingSphereDeploymentBuilder creates a new ShardingSphereDeploymentBuilder
+func NewShardingSphereDeploymentBuilder(meta metav1.Object, gvk schema.GroupVersionKind) ShardingSphereDeploymentBuilder {
+	db := deployment.NewDeploymentBuilder()
+	dp := db.BuildDeployment()
 
-func (b builder) buildProbes(scb container.ContainerBuilder, cn *v1alpha1.ComputeNode) {
-	if cn.Spec.Probes == nil {
-		return
+	return &shardingsphereDeploymentBuilder{
+		DeploymentBuilder: db,
+		deployment:        dp,
 	}
+}
 
-	if cn.Spec.Probes.LivenessProbe != nil {
-		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
-	}
-	if cn.Spec.Probes.ReadinessProbe != nil {
-		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
-	}
-	if cn.Spec.Probes.StartupProbe != nil {
-		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
-	}
+type shardingsphereDeploymentBuilder struct {
+	deployment.DeploymentBuilder
+	deployment *appsv1.Deployment
 }
 
 func (b builder) buildMetadata(ssbuilder ShardingSphereDeploymentBuilder, cn *v1alpha1.ComputeNode) {
@@ -100,19 +74,6 @@ func (b builder) buildMetadata(ssbuilder ShardingSphereDeploymentBuilder, cn *v1
 		SetNamespace(cn.Namespace).
 		SetLabels(cn.Labels).
 		SetAnnotations(cn.Annotations)
-}
-
-func getContainerPortsFromComputeNode(cn *v1alpha1.ComputeNode) []corev1.ContainerPort {
-	ports := []corev1.ContainerPort{}
-	for idx := range cn.Spec.PortBindings {
-		ports = append(ports, corev1.ContainerPort{
-			Name:          cn.Spec.PortBindings[idx].Name,
-			HostIP:        cn.Spec.PortBindings[idx].HostIP,
-			ContainerPort: cn.Spec.PortBindings[idx].ContainerPort,
-			Protocol:      cn.Spec.PortBindings[idx].Protocol,
-		})
-	}
-	return ports
 }
 
 func (b builder) buildSpec(ssbuilder ShardingSphereDeploymentBuilder, cn *v1alpha1.ComputeNode) {
@@ -165,41 +126,20 @@ func (b builder) buildSpec(ssbuilder ShardingSphereDeploymentBuilder, cn *v1alph
 	ssbuilder.SetPodTemplateSpec(tpl)
 }
 
-// Build returns a new Deployment
-func (b builder) Build(ctx context.Context, cn *v1alpha1.ComputeNode) *appsv1.Deployment {
-	ssbuilder := NewShardingSphereDeploymentBuilder(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind())
-
-	b.buildMetadata(ssbuilder, cn)
-	b.buildSpec(ssbuilder, cn)
-
-	return ssbuilder.BuildShardingSphereDeployment()
-}
-
-type ShardingSphereDeploymentBuilder interface {
-	deployment.DeploymentBuilder
-
-	SetMySQLConnector(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
-	SetAgentBin(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
-	SetAgentScript(cn *v1alpha1.ComputeNode) ShardingSphereDeploymentBuilder
-
-	BuildShardingSphereDeployment() *appsv1.Deployment
-}
-
-// NewShardingSphereDeploymentBuilder creates a new ShardingSphereDeploymentBuilder
-func NewShardingSphereDeploymentBuilder(meta metav1.Object, gvk schema.GroupVersionKind) ShardingSphereDeploymentBuilder {
-	// dp := deployment.DefaultDeployment(meta, gvk)
-	db := deployment.NewDeploymentBuilder()
-	dp := db.BuildDeployment()
-
-	return &shardingsphereDeploymentBuilder{
-		DeploymentBuilder: db,
-		deployment:        dp,
+func (b builder) buildProbes(scb container.ContainerBuilder, cn *v1alpha1.ComputeNode) {
+	if cn.Spec.Probes == nil {
+		return
 	}
-}
 
-type shardingsphereDeploymentBuilder struct {
-	deployment.DeploymentBuilder
-	deployment *appsv1.Deployment
+	if cn.Spec.Probes.LivenessProbe != nil {
+		scb.SetLivenessProbe(cn.Spec.Probes.LivenessProbe)
+	}
+	if cn.Spec.Probes.ReadinessProbe != nil {
+		scb.SetReadinessProbe(cn.Spec.Probes.ReadinessProbe)
+	}
+	if cn.Spec.Probes.StartupProbe != nil {
+		scb.SetStartupProbe(cn.Spec.Probes.StartupProbe)
+	}
 }
 
 // SetMySQLConnector will set an init container to download mysql jar and mount files for proxy container.
@@ -336,6 +276,5 @@ func (d *shardingsphereDeploymentBuilder) SetAgentScript(cn *v1alpha1.ComputeNod
 
 func (d *shardingsphereDeploymentBuilder) BuildShardingSphereDeployment() *appsv1.Deployment {
 	dp := d.DeploymentBuilder.BuildDeployment()
-
 	return dp
 }
