@@ -29,7 +29,6 @@ import (
 // NewDeploymentClient creates a new Deployment
 func NewDeploymentClient(c client.Client) Deployment {
 	return deploymentClient{
-		// builder: builder{},
 		getter: getter{
 			Client: c,
 		},

@@ -18,130 +18,23 @@
 package computenode
 
 import (
-	"time"
+	"context"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetConditionFromPods returns the condition for a pod
-func GetConditionFromPods(podlist *corev1.PodList) []v1alpha1.ComputeNodeCondition {
-	conds := []v1alpha1.ComputeNodeCondition{}
-
-	if len(podlist.Items) == 0 {
-		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionUnknown, "PodNotFound", "No pod was found"))
-		return conds
-	}
-
-	result := map[v1alpha1.ComputeNodeConditionType]int{}
-	for i := range podlist.Items {
-		pcs := getPreferedConditionFromPod(&podlist.Items[i])
-		for idx := range pcs {
-			result[pcs[idx].Type]++
-		}
-	}
-
-	if result[v1alpha1.ComputeNodeConditionUnknown] == len(podlist.Items) {
-		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionUnknown, "PodUnknown", "All pods are unknown"))
-	}
-
-	if result[v1alpha1.ComputeNodeConditionReady] > 0 {
-		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionReady, "PodReady", "Some pods are ready"))
-	}
-
-	if result[v1alpha1.ComputeNodeConditionStarted] > 0 {
-		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionStarted, "PodStarted", "Some pods are started"))
-	}
-
-	if result[v1alpha1.ComputeNodeConditionInitialized] > 0 {
-		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionInitialized, "PodInitialized", "Some pods are initialized"))
-	}
-
-	if result[v1alpha1.ComputeNodeConditionDeployed] > 0 {
-		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionDeployed, "PodDeployed", "Some pods are deployed"))
-	}
-
-	if result[v1alpha1.ComputeNodeConditionPending] > 0 {
-		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionPending, "PodPending", "Some pods are pending"))
-	}
-
-	if result[v1alpha1.ComputeNodeConditionFailed] > 0 {
-		conds = append(conds, newCondition(v1alpha1.ComputeNodeConditionFailed, "PodFailed", "Some pods are failed"))
-	}
-
-	return conds
+// Builder build Deployment from given ComputeNode
+type Builder interface {
+	BuildDeployment(context.Context, *v1alpha1.ComputeNode) *appsv1.Deployment
+	BuildConfigMap(context.Context, *v1alpha1.ComputeNode) *corev1.ConfigMap
+	BuildService(context.Context, *v1alpha1.ComputeNode) *corev1.Service
 }
 
-func getPreferedConditionFromPod(pod *corev1.Pod) []v1alpha1.ComputeNodeCondition {
-	computenodeConditions := []v1alpha1.ComputeNodeCondition{}
-	if pod.Status.Phase == corev1.PodUnknown {
-		computenodeConditions = append(computenodeConditions, v1alpha1.ComputeNodeCondition{
-			Type: v1alpha1.ComputeNodeConditionUnknown,
-		})
-		return computenodeConditions
-	}
-
-	podConditions := getPreferedConditionFromPodConditions(pod.Status.Conditions)
-	if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning && len(podConditions) == 4 {
-		computenodeConditions = append(computenodeConditions, v1alpha1.ComputeNodeCondition{
-			Type: v1alpha1.ComputeNodeConditionPending,
-		})
-		computenodeConditions = append(computenodeConditions, podConditions...)
-		return computenodeConditions
-	}
-
-	if pod.Status.Phase == corev1.PodFailed {
-		computenodeConditions = append(computenodeConditions, v1alpha1.ComputeNodeCondition{
-			Type: v1alpha1.ComputeNodeConditionFailed,
-		})
-		return computenodeConditions
-	}
-
-	return podConditions
+// NewBulder builds resources needed by ComputeNode
+func NewBuilder() Builder {
+	return &builder{}
 }
 
-func getPreferedConditionFromPodConditions(pcs []corev1.PodCondition) []v1alpha1.ComputeNodeCondition {
-	conditions := []v1alpha1.ComputeNodeCondition{}
-
-	for i := range pcs {
-		if pcs[i].Status != corev1.ConditionTrue {
-			continue
-		}
-
-		if pcs[i].Type == corev1.PodScheduled {
-			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
-				Type: v1alpha1.ComputeNodeConditionDeployed,
-			})
-		}
-		if pcs[i].Type == corev1.PodInitialized {
-			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
-				Type: v1alpha1.ComputeNodeConditionInitialized,
-			})
-		}
-		if pcs[i].Type == corev1.ContainersReady {
-			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
-				Type: v1alpha1.ComputeNodeConditionStarted,
-			})
-		}
-		if pcs[i].Type == corev1.PodReady {
-			conditions = append(conditions, v1alpha1.ComputeNodeCondition{
-				Type: v1alpha1.ComputeNodeConditionReady,
-			})
-		}
-	}
-
-	return conditions
-}
-
-func newCondition(t v1alpha1.ComputeNodeConditionType, reason, message string) v1alpha1.ComputeNodeCondition {
-	return v1alpha1.ComputeNodeCondition{
-		Type:               t,
-		Status:             v1alpha1.ConditionStatusTrue,
-		LastUpdateTime:     metav1.NewTime(time.Now()),
-		LastTransitionTime: metav1.NewTime(time.Now()),
-		Reason:             reason,
-		Message:            message,
-	}
-}
+type builder struct{}
