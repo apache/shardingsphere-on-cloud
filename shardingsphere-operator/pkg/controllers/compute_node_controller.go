@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
@@ -51,10 +52,12 @@ type ComputeNodeReconciler struct {
 	Scheme *runtime.Scheme
 	Log    logr.Logger
 
-	Deployment        deployment.Deployment
-	DeploymentBuilder reconcile.Builder
-	Service           service.Service
-	ConfigMap         configmap.ConfigMap
+	Builder   reconcile.Builder
+	Resources kubernetes.Resources
+
+	Deployment deployment.Deployment
+	Service    service.Service
+	ConfigMap  configmap.ConfigMap
 }
 
 // SetupWithManager sets up the controller with the Manager
@@ -126,8 +129,8 @@ func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1a
 }
 
 func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	deploy := r.DeploymentBuilder.Build(ctx, cn)
-	err := r.Deployment.Create(ctx, deploy)
+	deploy := r.Builder.BuildDeployment(ctx, cn)
+	err := r.Resources.Deployment().Create(ctx, deploy)
 	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
 		return nil
 	}
@@ -135,19 +138,19 @@ func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alph
 }
 
 func (r *ComputeNodeReconciler) updateDeployment(ctx context.Context, cn *v1alpha1.ComputeNode, deploy *appsv1.Deployment) error {
-	exp := r.DeploymentBuilder.Build(ctx, cn)
+	exp := r.Builder.BuildDeployment(ctx, cn)
 	exp.ObjectMeta = deploy.ObjectMeta
 	exp.Labels = deploy.Labels
 	exp.Annotations = deploy.Annotations
 
 	if !reflect.DeepEqual(deploy.Spec, exp.Spec) {
-		return r.Deployment.Update(ctx, exp)
+		return r.Resources.Deployment().Update(ctx, exp)
 	}
 	return nil
 }
 
 func (r *ComputeNodeReconciler) getDeploymentByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*appsv1.Deployment, error) {
-	dp, err := r.Deployment.GetByNamespacedName(ctx, namespacedName)
+	dp, err := r.Resources.Deployment().GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return nil, err
 	}
@@ -166,8 +169,8 @@ func (r *ComputeNodeReconciler) reconcileService(ctx context.Context, cn *v1alph
 }
 
 func (r *ComputeNodeReconciler) createService(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	svc := r.Service.Build(ctx, cn)
-	err := r.Service.Create(ctx, svc)
+	svc := r.Builder.BuildService(ctx, cn)
+	err := r.Resources.Service().Create(ctx, svc)
 	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
 		return nil
 	}
@@ -207,7 +210,7 @@ func (r *ComputeNodeReconciler) updateService(ctx context.Context, cn *v1alpha1.
 		}
 	}
 
-	exp := r.Service.Build(ctx, cn)
+	exp := r.Builder.BuildService(ctx, cn)
 	exp.ObjectMeta = s.ObjectMeta
 	exp.Spec.ClusterIP = s.Spec.ClusterIP
 	exp.Spec.ClusterIPs = s.Spec.ClusterIPs
@@ -266,7 +269,7 @@ func updateNodePorts(portbindings []v1alpha1.PortBinding, svcports []corev1.Serv
 }
 
 func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.Service, error) {
-	svc, err := r.Service.GetByNamespacedName(ctx, namespacedName)
+	svc, err := r.Resources.Service().GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return nil, err
 	}
@@ -274,8 +277,8 @@ func (r *ComputeNodeReconciler) getServiceByNamespacedName(ctx context.Context, 
 }
 
 func (r *ComputeNodeReconciler) createConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	cm := r.ConfigMap.Build(ctx, cn)
-	err := r.ConfigMap.Create(ctx, cm)
+	cm := r.Builder.BuildConfigMap(ctx, cn)
+	err := r.Resources.ConfigMap().Create(ctx, cm)
 	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
 		return nil
 	}
@@ -283,18 +286,18 @@ func (r *ComputeNodeReconciler) createConfigMap(ctx context.Context, cn *v1alpha
 }
 
 func (r *ComputeNodeReconciler) updateConfigMap(ctx context.Context, cn *v1alpha1.ComputeNode, cm *corev1.ConfigMap) error {
-	exp := r.ConfigMap.Build(ctx, cn)
+	exp := r.Builder.BuildConfigMap(ctx, cn)
 	exp.ObjectMeta = cm.ObjectMeta
 	exp.Labels = cm.Labels
 	exp.Annotations = cm.Annotations
 	if !reflect.DeepEqual(cm.Data, exp.Data) {
-		return r.ConfigMap.Update(ctx, exp)
+		return r.Resources.ConfigMap().Update(ctx, exp)
 	}
 	return nil
 }
 
 func (r *ComputeNodeReconciler) getConfigMapByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*corev1.ConfigMap, error) {
-	cm, err := r.ConfigMap.GetByNamespacedName(ctx, namespacedName)
+	cm, err := r.Resources.ConfigMap().GetByNamespacedName(ctx, namespacedName)
 	if err != nil {
 		return nil, err
 	}
