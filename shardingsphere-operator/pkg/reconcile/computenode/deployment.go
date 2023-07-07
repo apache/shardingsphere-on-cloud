@@ -73,7 +73,10 @@ func (b builder) buildMetadata(ssbuilder ShardingSphereDeploymentBuilder, cn *v1
 	ssbuilder.SetName(cn.Name).
 		SetNamespace(cn.Namespace).
 		SetLabels(cn.Labels).
-		SetAnnotations(cn.Annotations)
+		SetAnnotations(cn.Annotations).
+		SetOwnerReferences([]metav1.OwnerReference{
+			*metav1.NewControllerRef(cn.GetObjectMeta(), cn.GetObjectKind().GroupVersionKind()),
+		})
 }
 
 func (b builder) buildSpec(ssbuilder ShardingSphereDeploymentBuilder, cn *v1alpha1.ComputeNode) {
