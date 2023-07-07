@@ -29,6 +29,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/job"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
 
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	cnpgv1 "github.com/cloudnative-pg/cloudnative-pg/api/v1"
@@ -131,12 +132,13 @@ type FeatureGateHandler func(mgr manager.Manager) error
 var featureGatesHandlers = map[string]FeatureGateHandler{
 	"ComputeNode": func(mgr manager.Manager) error {
 		if err := (&controllers.ComputeNodeReconciler{
-			Client:     mgr.GetClient(),
-			Scheme:     mgr.GetScheme(),
-			Log:        mgr.GetLogger(),
-			Deployment: deployment.NewDeploymentClient(mgr.GetClient()),
-			Service:    service.NewServiceClient(mgr.GetClient()),
-			ConfigMap:  configmap.NewConfigMapClient(mgr.GetClient()),
+			Client:            mgr.GetClient(),
+			Scheme:            mgr.GetScheme(),
+			Log:               mgr.GetLogger(),
+			Deployment:        deployment.NewDeploymentClient(mgr.GetClient()),
+			DeploymentBuilder: computenode.NewBuilder(),
+			Service:           service.NewServiceClient(mgr.GetClient()),
+			ConfigMap:         configmap.NewConfigMapClient(mgr.GetClient()),
 		}).SetupWithManager(mgr); err != nil {
 			logger.Error(err, "unable to create controller", "controller", "ComputeNode")
 			return err
