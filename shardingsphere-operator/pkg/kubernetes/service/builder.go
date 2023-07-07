@@ -19,7 +19,6 @@ package service
 
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -31,6 +30,8 @@ const (
 	commonAnnotationPrometheusMetricsPort   = "prometheus.io/port"
 	commonAnnotationPrometheusMetricsScrape = "prometheus.io/scrape"
 	commonAnnotationPrometheusMetricsScheme = "prometheus.io/scheme"
+
+	DefaultAnnotationJavaAgentEnabled = "shardingsphere.apache.org/java-agent-enabled"
 )
 
 // NewService returns a new Service
@@ -48,7 +49,7 @@ func NewService(cn *v1alpha1.ComputeNode) *corev1.Service {
 		})
 	}
 
-	if enabled, ok := cn.Annotations[deployment.DefaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
+	if enabled, ok := cn.Annotations[DefaultAnnotationJavaAgentEnabled]; ok && enabled == "true" {
 		metricsAnnos := map[string]string{}
 		metricsAnnos[commonAnnotationPrometheusMetricsPath] = cn.Annotations[commonAnnotationPrometheusMetricsPath]
 		metricsAnnos[commonAnnotationPrometheusMetricsPort] = cn.Annotations[commonAnnotationPrometheusMetricsPort]
