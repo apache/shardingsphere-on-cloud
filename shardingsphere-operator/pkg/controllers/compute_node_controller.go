@@ -51,9 +51,10 @@ type ComputeNodeReconciler struct {
 	Scheme *runtime.Scheme
 	Log    logr.Logger
 
-	Deployment deployment.Deployment
-	Service    service.Service
-	ConfigMap  configmap.ConfigMap
+	Deployment        deployment.Deployment
+	DeploymentBuilder reconcile.Builder
+	Service           service.Service
+	ConfigMap         configmap.ConfigMap
 }
 
 // SetupWithManager sets up the controller with the Manager
@@ -125,7 +126,7 @@ func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1a
 }
 
 func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alpha1.ComputeNode) error {
-	deploy := r.Deployment.Build(ctx, cn)
+	deploy := r.DeploymentBuilder.Build(ctx, cn)
 	err := r.Deployment.Create(ctx, deploy)
 	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
 		return nil
@@ -134,7 +135,7 @@ func (r *ComputeNodeReconciler) createDeployment(ctx context.Context, cn *v1alph
 }
 
 func (r *ComputeNodeReconciler) updateDeployment(ctx context.Context, cn *v1alpha1.ComputeNode, deploy *appsv1.Deployment) error {
-	exp := r.Deployment.Build(ctx, cn)
+	exp := r.DeploymentBuilder.Build(ctx, cn)
 	exp.ObjectMeta = deploy.ObjectMeta
 	exp.Labels = deploy.Labels
 	exp.Annotations = deploy.Annotations
