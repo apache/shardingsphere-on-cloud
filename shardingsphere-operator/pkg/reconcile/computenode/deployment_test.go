@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package deployment
+package computenode
 
 import (
 	"context"
