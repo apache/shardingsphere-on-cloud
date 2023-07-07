@@ -18,8 +18,8 @@
 package pod
 
 import (
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/container"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/metadata"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -73,12 +73,12 @@ type PodSpecBuilder interface {
 
 	SetInitContainers(cs []corev1.Container) PodSpecBuilder
 	UpdateInitContainerByName(c *corev1.Container) PodSpecBuilder
-	FindInitContainerByName(name string) common.ContainerBuilder
+	FindInitContainerByName(name string) container.ContainerBuilder
 	AppendInitContainers(cs []corev1.Container) PodSpecBuilder
 
 	SetContainers(cs []corev1.Container) PodSpecBuilder
 	UpdateContainerByName(c *corev1.Container) PodSpecBuilder
-	FindContainerByName(name string) common.ContainerBuilder
+	FindContainerByName(name string) container.ContainerBuilder
 	AppendContainers(cs []corev1.Container) PodSpecBuilder
 
 	SetTerminationGracePeriodSeconds(secs *int64) PodSpecBuilder
@@ -161,10 +161,10 @@ func (b *podSpecBuilder) AppendInitContainers(cs []corev1.Container) PodSpecBuil
 }
 
 // FindInitContainerByName returns a builder for this init container
-func (b *podSpecBuilder) FindInitContainerByName(name string) common.ContainerBuilder {
+func (b *podSpecBuilder) FindInitContainerByName(name string) container.ContainerBuilder {
 	for idx := range b.spec.InitContainers {
 		if b.spec.InitContainers[idx].Name == name {
-			return common.NewContainerBuilderFromContainer(&b.spec.InitContainers[idx])
+			return container.NewContainerBuilderFromContainer(&b.spec.InitContainers[idx])
 		}
 	}
 	return nil
@@ -207,10 +207,10 @@ func (b *podSpecBuilder) AppendContainers(cs []corev1.Container) PodSpecBuilder 
 }
 
 // FindContainerByName returns a builder for this container
-func (b *podSpecBuilder) FindContainerByName(name string) common.ContainerBuilder {
+func (b *podSpecBuilder) FindContainerByName(name string) container.ContainerBuilder {
 	for idx := range b.spec.Containers {
 		if b.spec.Containers[idx].Name == name {
-			return common.NewContainerBuilderFromContainer(&b.spec.Containers[idx])
+			return container.NewContainerBuilderFromContainer(&b.spec.Containers[idx])
 		}
 	}
 	return nil

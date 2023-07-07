@@ -21,20 +21,12 @@ import (
 	"context"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
-// Builder build Deployment from given ComputeNode
-type Builder interface {
-	BuildDeployment(context.Context, *v1alpha1.ComputeNode) *appsv1.Deployment
-	BuildConfigMap(context.Context, *v1alpha1.ComputeNode) *corev1.ConfigMap
-	BuildService(context.Context, *v1alpha1.ComputeNode) *corev1.Service
+// BuildService returns a Service
+func (b *builder) BuildService(ctx context.Context, cn *v1alpha1.ComputeNode) *corev1.Service {
+	return service.NewService(cn)
 }
-
-// NewBulder builds resources needed by ComputeNode
-func NewBuilder() Builder {
-	return &builder{}
-}
-
-type builder struct{}

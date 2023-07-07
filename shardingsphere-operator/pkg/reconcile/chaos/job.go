@@ -23,7 +23,7 @@ import (
 	"strconv"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
-	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/common"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/container"
 
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -101,7 +101,7 @@ func NewJob(ssChaos *v1alpha1.Chaos, requirement JobType) (*v1.Job, error) {
 
 	vm := &corev1.VolumeMount{Name: DefaultConfigName, MountPath: DefaultWorkPath}
 
-	cbd := common.NewContainerBuilder()
+	cbd := container.NewContainerBuilder()
 	cbd.SetImage(DefaultImageName)
 	cbd.SetName(DefaultContainerName)
 	// cbd.SetVolumeMount(vm)

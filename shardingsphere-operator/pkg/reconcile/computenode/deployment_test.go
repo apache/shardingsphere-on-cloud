@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package deployment
+package computenode
 
 import (
 	"context"
@@ -33,7 +33,7 @@ import (
 
 func testNewDeployment(cn *v1alpha1.ComputeNode) *appsv1.Deployment {
 	b := builder{}
-	return b.Build(context.TODO(), cn)
+	return b.BuildDeployment(context.TODO(), cn)
 }
 
 func Test_NewDeployment(t *testing.T) {
