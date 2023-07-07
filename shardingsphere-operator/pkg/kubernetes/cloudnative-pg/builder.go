@@ -33,6 +33,18 @@ func NewCluster(sn *v1alpha1.StorageNode, sp *v1alpha1.StorageProvider) *cnpgv1.
 	builder.SetName(sn.Name)
 	builder.SetNamespace(sn.Namespace)
 
+	if len(sp.Spec.Parameters["imageName"]) > 0 {
+		builder.SetImageName(sp.Spec.Parameters["imageName"])
+	}
+
+	if len(sp.Spec.Parameters["backup.retentionPolicy"]) > 0 {
+		builder.SetBackupRetentionPolicy(sp.Spec.Parameters["backup.retentionPolicy"])
+	}
+
+	if len(sp.Spec.Parameters["backup.target"]) > 0 {
+		builder.SetBackupTarget(cnpgv1.BackupTarget(sp.Spec.Parameters["backup.target"]))
+	}
+
 	if len(sp.Spec.Parameters["instances"]) > 0 {
 		ins, _ := strconv.Atoi(sp.Spec.Parameters["instances"])
 		builder.SetInstances(ins)
@@ -56,7 +68,10 @@ type ClusterBuilder interface {
 	SetName(name string) ClusterBuilder
 	SetNamespace(namespace string) ClusterBuilder
 	SetInstances(n int) ClusterBuilder
+	SetImageName(name string) ClusterBuilder
 	SetStorageSize(s string) ClusterBuilder
+	SetBackupRetentionPolicy(r string) ClusterBuilder
+	SetBackupTarget(t cnpgv1.BackupTarget) ClusterBuilder
 	Build() *cnpgv1.Cluster
 }
 
@@ -82,9 +97,27 @@ func (b *clusterBuilder) SetInstances(n int) ClusterBuilder {
 	return b
 }
 
+// SetImageName sets the name of the container image
+func (b *clusterBuilder) SetImageName(name string) ClusterBuilder {
+	b.cluster.Spec.ImageName = name
+	return b
+}
+
 // SetStorageSize sets the storage size of the cluster
 func (b *clusterBuilder) SetStorageSize(s string) ClusterBuilder {
 	b.cluster.Spec.StorageConfiguration.Size = s
+	return b
+}
+
+// SetBackupRetentionPolicy sets the backup retention policy of the cluster
+func (b *clusterBuilder) SetBackupRetentionPolicy(r string) ClusterBuilder {
+	b.cluster.Spec.Backup.RetentionPolicy = r
+	return b
+}
+
+// SetBackupTarget sets the backup target of the cluster
+func (b *clusterBuilder) SetBackupTarget(t cnpgv1.BackupTarget) ClusterBuilder {
+	b.cluster.Spec.Backup.Target = t
 	return b
 }
 
