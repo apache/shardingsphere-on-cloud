@@ -15,11 +15,6 @@
 # limitations under the License.
 #
 
-# Check Zookeeper settings
-# if enabled zookeeper's persistence, should set correct storageClass for it
-{{- if .Values.zookeeper.persistence.enabled }}
-{{- required "Detected .Values.zookeeper.persistence.enabled is true, please set a correct .Values.zookeeper.persistence.storageClass !" .Values.zookeeper.persistence.storageClass -}}
-{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
