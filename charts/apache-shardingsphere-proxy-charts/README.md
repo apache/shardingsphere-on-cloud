@@ -9,7 +9,7 @@ Use the following command to install:
 ```
 helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
 helm repo update
-helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-proxy-charts --version 0.1.0
+helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-proxy-charts --version 0.3.0
 ```
 
 ## Uninstall
@@ -51,7 +51,7 @@ helm unstall [RELEASE_NAME]
 | ------------------------------------- | -------------------------------------------------------------- | ------------------------------- |
 | `compute.image.repository`          | Image name of ShardingSphere-Proxy.                          | `apache/shardingsphere-proxy` |
 | `compute.image.pullPolicy`          | The policy for pulling ShardingSphere-Proxy image            | `IfNotPresent`                |
-| `compute.image.tag`                 | ShardingSphere-Proxy image tag                               | `5.2.0`                       |
+| `compute.image.tag`                 | ShardingSphere-Proxy image tag                               | `5.4.0`                       |
 | `compute.imagePullSecrets`          | Specify docker-registry secret names as an array             | `[]`                          |
 | `compute.resources.limits`          | The resources limits for the ShardingSphere-Proxy containers | `{}`                          |
 | `compute.resources.requests.memory` | The requested memory for the ShardingSphere-Proxy containers | `2Gi`                         |
@@ -62,5 +62,5 @@ helm unstall [RELEASE_NAME]
 | `compute.mysqlConnector.version`    | MySQL connector version                                      | `5.1.49`                      |
 | `compute.startPort`                 | ShardingSphere-Proxy start port                              | `3307`                        |
 | `compute.serverConfig`              | Server Configuration file for ShardingSphere-Proxy           | `""`                          |
-| `compute.agent.enabled`             | switch to enable or disable the agent metrics                | `true`                        |
+| `compute.agent.enabled`             | switch to enable or disable the agent metrics                | `false`                       |
 | `compute.agent.config`              | agent Configuration file for ShardingSphere-Proxy agent      | `""`                          |

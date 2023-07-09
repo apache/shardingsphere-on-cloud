@@ -69,7 +69,7 @@ compute:
     pullPolicy: IfNotPresent
     ## Overrides the image tag whose default is the chart appVersion.
     ##
-    tag: "5.3.1"
+    tag: "5.4.0"
   ## @param compute.imagePullSecrets Specify docker-registry secret names as an array
   ## e.g：
   ## imagePullSecrets:
@@ -161,7 +161,7 @@ compute:
   ## @section Compute-Node ShardingSphere-Proxy agent parameters
   ## @param compute.agent.enabled Switch to enable or disable the agent metrics
   agent:
-    enabled: true
+    enabled: false 
     ## @section Compute-Node ShardingSphere-Proxy agent Configuration parameters
     ## ref: https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/observability/
     ## @param compute.agent.config.plugins list the agent plugins we can use
