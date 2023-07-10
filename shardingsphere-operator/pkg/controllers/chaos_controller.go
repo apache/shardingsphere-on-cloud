@@ -65,6 +65,10 @@ type ChaosReconciler struct {
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=chaos,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=chaos/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=chaos/finalizers,verbs=update
+// +kubebuilder:rbac:groups=chaos-mesh.org,resources=podchaos,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=chaos-mesh.org,resources=stresschaos,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=chaos-mesh.org,resources=networkchaos,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile handles main function of this controller
 func (r *ChaosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
