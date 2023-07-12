@@ -22,14 +22,14 @@ import (
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // Builder build HPA from given AutoScaler
 type Builder interface {
-	BuildHorizontalPodAutoScaler(context.Context, metav1.ObjectMeta, schema.GroupVersionKind, *v1alpha1.ScalingPolicy) *autoscalingv2beta2.HorizontalPodAutoscaler
+	BuildHorizontalPodAutoScaler(context.Context, metav1.ObjectMeta, schema.GroupVersionKind, *v1alpha1.ScalingPolicy) *autoscalingv2.HorizontalPodAutoscaler
 }
 
 // NewBulder builds resources needed by AutoScaler

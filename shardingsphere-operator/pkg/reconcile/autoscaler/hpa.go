@@ -23,7 +23,8 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/hpa"
 
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -35,18 +36,7 @@ func (b builder) BuildHorizontalPodAutoScaler(ctx context.Context, meta metav1.O
 		*metav1.NewControllerRef(meta.GetObjectMeta(), gvk),
 	})
 
-	// Deployment
-	/*
-		if policy.TargetSelector.ObjectRef.Kind == "ComputeNode" && policy.TargetSelector.ObjectRef.APIVersion == "shardingsphere.apache.org/v1alpha1" {
-			blder.SetScaleTargetRef(autoscalingv2beta2.CrossVersionObjectReference{
-				Kind:       "Deployment",
-				Name:       policy.TargetSelector.ObjectRef.Name,
-				APIVersion: "apps/v1",
-			})
-		}
-	*/
-	// ComputeNode
-	blder.SetScaleTargetRef(autoscalingv2beta2.CrossVersionObjectReference{
+	blder.SetScaleTargetRef(autoscalingv2.CrossVersionObjectReference{
 		Kind:       "ComputeNode",
 		Name:       policy.TargetSelector.ObjectRef.Name,
 		APIVersion: "shardingsphere.apache.org/v1alpha1",
@@ -55,13 +45,11 @@ func (b builder) BuildHorizontalPodAutoScaler(ctx context.Context, meta metav1.O
 	blder.SetMinReplicas(policy.Horizontal.MinReplicas)
 	blder.SetMaxReplicas(policy.Horizontal.MaxReplicas)
 	if policy.Horizontal.Metrics != nil {
-		blder.SetMetrics([]autoscalingv2beta2.MetricSpec{
-			*policy.Horizontal.Metrics,
-		})
+		blder.SetMetrics(policy.Horizontal.Metrics)
 	}
 
 	var (
-		up, down *autoscalingv2beta2.HPAScalingRules
+		up, down *autoscalingv2.HPAScalingRules
 	)
 
 	if policy.Horizontal.ScaleUpRules != nil {
@@ -72,7 +60,7 @@ func (b builder) BuildHorizontalPodAutoScaler(ctx context.Context, meta metav1.O
 	}
 
 	if up != nil || down != nil {
-		blder.SetBehavior(&autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
+		blder.SetBehavior(&autoscalingv2.HorizontalPodAutoscalerBehavior{
 			ScaleUp:   up,
 			ScaleDown: down,
 		})
