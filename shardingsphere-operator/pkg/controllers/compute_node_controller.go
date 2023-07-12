@@ -34,6 +34,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -122,7 +123,9 @@ func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1a
 	if err != nil {
 		return err
 	}
+
 	if deploy != nil {
+		fmt.Printf("deploy selector: %s\n", deploy.Spec.Selector.String())
 		return r.updateDeployment(ctx, cn, deploy)
 	}
 	return r.createDeployment(ctx, cn)
@@ -316,6 +319,12 @@ func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1al
 }
 
 func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha1.ComputeNode) error {
+	selector, err := metav1.LabelSelectorAsSelector(cn.Spec.Selector)
+	if err != nil {
+		err := fmt.Errorf("error retrieving ComputeNode labels")
+		return err
+	}
+
 	podlist := &corev1.PodList{}
 	if err := r.List(ctx, podlist, client.InNamespace(cn.Namespace), client.MatchingLabels(cn.Spec.Selector.MatchLabels)); err != nil {
 		return err
@@ -339,6 +348,7 @@ func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha
 	if err != nil {
 		return err
 	}
+	status.Selector = selector.String()
 	rt.Status = *status
 
 	return r.Status().Update(ctx, rt)

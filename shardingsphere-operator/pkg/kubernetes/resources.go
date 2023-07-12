@@ -22,6 +22,7 @@ import (
 	cloudnativepg "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/cloudnative-pg"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/hpa"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,7 +39,7 @@ type KubernetesResources interface {
 	Deployment() deployment.Deployment
 	Service() service.Service
 	ConfigMap() configmap.ConfigMap
-	// Pod()
+	HPA() hpa.HorizontalPodAutoscaler
 	// Job()
 }
 
@@ -55,6 +56,7 @@ func NewResources(c client.Client) Resources {
 			deployment: deployment.NewDeploymentClient(c),
 			service:    service.NewServiceClient(c),
 			configmap:  configmap.NewConfigMapClient(c),
+			hpa:        hpa.NewHorizontalPodAutoscalerClient(c),
 		},
 		ExtendedResources: &extended{
 			chaosmesh:     chaosmesh.NewChaos(c),
@@ -74,6 +76,7 @@ type kubernetes struct {
 	deployment deployment.Deployment
 	service    service.Service
 	configmap  configmap.ConfigMap
+	hpa        hpa.HorizontalPodAutoscaler
 }
 
 // Deployment returns a Kubernetes deployment
@@ -89,6 +92,11 @@ func (r *kubernetes) Service() service.Service {
 // ConfigMap returns a Kubernetes configmap
 func (r *kubernetes) ConfigMap() configmap.ConfigMap {
 	return r.configmap
+}
+
+// HPA returns a Kubernetes HPA
+func (r *kubernetes) HPA() hpa.HorizontalPodAutoscaler {
+	return r.hpa
 }
 
 var _ ExtendedResources = &extended{}

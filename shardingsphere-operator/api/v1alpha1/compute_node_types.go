@@ -35,7 +35,7 @@ type ComputeNodeList struct {
 // +kubebuilder:printcolumn:JSONPath=".status.loadBalancer.clusterIP",name="Cluster-IP",type=string
 // +kubebuilder:printcolumn:JSONPath=".spec.portBindings[*].servicePort",name="ServicePorts",type=integer
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
-// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.spec.selectors
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // ComputeNode is the Schema for the ShardingSphere Proxy API
@@ -289,6 +289,8 @@ type ComputeNodeSpec struct {
 
 // ComputeNodeStatus defines the observed state of ShardingSphere Proxy
 type ComputeNodeStatus struct {
+	Selector string `json:"selector" yaml:"selector"`
+
 	Replicas int32 `json:"replicas" yaml:"replicas"`
 
 	Ready string `json:"ready,omitempty" yaml:"ready,omitempty"`
