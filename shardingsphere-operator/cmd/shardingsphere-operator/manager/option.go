@@ -29,6 +29,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/job"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/autoscaler"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/computenode"
 
 	chaosv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
@@ -182,6 +183,20 @@ var featureGatesHandlers = map[string]FeatureGateHandler{
 			logger.Error(err, "unable to create controller", "controller", "Chaos")
 			return err
 		}
+		return nil
+	},
+	"AutoScaler": func(mgr manager.Manager) error {
+		if err := (&controllers.AutoScalerReconciler{
+			Client:    mgr.GetClient(),
+			Scheme:    mgr.GetScheme(),
+			Log:       mgr.GetLogger(),
+			Builder:   autoscaler.NewBuilder(),
+			Resources: kubernetes.NewResources(mgr.GetClient()),
+		}).SetupWithManager(mgr); err != nil {
+			logger.Error(err, "unable to create controller", "controller", "AutoScaler")
+			return err
+		}
+
 		return nil
 	},
 }

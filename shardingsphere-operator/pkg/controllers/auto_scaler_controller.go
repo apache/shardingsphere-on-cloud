@@ -24,8 +24,9 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes"
 	reconcile "github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/reconcile/autoscaler"
+
 	"github.com/go-logr/logr"
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -58,11 +59,10 @@ func (r *AutoScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=computenodes,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=autoscaling/v2beta2,resources=horizontalpodautoscaler,verbs=get;list;watch;create;update;patch;delete
-
+// +kubebuilder:rbac:groups=autoscaling/v2,resources=horizontalpodautoscaler,verbs=get;list;watch;create;update;patch;delete
 // Reconcile handles main function of this controller
 func (r *AutoScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := r.Log.WithValues(computeNodeControllerName, req.NamespacedName)
+	logger := r.Log.WithValues(autoScalerControllerName, req.NamespacedName)
 
 	as := &v1alpha1.AutoScaler{}
 	if err := r.Get(ctx, req.NamespacedName, as); err != nil {
@@ -75,7 +75,7 @@ func (r *AutoScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	if err := r.reconcileAutoScaler(ctx, as); err != nil {
-		logger.Error(err, "Failed to reconcile status")
+		logger.Error(err, "Failed to reconcile autoscaler")
 	}
 
 	return ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
@@ -84,12 +84,10 @@ func (r *AutoScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 func (r *AutoScalerReconciler) reconcileAutoScaler(ctx context.Context, as *v1alpha1.AutoScaler) error {
 	gvk := as.GroupVersionKind()
 
-	if len(as.Spec.Provider) == 0 {
-		for _, pg := range as.Spec.PolicyGroup {
-			if pg.Horizontal != nil {
-				if err := r.reconcileHPA(ctx, as.ObjectMeta, gvk, &pg); err != nil {
-					return err
-				}
+	for _, pg := range as.Spec.PolicyGroup {
+		if pg.Provider == "KubernetesHPA" && pg.Horizontal != nil {
+			if err := r.reconcileHPA(ctx, as.ObjectMeta, gvk, &pg); err != nil {
+				return err
 			}
 		}
 	}
