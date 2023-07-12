@@ -22,6 +22,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: AutoScaler defines a autoscaler for ShardingSphere given
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -36,16 +37,37 @@ spec:
           metadata:
             type: object
           spec:
+            description: AutoScalerSpec defines a list of scaling policies
             properties:
               policyGroup:
+                description: PolicyGroup declares a set of scaling policies, including
+                  horizontal and vertical scaling Allow ComputeNode to enable HPA
+                  and VPA at the same time, without guaranteeing the result Haven't
+                  verified the configuration of HPA and VPA of StorageNode yet
                 items:
+                  description: ScalingPolicy defines a policy for scaling
                   properties:
                     horizontal:
+                      description: HorizontalScaling contains the necessary parameters
+                        for HPA scaling Does not contain StorageNode related configuration
                       properties:
                         maxReplicas:
+                          description: maxReplicas is the upper limit for the number
+                            of replicas to which the autoscaler can scale up. It cannot
+                            be less that minReplicas.
                           format: int32
                           type: integer
                         metrics:
+                          description: metrics contains the specifications for which
+                            to use to calculate the desired replica count (the maximum
+                            replica count across all metrics will be used).  The desired
+                            replica count is calculated multiplying the ratio between
+                            the target value and the current value by the current
+                            number of pods.  Ergo, metrics used must decrease as the
+                            pod count is increased, and vice-versa.  See the individual
+                            metric source types for more information about how each
+                            type of metric must respond. If not set, the default metric
+                            will be set to 80% average CPU utilization.
                           items:
                             description: MetricSpec specifies how to scale based on
                               a single metric (only `type` and one other matching
@@ -546,16 +568,20 @@ spec:
                             type: object
                           type: array
                         minReplicas:
+                          description: minReplicas is the lower limit for the number
+                            of replicas to which the autoscaler can scale down.  It
+                            defaults to 1 pod.  minReplicas is allowed to be 0 if
+                            the alpha feature gate HPAScaleToZero is enabled and at
+                            least one Object or External metric is configured.  Scaling
+                            is active as long as at least one metric value is available.
                           format: int32
                           type: integer
                         scaleDownRules:
-                          description: HPAScalingRules configures the scaling behavior
-                            for one direction. These Rules are applied after calculating
-                            DesiredReplicas from metrics for the HPA. They can limit
-                            the scaling velocity by specifying scaling policies. They
-                            can prevent flapping by specifying the stabilization window,
-                            so that the number of replicas is not set instantly, instead,
-                            the safest value from the stabilization window is chosen.
+                          description: scaleDown is scaling policy for scaling Down.
+                            If not set, the default value is to allow to scale down
+                            to minReplicas pods, with a 300 second stabilization window
+                            (i.e., the highest recommendation for the last 300sec
+                            is used).
                           properties:
                             policies:
                               description: policies is a list of potential scaling
@@ -608,13 +634,10 @@ spec:
                               type: integer
                           type: object
                         scaleUpRules:
-                          description: HPAScalingRules configures the scaling behavior
-                            for one direction. These Rules are applied after calculating
-                            DesiredReplicas from metrics for the HPA. They can limit
-                            the scaling velocity by specifying scaling policies. They
-                            can prevent flapping by specifying the stabilization window,
-                            so that the number of replicas is not set instantly, instead,
-                            the safest value from the stabilization window is chosen.
+                          description: 'scaleUp is scaling policy for scaling Up.
+                            If not set, the default value is the higher of: * increase
+                            no more than 4 pods per 60 seconds * double the number
+                            of pods per 60 seconds No stabilization is used.'
                           properties:
                             policies:
                               description: policies is a list of potential scaling
@@ -668,8 +691,18 @@ spec:
                           type: object
                       type: object
                     provider:
+                      description: 'Provider is the provider of the scaling mechanism,
+                        and the optional values are: - Empty: default value, which
+                        means provided by ShardingSphere Operator - KubernetesHPA:
+                        Indicates the use of Kubernetes native HPA - KubernetesVPA:
+                        Indicates the use of Kubernetes community VPA - Other: Indicates
+                        a controller using a third-party controller'
                       type: string
                     targetSelector:
+                      description: TargetSelector is used to select the auto-scaling
+                        target Support native CrossVersionObjectReference and Selector
+                        The first version plans to support CrossVersionObjectReference
+                        first
                       properties:
                         objectRef:
                           description: CrossVersionObjectReference contains enough
@@ -738,8 +771,14 @@ spec:
                           type: object
                       type: object
                     vertical:
+                      description: VerticalScaling contains the necessary parameters
+                        for VPA scaling Does not contain StorageNode related configuration
                       properties:
                         recommenders:
+                          description: Recommender responsible for generating recommendation
+                            for this object. List should be empty (then the default
+                            recommender will generate the recommendation) or contain
+                            exactly one recommender.
                           items:
                             description: VerticalPodAutoscalerRecommenderSelector
                               points to a specific Vertical Pod Autoscaler recommender.
@@ -754,12 +793,11 @@ spec:
                             type: object
                           type: array
                         resourcePolicy:
-                          description: PodResourcePolicy controls how autoscaler computes
-                            the recommended resources for containers belonging to
-                            the pod. There can be at most one entry for every named
-                            container and optionally a single wildcard entry with
-                            `containerName` = '*', which handles all containers that
-                            don't have individual policies.
+                          description: Controls how the autoscaler computes recommended
+                            resources. The resource policy may be used to set constraints
+                            on the recommendations for individual containers. If not
+                            specified, the autoscaler computes recommended resources
+                            for all containers in the pod, without additional constraints.
                           properties:
                             containerPolicies:
                               description: Per-container resource policies.
@@ -823,8 +861,9 @@ spec:
                               type: array
                           type: object
                         updatePolicy:
-                          description: PodUpdatePolicy describes the rules on how
-                            changes are applied to the pods.
+                          description: Describes the rules on how changes are applied
+                            to the pods. If not specified, all fields in the `PodUpdatePolicy`
+                            are set to their default values.
                           properties:
                             minReplicas:
                               description: Minimal number of replicas which need to
@@ -848,9 +887,11 @@ spec:
                 type: array
             type: object
           status:
+            description: AutoScalerStatus defines the status of a autoscaler
             properties:
               conditions:
                 items:
+                  description: AutoScalerCondition defiens the condition of a autoscaler
                   properties:
                     lastTransitionTime:
                       format: date-time

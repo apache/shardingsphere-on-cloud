@@ -24,13 +24,12 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/hpa"
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // BuildHorizontalPodAutoScaler returns a new HPA
-func (b builder) BuildHorizontalPodAutoScaler(ctx context.Context, meta metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy) *autoscalingv2beta2.HorizontalPodAutoscaler {
+func (b builder) BuildHorizontalPodAutoScaler(ctx context.Context, meta *metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy) *autoscalingv2.HorizontalPodAutoscaler {
 	blder := hpa.NewHorizontalPodAutoScalerBuilder()
 	blder.SetName(meta.Name).SetNamespace(meta.Namespace).SetLabels(meta.Labels).SetAnnotations(meta.Annotations).SetOwnerReferences([]metav1.OwnerReference{
 		*metav1.NewControllerRef(meta.GetObjectMeta(), gvk),

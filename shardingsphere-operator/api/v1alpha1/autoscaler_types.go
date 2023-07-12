@@ -74,7 +74,7 @@ type ScalingPolicy struct {
 	// VerticalScaling contains the necessary parameters for VPA scaling
 	// Does not contain StorageNode related configuration
 	// +optional
-	Vertical *VerticalScaling `json:"vertical,omitempey" yaml:"vertical,omitempty"`
+	Vertical *VerticalScaling `json:"vertical,omitempty" yaml:"vertical,omitempty"`
 }
 
 // ObjectRefSelector defines a selector for objects

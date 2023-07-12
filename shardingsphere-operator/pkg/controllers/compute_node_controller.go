@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -322,7 +321,7 @@ func (r *ComputeNodeReconciler) reconcileConfigMap(ctx context.Context, cn *v1al
 func (r *ComputeNodeReconciler) reconcileStatus(ctx context.Context, cn *v1alpha1.ComputeNode) error {
 	selector, err := metav1.LabelSelectorAsSelector(cn.Spec.Selector)
 	if err != nil {
-		err := errors.New(fmt.Sprintf("Error retrieving ComputeNode labels"))
+		err := fmt.Errorf("error retrieving ComputeNode labels")
 		return err
 	}
 

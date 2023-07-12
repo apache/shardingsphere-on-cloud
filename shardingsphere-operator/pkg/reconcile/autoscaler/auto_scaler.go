@@ -29,7 +29,7 @@ import (
 
 // Builder build HPA from given AutoScaler
 type Builder interface {
-	BuildHorizontalPodAutoScaler(context.Context, metav1.ObjectMeta, schema.GroupVersionKind, *v1alpha1.ScalingPolicy) *autoscalingv2.HorizontalPodAutoscaler
+	BuildHorizontalPodAutoScaler(context.Context, *metav1.ObjectMeta, schema.GroupVersionKind, *v1alpha1.ScalingPolicy) *autoscalingv2.HorizontalPodAutoscaler
 }
 
 // NewBulder builds resources needed by AutoScaler

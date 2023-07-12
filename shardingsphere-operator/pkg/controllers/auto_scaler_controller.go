@@ -84,9 +84,10 @@ func (r *AutoScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 func (r *AutoScalerReconciler) reconcileAutoScaler(ctx context.Context, as *v1alpha1.AutoScaler) error {
 	gvk := as.GroupVersionKind()
 
-	for _, pg := range as.Spec.PolicyGroup {
+	for i := range as.Spec.PolicyGroup {
+		pg := as.Spec.PolicyGroup[i]
 		if pg.Provider == "KubernetesHPA" && pg.Horizontal != nil {
-			if err := r.reconcileHPA(ctx, as.ObjectMeta, gvk, &pg); err != nil {
+			if err := r.reconcileHPA(ctx, &as.ObjectMeta, gvk, &pg); err != nil {
 				return err
 			}
 		}
@@ -95,7 +96,7 @@ func (r *AutoScalerReconciler) reconcileAutoScaler(ctx context.Context, as *v1al
 	return nil
 }
 
-func (r *AutoScalerReconciler) reconcileHPA(ctx context.Context, meta metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy) error {
+func (r *AutoScalerReconciler) reconcileHPA(ctx context.Context, meta *metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy) error {
 	hpa, err := r.getHPAByNamespacedName(ctx, types.NamespacedName{Namespace: meta.Namespace, Name: meta.Name})
 	if err != nil {
 		return err
@@ -110,7 +111,7 @@ func (r *AutoScalerReconciler) getHPAByNamespacedName(ctx context.Context, names
 	return r.Resources.HPA().GetByNamespacedName(ctx, namespacedName)
 }
 
-func (r *AutoScalerReconciler) updateHPA(ctx context.Context, meta metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy, hpa *autoscalingv2beta2.HorizontalPodAutoscaler) error {
+func (r *AutoScalerReconciler) updateHPA(ctx context.Context, meta *metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy, hpa *autoscalingv2beta2.HorizontalPodAutoscaler) error {
 	exp := r.Builder.BuildHorizontalPodAutoScaler(ctx, meta, gvk, policy)
 	exp.ObjectMeta = hpa.ObjectMeta
 	exp.Labels = hpa.Labels
@@ -122,7 +123,7 @@ func (r *AutoScalerReconciler) updateHPA(ctx context.Context, meta metav1.Object
 	return nil
 }
 
-func (r *AutoScalerReconciler) createHPA(ctx context.Context, meta metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy) error {
+func (r *AutoScalerReconciler) createHPA(ctx context.Context, meta *metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy) error {
 	hpa := r.Builder.BuildHorizontalPodAutoScaler(ctx, meta, gvk, policy)
 	err := r.Resources.HPA().Create(ctx, hpa)
 	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
