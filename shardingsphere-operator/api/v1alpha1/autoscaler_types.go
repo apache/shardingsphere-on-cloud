@@ -18,7 +18,7 @@
 package v1alpha1
 
 import (
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
@@ -80,7 +80,7 @@ type ScalingPolicy struct {
 // ObjectRefSelector defines a selector for objects
 type ObjectRefSelector struct {
 	// +optional
-	ObjectRef autoscalingv2beta2.CrossVersionObjectReference `json:"objectRef,omitempty" yaml:"objectRef,omitempty"`
+	ObjectRef autoscalingv2.CrossVersionObjectReference `json:"objectRef,omitempty" yaml:"objectRef,omitempty"`
 	// +optional
 	Selector *metav1.LabelSelector `json:"selector,omitempty" yaml:"selector,omitempty"`
 }
@@ -106,13 +106,13 @@ type HorizontalScaling struct {
 	//   * double the number of pods per 60 seconds
 	// No stabilization is used.
 	// +optional
-	ScaleUpRules *autoscalingv2beta2.HPAScalingRules `json:"scaleUpRules,omitempty" yaml:"scaleUpRules,omitempty"`
+	ScaleUpRules *autoscalingv2.HPAScalingRules `json:"scaleUpRules,omitempty" yaml:"scaleUpRules,omitempty"`
 	// scaleDown is scaling policy for scaling Down.
 	// If not set, the default value is to allow to scale down to minReplicas pods, with a
 	// 300 second stabilization window (i.e., the highest recommendation for
 	// the last 300sec is used).
 	// +optional
-	ScaleDownRules *autoscalingv2beta2.HPAScalingRules `json:"scaleDownRules,omitempty" yaml:"scaleDownRules,omitempty"`
+	ScaleDownRules *autoscalingv2.HPAScalingRules `json:"scaleDownRules,omitempty" yaml:"scaleDownRules,omitempty"`
 
 	// metrics contains the specifications for which to use to calculate the
 	// desired replica count (the maximum replica count across all metrics will
@@ -123,7 +123,7 @@ type HorizontalScaling struct {
 	// more information about how each type of metric must respond.
 	// If not set, the default metric will be set to 80% average CPU utilization.
 	// +optional
-	Metrics []autoscalingv2beta2.MetricSpec `json:"metrics,omitempty" yaml:"metrics,omitempty"`
+	Metrics []autoscalingv2.MetricSpec `json:"metrics,omitempty" yaml:"metrics,omitempty"`
 }
 
 // The following configuration items are basically the same as the VPA configuration,
