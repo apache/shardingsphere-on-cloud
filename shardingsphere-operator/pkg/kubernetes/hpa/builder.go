@@ -19,58 +19,64 @@ package hpa
 
 import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/metadata"
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 )
 
+// HorizontalPodAutoscalerBuilder is a builder for HPA
 type HorizontalPodAutoscalerBuilder interface {
 	metadata.MetadataBuilder
 
-	SetScaleTargetRef(ref autoscalingv2beta2.CrossVersionObjectReference) HorizontalPodAutoscalerBuilder
+	SetScaleTargetRef(ref autoscalingv2.CrossVersionObjectReference) HorizontalPodAutoscalerBuilder
 	SetMinReplicas(n int32) HorizontalPodAutoscalerBuilder
 	SetMaxReplicas(n int32) HorizontalPodAutoscalerBuilder
-	SetMetrics(specs []autoscalingv2beta2.MetricSpec) HorizontalPodAutoscalerBuilder
-	SetBehavior(bh *autoscalingv2beta2.HorizontalPodAutoscalerBehavior) HorizontalPodAutoscalerBuilder
+	SetMetrics(specs []autoscalingv2.MetricSpec) HorizontalPodAutoscalerBuilder
+	SetBehavior(bh *autoscalingv2.HorizontalPodAutoscalerBehavior) HorizontalPodAutoscalerBuilder
 
-	BuildHPA() *autoscalingv2beta2.HorizontalPodAutoscaler
+	BuildHPA() *autoscalingv2.HorizontalPodAutoscaler
 }
 
+// NewHorizontalPodAutoScalerBuilder returns a HorizontalPodAutoScalerBuilder for HPA
 func NewHorizontalPodAutoScalerBuilder() HorizontalPodAutoscalerBuilder {
-	return &hpaBuilder{
-		hpa:             &autoscalingv2beta2.HorizontalPodAutoscaler{},
-		MetadataBuilder: metadata.NewMetadataBuilder(),
-	}
+	return &hpaBuilder{}
 }
 
 type hpaBuilder struct {
-	hpa *autoscalingv2beta2.HorizontalPodAutoscaler
+	hpa *autoscalingv2.HorizontalPodAutoscaler
 	metadata.MetadataBuilder
 }
 
-func (b *hpaBuilder) SetScaleTargetRef(ref autoscalingv2beta2.CrossVersionObjectReference) HorizontalPodAutoscalerBuilder {
+// SetScaleTargetRef set the scale target
+func (b *hpaBuilder) SetScaleTargetRef(ref autoscalingv2.CrossVersionObjectReference) HorizontalPodAutoscalerBuilder {
 	b.hpa.Spec.ScaleTargetRef = ref
 	return b
 }
 
+// SetMinReplicas set the min replicas
 func (b *hpaBuilder) SetMinReplicas(n int32) HorizontalPodAutoscalerBuilder {
 	b.hpa.Spec.MinReplicas = &n
 	return b
 }
 
+// SetMaxReplicas set the max replicas
 func (b *hpaBuilder) SetMaxReplicas(n int32) HorizontalPodAutoscalerBuilder {
 	b.hpa.Spec.MaxReplicas = n
 	return b
 }
 
-func (b *hpaBuilder) SetMetrics(specs []autoscalingv2beta2.MetricSpec) HorizontalPodAutoscalerBuilder {
+// SetMetrics set the metrics
+func (b *hpaBuilder) SetMetrics(specs []autoscalingv2.MetricSpec) HorizontalPodAutoscalerBuilder {
 	b.hpa.Spec.Metrics = specs
 	return b
 }
 
-func (b *hpaBuilder) SetBehavior(bh *autoscalingv2beta2.HorizontalPodAutoscalerBehavior) HorizontalPodAutoscalerBuilder {
+// SetBehavior set the behavior
+func (b *hpaBuilder) SetBehavior(bh *autoscalingv2.HorizontalPodAutoscalerBehavior) HorizontalPodAutoscalerBuilder {
 	b.hpa.Spec.Behavior = bh
 	return b
 }
 
-func (b *hpaBuilder) BuildHPA() *autoscalingv2beta2.HorizontalPodAutoscaler {
+// BuildHPA returns a HPA
+func (b *hpaBuilder) BuildHPA() *autoscalingv2.HorizontalPodAutoscaler {
+	b.hpa.ObjectMeta = *b.BuildMetadata()
 	return b.hpa
 }

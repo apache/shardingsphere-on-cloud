@@ -20,7 +20,7 @@ package hpa
 import (
 	"context"
 
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,7 +51,7 @@ type hpaClient struct {
 
 // Getter get HorizontalPodAutoscaler from different parameters
 type Getter interface {
-	GetByNamespacedName(context.Context, types.NamespacedName) (*autoscalingv2beta2.HorizontalPodAutoscaler, error)
+	GetByNamespacedName(context.Context, types.NamespacedName) (*autoscalingv2.HorizontalPodAutoscaler, error)
 }
 
 type getter struct {
@@ -59,8 +59,8 @@ type getter struct {
 }
 
 // GetByNamespacedName returns Deployment from given namespaced name
-func (dg getter) GetByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*autoscalingv2beta2.HorizontalPodAutoscaler, error) {
-	hpa := &autoscalingv2beta2.HorizontalPodAutoscaler{}
+func (dg getter) GetByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*autoscalingv2.HorizontalPodAutoscaler, error) {
+	hpa := &autoscalingv2.HorizontalPodAutoscaler{}
 	if err := dg.Client.Get(ctx, namespacedName, hpa); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
@@ -73,8 +73,8 @@ func (dg getter) GetByNamespacedName(ctx context.Context, namespacedName types.N
 
 // Setter get HorizontalPodAutoscaler from different parameters
 type Setter interface {
-	Create(context.Context, *autoscalingv2beta2.HorizontalPodAutoscaler) error
-	Update(context.Context, *autoscalingv2beta2.HorizontalPodAutoscaler) error
+	Create(context.Context, *autoscalingv2.HorizontalPodAutoscaler) error
+	Update(context.Context, *autoscalingv2.HorizontalPodAutoscaler) error
 }
 
 type setter struct {
@@ -82,11 +82,11 @@ type setter struct {
 }
 
 // Create creates HorizontalPodAutoscaler
-func (ds setter) Create(ctx context.Context, dp *autoscalingv2beta2.HorizontalPodAutoscaler) error {
+func (ds setter) Create(ctx context.Context, dp *autoscalingv2.HorizontalPodAutoscaler) error {
 	return ds.Client.Create(ctx, dp)
 }
 
 // Update updates HorizontalPodAutoscaler
-func (ds setter) Update(ctx context.Context, dp *autoscalingv2beta2.HorizontalPodAutoscaler) error {
+func (ds setter) Update(ctx context.Context, dp *autoscalingv2.HorizontalPodAutoscaler) error {
 	return ds.Client.Update(ctx, dp)
 }
