@@ -125,7 +125,6 @@ func (r *ComputeNodeReconciler) reconcileDeployment(ctx context.Context, cn *v1a
 	}
 
 	if deploy != nil {
-		fmt.Printf("deploy selector: %s\n", deploy.Spec.Selector.String())
 		return r.updateDeployment(ctx, cn, deploy)
 	}
 	return r.createDeployment(ctx, cn)
