@@ -204,7 +204,7 @@ func (d *shardingsphereDeploymentBuilder) SetAgentBin(cn *v1alpha1.ComputeNode) 
 	d.deployment.Spec.Template.Annotations = metricsAnnos
 
 	proxy := d.FindContainerByName("shardingsphere-proxy")
-	if kubernetes.VersionBetween(cn.Spec.ServerVersion, "5.3.0", "5.3.2") {
+	if kubernetes.VersionBetween(cn.Spec.ServerVersion, "5.3.0", "5.4.0") {
 		proxy.AppendEnv([]corev1.EnvVar{
 			{
 				Name:  defaultJavaToolOptionsName,
