@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -91,6 +92,11 @@ func (r *AutoScalerReconciler) reconcileAutoScaler(ctx context.Context, as *v1al
 				return err
 			}
 		}
+		if pg.Provider == "KubernetesVPA" && pg.Vertical != nil {
+			if err := r.reconcileVPA(ctx, &as.ObjectMeta, gvk, &pg); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -111,6 +117,7 @@ func (r *AutoScalerReconciler) getHPAByNamespacedName(ctx context.Context, names
 	return r.Resources.HPA().GetByNamespacedName(ctx, namespacedName)
 }
 
+// nolint:dupl
 func (r *AutoScalerReconciler) updateHPA(ctx context.Context, meta *metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy, hpa *autoscalingv2beta2.HorizontalPodAutoscaler) error {
 	exp := r.Builder.BuildHorizontalPodAutoScaler(ctx, meta, gvk, policy)
 	exp.ObjectMeta = hpa.ObjectMeta
@@ -126,6 +133,44 @@ func (r *AutoScalerReconciler) updateHPA(ctx context.Context, meta *metav1.Objec
 func (r *AutoScalerReconciler) createHPA(ctx context.Context, meta *metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy) error {
 	hpa := r.Builder.BuildHorizontalPodAutoScaler(ctx, meta, gvk, policy)
 	err := r.Resources.HPA().Create(ctx, hpa)
+	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
+		return nil
+	}
+	return err
+}
+
+func (r *AutoScalerReconciler) reconcileVPA(ctx context.Context, meta *metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy) error {
+	vpa, err := r.getVPAByNamespacedName(ctx, types.NamespacedName{Namespace: meta.Namespace, Name: meta.Name})
+	if err != nil {
+		return err
+	}
+	if vpa != nil {
+		return r.updateVPA(ctx, meta, gvk, policy, vpa)
+	}
+	return r.createVPA(ctx, meta, gvk, policy)
+}
+
+func (r *AutoScalerReconciler) getVPAByNamespacedName(ctx context.Context, namespacedName types.NamespacedName) (*autoscalingv1.VerticalPodAutoscaler, error) {
+	return r.Resources.VPA().GetByNamespacedName(ctx, namespacedName)
+}
+
+// nolint:dupl
+func (r *AutoScalerReconciler) updateVPA(ctx context.Context, meta *metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy, vpa *autoscalingv1.VerticalPodAutoscaler) error {
+	exp := r.Builder.BuildVerticalPodAutoscaler(ctx, meta, gvk, policy)
+	exp.ObjectMeta = vpa.ObjectMeta
+	exp.Labels = vpa.Labels
+	exp.Annotations = vpa.Annotations
+
+	if !reflect.DeepEqual(vpa.Spec, exp.Spec) {
+		return r.Resources.VPA().Update(ctx, vpa)
+	}
+	return nil
+}
+
+// nolint:dupl
+func (r *AutoScalerReconciler) createVPA(ctx context.Context, meta *metav1.ObjectMeta, gvk schema.GroupVersionKind, policy *v1alpha1.ScalingPolicy) error {
+	vpa := r.Builder.BuildVerticalPodAutoscaler(ctx, meta, gvk, policy)
+	err := r.Resources.VPA().Create(ctx, vpa)
 	if err != nil && apierrors.IsAlreadyExists(err) || err == nil {
 		return nil
 	}
