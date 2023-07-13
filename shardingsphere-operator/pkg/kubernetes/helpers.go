@@ -18,6 +18,8 @@
 package kubernetes
 
 import (
+	"fmt"
+
 	"golang.org/x/mod/semver"
 )
 
@@ -25,8 +27,12 @@ var (
 	supportedShardingSphereVersion = []string{"5.3.0", "5.3.1", "5.3.2", "5.4.0"}
 )
 
+func patchHeadingV(version string) string {
+	return fmt.Sprintf("v%s", version)
+}
+
 func IsSupportedShardingSphereVersion(v string) bool {
-	if !semver.IsValid(v) {
+	if !semver.IsValid(patchHeadingV(v)) {
 		return false
 	}
 
@@ -44,6 +50,10 @@ func VersionBetween(version, left, right string) bool {
 		return false
 	}
 
+	version = patchHeadingV(version)
+	left = patchHeadingV(left)
+	right = patchHeadingV(right)
+
 	if semver.Compare(version, left) >= 0 && semver.Compare(version, right) <= 0 {
 		return true
 	}
@@ -55,6 +65,9 @@ func VersionGreaterAndEqualThan(version, target string) bool {
 		return false
 	}
 
+	target = patchHeadingV(target)
+	version = patchHeadingV(version)
+
 	return semver.Compare(version, target) >= 0
 }
 
@@ -62,6 +75,9 @@ func VersionExactEqualTo(version, target string) bool {
 	if !IsSupportedShardingSphereVersion(target) || !IsSupportedShardingSphereVersion(version) {
 		return false
 	}
+
+	target = patchHeadingV(target)
+	version = patchHeadingV(version)
 
 	return semver.Compare(version, target) == 0
 }
