@@ -24,6 +24,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/hpa"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/service"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/vpa"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -40,6 +41,7 @@ type KubernetesResources interface {
 	Service() service.Service
 	ConfigMap() configmap.ConfigMap
 	HPA() hpa.HorizontalPodAutoscaler
+	VPA() vpa.VerticalPodAutoscaler
 	// Job()
 }
 
@@ -57,6 +59,7 @@ func NewResources(c client.Client) Resources {
 			service:    service.NewServiceClient(c),
 			configmap:  configmap.NewConfigMapClient(c),
 			hpa:        hpa.NewHorizontalPodAutoscalerClient(c),
+			vpa:        vpa.NewVerticalPodAutoscalerClient(c),
 		},
 		ExtendedResources: &extended{
 			chaosmesh:     chaosmesh.NewChaos(c),
@@ -77,6 +80,7 @@ type kubernetes struct {
 	service    service.Service
 	configmap  configmap.ConfigMap
 	hpa        hpa.HorizontalPodAutoscaler
+	vpa        vpa.VerticalPodAutoscaler
 }
 
 // Deployment returns a Kubernetes deployment
@@ -97,6 +101,11 @@ func (r *kubernetes) ConfigMap() configmap.ConfigMap {
 // HPA returns a Kubernetes HPA
 func (r *kubernetes) HPA() hpa.HorizontalPodAutoscaler {
 	return r.hpa
+}
+
+// VPA returns a Kubernetes VPA
+func (r *kubernetes) VPA() vpa.VerticalPodAutoscaler {
+	return r.vpa
 }
 
 var _ ExtendedResources = &extended{}

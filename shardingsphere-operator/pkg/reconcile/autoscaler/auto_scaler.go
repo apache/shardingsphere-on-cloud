@@ -20,6 +20,8 @@ package autoscaler
 import (
 	"context"
 
+	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -30,6 +32,7 @@ import (
 // Builder build HPA from given AutoScaler
 type Builder interface {
 	BuildHorizontalPodAutoScaler(context.Context, *metav1.ObjectMeta, schema.GroupVersionKind, *v1alpha1.ScalingPolicy) *autoscalingv2.HorizontalPodAutoscaler
+	BuildVerticalPodAutoscaler(context.Context, *metav1.ObjectMeta, schema.GroupVersionKind, *v1alpha1.ScalingPolicy) *autoscalingv1.VerticalPodAutoscaler
 }
 
 // NewBulder builds resources needed by AutoScaler
