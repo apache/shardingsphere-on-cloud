@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/api/v1alpha1"
+	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/configmap"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/container"
 	"github.com/apache/shardingsphere-on-cloud/shardingsphere-operator/pkg/kubernetes/deployment"
@@ -203,12 +204,16 @@ func (d *shardingsphereDeploymentBuilder) SetAgentBin(cn *v1alpha1.ComputeNode) 
 	d.deployment.Spec.Template.Annotations = metricsAnnos
 
 	proxy := d.FindContainerByName("shardingsphere-proxy")
-	proxy.AppendEnv([]corev1.EnvVar{
-		{
-			Name:  defaultJavaToolOptionsName,
-			Value: fmt.Sprintf(defaultJavaAgentEnvValue, cn.Spec.ServerVersion),
-		},
-	})
+	if kubernetes.VersionBetween(cn.Spec.ServerVersion, "5.3.0", "5.3.2") {
+		proxy.AppendEnv([]corev1.EnvVar{
+			{
+				Name:  defaultJavaToolOptionsName,
+				Value: fmt.Sprintf(defaultJavaAgentEnvValue, cn.Spec.ServerVersion),
+			},
+		})
+	} else if kubernetes.VersionGreaterAndEqualThan(cn.Spec.ServerVersion, "5.4.0") {
+		proxy.SetArgs([]string{"-g"})
+	}
 
 	vbAgentConf := deployment.NewSharedVolumeAndMountBuilder().
 		SetVolumeMountSize(1).
@@ -242,9 +247,10 @@ func (d *shardingsphereDeploymentBuilder) SetAgentBin(cn *v1alpha1.ComputeNode) 
 
 	proxy.AppendVolumeMounts([]corev1.VolumeMount{*vmc[0], *vma[0]})
 
-	if cn.Spec.ServerVersion == "5.3.2" {
+	if kubernetes.VersionExactEqualTo(cn.Spec.ServerVersion, "5.3.2") {
 		d.SetAgentScript(cn)
 	}
+
 	d.UpdateContainerByName(proxy.BuildContainer())
 	return d
 }
