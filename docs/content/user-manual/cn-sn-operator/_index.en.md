@@ -23,7 +23,7 @@ Operator currently supports Helm Charts rapid deployment, configuration content 
  kubectl create ns shardingsphere-operator
  helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
  helm repo update
- helm install shardingsphere-cluster shardingsphere/apache-shardingsphere-operator-charts -n shardingsphere-operator
+ helm install shardingsphere-cluster shardingsphere/apache-shardingsphere-operator-charts -n shardingsphere-operator --set zookeeper.persistence.enabled=false
 ```
 
 ### Source Code Installation
@@ -33,7 +33,7 @@ kubectl create ns shardingsphere-operator
 cd charts/apache-shardingsphere-operator-charts/
 helm dependency build
 cd ../
-helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n shardingsphere-operator
+helm install shardingsphere-cluster apache-shardingsphere-operator-charts -n shardingsphere-operator --set zookeeper.persistence.enabled=false
 ```
 
 ### Charts Parameters Instruction

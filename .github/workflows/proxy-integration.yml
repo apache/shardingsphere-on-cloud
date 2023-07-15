@@ -52,6 +52,7 @@ jobs:
           set -x 
           export TEST_NAMESPACE="default"
           #kubectl create namespace ${TEST_NAMESPACE}
+          helm repo add bitnami https://charts.bitnami.com/bitnami
           cd charts/apache-shardingsphere-proxy-charts/charts/governance
           helm dependency build 
           cd ../..

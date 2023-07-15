@@ -1,3 +1,36 @@
+## 0.3.0
+
+### New Feature
+
+1. Introduce new CRD StorageNode，to be activated at `--feature-gates=StorageNode=true`
+2. Introduce new CRD Chaos，to be activated at `--feature-gates=Chaos=true`
+3. Add Grafana dashboard template for ShardingSphere Proxy Grafana
+
+### Enhancement
+
+1. Update AgentConfig of ComputeNode
+2. Update the display of execute-latency in the Grafana panel
+3. Add some checks about zookeeper before install proxy with Helm 
+4. Add demo for sharding algorithm based on Wasm
+5. Support Agent in Proxy CHarts
+6. StorageNode suppors CloudNativePG cluster
+7. Optimize ComputeNode conditions in Pending phase
+8. Adjust default legents in Grafana template 
+9. Support operator docker image pushed to Apache Dockerhub repo
+10. Add golangci-lint action to Github Action 
+11. Upgrade Zookeeper config to support arm arch in Proxy Charts
+
+### Bug fix
+
+1. Fix Arm image build in Github Action 
+2. Fix Agent ConfigMap charts name template
+3. Fix Status reconciliation error which cause unexpected loop
+
+### Change Log
+
+1. [MILESTONE](https://github.com/apache/shardingsphere-on-cloud/milestone/7)
+
+
 ## 0.2.0
 
 ### New Feature
