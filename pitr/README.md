@@ -1,5 +1,7 @@
 # README
 
+This is a cli tool for point-in-time recovery of Apache ShardingSphere and OpenGauss distributed database cluster.
+
 ## Prerequisition
 
 ### Servers
@@ -145,7 +147,7 @@ make build
 
 ```shell
 scp tls.crt tls.key root@${OPENGAUSS_SERVER_1}:/home/omm/
-scp tls.crt tls.key root@${OPENGAUSS_SERVER_2:/home/omm/
+scp tls.crt tls.key root@${OPENGAUSS_SERVER_2}:/home/omm/
 ```
 
 2. Copy binary and cert files
