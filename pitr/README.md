@@ -12,17 +12,68 @@ This is a cli tool for point-in-time recovery of Apache ShardingSphere and OpenG
 |2| OpenGauss Server 1 | OpenGauss Server + Pitr Agent |
 |3| OpenGauss Server 2 | OpenGauss Server + Pitr Agent |
 
-### Softwares
+### Environment
 
-- Apache ShardingSphere Proxy can access OpenGauss network 
+- Apache ShardingSphere Proxy can access OpenGauss network
 - External access to Apache ShardingSphere Proxy
 - External access to OpenGauss Server via port 18080
 - OpenGauss has user `omm` and database `omm` which can be accessed
 - OpenGauss enables `cbm tracking`
-- SSL certs for cli and agent secure communication
+- SSL key pairs for Pitr cli-agent secure communication
+
+#### Compilation (optional)
+
+If you want to compile Pitr tools yourself, you should using a recommanded Golang version 1.20 with Linux 3.10.0-957.el7.x86_64. Following the steps below to compile both Pitr agent and cli.
+
+Step 1. Firstly clone the project
+
+```shell
+git clone git@github.com:apache/shardingsphere-on-cloud.git
+```
+
+Step 2. Compile Pitr agent
+
+```shell
+cd shardingsphere-on-cloud/pitr/agent
+make build
+```
+
+Step 3. Compile Pitr cli
+
+```shell
+cd shardingsphere-on-cloud/pitr/cli
+make build
+```
+
+### SSL Configurations
+
+The communication of Pitr cli and Pitr agent is secured by TLS which needs a SSL key pair. You can either use any available keypairs or generate a new keypair, e.g.:
+
+- tls.key
+- tls.crt
+
+#### Generate new TLS keypair (Optional)
+
+Make sure you have a usable OpenSSL environment, check environment variable OPENSSL_CONF, generally it is set to `/etc/pki/tls`.
+
+Then using the script under Pitr agent code directory, execute the commands below:
+
+```shell
+git clone git@github.com:apache/shardingsphere-on-cloud.git
+cd shardingsphere-on-cloud/pitr/agent
+make openssl-local
+```
+
+After that, the keypair files will be write to `./certs` in the current directory.
 
 
-### ShardingSphere Proxy Configurations
+## Deployment
+
+Pitr cli (aka `gs_pitr`) and Pitr agent (aka `pitr-agent`) binaries could be downloaded at Apache ShardingSphere on Cloud release page, or just compiled in your local development environment.
+
+### Step 1: Get ShardingSphere Proxy Configurations
+
+Substitute the OpenGauss server address below:
 
 server.yaml
 
@@ -71,8 +122,8 @@ databaseName: sharding_db
 dataSources:
   ds_0:
     url: jdbc:opengauss://${OPENGAUSS_SERVER_1}:13100/tpccdb?useSSL=false
-    username: root 
-    password: root 
+    username: root
+    password: root
     connectionTimeoutMilliseconds: 30000
     idleTimeoutMilliseconds: 60000
     maxLifetimeMilliseconds: 1800000
@@ -81,8 +132,8 @@ dataSources:
 
   ds_1:
     url: jdbc:opengauss://${OPENGAUSS_SERVER_2}:13100/tpccdb?useSSL=false
-    username: root 
-    password: root 
+    username: root
+    password: root
     connectionTimeoutMilliseconds: 30000
     idleTimeoutMilliseconds: 60000
     maxLifetimeMilliseconds: 1800000
@@ -90,7 +141,7 @@ dataSources:
     minPoolSize: 1
 ```
 
-### OpenGauss Configurations
+### Step 2: Get OpenGauss Configurations
 
 Enable `cbm tracking` in postgres.conf
 
@@ -98,70 +149,41 @@ Enable `cbm tracking` in postgres.conf
 enable_cbm_tracking = on
 ```
 
-### SSL Configurations
+### Step 3: Get Pitr tools
 
-The communication of Pitr cli and Pitr agent is secured by TLS which needs a SSL key pair. You can choose or generate a new key pair through commands below:
+You can download pre-compiled Pitr tools binary release or compile them yourself from source code.
 
-```shell
-cd pitr/agent
-make openssl-local
-```
-
-NOTE: update environment variable `OPENSSL_CONF` if needed.
-
-## Deployment
-
-Pitr cli (aka `gs_pitr`) and Pitr agent (aka `pitr-agent`) binaries could be downloaded at Apache ShardingSphere on Cloud release page, or just compiled in your local development environment.
-
-### Binary
+#### Get binary release
 
 The binaries are packaged as .tar.gz file on [release page](https://github.com/apache/shardingsphere-on-cloud/releases). You can download expected version and uncompress the binary files `gs_pitr` and `pitr-agent`.
 
-### Compile
+#### Compile it yourself
 
-To compile Pitr cli and agent, you should using a recommanded Golang version 1.20 with Linux 3.10.0-957.el7.x86_64.
+Please refer to the `Compilation` section in `Prerequsition` for detailed instructions.
 
-1. Firstly clone the project
-
-```shell
-git clone git@github.com:apache/shardingsphere-on-cloud.git
-```
-
-2. Compile Pitr agent
-
-```shell
-cd shardingsphere-on-cloud/pitr/agent
-make build
-```
-
-3. Compile Pitr cli
-
-```shell
-cd shardingsphere-on-cloud/pitr/cli 
-make build
-```
-
-### Deploy Pitr Agent
+### Step 4: Deploy Pitr Agent
 
 1. Copy cert files
+
+If the TLS keypair is compiled yourself, the cert files are located at `shardingsphere-on-cloud/pitr/agent/certs`. You should change directory to the cert directory before executing the command below:
 
 ```shell
 scp tls.crt tls.key root@${OPENGAUSS_SERVER_1}:/home/omm/
 scp tls.crt tls.key root@${OPENGAUSS_SERVER_2}:/home/omm/
 ```
 
-2. Copy binary and cert files
+2. Copy binary files
 
 ```shell
-cd shardingsphere-on-cloud/pitr/agent 
+cd shardingsphere-on-cloud/pitr/agent
 
 scp pitr-agent root@${OPENGAUSS_SERVER_1}:/home/omm/
 scp pitr-agent root@${OPENGAUSS_SERVER_2}:/home/omm/
 ```
 
-### Start Pitr Agent
+### Step 5: Start Pitr Agent
 
-1. Login OpenGauss server and change directory to `/home/omm`
+1. Login OpenGauss servers and change directory to `/home/omm`
 
 Here are files under `/home/omm`:
 
@@ -183,7 +205,7 @@ drwx------ 29 omm  omm  4.0K May 23 11:37 pgdata
 
 Parameters:
 - pgdata: OpenGauss data storage path
-- port: Pitr agent exposed port 
+- port: Pitr agent exposed port
 - tls-crt: TLS crt file path
 - tls-key: TLS key file path
 - log-level: Pitr agent log level
@@ -209,7 +231,7 @@ CREATE SHARDING TABLE RULE t_user(
  STORAGE_UNITS(ds_0,ds_1),
  SHARDING_COLUMN=user_id,
  TYPE(NAME="hash_mod",PROPERTIES("sharding-count"="4"))
-);	
+);
 ```
 
 3. Check Sharding Table Rule
@@ -218,12 +240,12 @@ CREATE SHARDING TABLE RULE t_user(
 SHOW SHARDING TABLE RULE t_user;
 ```
 
-4. Create Table `t_user` 
+4. Create Table `t_user`
 ```SQL
 CREATE TABLE t_user (
-  user_id INT NOT NULL, 
-  order_id INT NOT NULL, 
-  status VARCHAR(45) NULL, 
+  user_id INT NOT NULL,
+  order_id INT NOT NULL,
+  status VARCHAR(45) NULL,
   PRIMARY KEY (user_id)
 );
 ```
@@ -243,7 +265,7 @@ insert into t_user( user_id, order_id, status) values(4,4,4);
 select * from t_user;
 ```
 
-### Test Case 
+### Test Case
 
 #### Backup
 
@@ -277,7 +299,7 @@ delete from t_user where user_id=2;
 
 Do recovery:
 ```Shell
-./gs_pitr restore --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID} 
+./gs_pitr restore --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
 ```
 
 Parameters:
@@ -287,11 +309,9 @@ Parameters:
 - password: ShardingSphere Proxy password
 - agent-port: Pitr agent port
 - dn-backup-path: OpenGauss backup files path
-- id: Backup id 
+- id: Backup id
 
-Verify data: 
+Verify data:
 ```SQL
 select * from t_user;
 ```
-
-
