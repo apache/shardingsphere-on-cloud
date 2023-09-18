@@ -19,6 +19,9 @@ This is a cli tool for point-in-time recovery of Apache ShardingSphere and OpenG
 - External access to OpenGauss Server via port 18080
 - OpenGauss has user `omm` and database `omm` which can be accessed
 - OpenGauss enables `cbm tracking`
+- Set below environment variables on OpenGauss Servers
+  - export PGDATABASE=13100
+  - export PGPORT=tpccdb
 - SSL key pairs for Pitr cli-agent secure communication
 
 #### Compilation (optional)
@@ -141,13 +144,14 @@ dataSources:
     minPoolSize: 1
 ```
 
-### Step 2: Get OpenGauss Configurations
+### Step 2: Set OpenGauss Configurations
 
-Enable `cbm tracking` in postgres.conf
+a. Enable `cbm tracking` in postgres.conf
 
 ```shell
 enable_cbm_tracking = on
 ```
+b. Execute `gs_probackup init -B ${backup-path}` to set the expected backup path. 
 
 ### Step 3: Get Pitr tools
 
