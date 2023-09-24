@@ -25,6 +25,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/cmds"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -32,18 +33,18 @@ func DiskSpace(ctx *fiber.Ctx) error {
 	in := &view.DiskSpaceIn{}
 
 	if err := ctx.BodyParser(in); err != nil {
-		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
+		return fmt.Errorf("body parse err: %s, wrap: %w", err, cons.BodyParseFailed)
 	}
 
 	if err := in.Validate(); err != nil {
-		return fmt.Errorf("invalid parameter,err=%w", err)
+		return fmt.Errorf("invalid parameter, err wrap: %w", err)
 	}
 
 	// show disk space
 	cmd := fmt.Sprintf("df -h %s", in.DiskPath)
 	output, err := cmds.Exec(os.Getenv("SHELL"), cmd)
 	if err != nil {
-		return fmt.Errorf("exec cmd [%s] failure,err=%w", cmd, err)
+		return fmt.Errorf("exec cmd [%s] failure, err wrap: %w", cmd, err)
 	}
 
 	return responder.Success(ctx, output)
