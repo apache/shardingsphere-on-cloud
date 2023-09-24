@@ -76,14 +76,14 @@ func (ls *localStorage) init() error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.Mkdir(ls.rootDir, 0777); err != nil {
-				return fmt.Errorf("create root dir failure,dir=%s,err=%s", ls.rootDir, err)
+				return fmt.Errorf("create root dir failure. dir: %s, err: %s", ls.rootDir, err)
 			}
 		} else if os.IsExist(err) {
 			if !fi.IsDir() {
-				return fmt.Errorf("file has already exist,name=%s", ls.rootDir)
+				return fmt.Errorf("file has already exist. name: %s", ls.rootDir)
 			}
 		} else {
-			return fmt.Errorf("failed to get file info,root dir=%s,err=%s", ls.rootDir, err)
+			return fmt.Errorf("failed to get file info. root dir: %s, err: %s", ls.rootDir, err)
 		}
 	}
 
@@ -92,14 +92,14 @@ func (ls *localStorage) init() error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.Mkdir(ls.backupDir, 0777); err != nil {
-				return fmt.Errorf("create backup dir failure,dir=%s,err=%s", ls.backupDir, err)
+				return fmt.Errorf("create backup dir failure. dir: %s, err: %s", ls.backupDir, err)
 			}
 		} else if os.IsExist(err) {
 			if !fi.IsDir() {
-				return fmt.Errorf("backup:file has already exist,name=%s", ls.backupDir)
+				return fmt.Errorf("backup: file has already exist. name: %s", ls.backupDir)
 			}
 		} else {
-			return fmt.Errorf("failed to get file info,backup dir=%s,err=%s", ls.backupDir, err)
+			return fmt.Errorf("failed to get file info. backup dir: %s, err: %s", ls.backupDir, err)
 		}
 	}
 
@@ -108,7 +108,7 @@ func (ls *localStorage) init() error {
 
 func (ls *localStorage) WriteByJSON(name string, contents *model.LsBackup) error {
 	if !strings.HasSuffix(name, ".json") {
-		return fmt.Errorf("wrong file extension,file name is %s", name)
+		return fmt.Errorf("wrong file extension. file name: %s", name)
 	}
 
 	data, err := json.MarshalIndent(contents, "", "  ")
@@ -119,12 +119,12 @@ func (ls *localStorage) WriteByJSON(name string, contents *model.LsBackup) error
 	path := fmt.Sprintf("%s/%s", ls.backupDir, name)
 	fi, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("create file failure,file path is %s", path)
+		return fmt.Errorf("create file failure. file path: %s", path)
 	}
 
 	_, err = fi.Write(data)
 	if err != nil {
-		return fmt.Errorf("write to file failure,err=%s,data is %s", err, data)
+		return fmt.Errorf("write to file failure. err: %s, data: %s", err, data)
 	}
 
 	return nil
@@ -133,7 +133,7 @@ func (ls *localStorage) WriteByJSON(name string, contents *model.LsBackup) error
 func (ls *localStorage) ReadAll() ([]*model.LsBackup, error) {
 	entries, err := os.ReadDir(ls.backupDir)
 	if err != nil {
-		return nil, xerr.NewCliErr(fmt.Sprintf("read the dir[path:%s] failed,err=%s", ls.backupDir, err))
+		return nil, xerr.NewCliErr(fmt.Sprintf("read the dir[path:%s] failed. err: %s", ls.backupDir, err))
 	}
 
 	backups := make([]*model.LsBackup, 0, len(entries))
@@ -147,7 +147,7 @@ func (ls *localStorage) ReadAll() ([]*model.LsBackup, error) {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, xerr.NewCliErr("The file does not exist or has changed")
 		} else if err != nil {
-			return nil, xerr.NewCliErr(fmt.Sprintf("Unknown err:get entry info failed,err=%s", err))
+			return nil, xerr.NewCliErr(fmt.Sprintf("Unknown err: get entry info failed. err: %s", err))
 		}
 
 		if !strings.HasSuffix(info.Name(), ".json") {
@@ -157,12 +157,12 @@ func (ls *localStorage) ReadAll() ([]*model.LsBackup, error) {
 		path := fmt.Sprintf("%s/%s", ls.backupDir, info.Name())
 		file, err := os.ReadFile(path)
 		if err != nil {
-			return nil, xerr.NewCliErr(fmt.Sprintf("read file failed,err=%s", err))
+			return nil, xerr.NewCliErr(fmt.Sprintf("read file failed. err: %s", err))
 		}
 
 		b := &model.LsBackup{}
 		if err := json.Unmarshal(file, b); err != nil {
-			return nil, xerr.NewCliErr(fmt.Sprintf("invalid contents[filePath=%s],err=%s", path, err))
+			return nil, xerr.NewCliErr(fmt.Sprintf("invalid contents[filePath=%s]. err: %s", path, err))
 		}
 
 		backups = append(backups, b)
@@ -217,7 +217,7 @@ func (ls *localStorage) GenFilename(extn Extension) string {
 func (ls *localStorage) DeleteByName(name string) error {
 	path := fmt.Sprintf("%s/%s", ls.backupDir, name)
 	if err := os.Remove(path); err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("delete file failed,err=%s", err))
+		return xerr.NewCliErr(fmt.Sprintf("delete file failed. err: %s", err))
 	}
 	return nil
 }
