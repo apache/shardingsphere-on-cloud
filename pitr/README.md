@@ -6,6 +6,7 @@ This is a cli tool for point-in-time recovery of Apache ShardingSphere and OpenG
 
 Before you start, you need to prepare at least three servers, set the running environment and deploy required softwares respectively. The topology is:
 
+```shell
 +------------------------------+             +------------------+
 |                              |             | OpenGauss Server |
 | Apache ShardingSphere Proxy  |             | Pitr Agent       |
@@ -13,6 +14,7 @@ Before you start, you need to prepare at least three servers, set the running en
 | Pitr Cli (aka `gs_pitr`)     |             | OpenGauss Server |
 |                              |             | Pitr Agent       |
 +------------------------------+             +------------------+
+```
 
 ### Servers
 
