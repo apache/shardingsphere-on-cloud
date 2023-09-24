@@ -4,7 +4,19 @@ This is a cli tool for point-in-time recovery of Apache ShardingSphere and OpenG
 
 ## Prerequisition
 
+Before you start, you need to prepare at least three servers, set the running environment and deploy required softwares respectively. The topology is:
+
++------------------------------+             +------------------+
+|                              |             | OpenGauss Server |
+| Apache ShardingSphere Proxy  |             | Pitr Agent       |
+| Apache Zookeeper             | ----------> +------------------+
+| Pitr Cli (aka `gs_pitr`)     |             | OpenGauss Server |
+|                              |             | Pitr Agent       |
++------------------------------+             +------------------+
+
 ### Servers
+
+You need to prepare at least three servers: one server for the Pitr commandline tool and Apache ShardingSphere, other two servers for the Pitr agent and OpenGauss:
 
 | | Role | Components |
 |:-:|:-:|:-:|
@@ -14,21 +26,25 @@ This is a cli tool for point-in-time recovery of Apache ShardingSphere and OpenG
 
 ### Environment
 
-- Apache ShardingSphere Proxy can access OpenGauss network
+After the servers are ready, you should check and ensure the following items:
+
+- Apache ShardingSphere Proxy is allowed to access OpenGauss Servers
 - External access to Apache ShardingSphere Proxy
 - External access to OpenGauss Server via port 18080
-- OpenGauss has user `omm` and database `omm` which can be accessed
-- OpenGauss enables `cbm tracking`
 - Set below environment variables on OpenGauss Servers
   - export PGDATABASE=13100
   - export PGPORT=tpccdb
-- SSL key pairs for Pitr cli-agent secure communication
+- OpenGauss has user `omm` and database `omm` which can be accessed
+- OpenGauss enables `cbm tracking`
+- SSL key pairs. Any valid key pairs are acceptable, they will be used for Pitr cli-agent secure communication
 
 #### Compilation (optional)
 
-If you want to compile Pitr tools yourself, you should using a recommanded Golang version 1.20 with Linux 3.10.0-957.el7.x86_64. Following the steps below to compile both Pitr agent and cli.
+Generally the Pitr command line tools, including cli binary and agent binary could be downloaded throught the [Apache ShardingSphere-on-Cloud release page](https://github.com/apache/shardingsphere-on-cloud/releases). 
 
-Step 1. Firstly clone the project
+In case of if you want to compile Pitr tools yourself, you should using this recommanded Golang version 1.20 with Linux 3.10.0-957.el7.x86_64. Please follow the steps below to compile both Pitr agent and cli.
+
+Step 1. Clone the project
 
 ```shell
 git clone git@github.com:apache/shardingsphere-on-cloud.git
@@ -55,28 +71,48 @@ The communication of Pitr cli and Pitr agent is secured by TLS which needs a SSL
 - tls.key
 - tls.crt
 
+The key pair need to be deployed on the servers where Pitr agent and OpenGauss are installed.
+
 #### Generate new TLS keypair (Optional)
 
-Make sure you have a usable OpenSSL environment, check environment variable OPENSSL_CONF, generally it is set to `/etc/pki/tls`.
+If you want to generate a new key pair, please make sure you have a available OpenSSL environment, check environment variable OPENSSL_CONF, generally it is set to `/etc/pki/tls`.
 
 Then using the script under Pitr agent code directory, execute the commands below:
 
 ```shell
-git clone git@github.com:apache/shardingsphere-on-cloud.git
 cd shardingsphere-on-cloud/pitr/agent
 make openssl-local
 ```
 
-After that, the keypair files will be write to `./certs` in the current directory.
+After that, the keypair files will be write to `./certs` in the current directory. 
 
 
 ## Deployment
 
-Pitr cli (aka `gs_pitr`) and Pitr agent (aka `pitr-agent`) binaries could be downloaded at Apache ShardingSphere on Cloud release page, or just compiled in your local development environment.
+Pitr cli (aka `gs_pitr`) and Pitr agent (aka `pitr-agent`) binaries could be downloaded at [Apache ShardingSphere on Cloud release page](https://github.com/apache/shardingsphere-on-cloud/releases), or just compiled in your local development environment according the previous instructions.
 
-### Step 1: Get ShardingSphere Proxy Configurations
+The whole deployment process consists of two parts: 
 
-Substitute the OpenGauss server address below:
+1. Deploying Apache ShardingSphere Proxy, Zookeeper and Pitr Cli, refering to step 1 - step 2
+2. Deploying OpenGauss and Pitr Agent, refering to step 3 - step 5.
+
+### Step 1: Get Pitr tools
+
+You can download pre-compiled Pitr tools binary release or compile them yourself from source code.
+
+#### Get binary release
+
+The binaries are packaged as .tar.gz file on [release page](https://github.com/apache/shardingsphere-on-cloud/releases). You can download expected version and uncompress the binary files `gs_pitr` and `pitr-agent`.
+
+#### Compile it yourself
+
+Please refer to the `Compilation` section in `Prerequsition` for detailed instructions.
+
+After fetching the binaries successfully. You need to save the `gs_pitr` to the same server where Apache ShardingSphere Proxy is located. And save `pitr-agent` to the servers where OpenGauss is deployed.
+
+### Step 2: Get ShardingSphere Proxy Configurations
+
+Using the OpenGauss host to substitute the ${OPENGAUSS_SERVER_1} and ${OPENGAUSS_SERVER_2} below:
 
 server.yaml
 
@@ -144,7 +180,9 @@ dataSources:
     minPoolSize: 1
 ```
 
-### Step 2: Set OpenGauss Configurations
+And using the script `bin/start.sh` to start ShardingSphere Proxy. This script could be found in apache-shardingsphere-{version}-shardingsphere-proxy-bin.tar.gz
+
+### Step 3: Set OpenGauss Configurations
 
 a. Enable `cbm tracking` in postgres.conf
 
@@ -153,21 +191,12 @@ enable_cbm_tracking = on
 ```
 b. Execute `gs_probackup init -B ${backup-path}` to set the expected backup path. 
 
-### Step 3: Get Pitr tools
+Then you can start both OpenGauss servers.
 
-You can download pre-compiled Pitr tools binary release or compile them yourself from source code.
 
-#### Get binary release
+### Step 4: Deploy SSL certs for Pitr Agent
 
-The binaries are packaged as .tar.gz file on [release page](https://github.com/apache/shardingsphere-on-cloud/releases). You can download expected version and uncompress the binary files `gs_pitr` and `pitr-agent`.
-
-#### Compile it yourself
-
-Please refer to the `Compilation` section in `Prerequsition` for detailed instructions.
-
-### Step 4: Deploy Pitr Agent
-
-1. Copy cert files
+Before you start Pitr agent, you need to deploy SSL certs for Pitr agent:
 
 If the TLS keypair is compiled yourself, the cert files are located at `shardingsphere-on-cloud/pitr/agent/certs`. You should change directory to the cert directory before executing the command below:
 
@@ -176,7 +205,11 @@ scp tls.crt tls.key root@${OPENGAUSS_SERVER_1}:/home/omm/
 scp tls.crt tls.key root@${OPENGAUSS_SERVER_2}:/home/omm/
 ```
 
-2. Copy binary files
+Otherwise the key pairs need to be deployed to the same path on OpenGauss servers.
+
+### Step 5: Start Pitr Agent
+
+1. Copy binary files
 
 ```shell
 cd shardingsphere-on-cloud/pitr/agent
@@ -185,9 +218,7 @@ scp pitr-agent root@${OPENGAUSS_SERVER_1}:/home/omm/
 scp pitr-agent root@${OPENGAUSS_SERVER_2}:/home/omm/
 ```
 
-### Step 5: Start Pitr Agent
-
-1. Login OpenGauss servers and change directory to `/home/omm`
+2. Login OpenGauss servers and change directory to `/home/omm`
 
 Here are files under `/home/omm`:
 
@@ -201,7 +232,7 @@ drwx------ 29 omm  omm  4.0K May 23 11:37 pgdata
 -rwxr-xr-x  1 root root 1.7K May 16 18:26 tls.key
 ```
 
-2. Start Pitr agent
+3. Start Pitr agent
 
 ```shell
 ./pitr-agent -pgdata /data/data-glt/d1 -port 18080 -tls-crt tls.crt -tls-key tls.key -log-level debug
