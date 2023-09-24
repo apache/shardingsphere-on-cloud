@@ -23,9 +23,10 @@ import (
 	"fmt"
 	"testing"
 
-	"bou.ke/monkey"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils"
+
+	"bou.ke/monkey"
 	mock_httputils "github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils/mocks"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"

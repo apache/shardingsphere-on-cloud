@@ -28,6 +28,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/prettyoutput"
+
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
@@ -87,11 +88,11 @@ func restore() error {
 	// init local storage
 	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("new local storage failed, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("new local storage failed. err: %s", err.Error()))
 	}
 	proxy, err := pkg.NewShardingSphereProxy(Username, Password, pkg.DefaultDBName, Host, Port)
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("new ss-proxy failed, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("new ss-proxy failed. err: [%s", err.Error()))
 	}
 
 	// get backup record
@@ -99,24 +100,24 @@ func restore() error {
 	if CSN != "" {
 		bak, err = ls.ReadByCSN(CSN)
 		if err != nil {
-			return xerr.NewCliErr("read backup record by csn failed")
+			return xerr.NewCliErr(fmt.Sprintf("read backup record by csn failed. err: %s", err))
 		}
 	}
 
 	if RecordID != "" {
 		bak, err = ls.ReadByID(RecordID)
 		if err != nil {
-			return xerr.NewCliErr("read backup record by id failed")
+			return xerr.NewCliErr(fmt.Sprintf("read backup record by id failed. err: %s", err))
 		}
 	}
 	if bak == nil {
-		return xerr.NewCliErr("backup record not found")
+		return xerr.NewCliErr(fmt.Sprintf("backup record not found. err: %s", err))
 	}
 
 	// check if the backup logic database exits,
 	// if exits, we need to warning user that we will drop the database.
 	if err := checkDatabaseExist(proxy, bak); err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("check database exist failed:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("check database exist failed. err: %s", err))
 	}
 
 	// check agent server status
@@ -128,13 +129,13 @@ func restore() error {
 	// exec restore
 	logging.Info("Start restore backup data to openGauss...")
 	if err := execRestore(bak); err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("exec restore failed:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("exec restore failed. err: %s", err))
 	}
 
 	logging.Info("Restore backup data to openGauss success!")
 	// restore metadata to ss-proxy
 	if err := restoreDataToSSProxy(proxy, bak); err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("restore metadata to ss-proxy failed:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("restore metadata to shardingsphere proxy failed. err: %s", err))
 	}
 	logging.Info("Restore success!")
 	return nil
@@ -143,7 +144,7 @@ func restore() error {
 func checkDatabaseExist(proxy pkg.IShardingSphereProxy, bak *model.LsBackup) error {
 	clusterNow, err := proxy.ExportMetaData()
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("get cluster metadata failed:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("get cluster metadata failed. err: %s", err))
 	}
 
 	for k := range bak.SsBackup.ClusterInfo.MetaData.Databases {
@@ -169,13 +170,13 @@ func restoreDataToSSProxy(proxy pkg.IShardingSphereProxy, lsBackup *model.LsBack
 	for _, shardingDBName := range databaseNamesExist {
 		logging.Info(fmt.Sprintf("Dropping database: [%s] ...", shardingDBName))
 		if err := proxy.DropDatabase(shardingDBName); err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("drop database failed:%s", err.Error()))
+			return xerr.NewCliErr(fmt.Sprintf("drop database failed. err: %s", err))
 		}
 	}
 
 	// import metadata
 	if err := proxy.ImportMetaData(lsBackup.SsBackup.ClusterInfo); err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("Import metadata to ss-proxy failed:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("Import metadata to ss-proxy failed. err: %s", err))
 	}
 
 	return nil

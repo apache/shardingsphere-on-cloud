@@ -27,6 +27,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/prettyoutput"
+
 	"github.com/google/uuid"
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -107,19 +108,19 @@ func backup() error {
 	var lsBackup *model.LsBackup
 	proxy, err := pkg.NewShardingSphereProxy(Username, Password, pkg.DefaultDBName, Host, Port)
 	if err != nil {
-		return xerr.NewCliErr("Create ss-proxy connect failed")
+		return xerr.NewCliErr(fmt.Sprintf("Connect shardingsphere proxy failed, err: %s", err))
 	}
 
 	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())
 	if err != nil {
-		return xerr.NewCliErr("Create local storage failed")
+		return xerr.NewCliErr(fmt.Sprintf("Create local storage failed. err: %s", err))
 	}
 
 	defer func() {
 		if err != nil {
 			logging.Warn("Try to unlock cluster ...")
 			if err := proxy.Unlock(); err != nil {
-				logging.Error(fmt.Sprintf("Coz backup failed, try to unlock cluster, but still failed, err:%s", err.Error()))
+				logging.Error(fmt.Sprintf("Since backup failed, try to unlock cluster, but still failed. err: %s", err))
 			}
 
 			if lsBackup != nil {
@@ -133,14 +134,14 @@ func backup() error {
 	logging.Info("Starting lock cluster ...")
 	err = proxy.LockForBackup()
 	if err != nil {
-		return xerr.NewCliErr("Lock for backup failed")
+		return xerr.NewCliErr(fmt.Sprintf("Lock for backup failed. err: %s", err))
 	}
 
 	// Step2. Get cluster info and save local backup info
 	logging.Info("Starting export metadata ...")
 	lsBackup, err = exportData(proxy, ls)
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("export backup data failed, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("export backup data failed. err: %s", err))
 	}
 	logging.Info(fmt.Sprintf("Export backup data success, backup filename: %s", filename))
 
@@ -156,28 +157,28 @@ func backup() error {
 	logging.Info("Checking disk space...")
 	err = checkDiskSpace(lsBackup)
 	if err != nil {
-		return xerr.NewCliErr(err.Error())
+		return xerr.NewCliErr(fmt.Sprintf("check disk space failed. err: %s", err))
 	}
 
 	// Step5. send backup command to agent-server.
 	logging.Info("Starting backup ...")
 	err = execBackup(lsBackup)
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("exec backup failed, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("exec backup failed. err: %s", err))
 	}
 
 	// Step6. unlock cluster
 	logging.Info("Starting unlock cluster ...")
 	err = proxy.Unlock()
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("unlock cluster failed, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("unlock cluster failed. err: %s", err))
 	}
 
 	// Step7. update backup file
 	logging.Info("Starting update backup file ...")
 	err = ls.WriteByJSON(filename, lsBackup)
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("update backup file failed, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("update backup file failed. err: %s", err))
 	}
 
 	// Step8. check agent server backup
@@ -193,7 +194,7 @@ func backup() error {
 	logging.Info("Starting update backup file ...")
 	err = ls.WriteByJSON(filename, lsBackup)
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("update backup file failed, err: %s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("update backup file failed. err: %s", err))
 	}
 
 	logging.Info("Backup finished!")
@@ -204,13 +205,13 @@ func exportData(proxy pkg.IShardingSphereProxy, ls pkg.ILocalStorage) (lsBackup 
 	// Step1. export cluster metadata from ss-proxy
 	cluster, err := proxy.ExportMetaData()
 	if err != nil {
-		return nil, xerr.NewCliErr("export meta data failed")
+		return nil, xerr.NewCliErr(fmt.Sprintf("export meta data failed. err: %s", err))
 	}
 
 	// Step2. export storage nodes from ss-proxy
 	nodes, err := proxy.ExportStorageNodes()
 	if err != nil {
-		return nil, xerr.NewCliErr("export storage nodes failed")
+		return nil, xerr.NewCliErr(fmt.Sprintf("export storage nodes failed. err: %s", err))
 	}
 
 	// Step3. combine the backup contents
@@ -237,7 +238,7 @@ func exportData(proxy pkg.IShardingSphereProxy, ls pkg.ILocalStorage) (lsBackup 
 
 	// Step4. finally, save data with json to local
 	if err := ls.WriteByJSON(filename, contents); err != nil {
-		return nil, xerr.NewCliErr("write backup info by json failed")
+		return nil, xerr.NewCliErr(fmt.Sprintf("write backup info by json failed. err: %s", err))
 	}
 
 	return contents, nil
@@ -264,7 +265,7 @@ func execBackup(lsBackup *model.LsBackup) error {
 	// if backup failed, return error
 	if err != nil {
 		lsBackup.SsBackup.Status = model.SsBackupStatusFailed
-		return xerr.NewCliErr(fmt.Sprintf("node backup failed, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("node backup failed. err: %s", err))
 	}
 
 	// save data node list to lsBackup
@@ -289,7 +290,7 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 	}
 	backupID, err := as.Backup(in)
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("backup failed, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("backup failed, err: %s", err))
 	}
 
 	// update DnList of lsBackup

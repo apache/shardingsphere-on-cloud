@@ -20,35 +20,33 @@ package handler
 import (
 	"fmt"
 
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
+	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
 
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
-
 	"github.com/gofiber/fiber/v2"
-
-	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/cons"
 )
 
 func Show(ctx *fiber.Ctx) error {
 	in := &view.ShowIn{}
 
 	if err := ctx.BodyParser(in); err != nil {
-		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
+		return fmt.Errorf("body parse err: %s, wrap: %w", err, cons.BodyParseFailed)
 	}
 
 	if err := in.Validate(); err != nil {
-		return fmt.Errorf("invalid parameter,err=%w", err)
+		return fmt.Errorf("invalid parameter, err wrap: %w", err)
 	}
 
 	if err := pkg.OG.Auth(in.Username, in.Password, in.DBName, in.DBPort); err != nil {
-		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
+		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s], err wrap: %w"
 		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
 	}
 
 	data, err := pkg.OG.ShowBackup(in.DnBackupPath, in.Instance, in.DnBackupID)
 	if err != nil {
-		efmt := "pkg.OG.ShowBackupDetail failure[backupPath=%s,instance=%s,backupID=%s],err=%w"
+		efmt := "pkg.OG.ShowBackupDetail failure[backupPath=%s,instance=%s,backupID=%s], err wrap: %w"
 		return fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupID, err)
 	}
 
@@ -59,22 +57,22 @@ func ShowList(ctx *fiber.Ctx) error {
 	in := &view.ShowListIn{}
 
 	if err := ctx.BodyParser(in); err != nil {
-		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
+		return fmt.Errorf("body parse err: %s, wrap: %w", err, cons.BodyParseFailed)
 	}
 
 	if err := in.Validate(); err != nil {
-		return fmt.Errorf("invalid parameter,err=%w", err)
+		return fmt.Errorf("invalid parameter, err wrap: %w", err)
 	}
 
 	if err := pkg.OG.Auth(in.Username, in.Password, in.DBName, in.DBPort); err != nil {
-		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
+		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s], err wrap: %w"
 		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
 	}
 
 	//Show list
 	list, err := pkg.OG.ShowBackupList(in.DnBackupPath, in.Instance)
 	if err != nil {
-		efmt := "pkg.OG.ShowBackupList failure[backupPath=%s,instance=%s],err=%w"
+		efmt := "pkg.OG.ShowBackupList failure[backupPath=%s,instance=%s], err wrap: %w"
 		return fmt.Errorf(efmt, in.DnBackupPath, in.Instance, err)
 	}
 

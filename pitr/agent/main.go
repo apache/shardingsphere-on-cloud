@@ -30,6 +30,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap/zapcore"
@@ -72,7 +73,7 @@ func main() {
 	if envSourceFile != "" {
 		err := godotenv.Load(envSourceFile)
 		if err != nil {
-			panic(fmt.Errorf("load env source file error:%s", err.Error()))
+			panic(fmt.Errorf("load env source file error: %s", err))
 		}
 	}
 
@@ -84,12 +85,12 @@ func main() {
 	if pgData == "" {
 		pgData = os.Getenv("PGDATA")
 		if pgData == "" {
-			panic(fmt.Errorf("PGDATA:no database directory specified and environment variable PGDATA unset"))
+			panic(fmt.Errorf("PGDATA: no database directory specified and environment variable PGDATA unset"))
 		}
 	}
 
 	if _, err := os.Stat(pgData); os.IsNotExist(err) {
-		panic(fmt.Errorf("PGDATA:%s the database directory does not exist", pgData))
+		panic(fmt.Errorf("PGDATA: %s the database directory does not exist", pgData))
 	}
 
 	pgData = strings.Trim(pgData, " ")

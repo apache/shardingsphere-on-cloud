@@ -66,7 +66,7 @@ LockForBackup 停写，同时锁 CSN，备份场景使用
 func (ss *shardingSphereProxy) LockForBackup() error {
 	_, err := ss.db.Exec(`LOCK CLUSTER WITH LOCK_STRATEGY(TYPE(NAME="WRITE", PROPERTIES("lock_csn"=true)));`)
 	if err != nil {
-		return xerr.NewCliErr("ss lock for backup failure")
+		return xerr.NewCliErr(fmt.Sprintf("shardingsphere lock for backup failure. err: %s", err))
 	}
 	return nil
 }
@@ -77,7 +77,7 @@ LockForRestore 停读写，不需要锁 CSN，恢复场景使用
 func (ss *shardingSphereProxy) LockForRestore() error {
 	_, err := ss.db.Exec(`LOCK CLUSTER WITH LOCK_STRATEGY(TYPE(NAME="READ_WRITE"))`)
 	if err != nil {
-		return xerr.NewCliErr("ss lock for restore failure")
+		return xerr.NewCliErr(fmt.Sprintf("shardingsphere lock for restore failure. err: %s", err))
 	}
 	return nil
 }
@@ -85,7 +85,7 @@ func (ss *shardingSphereProxy) LockForRestore() error {
 func (ss *shardingSphereProxy) Unlock() error {
 	_, err := ss.db.Exec("UNLOCK CLUSTER;")
 	if err != nil {
-		return xerr.NewCliErr("ss unlock failure")
+		return xerr.NewCliErr(fmt.Sprintf("shardingsphere unlock failure. err: %s", err))
 	}
 	return nil
 }
@@ -102,7 +102,7 @@ ExportMetaData 导出 SS 元数据
 func (ss *shardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
 	query, err := ss.db.Query(`EXPORT METADATA;`)
 	if err != nil {
-		return nil, xerr.NewCliErr(fmt.Sprintf("export meta data failure,err=%s", err))
+		return nil, xerr.NewCliErr(fmt.Sprintf("export meta data failure. err: %s", err))
 	}
 
 	var (
@@ -112,23 +112,23 @@ func (ss *shardingSphereProxy) ExportMetaData() (*model.ClusterInfo, error) {
 	)
 	if query.Next() {
 		if err = query.Scan(&id, &createTime, &data); err != nil {
-			return nil, xerr.NewCliErr(fmt.Sprintf("query scan failure,err=%s", err))
+			return nil, xerr.NewCliErr(fmt.Sprintf("query scan failure. err: %s", err))
 		}
 		if err = query.Close(); err != nil {
-			return nil, xerr.NewCliErr(fmt.Sprintf("query close failure,err=%s", err))
+			return nil, xerr.NewCliErr(fmt.Sprintf("query close failure. err: %s", err))
 		}
 	}
 	if query.Err() != nil {
-		return nil, xerr.NewCliErr(fmt.Sprintf("query err=%s", query.Err()))
+		return nil, xerr.NewCliErr(fmt.Sprintf("query err: %s", query.Err()))
 	}
 
 	var out model.ClusterInfo
 	rawDecodedText, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
-		return nil, fmt.Errorf("base64 decode return err=%s", err)
+		return nil, fmt.Errorf("base64 decode return err: %s", err)
 	}
 	if err = json.Unmarshal(rawDecodedText, &out); err != nil {
-		return nil, fmt.Errorf("json unmarshal return err=%s", err)
+		return nil, fmt.Errorf("json unmarshal return err: %s", err)
 	}
 
 	if out.SnapshotInfo != nil && out.SnapshotInfo.Csn == "" {
@@ -150,7 +150,7 @@ ExportStorageNodes 导出存储节点数据
 func (ss *shardingSphereProxy) ExportStorageNodes() ([]*model.StorageNode, error) {
 	query, err := ss.db.Query(`EXPORT STORAGE NODES;`)
 	if err != nil {
-		return nil, xerr.NewCliErr(fmt.Sprintf("export storage nodes failure,err=%s", err))
+		return nil, xerr.NewCliErr(fmt.Sprintf("export storage nodes failure. err: %s", err))
 	}
 
 	var (
@@ -160,20 +160,20 @@ func (ss *shardingSphereProxy) ExportStorageNodes() ([]*model.StorageNode, error
 	)
 	if query.Next() {
 		if err = query.Scan(&id, &createTime, &data); err != nil {
-			return nil, xerr.NewCliErr(fmt.Sprintf("query scan failure,err=%s", err))
+			return nil, xerr.NewCliErr(fmt.Sprintf("query scan failure. err: %s", err))
 		}
 
 		if err = query.Close(); err != nil {
-			return nil, xerr.NewCliErr(fmt.Sprintf("query close failure,err=%s", err))
+			return nil, xerr.NewCliErr(fmt.Sprintf("query close failure. err: %s", err))
 		}
 	}
 	if query.Err() != nil {
-		return nil, xerr.NewCliErr(fmt.Sprintf("query err failure,err=%s", err))
+		return nil, xerr.NewCliErr(fmt.Sprintf("query err failure. err: %s", err))
 	}
 
 	out := &model.StorageNodesInfo{}
 	if err = json.Unmarshal([]byte(data), &out); err != nil {
-		return nil, fmt.Errorf("json unmarshal return err=%s", err)
+		return nil, fmt.Errorf("json unmarshal return err: %s", err)
 	}
 
 	// get all storage nodes and filter duplicate nodes
@@ -210,7 +210,7 @@ func (ss *shardingSphereProxy) ImportMetaData(in *model.ClusterInfo) error {
 
 	_, err = ss.db.Exec(fmt.Sprintf(`IMPORT METADATA '%s';`, base64.StdEncoding.EncodeToString(marshal)))
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("import metadata failure,err=%s", err))
+		return xerr.NewCliErr(fmt.Sprintf("import metadata failure. err: %s", err))
 	}
 
 	return nil
@@ -220,7 +220,7 @@ func (ss *shardingSphereProxy) ImportMetaData(in *model.ClusterInfo) error {
 func (ss *shardingSphereProxy) DropDatabase(databaseName string) error {
 	_, err := ss.db.Exec(fmt.Sprintf(`DROP DATABASE %s;`, databaseName))
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("drop database failure, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("drop database failure. err: %s", err))
 	}
 	return nil
 }

@@ -18,16 +18,17 @@
 package pkg
 
 import (
-	"bou.ke/monkey"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
-	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/gsutil"
 	"regexp"
 	"time"
 
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/gsutil"
+
+	"bou.ke/monkey"
 	"github.com/DATA-DOG/go-sqlmock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

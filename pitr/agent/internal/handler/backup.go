@@ -25,6 +25,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/handler/view"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/agent/pkg/responder"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -32,26 +33,26 @@ func Backup(ctx *fiber.Ctx) error {
 	in := &view.BackupIn{}
 
 	if err := ctx.BodyParser(in); err != nil {
-		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
+		return fmt.Errorf("body parse err: %s, wrap: %w", err, cons.BodyParseFailed)
 	}
 
 	if err := in.Validate(); err != nil {
-		return fmt.Errorf("invalid parameter,err=%w", err)
+		return fmt.Errorf("invalid parameter, err wrap: %w", err)
 	}
 
 	if err := pkg.OG.Auth(in.Username, in.Password, in.DBName, in.DBPort); err != nil {
-		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
+		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s], err wrap=%w"
 		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
 	}
 
 	// try to add backup instance
 	if err := pkg.OG.AddInstance(in.DnBackupPath, in.Instance); err != nil && !errors.Is(err, cons.InstanceAlreadyExist) {
-		return fmt.Errorf("add instance failed, err=%w", err)
+		return fmt.Errorf("add instance failed, err wrap: %w", err)
 	}
 
 	backupID, err := pkg.OG.AsyncBackup(in.DnBackupPath, in.Instance, in.DnBackupMode, 1, in.DBPort)
 	if err != nil {
-		efmt := "pkg.OG.AsyncBackup[path=%s,instance=%s,mode=%s] failure,err=%w"
+		efmt := "pkg.OG.AsyncBackup[path=%s,instance=%s,mode=%s] failure, err wrap: %w"
 		return fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupMode, err)
 	}
 
@@ -63,20 +64,20 @@ func Backup(ctx *fiber.Ctx) error {
 func DeleteBackup(ctx *fiber.Ctx) error {
 	in := &view.DeleteBackupIn{}
 	if err := ctx.BodyParser(in); err != nil {
-		return fmt.Errorf("body parse err=%s,wrap=%w", err, cons.BodyParseFailed)
+		return fmt.Errorf("body parse err: %s, wrap: %w", err, cons.BodyParseFailed)
 	}
 
 	if err := in.Validate(); err != nil {
-		return fmt.Errorf("invalid parameter,err=%w", err)
+		return fmt.Errorf("invalid parameter, err: %w", err)
 	}
 
 	if err := pkg.OG.Auth(in.Username, in.Password, in.DBName, in.DBPort); err != nil {
-		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s],err=%w"
+		efmt := "pkg.OG.Auth failure[un=%s,pw.len=%d,db=%s], err: %w"
 		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
 	}
 
 	if err := pkg.OG.DelBackup(in.DnBackupPath, in.Instance, in.BackupID); err != nil {
-		return fmt.Errorf("delete backup failure,err=%w", err)
+		return fmt.Errorf("delete backup failure, err: %w", err)
 	}
 
 	return responder.Success(ctx, "")
