@@ -22,10 +22,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
