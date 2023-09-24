@@ -25,6 +25,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
+
 	"github.com/spf13/cobra"
 )
 
@@ -52,17 +53,17 @@ func init() {
 func show() error {
 	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("connect to local storage failed, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("connect to local storage failed. err: %s", err))
 	}
 
 	// show backup record by csn
 	if CSN != "" {
 		bak, err := ls.ReadByCSN(CSN)
 		if err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("read backup record failed, err:%s", err.Error()))
+			return xerr.NewCliErr(fmt.Sprintf("read backup record failed. err: %s", err))
 		}
 		if bak == nil {
-			fmt.Println("Didn't find backup record by csn: ", CSN)
+			fmt.Printf("Didn't find backup record by csn: %s\n", CSN)
 			return nil
 		}
 
@@ -76,10 +77,10 @@ func show() error {
 	if RecordID != "" {
 		bak, err := ls.ReadByID(RecordID)
 		if err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("read backup record failed, err:%s", err.Error()))
+			return xerr.NewCliErr(fmt.Sprintf("read backup record failed. err: %s", err))
 		}
 		if bak == nil {
-			fmt.Println("Didn't find backup record by record id: ", RecordID)
+			fmt.Printf("Didn't find backup record by record id: %s\n", RecordID)
 			return nil
 		}
 
@@ -92,11 +93,11 @@ func show() error {
 	// show all backup record
 	backupList, err := ls.ReadAll()
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("read backup record failed, err:%s", err.Error()))
+		return xerr.NewCliErr(fmt.Sprintf("read backup record failed. err: %s", err))
 	}
 
 	if len(backupList) == 0 {
-		fmt.Println("Didn't find any backup record.")
+		fmt.Printf("Didn't find any backup record.\n")
 		return nil
 	}
 
