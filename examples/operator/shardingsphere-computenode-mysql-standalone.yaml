@@ -25,7 +25,7 @@ spec:
   storageNodeConnector: 
     type: mysql
     version: 5.1.47
-  serverVersion: 5.3.1
+  serverVersion: 5.4.1
   replicas: 1
   selector:
     matchLabels:
