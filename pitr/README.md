@@ -36,8 +36,8 @@ After the servers are ready, you should check and ensure the following items:
 - External access to Apache ShardingSphere Proxy
 - External access to OpenGauss Server via port 18080
 - Set below environment variables on OpenGauss Servers
-  - export PGDATABASE=13100
-  - export PGPORT=tpccdb
+  - export PGDATABASE=tpccdb
+  - export PGPORT=13100
 - OpenGauss has user `omm` and database `omm` which can be accessed
 - OpenGauss enables `cbm tracking`
 - SSL key pairs. Any valid key pairs are acceptable, they will be used for Pitr cli-agent secure communication
