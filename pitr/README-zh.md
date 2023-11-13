@@ -1,25 +1,25 @@
 # 目录
 ```shell
 使用说明
-  前置条件
-    服务器说明
-    环境说明
-      编译说明（可选）
-    SSL 配置
-      生成新的 SSL 密钥对（可选）
-  部署说明
-    步骤1：获取 Pitr 二进制
-      下载二进制包
-      自行编译
-    步骤2：准备 ShardingSphere Proxy 配置
-    步骤3：配置 OpenGauss
-    步骤4：为 Pitr Agent 部署 SSL 证书
-    步骤5：启动 Pitr Agent
-  测试说明
-    准备测试数据
-    测试用例
-      备份
-      恢复
+    前置条件
+        服务器说明
+        环境说明
+            编译说明（可选）
+        SSL 配置
+            生成新的 SSL 密钥对（可选）
+    部署说明
+        步骤1：获取 Pitr 二进制
+            下载二进制包
+            自行编译
+        步骤2：准备 ShardingSphere Proxy 配置
+        步骤3：配置 OpenGauss
+        步骤4：为 Pitr Agent 部署 SSL 证书
+        步骤5：启动 Pitr Agent
+    测试说明
+        准备测试数据
+        测试用例
+            备份
+            恢复
 ```
 
 

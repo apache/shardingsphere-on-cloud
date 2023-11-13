@@ -1,24 +1,25 @@
 # Content
 ```shell
-  Prerequisition 
-    Servers
-    Environment 
-      Compilation (optional) 
-    SSL Configurations 
-      Generate new SSL keypair (Optional) 
-  Deployment 
-    Step 1: Get Pitr tools 
-      Get binary release 
-      Compile it yourself 
-    Step 2: Get ShardingSphere Proxy Configurations 
-    Step 3: Set OpenGauss Configurations
-    Step 4: Deploy SSL certs for Pitr Agent  
-    Step 5: Start Pitr Agent 
-  Test
-    Prepare Test Data 
-    Test Case 
-      Backup
-      Recovery 
+README
+    Prerequisition 
+        Servers
+        Environment 
+            Compilation (optional) 
+        SSL Configurations 
+            Generate new SSL keypair (Optional) 
+    Deployment 
+        Step 1: Get Pitr tools 
+            Get binary release 
+            Compile it yourself 
+        Step 2: Get ShardingSphere Proxy Configurations 
+        Step 3: Set OpenGauss Configurations
+        Step 4: Deploy SSL certs for Pitr Agent  
+        Step 5: Start Pitr Agent 
+    Test
+        Prepare Test Data 
+        Test Case 
+            Backup
+            Recovery 
 ```
 
 # README
