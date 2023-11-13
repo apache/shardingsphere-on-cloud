@@ -1,24 +1,25 @@
 # Content
 ```shell
-  Prerequisition 
-    Servers
-    Environment 
-      Compilation (optional) 
-    SSL Configurations 
-      Generate new SSL keypair (Optional) 
-  Deployment 
-    Step 1: Get Pitr tools 
-      Get binary release 
-      Compile it yourself 
-    Step 2: Get ShardingSphere Proxy Configurations 
-    Step 3: Set OpenGauss Configurations
-    Step 4: Deploy SSL certs for Pitr Agent  
-    Step 5: Start Pitr Agent 
-  Test
-    Prepare Test Data 
-    Test Case 
-      Backup
-      Recovery 
+README
+    Prerequisition 
+        Servers
+        Environment 
+            Compilation (optional) 
+        SSL Configurations 
+            Generate new SSL keypair (Optional) 
+    Deployment 
+        Step 1: Get Pitr tools 
+            Get binary release 
+            Compile it yourself 
+        Step 2: Get ShardingSphere Proxy Configurations 
+        Step 3: Set OpenGauss Configurations
+        Step 4: Deploy SSL certs for Pitr Agent  
+        Step 5: Start Pitr Agent 
+    Test
+        Prepare Test Data 
+        Test Case 
+            Backup
+            Recovery 
 ```
 
 # README
@@ -378,3 +379,12 @@ Verify data:
 select * from t_user;
 ```
 
+# Restrictions
+
+- Global backup tasks need to be executed while there is no uncommitted transaction, and this will be ensuranced by ShardingSphere lock.
+- The backup metadata of ShardingSphere will be stored on the same host with the Pitr cli. You need to copy this metadata backup to the another host first where you want to start recovery.
+- The recovery operation need to stop service, and it is a synchonized operation. Users have to make sure the success of the recovery operation.
+- OpenGauss data nodes should use the same IP and port while backup and recovery
+- Only one Pitr cli could successfully if multiple cli are executed simutaneously
+- OpenGauss servers may under inconsistent status if recovery fails. Users need to try to recovery again until it is succeed.
+- Using the same version of ShardingSphere while backup and recovery to make sure the metadata is compatible.
