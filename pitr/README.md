@@ -1,3 +1,26 @@
+# Content
+```shell
+  Prerequisition 
+    Servers
+    Environment 
+      Compilation (optional) 
+    SSL Configurations 
+      Generate new SSL keypair (Optional) 
+  Deployment 
+    Step 1: Get Pitr tools 
+      Get binary release 
+      Compile it yourself 
+    Step 2: Get ShardingSphere Proxy Configurations 
+    Step 3: Set OpenGauss Configurations
+    Step 4: Deploy SSL certs for Pitr Agent  
+    Step 5: Start Pitr Agent 
+  Test
+    Prepare Test Data 
+    Test Case 
+      Backup
+      Recovery 
+```
+
 # README
 
 This is a cli tool for point-in-time recovery of Apache ShardingSphere and OpenGauss distributed database cluster.
@@ -77,11 +100,11 @@ The communication of Pitr cli and Pitr agent is secured by TLS which needs a SSL
 
 The key pair need to be deployed on the servers where Pitr agent and OpenGauss are installed.
 
-#### Generate new TLS keypair (Optional)
+#### Generate new SSL keypair (Optional)
 
-If you want to generate a new key pair, please make sure you have a available OpenSSL environment, check environment variable OPENSSL_CONF, generally it is set to `/etc/pki/tls`.
+If you want to generate a new key pair, please make sure you have a available OpenSSL environment, check environment variable OPENSSL_CONF, generally it is set to `/etc/pki/tls/openssl.cnf`.
 
-Then using the script under Pitr agent code directory, execute the commands below:
+Then using the script under `pitr/agent` code directory, execute the commands below:
 
 ```shell
 cd shardingsphere-on-cloud/pitr/agent
