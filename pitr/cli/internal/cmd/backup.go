@@ -56,7 +56,7 @@ var BackupCmd = &cobra.Command{
 		// convert BackupModeStr to BackupMode
 		switch BackupModeStr {
 		case "FULL", "full":
-			BackupMode = model.BDBackModeFull
+			BackupMode = model.DBBackModeFull
 		case "PTRACK", "ptrack":
 			BackupMode = model.DBBackModePTrack
 		}
