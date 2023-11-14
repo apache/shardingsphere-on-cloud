@@ -81,6 +81,10 @@ func (as *agentServer) CheckStatus(in *model.HealthCheckIn) error {
 		return xerr.NewUnknownErr(url, in, nil, err)
 	}
 
+	if out.Code != 0 {
+		return xerr.NewAgentServerErr(out.Code, out.Msg)
+	}
+
 	return nil
 }
 
