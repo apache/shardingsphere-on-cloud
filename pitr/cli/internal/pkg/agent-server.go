@@ -63,13 +63,21 @@ func NewAgentServer(addr string) IAgentServer {
 	}
 }
 
+type CommonOutResp struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+	Data any    `json:"data"`
+}
+
 // CheckStatus check agent server is alive
 func (as *agentServer) CheckStatus(in *model.HealthCheckIn) error {
 	url := fmt.Sprintf("%s%s", as.addr, as._apiHealthCheck)
 
+	out := &CommonOutResp{}
 	r := httputils.NewRequest(context.Background(), http.MethodPost, url)
+	r.Body(in)
 
-	if err := r.Send(in); err != nil {
+	if err := r.Send(out); err != nil {
 		return xerr.NewUnknownErr(url, in, nil, err)
 	}
 

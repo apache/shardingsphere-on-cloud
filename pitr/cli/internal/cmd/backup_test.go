@@ -370,6 +370,7 @@ var _ = Describe("test backup mock", func() {
 		BeforeEach(func() {
 			mockCtrl = gomock.NewController(GinkgoT())
 			mockIreq = mock_httputils.NewMockIreq(mockCtrl)
+			mockIreq.EXPECT().Body(gomock.Any()).AnyTimes()
 
 			monkey.Patch(httputils.NewRequest, func(ctx context.Context, method, url string) httputils.Ireq {
 				return mockIreq
