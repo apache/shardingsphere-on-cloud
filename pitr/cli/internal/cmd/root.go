@@ -103,12 +103,12 @@ func checkAgentServerStatus(lsBackup *model.LsBackup) bool {
 		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
 		in := &model.HealthCheckIn{
 			DBPort:   sn.Port,
-			DBName:   convertLocalhost(sn.IP),
+			DBName:   sn.Database,
 			Username: sn.Username,
 			Password: sn.Password,
 		}
 		if err := as.CheckStatus(in); err != nil {
-			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Port: AgentPort, Status: "Unavailable"})
+			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Port: AgentPort, Status: fmt.Sprintf("Unavailable: %s", err)})
 			available = false
 		} else {
 			statusList = append(statusList, &model.AgentServerStatus{IP: sn.IP, Port: AgentPort, Status: "Available"})
