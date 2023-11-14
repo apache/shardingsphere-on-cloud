@@ -50,7 +50,7 @@ func Backup(ctx *fiber.Ctx) error {
 		return fmt.Errorf("add instance failed, err wrap: %w", err)
 	}
 
-	backupID, err := pkg.OG.AsyncBackup(in.DnBackupPath, in.Instance, in.DnBackupMode, 1, in.DBPort)
+	backupID, err := pkg.OG.AsyncBackup(in.DnBackupPath, in.Instance, in.DnBackupMode, in.DnThreadsNum, in.DBPort)
 	if err != nil {
 		efmt := "pkg.OG.AsyncBackup[path=%s,instance=%s,mode=%s] failure, err wrap: %w"
 		return fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupMode, err)
