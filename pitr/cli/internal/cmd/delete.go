@@ -133,9 +133,11 @@ func deleteRecord() error {
 
 func _execDelete(lsBackup *model.LsBackup) error {
 	var (
-		dataNodeMap = make(map[string]*model.DataNode)
-		totalNum    = len(lsBackup.SsBackup.StorageNodes)
-		resultCh    = make(chan *model.DeleteBackupResult, totalNum)
+		dataNodeMap       = make(map[string]*model.DataNode)
+		totalNum          = len(lsBackup.SsBackup.StorageNodes)
+		resultCh          = make(chan *model.DeleteBackupResult, totalNum)
+		dnResult          = make([]*model.DeleteBackupResult, 0)
+		deleteFinalStatus = "Completed"
 	)
 	for _, dn := range lsBackup.DnList {
 		dataNodeMap[dn.IP] = dn
@@ -161,14 +163,19 @@ func _execDelete(lsBackup *model.LsBackup) error {
 	}
 
 	time.Sleep(time.Millisecond * 100)
+
 	for pw.IsRenderInProgress() {
-		if pw.LengthActive() == 0 {
-			pw.Stop()
-		}
 		time.Sleep(time.Millisecond * 100)
 	}
 
 	close(resultCh)
+
+	for result := range resultCh {
+		dnResult = append(dnResult, result)
+		if result.Status != "Completed" {
+			deleteFinalStatus = "Failed"
+		}
+	}
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
@@ -176,13 +183,16 @@ func _execDelete(lsBackup *model.LsBackup) error {
 	t.AppendHeader(table.Row{"#", "Node IP", "Node Port", "Result", "Message"})
 	t.SetColumnConfigs([]table.ColumnConfig{{Number: 5, WidthMax: 50}})
 
-	idx := 0
-	for result := range resultCh {
-		idx++
-		t.AppendRow([]interface{}{idx, result.IP, result.Port, result.Status, result.Msg})
+	for i, result := range dnResult {
+		t.AppendRow([]interface{}{i + 1, result.IP, result.Port, result.Status, result.Msg})
 		t.AppendSeparator()
 	}
 
 	t.Render()
+
+	if deleteFinalStatus == "Failed" {
+		return xerr.NewCliErr("delete failed, please check the log for more details.")
+	}
+
 	return nil
 }
