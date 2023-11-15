@@ -51,7 +51,7 @@ var DeleteCmd = &cobra.Command{
 			return
 		}
 
-		if err := delete(); err != nil {
+		if err := deleteRecord(); err != nil {
 			logging.Error(err.Error())
 		}
 	},
@@ -77,7 +77,7 @@ func init() {
 	DeleteCmd.Flags().StringVarP(&RecordID, "id", "", "", "backup record id")
 }
 
-func delete() error {
+func deleteRecord() error {
 	// init local storage
 	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())
 	if err != nil {
