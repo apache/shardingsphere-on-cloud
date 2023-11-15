@@ -27,6 +27,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/prettyoutput"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/timeutil"
 
 	"github.com/google/uuid"
 	"github.com/jedib0t/go-pretty/v6/progress"
@@ -225,8 +226,8 @@ func exportData(proxy pkg.IShardingSphereProxy, ls pkg.ILocalStorage) (lsBackup 
 		Info: &model.BackupMetaInfo{
 			ID:         uuid.New().String(), // generate uuid for this backup
 			CSN:        csn,
-			StartTime:  time.Now().Unix(),
-			EndTime:    0,
+			StartTime:  timeutil.Now(),
+			EndTime:    timeutil.Init(),
 			BackupMode: BackupMode,
 		},
 		SsBackup: &model.SsBackup{
@@ -299,8 +300,8 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 		Port:      node.Port,
 		Status:    model.SsBackupStatusRunning,
 		BackupID:  backupID,
-		StartTime: time.Now().Unix(),
-		EndTime:   0,
+		StartTime: timeutil.Now(),
+		EndTime:   timeutil.Init(),
 	}
 	dnCh <- dn
 	return nil
@@ -363,7 +364,7 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 
 	lsBackup.DnList = dnResult
 	lsBackup.SsBackup.Status = backupFinalStatus
-	lsBackup.Info.EndTime = time.Now().Unix()
+	lsBackup.Info.EndTime = timeutil.Now()
 	return backupFinalStatus
 }
 
@@ -388,14 +389,14 @@ func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, dn *model.DataNode,
 			if err != nil {
 				tracker.MarkAsErrored()
 				dn.Status = status
-				dn.EndTime = time.Now().Unix()
+				dn.EndTime = timeutil.Now()
 				dnCh <- dn
 				done <- struct{}{}
 			}
 			if status == model.SsBackupStatusCompleted || status == model.SsBackupStatusFailed {
 				tracker.MarkAsDone()
 				dn.Status = status
-				dn.EndTime = time.Now().Unix()
+				dn.EndTime = timeutil.Now()
 				dnCh <- dn
 				done <- struct{}{}
 			}
