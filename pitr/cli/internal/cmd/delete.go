@@ -149,17 +149,15 @@ func _execDelete(lsBackup *model.LsBackup) error {
 	pw := prettyoutput.NewPW(totalNum)
 	go pw.Render()
 
-	for _, sn := range lsBackup.SsBackup.StorageNodes {
-		sn := sn
-		dn, ok := dataNodeMap[sn.IP]
-		if !ok {
+	for _, storagenode := range lsBackup.SsBackup.StorageNodes {
+		sn := storagenode
+		if dn, ok := dataNodeMap[sn.IP]; !ok {
 			logging.Warn(fmt.Sprintf("SKIPPED! data node %s:%d not found in backup info.", sn.IP, sn.Port))
-			logging.Error(fmt.Sprintf("dnmap: %#v, sn: %v\n", dataNodeMap, sn.IP))
 			continue
+		} else {
+			as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
+			go doDelete(as, sn, dn, resultCh, pw)
 		}
-		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
-
-		go doDelete(as, sn, dn, resultCh, pw)
 	}
 
 	time.Sleep(time.Millisecond * 100)
