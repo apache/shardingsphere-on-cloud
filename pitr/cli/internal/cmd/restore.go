@@ -99,18 +99,9 @@ func restore() error {
 
 	// get backup record
 	var bak *model.LsBackup
-	if CSN != "" {
-		bak, err = ls.ReadByCSN(CSN)
-		if err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("read backup record by csn failed. err: %s", err))
-		}
-	}
-
-	if RecordID != "" {
-		bak, err = ls.ReadByID(RecordID)
-		if err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("read backup record by id failed. err: %s", err))
-		}
+	bak, err = validate(ls, CSN, RecordID)
+	if err != nil {
+		return err
 	}
 	if bak == nil {
 		return xerr.NewCliErr(fmt.Sprintf("backup record not found. err: %s", err))
