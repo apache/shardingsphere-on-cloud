@@ -44,6 +44,8 @@ type (
 		ReadByID(id string) (*model.LsBackup, error)
 		ReadByCSN(csn string) (*model.LsBackup, error)
 		DeleteByName(name string) error
+		HideByName(name string) error
+		DeleteByHidedName(name string) error
 	}
 
 	Extension string
@@ -164,7 +166,7 @@ func (ls *localStorage) ReadAll() ([]*model.LsBackup, error) {
 		if err := json.Unmarshal(file, b); err != nil {
 			return nil, xerr.NewCliErr(fmt.Sprintf("invalid contents[filePath=%s]. err: %s", path, err))
 		}
-
+		b.Info.FileName = info.Name()
 		backups = append(backups, b)
 	}
 	return backups, nil
@@ -214,10 +216,34 @@ func (ls *localStorage) GenFilename(extn Extension) string {
 	}
 }
 
-func (ls *localStorage) DeleteByName(name string) error {
+type mode int
+
+const (
+	normal mode = iota
+	hided
+)
+
+func (ls *localStorage) deleteByName(name string, mode mode) error {
 	path := fmt.Sprintf("%s/%s", ls.backupDir, name)
 	if err := os.Remove(path); err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("delete file failed. err: %s", err))
+	}
+	return nil
+}
+
+func (ls *localStorage) DeleteByName(name string) error {
+	return ls.deleteByName(name, normal)
+}
+
+func (ls *localStorage) DeleteByHidedName(name string) error {
+	return ls.deleteByName(fmt.Sprintf(".%s", name), hided)
+}
+
+func (ls *localStorage) HideByName(name string) error {
+	path := fmt.Sprintf("%s/%s", ls.backupDir, name)
+	hided := fmt.Sprintf("%s/.%s", ls.backupDir, name)
+	if err := os.Rename(path, hided); err != nil {
+		return xerr.NewCliErr(fmt.Sprintf("hide file failed. err: %s", err))
 	}
 	return nil
 }

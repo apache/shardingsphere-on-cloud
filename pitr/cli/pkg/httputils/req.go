@@ -131,14 +131,16 @@ func (r *req) setReqHeader(req *http.Request) *http.Request {
 		req.Header.Set(k, v)
 	}
 
+	if req.Header.Get("x-request-id") == "" {
+		req.Header.Set("x-request-id", uuid.New().String())
+	}
+
 	// set default header if method is post
-	if r.method == http.MethodPost {
+	if r.method == http.MethodPost || r.method == http.MethodDelete {
 		if req.Header.Get("Content-Type") == "" {
 			req.Header.Set("Content-Type", "application/json")
 		}
-		if req.Header.Get("x-request-id") == "" {
-			req.Header.Set("x-request-id", uuid.New().String())
-		}
+
 	}
 	return req
 }

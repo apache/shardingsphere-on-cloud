@@ -31,6 +31,7 @@ type (
 		BackupMode DBBackupMode `json:"backup_mode"`
 		StartTime  int64        `json:"start_time"` // Unix time
 		EndTime    int64        `json:"end_time"`   // Unix time
+		FileName   string
 	}
 
 	DataNode struct {
