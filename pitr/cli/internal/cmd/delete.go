@@ -33,6 +33,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
+//nolint:dupl
 var DeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete a backup record",
@@ -57,6 +58,7 @@ var DeleteCmd = &cobra.Command{
 	},
 }
 
+//nolint:dupl
 func init() {
 	RootCmd.AddCommand(DeleteCmd)
 

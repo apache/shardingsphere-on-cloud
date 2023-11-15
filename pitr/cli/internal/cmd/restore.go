@@ -40,6 +40,7 @@ var (
 	databaseNamesExist []string
 )
 
+//nolint:dupl
 var RestoreCmd = &cobra.Command{
 	Use:   "restore",
 	Short: "Restore a database cluster ",
@@ -64,6 +65,7 @@ var RestoreCmd = &cobra.Command{
 	},
 }
 
+//nolint:dupl
 func init() {
 	RootCmd.AddCommand(RestoreCmd)
 
