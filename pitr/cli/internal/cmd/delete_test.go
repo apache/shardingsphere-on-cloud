@@ -93,7 +93,7 @@ var _ = Describe("test delete", func() {
 		as.EXPECT().DeleteBackup(gomock.Any()).Return(nil)
 		ls.EXPECT().DeleteByHidedName(bak.Info.FileName).Return(nil)
 
-		Expect(delete()).To(BeNil())
+		Expect(deleteRecord()).To(BeNil())
 	})
 
 	Context("test exec delete", func() {
