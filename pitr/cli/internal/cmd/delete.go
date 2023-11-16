@@ -103,6 +103,13 @@ func deleteRecord() error {
 		return xerr.NewCliErr("one or more agent server are not available.")
 	}
 
+	prompt := fmt.Sprintf(
+		"The backup record(ID: %s, CSN: %s) will be deleted forever.\n"+
+			"Are you sure to continue? (Y/N)", bak.Info.ID, bak.Info.CSN)
+	if err := getUserApproveInTerminal(prompt); err != nil {
+		return xerr.NewCliErr("user approve in terminal error.")
+	}
+
 	// mark the target backup record to be deleted
 	// meanwhile this record cannot be restored
 	if err := ls.HideByName(bak.Info.FileName); err != nil {
