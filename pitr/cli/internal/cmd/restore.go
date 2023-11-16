@@ -154,7 +154,7 @@ func checkDatabaseExist(proxy pkg.IShardingSphereProxy, bak *model.LsBackup) err
 	prompt := fmt.Sprintf(
 		"Detected That The Database [%s] Already Exists In ShardingSphere-Proxy Metadata.\n"+
 			"The Logic Database Will Be DROPPED And Then Insert Backup's Metadata Into ShardingSphere-Proxy After Restoring The Backup Data.\n"+
-			"Are you sure to continue? (Y|N)", strings.Join(databaseNamesExist, ","))
+			"Are you sure to continue? (Y/N)", strings.Join(databaseNamesExist, ","))
 	return getUserApproveInTerminal(prompt)
 }
 
