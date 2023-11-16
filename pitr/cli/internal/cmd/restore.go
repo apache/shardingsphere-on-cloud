@@ -68,7 +68,6 @@ var RestoreCmd = &cobra.Command{
 //nolint:dupl
 func init() {
 	RootCmd.AddCommand(RestoreCmd)
-
 	RestoreCmd.Flags().StringVarP(&Host, "host", "H", "", "ss-proxy hostname or ip")
 	_ = RestoreCmd.MarkFlagRequired("host")
 	RestoreCmd.Flags().Uint16VarP(&Port, "port", "P", 0, "ss-proxy port")
@@ -82,6 +81,7 @@ func init() {
 	RestoreCmd.Flags().Uint16VarP(&AgentPort, "agent-port", "a", 443, "agent server port")
 	_ = RestoreCmd.MarkFlagRequired("agent-port")
 
+	RestoreCmd.Flags().Uint8VarP(&ThreadsNum, "dn-threads-num", "j", 1, "openGauss data restore threads nums")
 	RestoreCmd.Flags().StringVarP(&CSN, "csn", "", "", "commit sequence number")
 	RestoreCmd.Flags().StringVarP(&RecordID, "id", "", "", "backup record id")
 }
@@ -247,6 +247,7 @@ func doRestore(as pkg.IAgentServer, sn *model.StorageNode, backupID string, resu
 		Instance:     defaultInstance,
 		DnBackupPath: BackupPath,
 		DnBackupID:   backupID,
+		DnThreadsNum: ThreadsNum,
 	}
 
 	pw.AppendTracker(tracker)

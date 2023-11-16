@@ -50,7 +50,7 @@ type (
 		Start() error
 		Stop() error
 		Status() (string, error)
-		Restore(backupPath, instance, backupID string) error
+		Restore(backupPath, instance, backupID string, threadsNum uint8) error
 		ShowBackupList(backupPath, instanceName string) ([]*model.Backup, error)
 		Auth(user, password, dbName string, dbPort uint16) error
 		CheckSchema(user, password, dbName string, dbPort uint16, schema string) error
@@ -78,7 +78,7 @@ const (
 	_backupFmt    = "gs_probackup backup --backup-path=%s --instance=%s --backup-mode=%s --pgdata=%s --threads=%d --pgport %d 2>&1"
 	_showFmt      = "gs_probackup show --instance=%s --backup-path=%s --backup-id=%s --format=json 2>&1"
 	_delBackupFmt = "gs_probackup delete --backup-path=%s --instance=%s --backup-id=%s 2>&1"
-	_restoreFmt   = "gs_probackup restore --backup-path=%s --instance=%s --backup-id=%s --pgdata=%s 2>&1"
+	_restoreFmt   = "gs_probackup restore --backup-path=%s --instance=%s --backup-id=%s --pgdata=%s --threads=%d 2>&1"
 
 	_initFmt  = "gs_probackup init --backup-path=%s 2>&1"
 	_rmDirFmt = "rm -r %s"
@@ -277,8 +277,8 @@ func (og *openGauss) Status() (string, error) {
 }
 
 // Restore TODO:Dependent environments require integration testing
-func (og *openGauss) Restore(backupPath, instance, backupID string) error {
-	cmd := fmt.Sprintf(_restoreFmt, backupPath, instance, backupID, og.pgData)
+func (og *openGauss) Restore(backupPath, instance, backupID string, threadsNum uint8) error {
+	cmd := fmt.Sprintf(_restoreFmt, backupPath, instance, backupID, og.pgData, threadsNum)
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
 	for output := range outputs {
 		og.log.
