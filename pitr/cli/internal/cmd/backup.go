@@ -226,7 +226,7 @@ func exportData(proxy pkg.IShardingSphereProxy, ls pkg.ILocalStorage) (lsBackup 
 		Info: &model.BackupMetaInfo{
 			ID:         uuid.New().String(), // generate uuid for this backup
 			CSN:        csn,
-			StartTime:  timeutil.Now(),
+			StartTime:  timeutil.Now().String(),
 			EndTime:    timeutil.Init(),
 			BackupMode: BackupMode,
 		},
@@ -300,7 +300,7 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 		Port:      node.Port,
 		Status:    model.SsBackupStatusRunning,
 		BackupID:  backupID,
-		StartTime: timeutil.Now(),
+		StartTime: timeutil.Now().String(),
 		EndTime:   timeutil.Init(),
 	}
 	dnCh <- dn
@@ -364,7 +364,7 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 
 	lsBackup.DnList = dnResult
 	lsBackup.SsBackup.Status = backupFinalStatus
-	lsBackup.Info.EndTime = timeutil.Now()
+	lsBackup.Info.EndTime = timeutil.Now().String()
 	return backupFinalStatus
 }
 
@@ -389,14 +389,14 @@ func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, dn *model.DataNode,
 			if err != nil {
 				tracker.MarkAsErrored()
 				dn.Status = status
-				dn.EndTime = timeutil.Now()
+				dn.EndTime = timeutil.Now().String()
 				dnCh <- dn
 				done <- struct{}{}
 			}
 			if status == model.SsBackupStatusCompleted || status == model.SsBackupStatusFailed {
 				tracker.MarkAsDone()
 				dn.Status = status
-				dn.EndTime = timeutil.Now()
+				dn.EndTime = timeutil.Now().String()
 				dnCh <- dn
 				done <- struct{}{}
 			}
