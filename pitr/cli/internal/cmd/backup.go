@@ -161,6 +161,14 @@ func backup() error {
 		return xerr.NewCliErr(fmt.Sprintf("check disk space failed. err: %s", err))
 	}
 
+	prompt := fmt.Sprintf(
+		"Please Check All Nodes Disk Space, Make Sure Have Enough Space To Backup Or Restore Data.\n" +
+			"Are you sure to continue? (Y/N)")
+	err = getUserApproveInTerminal(prompt)
+	if err != nil {
+		return xerr.NewCliErr(fmt.Sprintf("%s", err))
+	}
+
 	// Step5. send backup command to agent-server.
 	logging.Info("Starting backup ...")
 	err = execBackup(lsBackup)
