@@ -107,7 +107,7 @@ func deleteRecord() error {
 		"The backup record(ID: %s, CSN: %s) will be deleted forever.\n"+
 			"Are you sure to continue? (Y/N)", bak.Info.ID, bak.Info.CSN)
 	if err := getUserApproveInTerminal(prompt); err != nil {
-		return xerr.NewCliErr("user approve in terminal error.")
+		return xerr.NewCliErr(fmt.Sprintf("%s", err))
 	}
 
 	// mark the target backup record to be deleted
