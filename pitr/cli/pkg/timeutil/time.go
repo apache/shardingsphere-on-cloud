@@ -23,8 +23,25 @@ const (
 	unifiedTimeFormat = "2006-01-02 15:04:05"
 )
 
-func Now() string {
-	return UnifiedTimeFormat(time.Now())
+type atime struct {
+	time.Time
+}
+
+func Now() atime {
+	return atime{time.Now()}
+}
+
+func (t atime) Add(d time.Duration) atime {
+	_ = t.Time.Add(d)
+	return t
+}
+
+func (t atime) String() string {
+	return UnifiedTimeFormat(t.Time)
+}
+
+func (t atime) Unit() int64 {
+	return UnixTimestampFormat(t.Time)
 }
 
 func Init() string {
