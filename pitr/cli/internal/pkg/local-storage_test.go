@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/timeutil"
 
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -90,8 +91,8 @@ var _ = Describe("ILocalStorage", func() {
 				Info: &model.BackupMetaInfo{
 					ID:        backupID,
 					CSN:       uuid.New().String(),
-					StartTime: time.Now().Unix(),
-					EndTime:   time.Now().Add(time.Minute).Unix(),
+					StartTime: timeutil.Now().String(),
+					EndTime:   timeutil.Now().Add(time.Minute).String(),
 				},
 				DnList: []*model.DataNode{
 					{
@@ -99,16 +100,16 @@ var _ = Describe("ILocalStorage", func() {
 						Port:      5432,
 						Status:    "Completed",
 						BackupID:  "SK08DAK1",
-						StartTime: time.Now().Unix(),
-						EndTime:   time.Now().Unix(),
+						StartTime: timeutil.Now().String(),
+						EndTime:   timeutil.Now().String(),
 					},
 					{
 						IP:        "1.1.1.2",
 						Port:      5432,
 						Status:    "Completed",
 						BackupID:  "SK08DAK2",
-						StartTime: time.Now().Unix(),
-						EndTime:   time.Now().Unix(),
+						StartTime: timeutil.Now().String(),
+						EndTime:   timeutil.Now().String(),
 					},
 				},
 				SsBackup: &model.SsBackup{
