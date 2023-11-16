@@ -29,8 +29,8 @@ type (
 		ID         string       `json:"id"`
 		CSN        string       `json:"csn"`
 		BackupMode DBBackupMode `json:"backup_mode"`
-		StartTime  int64        `json:"start_time"` // Unix time
-		EndTime    int64        `json:"end_time"`   // Unix time
+		StartTime  string       `json:"start_time"`
+		EndTime    string       `json:"end_time"`
 		FileName   string
 	}
 
@@ -39,8 +39,8 @@ type (
 		Port      uint16       `json:"port"`
 		Status    BackupStatus `json:"status"`
 		BackupID  string       `json:"backup_id"`
-		StartTime int64        `json:"start_time"` // Unix time
-		EndTime   int64        `json:"end_time"`   // Unix time
+		StartTime string       `json:"start_time"`
+		EndTime   string       `json:"end_time"`
 	}
 )
 

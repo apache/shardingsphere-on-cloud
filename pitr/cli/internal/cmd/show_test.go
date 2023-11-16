@@ -25,6 +25,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
 	mock_pkg "github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/mocks"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/timeutil"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -37,8 +38,8 @@ var _ = Describe("Show", func() {
 				Info: &model.BackupMetaInfo{
 					ID:        "back-id",
 					CSN:       "csn",
-					StartTime: time.Now().Unix(),
-					EndTime:   time.Now().Add(time.Second * 10).Unix(),
+					StartTime: timeutil.Now().String(),
+					EndTime:   timeutil.Now().Add(time.Second * 10).String(),
 				},
 				DnList: []*model.DataNode{
 					{
@@ -46,16 +47,16 @@ var _ = Describe("Show", func() {
 						Port:      3306,
 						Status:    "Running",
 						BackupID:  "back-id",
-						StartTime: time.Now().Unix(),
-						EndTime:   time.Now().Add(time.Second * 10).Unix(),
+						StartTime: timeutil.Now().String(),
+						EndTime:   timeutil.Now().Add(time.Second * 10).String(),
 					},
 					{
 						IP:        "127.0.0.2",
 						Port:      3306,
 						Status:    "Completed",
 						BackupID:  "back-id",
-						StartTime: time.Now().Unix(),
-						EndTime:   time.Now().Add(time.Second * 10).Unix(),
+						StartTime: timeutil.Now().String(),
+						EndTime:   timeutil.Now().Add(time.Second * 10).String(),
 					},
 				},
 				SsBackup: &model.SsBackup{
