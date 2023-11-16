@@ -144,6 +144,9 @@ func (ls *localStorage) ReadAll() ([]*model.LsBackup, error) {
 		if entry.IsDir() {
 			continue
 		}
+		if strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
 
 		info, err := entry.Info()
 		if errors.Is(err, os.ErrNotExist) {
