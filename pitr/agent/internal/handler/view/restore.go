@@ -27,6 +27,7 @@ type RestoreIn struct {
 	Instance     string `json:"instance"`
 	DnBackupPath string `json:"dn_backup_path"`
 	DnBackupID   string `json:"dn_backup_id"`
+	DnThreadsNum uint8  `json:"dn_threads_num"`
 }
 
 //nolint:dupl
