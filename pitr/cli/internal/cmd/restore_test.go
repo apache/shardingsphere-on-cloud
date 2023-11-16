@@ -104,6 +104,9 @@ var _ = Describe("test restore", func() {
 		monkey.Patch(pkg.NewLocalStorage, func(rootDir string) (pkg.ILocalStorage, error) {
 			return ls, nil
 		})
+		monkey.Patch(getUserApproveInTerminal, func(_ string) error {
+			return nil
+		})
 	})
 
 	AfterEach(func() {
@@ -129,15 +132,6 @@ var _ = Describe("test restore", func() {
 		as.EXPECT().Restore(gomock.Any()).Return(nil)
 
 		Expect(restore()).To(BeNil())
-	})
-
-	// test getUserApproveInTerminal
-	Context("test userApproveInTerminal", func() {
-		// test user abort
-		It("user abort", func() {
-			// exec getUserApproveInTerminal
-			Expect(getUserApproveInTerminal("")).To(Equal(xerr.NewCliErr("User abort")))
-		})
 	})
 
 	Context("restore data to ss proxy", func() {

@@ -179,8 +179,5 @@ func checkDiskSpace(lsBackup *model.LsBackup) error {
 		t.AppendSeparator()
 	}
 	t.Render()
-	prompt := fmt.Sprintf(
-		"Please Check All Nodes Disk Space, Make Sure Have Enough Space To Backup Or Restore Data.\n" +
-			"Are you sure to continue? (Y/N)")
-	return getUserApproveInTerminal(prompt)
+	return nil
 }

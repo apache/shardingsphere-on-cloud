@@ -113,6 +113,15 @@ func restore() error {
 		return xerr.NewCliErr(fmt.Sprintf("check database exist failed. err: %s", err))
 	}
 
+	prompt := fmt.Sprintf(
+		"Detected That The Database [%s] Already Exists In ShardingSphere-Proxy Metadata.\n"+
+			"The Logic Database Will Be DROPPED And Then Insert Backup's Metadata Into ShardingSphere-Proxy After Restoring The Backup Data.\n"+
+			"Are you sure to continue? (Y/N)", strings.Join(databaseNamesExist, ","))
+	err = getUserApproveInTerminal(prompt)
+	if err != nil {
+		return xerr.NewCliErr(fmt.Sprintf("%s", err))
+	}
+
 	// check agent server status
 	logging.Info("Checking agent server status...")
 	if available := checkAgentServerStatus(bak); !available {
@@ -150,12 +159,7 @@ func checkDatabaseExist(proxy pkg.IShardingSphereProxy, bak *model.LsBackup) err
 		return nil
 	}
 
-	// get user input to confirm
-	prompt := fmt.Sprintf(
-		"Detected That The Database [%s] Already Exists In ShardingSphere-Proxy Metadata.\n"+
-			"The Logic Database Will Be DROPPED And Then Insert Backup's Metadata Into ShardingSphere-Proxy After Restoring The Backup Data.\n"+
-			"Are you sure to continue? (Y|N)", strings.Join(databaseNamesExist, ","))
-	return getUserApproveInTerminal(prompt)
+	return nil
 }
 
 func restoreDataToSSProxy(proxy pkg.IShardingSphereProxy, lsBackup *model.LsBackup) error {

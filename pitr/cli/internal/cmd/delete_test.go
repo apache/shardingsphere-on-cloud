@@ -75,6 +75,9 @@ var _ = Describe("test delete", func() {
 		monkey.Patch(pkg.NewLocalStorage, func(rootDir string) (pkg.ILocalStorage, error) {
 			return ls, nil
 		})
+		monkey.Patch(getUserApproveInTerminal, func(_ string) error {
+			return nil
+		})
 	})
 
 	AfterEach(func() {
@@ -92,7 +95,6 @@ var _ = Describe("test delete", func() {
 		ls.EXPECT().HideByName(bak.Info.FileName).Return(nil)
 		as.EXPECT().DeleteBackup(gomock.Any()).Return(nil)
 		ls.EXPECT().DeleteByHidedName(bak.Info.FileName).Return(nil)
-
 		Expect(deleteRecord()).To(BeNil())
 	})
 
