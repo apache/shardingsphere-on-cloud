@@ -86,6 +86,7 @@ func init() {
 	RestoreCmd.Flags().StringVarP(&RecordID, "id", "", "", "backup record id")
 }
 
+//nolint:dupl
 func restore() error {
 	// init local storage
 	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())

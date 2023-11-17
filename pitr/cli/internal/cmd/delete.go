@@ -79,6 +79,7 @@ func init() {
 	DeleteCmd.Flags().StringVarP(&RecordID, "id", "", "", "backup record id")
 }
 
+//nolint:dupl
 func deleteRecord() error {
 	// init local storage
 	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())
@@ -106,6 +107,14 @@ func deleteRecord() error {
 		logging.Info("Checking agent server status...")
 		if available := checkAgentServerStatus(bak); !available {
 			return xerr.NewCliErr("one or more agent server are not available.")
+		}
+
+		prompt := fmt.Sprintf(
+			"The backup record(ID: %s, CSN: %s) will be deleted forever.\n"+
+				"Are you sure to continue? (Y/N)", bak.Info.ID, bak.Info.CSN)
+		err = getUserApproveInTerminal(prompt)
+		if err != nil {
+			return xerr.NewCliErr(fmt.Sprintf("%s", err))
 		}
 
 		// mark the target backup record to be deleted
