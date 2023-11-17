@@ -125,19 +125,19 @@ var _ = Describe("Show", func() {
 		It("get by csn", func() {
 			CSN = "csn"
 			RecordID = ""
-			ls.EXPECT().ReadByCSN(gomock.Any()).Return(&model.LsBackup{}, nil)
+			ls.EXPECT().ReadAllByCSN(gomock.Any()).Return([]*model.LsBackup{}, nil)
 			Expect(show()).To(BeNil())
 		})
 		It("get by csn failed", func() {
 			CSN = "csn"
 			RecordID = ""
-			ls.EXPECT().ReadByCSN(gomock.Any()).Return(nil, errors.New("error"))
+			ls.EXPECT().ReadAllByCSN(gomock.Any()).Return(nil, errors.New("error"))
 			Expect(show()).NotTo(BeNil())
 		})
 		It("get by csn empty", func() {
 			CSN = "csn"
 			RecordID = ""
-			ls.EXPECT().ReadByCSN(gomock.Any()).Return(nil, nil)
+			ls.EXPECT().ReadAllByCSN(gomock.Any()).Return(nil, nil)
 			Expect(show()).To(BeNil())
 		})
 

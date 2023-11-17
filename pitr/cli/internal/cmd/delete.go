@@ -87,49 +87,47 @@ func deleteRecord() error {
 	}
 
 	// get backup record
-	var bak *model.LsBackup
-	bak, err = validate(ls, CSN, RecordID)
+	var baks []*model.LsBackup
+	baks, err = validate(ls, CSN, RecordID)
 	if err != nil {
 		return err
 	}
 
-	if bak == nil {
+	if len(baks) == 0 {
 		return xerr.NewCliErr(fmt.Sprintf("backup record not found. err: %s", err))
 	}
-
-	// check agent server status
-	logging.Info("Checking agent server status...")
-	if available := checkAgentServerStatus(bak); !available {
-		return xerr.NewCliErr("one or more agent server are not available.")
+	if len(baks) > 1 {
+		return xerr.NewCliErr("multiple backup records found. please using ID to submit one specific record.")
 	}
 
-	prompt := fmt.Sprintf(
-		"The backup record(ID: %s, CSN: %s) will be deleted forever.\n"+
-			"Are you sure to continue? (Y/N)", bak.Info.ID, bak.Info.CSN)
-	err = getUserApproveInTerminal(prompt)
-	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("%s", err))
-	}
+	if len(baks) == 1 {
+		bak := baks[0]
+		// check agent server status
+		logging.Info("Checking agent server status...")
+		if available := checkAgentServerStatus(bak); !available {
+			return xerr.NewCliErr("one or more agent server are not available.")
+		}
 
-	// mark the target backup record to be deleted
-	// meanwhile this record cannot be restored
-	if err := ls.HideByName(bak.Info.FileName); err != nil {
-		return xerr.NewCliErr("cannot mark backup record.")
-	}
+		// mark the target backup record to be deleted
+		// meanwhile this record cannot be restored
+		if err := ls.HideByName(bak.Info.FileName); err != nil {
+			return xerr.NewCliErr("cannot mark backup record.")
+		}
 
-	// exec delete
-	logging.Info("Start delete backup data to openGauss...")
-	if err := _execDelete(bak); err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("exec delete failed. err: %s", err))
-	}
-	logging.Info("Delete backup data success!")
+		// exec delete
+		logging.Info("Start delete backup data to openGauss...")
+		if err := _execDelete(bak); err != nil {
+			return xerr.NewCliErr(fmt.Sprintf("exec delete failed. err: %s", err))
+		}
+		logging.Info("Delete backup data success!")
 
-	// delete the backup record
-	if err := ls.DeleteByHidedName(bak.Info.FileName); err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("exec delete backup record failed. err: %s", err))
-	}
+		// delete the backup record
+		if err := ls.DeleteByHidedName(bak.Info.FileName); err != nil {
+			return xerr.NewCliErr(fmt.Sprintf("exec delete backup record failed. err: %s", err))
+		}
 
-	logging.Info("Delete success!")
+		logging.Info("Delete success!")
+	}
 	return nil
 }
 

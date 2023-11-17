@@ -58,16 +58,16 @@ func show() error {
 
 	// show backup record by csn
 	if CSN != "" {
-		bak, err := ls.ReadByCSN(CSN)
+		baks, err := ls.ReadAllByCSN(CSN)
 		if err != nil {
 			return xerr.NewCliErr(fmt.Sprintf("read backup record failed. err: %s", err))
 		}
-		if bak == nil {
+		if len(baks) == 0 {
 			fmt.Printf("Didn't find backup record by csn: %s\n", CSN)
 			return nil
 		}
 
-		if err := formatRecord([]*model.LsBackup{bak}); err != nil {
+		if err := formatRecord(baks); err != nil {
 			return err
 		}
 		return nil

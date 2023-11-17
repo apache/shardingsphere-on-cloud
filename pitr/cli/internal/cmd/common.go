@@ -25,23 +25,25 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 )
 
-func validate(ls pkg.ILocalStorage, csn, recordID string) (*model.LsBackup, error) {
+func validate(ls pkg.ILocalStorage, csn, recordID string) ([]*model.LsBackup, error) {
 	var (
-		bak *model.LsBackup
-		err error
+		baks []*model.LsBackup
+		err  error
 	)
 	if CSN != "" {
-		bak, err = ls.ReadByCSN(csn)
+		// bak, err = ls.ReadByCSN(csn)
+		baks, err = ls.ReadAllByCSN(csn)
 		if err != nil {
-			return bak, xerr.NewCliErr(fmt.Sprintf("read backup record by csn failed. err: %s", err))
+			return baks, xerr.NewCliErr(fmt.Sprintf("read backup record by csn failed. err: %s", err))
 		}
 	}
 
 	if RecordID != "" {
-		bak, err = ls.ReadByID(recordID)
+		b, err := ls.ReadByID(recordID)
+		baks = append(baks, b)
 		if err != nil {
-			return bak, xerr.NewCliErr(fmt.Sprintf("read backup record by id failed. err: %s", err))
+			return baks, xerr.NewCliErr(fmt.Sprintf("read backup record by id failed. err: %s", err))
 		}
 	}
-	return bak, nil
+	return baks, nil
 }
