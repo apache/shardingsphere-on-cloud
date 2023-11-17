@@ -67,6 +67,16 @@ var _ = Describe("ILocalStorage", func() {
 			Expect(err.Error()).To(Equal("Not found"))
 		})
 
+		It("ReadAllByCSN", func() {
+			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
+			ls, err := NewLocalStorage(root)
+			Expect(err).To(BeNil())
+			Expect(ls).NotTo(BeNil())
+
+			_, err = ls.ReadAllByCSN("e19b6935-c437-4cf0-b820-3275bd2727a2")
+			Expect(err).To(BeNil())
+		})
+
 		It("ReadByID", func() {
 			root := fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".gs_pitr")
 			ls, err := NewLocalStorage(root)

@@ -43,6 +43,7 @@ type (
 		ReadAll() ([]*model.LsBackup, error)
 		ReadByID(id string) (*model.LsBackup, error)
 		ReadByCSN(csn string) (*model.LsBackup, error)
+		ReadAllByCSN(csn string) ([]*model.LsBackup, error)
 		DeleteByName(name string) error
 		HideByName(name string) error
 		DeleteByHidedName(name string) error
@@ -186,6 +187,22 @@ func (ls *localStorage) ReadByCSN(csn string) (*model.LsBackup, error) {
 		}
 	}
 	return nil, xerr.NewCliErr(xerr.NotFound)
+}
+
+func (ls *localStorage) ReadAllByCSN(csn string) ([]*model.LsBackup, error) {
+	baks := []*model.LsBackup{}
+	list, err := ls.ReadAll()
+	if err != nil {
+		return baks, err
+	}
+	for _, v := range list {
+		c := v
+		if v.Info.CSN == csn {
+			baks = append(baks, c)
+		}
+	}
+
+	return baks, nil
 }
 
 func (ls *localStorage) ReadByID(id string) (*model.LsBackup, error) {
