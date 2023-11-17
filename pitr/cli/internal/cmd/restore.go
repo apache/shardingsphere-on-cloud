@@ -86,6 +86,7 @@ func init() {
 	RestoreCmd.Flags().StringVarP(&RecordID, "id", "", "", "backup record id")
 }
 
+//nolint:dupl
 func restore() error {
 	// init local storage
 	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())
@@ -98,15 +99,13 @@ func restore() error {
 	}
 
 	// get backup record
-	var bak *model.LsBackup
-	bak, err = validate(ls, CSN, RecordID)
+	var baks []*model.LsBackup
+	baks, err = validate(ls, CSN, RecordID)
 	if err != nil {
 		return err
 	}
-	if bak == nil {
-		return xerr.NewCliErr(fmt.Sprintf("backup record not found. err: %s", err))
-	}
 
+	bak := baks[0]
 	// check if the backup logic database exits,
 	// if exits, we need to warning user that we will drop the database.
 	if err := checkDatabaseExist(proxy, bak); err != nil {

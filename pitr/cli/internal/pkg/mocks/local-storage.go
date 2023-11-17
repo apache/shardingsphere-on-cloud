@@ -107,6 +107,21 @@ func (mr *MockILocalStorageMockRecorder) ReadByCSN(csn interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadByCSN", reflect.TypeOf((*MockILocalStorage)(nil).ReadByCSN), csn)
 }
 
+// ReadAllByCSN mocks base method
+func (m *MockILocalStorage) ReadAllByCSN(csn string) ([]*model.LsBackup, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadAllByCSN", csn)
+	ret0, _ := ret[0].([]*model.LsBackup)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReadAllByCSN indicates an expected call of ReadAllByCSN
+func (mr *MockILocalStorageMockRecorder) ReadAllByCSN(csn interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadAllByCSN", reflect.TypeOf((*MockILocalStorage)(nil).ReadAllByCSN), csn)
+}
+
 // DeleteByName mocks base method
 func (m *MockILocalStorage) DeleteByName(name string) error {
 	m.ctrl.T.Helper()

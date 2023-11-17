@@ -79,6 +79,7 @@ func init() {
 	DeleteCmd.Flags().StringVarP(&RecordID, "id", "", "", "backup record id")
 }
 
+//nolint:dupl
 func deleteRecord() error {
 	// init local storage
 	ls, err := pkg.NewLocalStorage(pkg.DefaultRootDir())
@@ -87,16 +88,13 @@ func deleteRecord() error {
 	}
 
 	// get backup record
-	var bak *model.LsBackup
-	bak, err = validate(ls, CSN, RecordID)
+	var baks []*model.LsBackup
+	baks, err = validate(ls, CSN, RecordID)
 	if err != nil {
 		return err
 	}
 
-	if bak == nil {
-		return xerr.NewCliErr(fmt.Sprintf("backup record not found. err: %s", err))
-	}
-
+	bak := baks[0]
 	// check agent server status
 	logging.Info("Checking agent server status...")
 	if available := checkAgentServerStatus(bak); !available {
