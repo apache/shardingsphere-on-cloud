@@ -104,49 +104,41 @@ func restore() error {
 	if err != nil {
 		return err
 	}
-	if len(baks) == 0 {
-		return xerr.NewCliErr(fmt.Sprintf("backup record not found. err: %s", err))
+
+	bak := baks[0]
+	// check if the backup logic database exits,
+	// if exits, we need to warning user that we will drop the database.
+	if err := checkDatabaseExist(proxy, bak); err != nil {
+		return xerr.NewCliErr(fmt.Sprintf("check database exist failed. err: %s", err))
 	}
-	if len(baks) > 1 {
-		return xerr.NewCliErr("multiple backup records found. please using ID to submit one specific record.")
+
+	prompt := fmt.Sprintf(
+		"Detected That The Database [%s] Already Exists In ShardingSphere-Proxy Metadata.\n"+
+			"The Logic Database Will Be DROPPED And Then Insert Backup's Metadata Into ShardingSphere-Proxy After Restoring The Backup Data.\n"+
+			"Are you sure to continue? (Y/N)", strings.Join(databaseNamesExist, ","))
+	err = getUserApproveInTerminal(prompt)
+	if err != nil {
+		return xerr.NewCliErr(fmt.Sprintf("%s", err))
 	}
 
-	if len(baks) == 1 {
-		bak := baks[0]
-		// check if the backup logic database exits,
-		// if exits, we need to warning user that we will drop the database.
-		if err := checkDatabaseExist(proxy, bak); err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("check database exist failed. err: %s", err))
-		}
-
-		prompt := fmt.Sprintf(
-			"Detected That The Database [%s] Already Exists In ShardingSphere-Proxy Metadata.\n"+
-				"The Logic Database Will Be DROPPED And Then Insert Backup's Metadata Into ShardingSphere-Proxy After Restoring The Backup Data.\n"+
-				"Are you sure to continue? (Y/N)", strings.Join(databaseNamesExist, ","))
-		err = getUserApproveInTerminal(prompt)
-		if err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("%s", err))
-		}
-
-		// check agent server status
-		logging.Info("Checking agent server status...")
-		if available := checkAgentServerStatus(bak); !available {
-			return xerr.NewCliErr("one or more agent server are not available.")
-		}
-
-		// exec restore
-		logging.Info("Start restore backup data to openGauss...")
-		if err := execRestore(bak); err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("exec restore failed. err: %s", err))
-		}
-
-		logging.Info("Restore backup data to openGauss success!")
-		// restore metadata to ss-proxy
-		if err := restoreDataToSSProxy(proxy, bak); err != nil {
-			return xerr.NewCliErr(fmt.Sprintf("restore metadata to shardingsphere proxy failed. err: %s", err))
-		}
-		logging.Info("Restore success!")
+	// check agent server status
+	logging.Info("Checking agent server status...")
+	if available := checkAgentServerStatus(bak); !available {
+		return xerr.NewCliErr("one or more agent server are not available.")
 	}
+
+	// exec restore
+	logging.Info("Start restore backup data to openGauss...")
+	if err := execRestore(bak); err != nil {
+		return xerr.NewCliErr(fmt.Sprintf("exec restore failed. err: %s", err))
+	}
+
+	logging.Info("Restore backup data to openGauss success!")
+	// restore metadata to ss-proxy
+	if err := restoreDataToSSProxy(proxy, bak); err != nil {
+		return xerr.NewCliErr(fmt.Sprintf("restore metadata to shardingsphere proxy failed. err: %s", err))
+	}
+	logging.Info("Restore success!")
 	return nil
 }
 

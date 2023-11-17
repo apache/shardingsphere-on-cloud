@@ -31,7 +31,6 @@ func validate(ls pkg.ILocalStorage, csn, recordID string) ([]*model.LsBackup, er
 		err  error
 	)
 	if CSN != "" {
-		// bak, err = ls.ReadByCSN(csn)
 		baks, err = ls.ReadAllByCSN(csn)
 		if err != nil {
 			return baks, xerr.NewCliErr(fmt.Sprintf("read backup record by csn failed. err: %s", err))
@@ -45,5 +44,13 @@ func validate(ls pkg.ILocalStorage, csn, recordID string) ([]*model.LsBackup, er
 			return baks, xerr.NewCliErr(fmt.Sprintf("read backup record by id failed. err: %s", err))
 		}
 	}
+
+	if len(baks) == 0 {
+		return baks, xerr.NewCliErr(fmt.Sprintf("backup record not found. err: %s", err))
+	}
+	if len(baks) > 1 {
+		return baks, xerr.NewCliErr("multiple backup records found. please using ID to submit one specific record.")
+	}
+
 	return baks, nil
 }
