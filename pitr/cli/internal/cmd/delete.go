@@ -27,6 +27,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/prettyoutput"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/promptutil"
 	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/spf13/cobra"
@@ -79,6 +80,11 @@ func init() {
 	DeleteCmd.Flags().StringVarP(&RecordID, "id", "", "", "backup record id")
 }
 
+const (
+	deletePromptFmt = "The backup record(ID: %s, CSN: %s) will be deleted forever.\n" +
+		"Are you sure to continue? (Y/N)"
+)
+
 //nolint:dupl
 func deleteRecord() error {
 	// init local storage
@@ -101,10 +107,8 @@ func deleteRecord() error {
 		return xerr.NewCliErr("one or more agent server are not available.")
 	}
 
-	prompt := fmt.Sprintf(
-		"The backup record(ID: %s, CSN: %s) will be deleted forever.\n"+
-			"Are you sure to continue? (Y/N)", bak.Info.ID, bak.Info.CSN)
-	err = getUserApproveInTerminal(prompt)
+	prompt := fmt.Sprintf(deletePromptFmt, bak.Info.ID, bak.Info.CSN)
+	err = promptutil.GetUserApproveInTerminal(prompt)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("%s", err))
 	}
