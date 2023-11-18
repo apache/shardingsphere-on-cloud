@@ -165,7 +165,7 @@ func backup() error {
 		return xerr.NewCliErr(fmt.Sprintf("check disk space failed. err: %s", err))
 	}
 
-	prompt := fmt.Sprintf(backupPromptFmt)
+	prompt := fmt.Sprintln(backupPromptFmt)
 	err = promptutil.GetUserApproveInTerminal(prompt)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("%s", err))
