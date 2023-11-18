@@ -22,6 +22,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
 	mock_pkg "github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/mocks"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/promptutil"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -39,7 +40,7 @@ var _ = Describe("Root", func() {
 			monkey.Patch(pkg.NewAgentServer, func(_ string) pkg.IAgentServer {
 				return as
 			})
-			monkey.Patch(getUserApproveInTerminal, func(_ string) error {
+			monkey.Patch(promptutil.GetUserApproveInTerminal, func(_ string) error {
 				return nil
 			})
 		})

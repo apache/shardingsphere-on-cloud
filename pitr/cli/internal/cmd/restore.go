@@ -28,6 +28,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/prettyoutput"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/promptutil"
 
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -86,6 +87,12 @@ func init() {
 	RestoreCmd.Flags().StringVarP(&RecordID, "id", "", "", "backup record id")
 }
 
+const (
+	restorePromptFmt = "Detected That The Database [%s] Already Exists In ShardingSphere-Proxy Metadata.\n" +
+		"The Logic Database Will Be DROPPED And Then Insert Backup's Metadata Into ShardingSphere-Proxy After Restoring The Backup Data.\n" +
+		"Are you sure to continue? (Y/N)"
+)
+
 //nolint:dupl
 func restore() error {
 	// init local storage
@@ -112,11 +119,8 @@ func restore() error {
 		return xerr.NewCliErr(fmt.Sprintf("check database exist failed. err: %s", err))
 	}
 
-	prompt := fmt.Sprintf(
-		"Detected That The Database [%s] Already Exists In ShardingSphere-Proxy Metadata.\n"+
-			"The Logic Database Will Be DROPPED And Then Insert Backup's Metadata Into ShardingSphere-Proxy After Restoring The Backup Data.\n"+
-			"Are you sure to continue? (Y/N)", strings.Join(databaseNamesExist, ","))
-	err = getUserApproveInTerminal(prompt)
+	prompt := fmt.Sprintf(restorePromptFmt, strings.Join(databaseNamesExist, ","))
+	err = promptutil.GetUserApproveInTerminal(prompt)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("%s", err))
 	}

@@ -27,6 +27,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/prettyoutput"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/promptutil"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/timeutil"
 
 	"github.com/google/uuid"
@@ -42,6 +43,9 @@ const (
 	defaultInstance = "ins-default-ss"
 	// defaultShowDetailRetryTimes retry times of check backup detail from agent server
 	defaultShowDetailRetryTimes = 3
+
+	backupPromptFmt = "Please Check All Nodes Disk Space, Make Sure Have Enough Space To Backup Or Restore Data.\n" +
+		"Are you sure to continue? (Y/N)"
 )
 
 var filename string
@@ -161,10 +165,8 @@ func backup() error {
 		return xerr.NewCliErr(fmt.Sprintf("check disk space failed. err: %s", err))
 	}
 
-	prompt := fmt.Sprintf(
-		"Please Check All Nodes Disk Space, Make Sure Have Enough Space To Backup Or Restore Data.\n" +
-			"Are you sure to continue? (Y/N)")
-	err = getUserApproveInTerminal(prompt)
+	prompt := fmt.Sprintln(backupPromptFmt)
+	err = promptutil.GetUserApproveInTerminal(prompt)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("%s", err))
 	}

@@ -27,6 +27,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils"
 	mock_httputils "github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/httputils/mocks"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/promptutil"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -327,7 +328,7 @@ var _ = Describe("test backup mock", func() {
 			monkey.Patch(pkg.NewAgentServer, func(addr string) pkg.IAgentServer {
 				return as
 			})
-			monkey.Patch(getUserApproveInTerminal, func(_ string) error {
+			monkey.Patch(promptutil.GetUserApproveInTerminal, func(_ string) error {
 				return nil
 			})
 		})

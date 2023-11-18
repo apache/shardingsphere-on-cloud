@@ -26,6 +26,7 @@ import (
 	mock_pkg "github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/mocks"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/xerr"
+	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/promptutil"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -104,7 +105,7 @@ var _ = Describe("test restore", func() {
 		monkey.Patch(pkg.NewLocalStorage, func(rootDir string) (pkg.ILocalStorage, error) {
 			return ls, nil
 		})
-		monkey.Patch(getUserApproveInTerminal, func(_ string) error {
+		monkey.Patch(promptutil.GetUserApproveInTerminal, func(_ string) error {
 			return nil
 		})
 	})
@@ -115,7 +116,7 @@ var _ = Describe("test restore", func() {
 	})
 
 	It("check database if exists", func() {
-		monkey.Patch(getUserApproveInTerminal, func(_ string) error { return nil })
+		monkey.Patch(promptutil.GetUserApproveInTerminal, func(_ string) error { return nil })
 		proxy.EXPECT().ExportMetaData()
 		Expect(checkDatabaseExist(proxy, bak)).To(BeNil())
 	})
