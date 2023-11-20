@@ -369,7 +369,7 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 			Units:   progress.UnitsDefault,
 		}
 		pw.AppendTracker(tracker)
-		go pw.UpdateProgress(tracker, task.updateFdoCheck)
+		go pw.UpdateProgress(tracker, task.checkProgress)
 	}
 
 	pw.BlockedRendered()
@@ -411,7 +411,7 @@ type backuptask struct {
 	Backup *model.BackupInfo
 }
 
-func (t *backuptask) updateFdoCheck() (bool, error) {
+func (t *backuptask) checkProgress() (bool, error) {
 	var err error
 	in := &model.ShowDetailIn{
 		DBPort:       t.Sn.Port,
