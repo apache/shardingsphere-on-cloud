@@ -109,8 +109,11 @@ func init() {
 // 7. Double check backups all finished
 // nolint:gocognit
 func backup() error {
-	var err error
-	var lsBackup *model.LsBackup
+	var (
+		err      error
+		lsBackup *model.LsBackup
+		cancel   bool
+	)
 	proxy, err := pkg.NewShardingSphereProxy(Username, Password, pkg.DefaultDBName, Host, Port)
 	if err != nil {
 		return xerr.NewCliErr(fmt.Sprintf("Connect shardingsphere proxy failed, err: %s", err))
@@ -123,14 +126,20 @@ func backup() error {
 
 	defer func() {
 		if err != nil {
-			logging.Warn("Try to unlock cluster ...")
+			if !cancel {
+				logging.Warn("Try to unlock cluster ...")
+			}
 			if err := proxy.Unlock(); err != nil {
 				logging.Error(fmt.Sprintf("Since backup failed, try to unlock cluster, but still failed. err: %s", err))
 			}
 
 			if lsBackup != nil {
-				logging.Warn("Try to delete backup data ...")
-				deleteBackupFiles(ls, lsBackup)
+				if cancel {
+					deleteBackupFiles(ls, lsBackup, deleteModeQuiet)
+				} else {
+					logging.Warn("Try to delete backup data ...")
+					deleteBackupFiles(ls, lsBackup, deleteModeNormal)
+				}
 			}
 		}
 	}()
@@ -168,6 +177,7 @@ func backup() error {
 	prompt := fmt.Sprintln(backupPromptFmt)
 	err = promptutil.GetUserApproveInTerminal(prompt)
 	if err != nil {
+		cancel = true
 		return xerr.NewCliErr(fmt.Sprintf("%s", err))
 	}
 
@@ -436,7 +446,14 @@ func doCheck(as pkg.IAgentServer, sn *model.StorageNode, backupID string, retrie
 	return backupInfo.Status, nil
 }
 
-func deleteBackupFiles(ls pkg.ILocalStorage, lsBackup *model.LsBackup) {
+type deleteMode int
+
+const (
+	deleteModeNormal deleteMode = iota
+	deleteModeQuiet
+)
+
+func deleteBackupFiles(ls pkg.ILocalStorage, lsBackup *model.LsBackup, m deleteMode) {
 	var (
 		dataNodeMap = make(map[string]*model.DataNode)
 		totalNum    = len(lsBackup.SsBackup.StorageNodes)
@@ -458,7 +475,9 @@ func deleteBackupFiles(ls pkg.ILocalStorage, lsBackup *model.LsBackup) {
 		sn := sn
 		dn, ok := dataNodeMap[sn.IP]
 		if !ok {
-			logging.Warn(fmt.Sprintf("SKIPPED! data node %s:%d not found in backup info.", sn.IP, sn.Port))
+			if m != deleteModeQuiet {
+				logging.Warn(fmt.Sprintf("SKIPPED! data node %s:%d not found in backup info.", sn.IP, sn.Port))
+			}
 			continue
 		}
 		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
@@ -466,36 +485,41 @@ func deleteBackupFiles(ls pkg.ILocalStorage, lsBackup *model.LsBackup) {
 		go doDelete(as, sn, dn, resultCh, pw)
 	}
 
-	time.Sleep(time.Millisecond * 100)
-	for pw.IsRenderInProgress() {
-		if pw.LengthActive() == 0 {
-			pw.Stop()
-		}
+	if m != deleteModeQuiet {
+
 		time.Sleep(time.Millisecond * 100)
+		for pw.IsRenderInProgress() {
+			if pw.LengthActive() == 0 {
+				pw.Stop()
+			}
+			time.Sleep(time.Millisecond * 100)
+		}
+
+		close(resultCh)
+
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.SetTitle("Delete Backup Files Result")
+		t.AppendHeader(table.Row{"#", "Node IP", "Node Port", "Result", "Message"})
+		t.SetColumnConfigs([]table.ColumnConfig{{Number: 5, WidthMax: 50}})
+
+		idx := 0
+		for result := range resultCh {
+			idx++
+			t.AppendRow([]interface{}{idx, result.IP, result.Port, result.Status, result.Msg})
+			t.AppendSeparator()
+		}
+
+		t.Render()
 	}
-
-	close(resultCh)
-
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-	t.SetTitle("Delete Backup Files Result")
-	t.AppendHeader(table.Row{"#", "Node IP", "Node Port", "Result", "Message"})
-	t.SetColumnConfigs([]table.ColumnConfig{{Number: 5, WidthMax: 50}})
-
-	idx := 0
-	for result := range resultCh {
-		idx++
-		t.AppendRow([]interface{}{idx, result.IP, result.Port, result.Status, result.Msg})
-		t.AppendSeparator()
-	}
-
-	t.Render()
 
 	if err := ls.DeleteByName(filename); err != nil {
 		logging.Warn("Delete backup info file failed")
 	}
 
-	logging.Info("Delete backup files finished")
+	if m != deleteModeQuiet {
+		logging.Info("Delete backup files finished")
+	}
 }
 
 func doDelete(as pkg.IAgentServer, sn *model.StorageNode, dn *model.DataNode, resultCh chan *model.DeleteBackupResult, pw progress.Writer) {

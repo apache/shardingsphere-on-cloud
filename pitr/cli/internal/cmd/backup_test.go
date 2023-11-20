@@ -440,7 +440,7 @@ var _ = Describe("test backup mock", func() {
 
 		It("should delete failed", func() {
 			ls.EXPECT().DeleteByName(gomock.Any()).Return(errors.New("failed"))
-			deleteBackupFiles(ls, bak)
+			deleteBackupFiles(ls, bak, deleteModeNormal)
 		})
 
 		It("should delete success", func() {
@@ -454,7 +454,7 @@ var _ = Describe("test backup mock", func() {
 			defer ctrl.Finish()
 			as.EXPECT().DeleteBackup(gomock.Any()).Return(nil)
 			ls.EXPECT().DeleteByName(gomock.Any()).Return(nil)
-			deleteBackupFiles(ls, bak)
+			deleteBackupFiles(ls, bak, deleteModeNormal)
 		})
 	})
 })
