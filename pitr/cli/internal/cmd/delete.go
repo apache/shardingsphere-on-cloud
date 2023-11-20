@@ -20,7 +20,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
@@ -28,6 +27,7 @@ import (
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/logging"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/prettyoutput"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/pkg/promptutil"
+	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/spf13/cobra"
@@ -152,7 +152,10 @@ func _execDelete(lsBackup *model.LsBackup) error {
 		return nil
 	}
 
-	pw := prettyoutput.NewPW(totalNum)
+	pw := prettyoutput.NewProgressPrinter(prettyoutput.ProgressPrintOption{
+		NumTrackersExpected: totalNum,
+	})
+
 	go pw.Render()
 
 	for _, storagenode := range lsBackup.SsBackup.StorageNodes {
@@ -162,15 +165,26 @@ func _execDelete(lsBackup *model.LsBackup) error {
 			continue
 		} else {
 			as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
-			go doDelete(as, sn, dn, resultCh, pw)
+			backupInfo := &model.BackupInfo{
+				ID: dn.BackupID,
+			}
+			task := &deletetask{
+				As:       as,
+				Sn:       sn,
+				Dn:       dn,
+				ResultCh: resultCh,
+				Backup:   backupInfo,
+			}
+
+			tracker := &progress.Tracker{
+				Message: fmt.Sprintf("Deleting backup files  # %s:%d", sn.IP, sn.Port),
+			}
+			pw.AppendTracker(tracker)
+			go pw.UpdateProgress(tracker, task.checkProgress)
 		}
 	}
 
-	time.Sleep(time.Millisecond * 100)
-
-	for pw.IsRenderInProgress() {
-		time.Sleep(time.Millisecond * 100)
-	}
+	pw.BlockedRendered()
 
 	close(resultCh)
 
@@ -199,4 +213,44 @@ func _execDelete(lsBackup *model.LsBackup) error {
 	}
 
 	return nil
+}
+
+type deletetask struct {
+	As       pkg.IAgentServer
+	Sn       *model.StorageNode
+	Dn       *model.DataNode
+	ResultCh chan *model.DeleteBackupResult
+	Backup   *model.BackupInfo
+}
+
+func (t *deletetask) checkProgress() (bool, error) {
+	var (
+		err error
+	)
+	in := &model.DeleteBackupIn{
+		DBPort:       t.Sn.Port,
+		DBName:       t.Sn.Database,
+		Username:     t.Sn.Username,
+		Password:     t.Sn.Password,
+		BackupID:     t.Backup.ID,
+		DnBackupPath: BackupPath,
+		Instance:     defaultInstance,
+	}
+
+	r := &model.DeleteBackupResult{
+		IP:   t.Sn.IP,
+		Port: t.Sn.Port,
+	}
+
+	if err = t.As.DeleteBackup(in); err != nil {
+		r.Status = model.SsBackupStatusFailed
+		r.Msg = err.Error()
+		t.ResultCh <- r
+		return false, err
+	}
+
+	r.Status = model.SsBackupStatusCompleted
+	t.ResultCh <- r
+
+	return true, nil
 }

@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg"
 	"github.com/apache/shardingsphere-on-cloud/pitr/cli/internal/pkg/model"
@@ -199,19 +198,34 @@ func execRestore(lsBackup *model.LsBackup) error {
 		return xerr.NewCliErr(fmt.Sprintf("no storage node found, please check backup record [%s].", lsBackup.Info.ID))
 	}
 
-	pw := prettyoutput.NewPW(totalNum)
+	pw := prettyoutput.NewProgressPrinter(prettyoutput.ProgressPrintOption{
+		NumTrackersExpected: totalNum,
+	})
+
 	go pw.Render()
 	for i := 0; i < totalNum; i++ {
 		sn := lsBackup.SsBackup.StorageNodes[i]
 		dn := dataNodeMap[sn.IP]
 		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
-		go doRestore(as, sn, dn.BackupID, resultCh, pw)
+		backupInfo := &model.BackupInfo{
+			ID: dn.BackupID,
+		}
+		task := &restoretask{
+			As:       as,
+			Sn:       sn,
+			Dn:       dn,
+			ResultCh: resultCh,
+			Backup:   backupInfo,
+		}
+
+		tracker := &progress.Tracker{
+			Message: fmt.Sprintf("Restore data to openGauss: %s", sn.IP),
+		}
+		pw.AppendTracker(tracker)
+		go pw.UpdateProgress(tracker, task.checkProgress)
 	}
 
-	time.Sleep(time.Millisecond * 100)
-	for pw.IsRenderInProgress() {
-		time.Sleep(time.Millisecond * 100)
-	}
+	pw.BlockedRendered()
 
 	close(resultCh)
 
@@ -242,34 +256,42 @@ func execRestore(lsBackup *model.LsBackup) error {
 	return nil
 }
 
-func doRestore(as pkg.IAgentServer, sn *model.StorageNode, backupID string, resultCh chan *model.RestoreResult, pw progress.Writer) {
-	tracker := &progress.Tracker{Message: fmt.Sprintf("Restore data to openGauss: %s", sn.IP)}
-	result := ""
+type restoretask struct {
+	As       pkg.IAgentServer
+	Sn       *model.StorageNode
+	Dn       *model.DataNode
+	ResultCh chan *model.RestoreResult
+	Backup   *model.BackupInfo
+}
 
+func (t *restoretask) checkProgress() (bool, error) {
+	var (
+		err error
+	)
 	in := &model.RestoreIn{
-		DBPort:       sn.Port,
-		DBName:       sn.Database,
-		Username:     sn.Username,
-		Password:     sn.Password,
-		Instance:     defaultInstance,
+		DBPort:       t.Sn.Port,
+		DBName:       t.Sn.Database,
+		Username:     t.Sn.Username,
+		Password:     t.Sn.Password,
+		DnBackupID:   t.Backup.ID,
 		DnBackupPath: BackupPath,
-		DnBackupID:   backupID,
+		Instance:     defaultInstance,
 		DnThreadsNum: ThreadsNum,
 	}
 
-	pw.AppendTracker(tracker)
-
-	if err := as.Restore(in); err != nil {
-		tracker.MarkAsErrored()
-		result = "Failed"
-	} else {
-		tracker.MarkAsDone()
-		result = "Completed"
+	r := &model.RestoreResult{
+		IP:   t.Sn.IP,
+		Port: t.Sn.Port,
 	}
 
-	resultCh <- &model.RestoreResult{
-		IP:     sn.IP,
-		Port:   sn.Port,
-		Status: result,
+	if err = t.As.Restore(in); err != nil {
+		r.Status = "Failed"
+		t.ResultCh <- r
+		return false, err
 	}
+
+	r.Status = "Completed"
+	t.ResultCh <- r
+
+	return true, nil
 }
