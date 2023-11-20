@@ -262,7 +262,6 @@ type restoretask struct {
 	Dn       *model.DataNode
 	ResultCh chan *model.RestoreResult
 	Backup   *model.BackupInfo
-	retries  int
 }
 
 func (t *restoretask) checkProgress() (bool, error) {

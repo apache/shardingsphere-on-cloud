@@ -221,7 +221,6 @@ type deletetask struct {
 	Dn       *model.DataNode
 	ResultCh chan *model.DeleteBackupResult
 	Backup   *model.BackupInfo
-	retries  int
 }
 
 func (t *deletetask) checkProgress() (bool, error) {
