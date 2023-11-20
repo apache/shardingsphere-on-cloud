@@ -345,20 +345,35 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 		dataNodeMap[dn.IP] = dn
 	}
 
-	pw := prettyoutput.NewPW(totalNum)
+	pw := prettyoutput.NewProgressPrinter(prettyoutput.ProgressPrintOption{
+		NumTrackersExpected: totalNum,
+	})
+
 	go pw.Render()
-	for idx := 0; idx < totalNum; idx++ {
-		sn := lsBackup.SsBackup.StorageNodes[idx]
+
+	for i := 0; i < totalNum; i++ {
+		sn := lsBackup.SsBackup.StorageNodes[i]
 		as := pkg.NewAgentServer(fmt.Sprintf("%s:%d", convertLocalhost(sn.IP), AgentPort))
 		dn := dataNodeMap[sn.IP]
-		go checkStatus(as, sn, dn, dnCh, pw)
+		backupInfo := &model.BackupInfo{}
+		task := &backuptask{
+			As:      as,
+			Sn:      sn,
+			Dn:      dn,
+			DnCh:    dnCh,
+			Backup:  backupInfo,
+			retries: defaultShowDetailRetryTimes,
+		}
+		tracker := &progress.Tracker{
+			Message: fmt.Sprintf("Checking backup status  # %s:%d", sn.IP, sn.Port),
+			Total:   0,
+			Units:   progress.UnitsDefault,
+		}
+		pw.AppendTracker(tracker)
+		go pw.UpdateProgress(tracker, task.checkProgress)
 	}
 
-	// wait for all data node backup finished
-	time.Sleep(time.Millisecond * 100)
-	for pw.IsRenderInProgress() {
-		time.Sleep(time.Millisecond * 100)
-	}
+	pw.BlockedRendered()
 
 	close(dnCh)
 
@@ -388,62 +403,48 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 	return backupFinalStatus
 }
 
-func checkStatus(as pkg.IAgentServer, sn *model.StorageNode, dn *model.DataNode, dnCh chan *model.DataNode, pw progress.Writer) {
-	var (
-		// mark check status is done, time ticker should break.
-		done = make(chan struct{})
-		// time ticker, try to doCheck request every 2 seconds.
-		ticker = time.Tick(time.Second * 2)
-		// progress bar.
-		tracker = progress.Tracker{Message: fmt.Sprintf("Checking backup status  # %s:%d", sn.IP, sn.Port), Total: 0, Units: progress.UnitsDefault}
-	)
+type backuptask struct {
+	As   pkg.IAgentServer
+	Sn   *model.StorageNode
+	Dn   *model.DataNode
+	DnCh chan *model.DataNode
 
-	pw.AppendTracker(&tracker)
-
-	for !tracker.IsDone() {
-		select {
-		case <-done:
-			return
-		case <-ticker:
-			status, err := doCheck(as, sn, dn.BackupID, defaultShowDetailRetryTimes)
-			if err != nil {
-				tracker.MarkAsErrored()
-				dn.Status = status
-				dn.EndTime = timeutil.Now().String()
-				dnCh <- dn
-				done <- struct{}{}
-			}
-			if status == model.SsBackupStatusCompleted || status == model.SsBackupStatusFailed {
-				tracker.MarkAsDone()
-				dn.Status = status
-				dn.EndTime = timeutil.Now().String()
-				dnCh <- dn
-				done <- struct{}{}
-			}
-		}
-	}
+	Backup  *model.BackupInfo
+	retries int
 }
 
-func doCheck(as pkg.IAgentServer, sn *model.StorageNode, backupID string, retries int) (status model.BackupStatus, err error) {
+func (t *backuptask) checkProgress() (bool, error) {
+	var err error
 	in := &model.ShowDetailIn{
-		DBPort:       sn.Port,
-		DBName:       sn.Database,
-		Username:     sn.Username,
-		Password:     sn.Password,
-		DnBackupID:   backupID,
+		DBPort:       t.Sn.Port,
+		DBName:       t.Sn.Database,
+		Username:     t.Sn.Username,
+		Password:     t.Sn.Password,
+		DnBackupID:   t.Dn.BackupID,
 		DnBackupPath: BackupPath,
 		Instance:     defaultInstance,
 	}
-	backupInfo, err := as.ShowDetail(in)
+
+	t.Backup, err = t.As.ShowDetail(in)
 	if err != nil {
-		if retries == 0 {
-			return model.SsBackupStatusCheckError, err
+		if t.retries == 0 {
+			t.Dn.Status = model.SsBackupStatusCheckError
+			t.DnCh <- t.Dn
+			return false, err
 		}
 		time.Sleep(time.Second * 1)
-		return doCheck(as, sn, backupID, retries-1)
+		t.retries--
+		return t.checkProgress()
 	}
 
-	return backupInfo.Status, nil
+	t.Dn.Status = t.Backup.Status
+	t.Dn.EndTime = timeutil.Now().String()
+
+	if t.Backup.Status == model.SsBackupStatusCompleted || t.Backup.Status == model.SsBackupStatusFailed {
+		t.DnCh <- t.Dn
+		return true, nil
+	}
+	return false, nil
 }
 
 type deleteMode int
