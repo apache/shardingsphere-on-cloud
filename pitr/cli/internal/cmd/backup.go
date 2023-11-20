@@ -357,11 +357,12 @@ func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
 		dn := dataNodeMap[sn.IP]
 		backupInfo := &model.BackupInfo{}
 		task := &backuptask{
-			As:     as,
-			Sn:     sn,
-			Dn:     dn,
-			DnCh:   dnCh,
-			Backup: backupInfo,
+			As:      as,
+			Sn:      sn,
+			Dn:      dn,
+			DnCh:    dnCh,
+			Backup:  backupInfo,
+			retries: defaultShowDetailRetryTimes,
 		}
 		tracker := &progress.Tracker{
 			Message: fmt.Sprintf("Checking backup status  # %s:%d", sn.IP, sn.Port),
@@ -408,7 +409,8 @@ type backuptask struct {
 	Dn   *model.DataNode
 	DnCh chan *model.DataNode
 
-	Backup *model.BackupInfo
+	Backup  *model.BackupInfo
+	retries int
 }
 
 func (t *backuptask) checkProgress() (bool, error) {
@@ -422,20 +424,26 @@ func (t *backuptask) checkProgress() (bool, error) {
 		DnBackupPath: BackupPath,
 		Instance:     defaultInstance,
 	}
+
 	t.Backup, err = t.As.ShowDetail(in)
+	if err != nil {
+		if t.retries == 0 {
+			t.Dn.Status = model.SsBackupStatusCheckError
+			t.DnCh <- t.Dn
+			return false, err
+		}
+		time.Sleep(time.Second * 1)
+		t.retries--
+		return t.checkProgress()
+	}
+
 	t.Dn.Status = t.Backup.Status
 	t.Dn.EndTime = timeutil.Now().String()
-
-	if err != nil {
-		t.DnCh <- t.Dn
-		return false, err
-	}
 
 	if t.Backup.Status == model.SsBackupStatusCompleted || t.Backup.Status == model.SsBackupStatusFailed {
 		t.DnCh <- t.Dn
 		return true, nil
 	}
-
 	return false, nil
 }
 

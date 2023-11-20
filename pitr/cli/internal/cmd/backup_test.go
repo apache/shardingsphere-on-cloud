@@ -61,11 +61,12 @@ var _ = Describe("Backup", func() {
 		})
 
 		It("mock agent server return err", func() {
-			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout"))
+			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("mock agent timeout"))
 
 			finished, err := task.checkProgress()
 			Expect(err).To(HaveOccurred())
 			Expect(finished).To(BeFalse())
+			Expect(task.Dn.Status).To(Equal(model.SsBackupStatusCheckError))
 		})
 
 		It("mock agent server and return failed status", func() {
@@ -86,10 +87,11 @@ var _ = Describe("Backup", func() {
 		})
 
 		It("mock agent server and return check err first time and then success", func() {
-			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout"))
+			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("mock agent timeout"))
 			finished, err := task.checkProgress()
 			Expect(err).To(HaveOccurred())
 			Expect(finished).To(BeFalse())
+			Expect(task.Dn.Status).To(Equal(model.SsBackupStatusCheckError))
 
 			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil)
 			finished, err = task.checkProgress()
@@ -241,13 +243,11 @@ var _ = Describe("Backup", func() {
 			Expect(checkBackupStatus(lsbackup)).To(Equal(model.SsBackupStatusFailed))
 		})
 
-		/*
-			It("check error 3", func() {
-				as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout")).Times(2)
-				as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil).AnyTimes()
-				Expect(checkBackupStatus(lsbackup)).To(Equal(model.SsBackupStatusCompleted))
-			})
-		*/
+		It("check error 3", func() {
+			as.EXPECT().ShowDetail(gomock.Any()).Return(nil, errors.New("timeout")).Times(2)
+			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusCompleted}, nil).AnyTimes()
+			Expect(checkBackupStatus(lsbackup)).To(Equal(model.SsBackupStatusCompleted))
+		})
 
 		It("check failed", func() {
 			as.EXPECT().ShowDetail(gomock.Any()).Return(&model.BackupInfo{Status: model.SsBackupStatusFailed}, nil).AnyTimes()
