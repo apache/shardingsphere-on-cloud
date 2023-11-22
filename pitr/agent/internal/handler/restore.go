@@ -75,9 +75,10 @@ func Restore(ctx *fiber.Ctx) (err error) {
 			mvErr := pkg.OG.MvTempToPgData()
 			if mvErr != nil {
 				err = fmt.Errorf("restore failure[err=%s], pkg.OG.MvTempToPgData return err: %s", err, mvErr)
-			} else {
-				err = fmt.Errorf("restore failure[err=%s]", err)
+				return
 			}
+			err = fmt.Errorf("restore failure[err=%s]", err)
+			return
 		}
 	}()
 
