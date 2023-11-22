@@ -31,7 +31,7 @@ const (
 	Unknown           = "Unknown error"
 	InvalidHTTPStatus = "Invalid http status"
 	NotFound          = "Not found"
-	Http              = "Http request error"
+	HTTPRequest       = "Http request error"
 )
 
 func (e *err) Error() string {
@@ -48,11 +48,11 @@ func NewUnknownErr(url string, in, out interface{}, err error) error {
 	return fmt.Errorf(postErrFmt, url, in, out, err, NewCliErr(Unknown))
 }
 
-func NewHttpRequestErr(method, url string, in, out interface{}, err error) error {
-	return fmt.Errorf(httpErrFmt, method, url, in, out, err, NewCliErr(Http))
+func NewHTTPRequestErr(method, url string, in, out interface{}, err error) error {
+	return fmt.Errorf(httpErrFmt, method, url, in, out, err, NewCliErr(HTTPRequest))
 }
 
-func NewHttpRawRequestErr(err error) error {
+func NewHTTPRawRequestErr(err error) error {
 	return fmt.Errorf(httpRawErrFmt, err)
 }
 
