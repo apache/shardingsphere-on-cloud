@@ -411,7 +411,7 @@ func (og *openGauss) MvPgDataToTemp() error {
 		return err
 	}
 	if err != nil {
-		og.log.Error(fmt.Sprintf("cmds.Exec[shell=%s,cmd=%s] return err wrap: %w", og.shell, cmd, err))
+		og.log.Error(fmt.Sprintf(_CmdErrorFmt, og.shell, cmd, err))
 		return err
 	}
 
@@ -426,7 +426,7 @@ func (og *openGauss) MvTempToPgData() error {
 		return err
 	}
 	if err != nil {
-		og.log.Error(fmt.Sprintf("cmds.Exec[shell=%s,cmd=%s] return err wrap: %w", og.shell, cmd, err))
+		og.log.Error(fmt.Sprintf(_CmdErrorFmt, og.shell, cmd, err))
 		return err
 	}
 	return nil
@@ -440,7 +440,7 @@ func (og *openGauss) CleanPgDataTemp() error {
 		return err
 	}
 	if err != nil {
-		og.log.Error(fmt.Sprintf("cmds.Exec[shell=%s,cmd=%s] return err wrap: %w", og.shell, cmd, err))
+		og.log.Error(fmt.Sprintf(_CmdErrorFmt, og.shell, cmd, err))
 		return err
 	}
 	return nil
