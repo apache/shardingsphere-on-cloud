@@ -19,6 +19,7 @@ package pkg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -78,7 +79,7 @@ func (as *agentServer) CheckStatus(in *model.HealthCheckIn) error {
 	r.Body(in)
 
 	if err := r.Send(out); err != nil {
-		return xerr.NewUnknownErr(url, in, nil, err)
+		return xerr.NewHttpRawRequestErr(errors.Unwrap(err))
 	}
 
 	if out.Code != 0 {
@@ -96,7 +97,7 @@ func (as *agentServer) Backup(in *model.BackupIn) (string, error) {
 	r.Body(in)
 
 	if err := r.Send(out); err != nil {
-		return "", xerr.NewUnknownErr(url, in, out, err)
+		return "", xerr.NewHttpRawRequestErr(errors.Unwrap(err))
 	}
 
 	if out.Code != 0 {
@@ -115,7 +116,7 @@ func (as *agentServer) Restore(in *model.RestoreIn) error {
 	r.Body(in)
 
 	if err := r.Send(out); err != nil {
-		return xerr.NewUnknownErr(url, in, out, err)
+		return xerr.NewHttpRawRequestErr(errors.Unwrap(err))
 	}
 
 	if out.Code != 0 {
@@ -133,7 +134,7 @@ func (as *agentServer) ShowDetail(in *model.ShowDetailIn) (*model.BackupInfo, er
 	r.Body(in)
 
 	if err := r.Send(out); err != nil {
-		return nil, xerr.NewUnknownErr(url, in, out, err)
+		return nil, xerr.NewHttpRawRequestErr(errors.Unwrap(err))
 	}
 
 	if out.Code != 0 {
@@ -151,7 +152,7 @@ func (as *agentServer) ShowList(in *model.ShowListIn) ([]model.BackupInfo, error
 	r.Body(in)
 
 	if err := r.Send(out); err != nil {
-		return nil, xerr.NewUnknownErr(url, in, out, err)
+		return nil, xerr.NewHttpRawRequestErr(errors.Unwrap(err))
 	}
 
 	if out.Code != 0 {
@@ -169,7 +170,7 @@ func (as *agentServer) ShowDiskSpace(in *model.DiskSpaceIn) (*model.DiskSpaceInf
 	r.Body(in)
 
 	if err := r.Send(out); err != nil {
-		return nil, xerr.NewUnknownErr(url, in, out, err)
+		return nil, xerr.NewHttpRawRequestErr(errors.Unwrap(err))
 	}
 
 	if out.Code != 0 {
@@ -188,7 +189,7 @@ func (as *agentServer) DeleteBackup(in *model.DeleteBackupIn) error {
 	r.Body(in)
 
 	if err := r.Send(out); err != nil {
-		return xerr.NewUnknownErr(url, in, out, err)
+		return xerr.NewHttpRawRequestErr(errors.Unwrap(err))
 	}
 
 	if out.Code != 0 {

@@ -24,11 +24,14 @@ type err struct {
 }
 
 const (
-	postErrFmt = "httputils.NewRequest[url=%s,body=%v,out=%v] return err=%s,wrap=%w"
+	postErrFmt    = "httputils.NewRequest[url=%s, body=%v, out=%v] return err=%s, wrap=%w"
+	httpErrFmt    = "httputils.NewRequest[method=%s, url=%s, body=%v, out=%v] return err=%s, wrap=%w"
+	httpRawErrFmt = "err=%s"
 
 	Unknown           = "Unknown error"
 	InvalidHTTPStatus = "Invalid http status"
 	NotFound          = "Not found"
+	Http              = "Http request error"
 )
 
 func (e *err) Error() string {
@@ -45,8 +48,16 @@ func NewUnknownErr(url string, in, out interface{}, err error) error {
 	return fmt.Errorf(postErrFmt, url, in, out, err, NewCliErr(Unknown))
 }
 
+func NewHttpRequestErr(method, url string, in, out interface{}, err error) error {
+	return fmt.Errorf(httpErrFmt, method, url, in, out, err, NewCliErr(Http))
+}
+
+func NewHttpRawRequestErr(err error) error {
+	return fmt.Errorf(httpRawErrFmt, err)
+}
+
 func NewAgentServerErr(code int, msg string) error {
 	return &err{
-		msg: fmt.Sprintf("agent server err[code=%d,msg=%s]", code, msg),
+		msg: fmt.Sprintf("agent server err[code=%d, msg=%s]", code, msg),
 	}
 }
