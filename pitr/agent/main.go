@@ -146,7 +146,8 @@ func SetupApp() {
 
 	app.Use(
 		middleware.Recover(logging.Log()),
-		middleware.UniformErrResp(logging.Log()),
+		// middleware.UniformErrResp(logging.Log()),
+		middleware.UniformRawErrResp(logging.Log()),
 	)
 
 	app.Get("/ping", func(ctx *fiber.Ctx) error {
