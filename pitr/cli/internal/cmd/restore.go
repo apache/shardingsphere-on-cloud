@@ -285,7 +285,7 @@ func (t *restoretask) checkProgress() (bool, error) {
 	}
 
 	if err = t.As.Restore(in); err != nil {
-		r.Status = "Failed"
+		r.Status = fmt.Sprintf("Failed: %s", err)
 		t.ResultCh <- r
 		return false, err
 	}
