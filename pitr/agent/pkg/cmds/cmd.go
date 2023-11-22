@@ -19,6 +19,7 @@ package cmds
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -78,14 +79,13 @@ func AsyncExec(name string, args ...string) (chan *Output, error) {
 
 			if err = cmd.Wait(); err != nil {
 				if ee, ok := err.(*exec.ExitError); ok {
-					output <- &Output{
-						Error: fmt.Errorf("exec failure[ee=%s],wrap=%w", ee, cons.CmdOperateFailed),
-					}
-				} else {
-					output <- &Output{
-						Error: fmt.Errorf("cmd.Wait return err=%s,wrap=%w", err, cons.Internal),
-					}
+					logging.Error(fmt.Sprintf("exec failure[ee=%s], wrap=%w", ee, cons.CmdOperateFailed))
 				}
+
+				output <- &Output{
+					Error: errors.New(fmt.Sprintf("%s err: %s", cmd.String(), err)),
+				}
+
 			}
 			return nil
 		})(); err != nil {
@@ -125,9 +125,9 @@ func Exec(name string, args ...string) (string, error) {
 
 	if err = cmd.Wait(); err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
-			return "", fmt.Errorf("exec failure[ee=%s,stdout=%s],wrap=%w", ee, string(reader), cons.CmdOperateFailed)
+			logging.Error(fmt.Sprintf("exec failure[ee=%s,stdout=%s]", ee, string(reader)))
 		}
-		return "", cons.Internal
+		return "", errors.New(fmt.Sprintf("%s err: %s", cmd.String(), err))
 	}
 	return string(reader), nil
 }
