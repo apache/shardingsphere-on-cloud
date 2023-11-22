@@ -133,30 +133,14 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, th
 //nolint:dupl
 func (og *openGauss) ShowBackup(backupPath, instanceName, backupID string) (*model.Backup, error) {
 	cmd := fmt.Sprintf(_showFmt, instanceName, backupPath, backupID)
-	output, err := cmds.Exec(og.shell, cmd)
+	list, err := og.showbackup(cmd, instanceName)
 	if err != nil {
-		og.log.Error(fmt.Sprintf(_CmdErrorFmt, og.shell, cmd, err))
 		return nil, err
 	}
-
-	var list []*model.BackupList
-	if err = json.Unmarshal([]byte(output), &list); err != nil {
-		og.log.Error(fmt.Sprintf("json.Unmarshal[output=%s] return err: %s, wrap: %s", output, err, cons.JSONUnmarshalFailed))
-		return nil, err
+	if len(list) > 0 {
+		return list[0], nil
 	}
-
-	for _, ins := range list {
-		if ins.Instance == instanceName {
-			if len(ins.List) == 0 {
-				og.log.Error(fmt.Sprintf("instance[name=%s], backupList[v=%+v], err wrap: %s", ins.Instance, list, cons.DataNotFound))
-				return nil, err
-			}
-
-			return ins.List[0], nil
-		}
-	}
-
-	return nil, fmt.Errorf("backupList[v=%+v], err wrap: %w", list, cons.DataNotFound)
+	return nil, err
 }
 
 func (og *openGauss) DelBackup(backupPath, instanceName, backupID string) error {
@@ -330,8 +314,7 @@ func (og *openGauss) Restore(backupPath, instance, backupID string, threadsNum u
 }
 
 //nolint:dupl
-func (og *openGauss) ShowBackupList(backupPath, instanceName string) ([]*model.Backup, error) {
-	cmd := fmt.Sprintf(_showListFmt, instanceName, backupPath)
+func (og *openGauss) showbackup(cmd, instanceName string) ([]*model.Backup, error) {
 	output, err := cmds.Exec(og.shell, cmd)
 	if err != nil {
 		og.log.Error(fmt.Sprintf(_CmdErrorFmt, og.shell, cmd, cons.CmdShowBackupFailed))
@@ -357,6 +340,11 @@ func (og *openGauss) ShowBackupList(backupPath, instanceName string) ([]*model.B
 
 	og.log.Error(fmt.Sprintf("backupList[v=%+v], err wrap: %s", list, cons.DataNotFound))
 	return nil, err
+}
+
+func (og *openGauss) ShowBackupList(backupPath, instanceName string) ([]*model.Backup, error) {
+	cmd := fmt.Sprintf(_showListFmt, instanceName, backupPath)
+	return og.showbackup(cmd, instanceName)
 }
 
 func (og *openGauss) ignore(outputs chan *cmds.Output) {
