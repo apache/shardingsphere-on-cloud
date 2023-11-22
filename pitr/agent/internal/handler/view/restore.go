@@ -33,7 +33,7 @@ type RestoreIn struct {
 //nolint:dupl
 func (in *RestoreIn) Validate() error {
 	if in == nil {
-		return cons.InvalidHttpRequestBody
+		return cons.InvalidHTTPRequestBody
 	}
 
 	if in.DBPort == 0 {
