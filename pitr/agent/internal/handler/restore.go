@@ -73,14 +73,16 @@ func Restore(ctx *fiber.Ctx) (err error) {
 	defer func() {
 		if status != "restore success" {
 			mvErr := pkg.OG.MvTempToPgData()
-			err = fmt.Errorf("resotre failre[err=%s], pkg.OG.MvTempToPgData return err wrap: %w", err, mvErr)
+			if mvErr != nil {
+				err = fmt.Errorf("restore failure[err=%s], pkg.OG.MvTempToPgData return err: %s", err, mvErr)
+			} else {
+				err = fmt.Errorf("restore failure[err=%s]", err)
+			}
 		}
 	}()
 
 	// restore data from backup
 	if err = pkg.OG.Restore(in.DnBackupPath, in.Instance, in.DnBackupID, in.DnThreadsNum); err != nil {
-		efmt := "pkg.OG.Restore failure[path=%s,instance=%s,backupID=%s], err wrap: %w"
-		err = fmt.Errorf(efmt, in.DnBackupPath, in.Instance, in.DnBackupID, err)
 		status = "restore failure"
 		return
 	}
