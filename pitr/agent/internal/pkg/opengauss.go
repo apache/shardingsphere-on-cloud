@@ -130,6 +130,7 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, th
 	return "", fmt.Errorf("unknow err")
 }
 
+//nolint:dupl
 func (og *openGauss) ShowBackup(backupPath, instanceName, backupID string) (*model.Backup, error) {
 	cmd := fmt.Sprintf(_showFmt, instanceName, backupPath, backupID)
 	output, err := cmds.Exec(og.shell, cmd)
@@ -328,6 +329,7 @@ func (og *openGauss) Restore(backupPath, instance, backupID string, threadsNum u
 	return nil
 }
 
+//nolint:dupl
 func (og *openGauss) ShowBackupList(backupPath, instanceName string) ([]*model.Backup, error) {
 	cmd := fmt.Sprintf(_showListFmt, instanceName, backupPath)
 	output, err := cmds.Exec(og.shell, cmd)
