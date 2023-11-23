@@ -1,5 +1,5 @@
 # Content
-```shell
+
 * [README](#readme)
   * [Prerequisition](#prerequisition)
     * [Servers](#servers)
@@ -19,9 +19,10 @@
     * [Prepare Test Data](#prepare-test-data) 
     * [Test Case](#test-case) 
       * [Backup](#backup)
+      * [Show](#show-backup-info)
       * [Recovery](#recovery) 
+      * [Deletion](#deletion)
 * [Limitations](#limitations)
-```
 
 # README
 
