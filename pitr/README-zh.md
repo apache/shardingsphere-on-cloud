@@ -402,7 +402,8 @@ select * from t_user;
 
 # 使用限制
 
-- Pitr 备份恢复功能的使用需要开启 GLT，并在 ShardingSphere 中进行配置
+- Pitr 备份恢复功能的使用需要开启 GLT，并在 ShardingSphere 中进行配置。如果没有 GLT，那么 Pitr 无法依据 CSN 保证一致性
+- GLT 部署可以使用 Redis，无需对 Redis 进行额外配置
 - 全局备份任务需要在没有进行中的事务的时间点进行开启，由 ShardingSphere 来加锁保证
 - 备份开始后 ShardingSphere 会一直持有锁，当备份结束后才会释放锁
 - 多个 Pitr cli 客户端同时操作，只有一个 Pitr cli 客户端可执行成功
