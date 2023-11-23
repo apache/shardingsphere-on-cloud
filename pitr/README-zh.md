@@ -19,7 +19,11 @@
     * [准备测试数据](#准备测试数据)
     * [测试用例](#测试用例)
       * [备份](#备份)
+      * [查看备份]
       * [恢复](#恢复)
+      * [删除备份]
+* [使用限制](#使用限制)
+* [FAQ](#faq)
 
 # 使用说明 
 
@@ -45,7 +49,7 @@
 
 | | Role | Components |
 |:-:|:-:|:-:|
-|1| Pitr cli operation server | Pitr Cli + ShardingSphere Proxy + Zookeeper|
+|1| Pitr cli operation server | Pitr Cli + ShardingSphere Proxy + Zookeeper + GLT |
 |2| OpenGauss Server 1 | OpenGauss Server + Pitr Agent |
 |3| OpenGauss Server 2 | OpenGauss Server + Pitr Agent |
 
@@ -62,6 +66,7 @@
 - OpenGauss 使用用户 `omm` 并且可以访问数据库 `omm`
 - OpenGauss 开启了 `cbm tracking`
 - SSL 密钥对。用来提供 Pitr 命令行工具和 Pitr Agent 之间的安全通信，可以使用任何有效的密钥对
+- 需要部署 GLT 服务，比如 Redis，用来向 ShardingSphere 和 OpenGauss 构成的分布式数据库提供全局 CSN
 
 #### 编译说明（可选）
 
@@ -162,6 +167,7 @@ authority:
   privilege:
     type: ALL_PERMITTED
 
+# 以下配置为 GLT 相关配置
 globalClock:
   enabled: true
   type: TSO
@@ -330,7 +336,7 @@ select * from t_user;
 
 执行备份：
 ```Shell
-./gs_pitr backup --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-threads-num 1 --dn-backup-path "/home/omm/data" -b FULL
+./gs_pitr backup --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-threads-num 10 --dn-backup-path "/home/omm/data" -b FULL
 ```
 
 参数说明:
@@ -348,6 +354,13 @@ select * from t_user;
 ./gs_pitr show
 ```
 
+#### 查看备份 
+
+查看备份：
+```Shell
+./gs_pitr show 
+```
+
 #### 恢复 
 
 你需要先删除部分 `t_user` 表中的记录：
@@ -358,7 +371,7 @@ delete from t_user where user_id=2;
 
 执行恢复：
 ```Shell
-./gs_pitr restore --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
+./gs_pitr restore --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-threads-num 10 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
 ```
 
 参数说明:
@@ -368,6 +381,7 @@ delete from t_user where user_id=2;
 - password: ShardingSphere Proxy 连接密码
 - agent-port: Pitr Agent 监听端口 
 - dn-backup-path: OpenGauss 备份文件路径 
+- dn-threads-num: OpenGauss 并发恢复数量 
 - id: 备份 id 
 
 验证数据:
@@ -375,12 +389,32 @@ delete from t_user where user_id=2;
 select * from t_user;
 ```
 
+#### 删除备份
+
+删除备份：
+```shell
+./gs_pitr delete --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
+```
+
+参数说明：
+- host: ShardingSphere Proxy 服务器 
+- port: ShardingSphere Proxy 监听端口 
+- username: ShardingSphere Proxy 连接用户名 
+- password: ShardingSphere Proxy 连接密码
+- agent-port: Pitr Agent 监听端口 
+- dn-backup-path: OpenGauss 备份文件路径 
+- id: 备份 id 
+
 # 使用限制
 
+- Pitr 备份恢复功能的使用需要开启 GLT，并在 ShardingSphere 中进行配置
 - 全局备份任务需要在没有进行中的事务的时间点进行开启，由 ShardingSphere 来加锁保证
-- ShardingSphere 备份元数据存储在 Pitr cli 本地，如果需要另一台设备上需要恢复，需要复制对应备份数据到对应设备
-- 恢复操作需要停机，并且为同步操作，用户需保证完全恢复成功
-- 恢复前后 OpenGauss 数据节点的 IP 地址和端口需保持不变
+- 备份开始后 ShardingSphere 会一直持有锁，当备份结束后才会释放锁
 - 多个 Pitr cli 客户端同时操作，只有一个 Pitr cli 客户端可执行成功
+- 恢复前后 OpenGauss 数据节点的 IP 地址和端口需保持不变，即和 ShardingSphere 中逻辑库注册的数据源保持一致
+- 恢复时，保证 ShardingSphere 在备份时和恢复时使用的版本一致，确保元数据兼容
+- 恢复操作需要停机，并且为同步操作，用户需保证完全恢复成功
 - 当恢复失败时，OpenGauss 数据节点存在状态不一致，需用户重新发起恢复操作，保证最终恢复成功
-- 恢复时，保证 ShardingSphere 备份和恢复的版本一致，确保元数据兼容
+- 当执行备份后，会在当前用户的 `$HOME` 下创建 `.gs_pitr/backup` 目录，并在该目录下存放备份元数据文件
+- 如果需要另一台设备上需要恢复，需要复制该路径下的备份数据到对应设备的相同路径
+- 当执行删除备份后，当前用户的 `$HOME/.gs_pitr/backup` 下的备份文件将被删除
