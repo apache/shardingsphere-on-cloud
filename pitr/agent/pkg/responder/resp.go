@@ -66,7 +66,18 @@ func Error(ctx *fiber.Ctx, e error) error {
 	})
 }
 
-func ErrorWitData(ctx *fiber.Ctx, e error, data any) error {
+func RawError(ctx *fiber.Ctx, e error) error {
+	if e == nil {
+		return xerror.New(unknownErrCode, unknownErrMsg)
+	}
+	ctx.Status(http.StatusOK)
+	return ctx.JSON(&resp{
+		Code: unknownErrCode,
+		Msg:  e.Error(),
+	})
+}
+
+func ErrorWithData(ctx *fiber.Ctx, e error, data any) error {
 	if e == nil {
 		return xerror.New(unknownErrCode, unknownErrMsg)
 	}

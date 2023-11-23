@@ -36,10 +36,25 @@ func UniformErrResp(log logging.ILog) fiber.Handler {
 		log.Fields(map[logging.FieldKey]string{
 			logging.ErrorKey:  err.Error(),
 			logging.RequestID: ctx.Get(cons.RequestID),
-		}).Error("UniformErrResp:an error occurred")
+		}).Error("UniformErrResp: an error occurred")
 		if e, b := xerror.FromError(err); b {
 			return responder.Error(ctx, e)
 		}
 		return responder.Error(ctx, cons.Internal)
+	}
+}
+
+func UniformRawErrResp(log logging.ILog) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		err := ctx.Next()
+		if err == nil {
+			return nil
+		}
+		//nolint:exhaustive
+		log.Fields(map[logging.FieldKey]string{
+			logging.ErrorKey:  err.Error(),
+			logging.RequestID: ctx.Get(cons.RequestID),
+		}).Error("UniformErrResp: an error occurred")
+		return responder.RawError(ctx, err)
 	}
 }

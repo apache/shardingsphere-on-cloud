@@ -174,7 +174,7 @@ func backup() error {
 		return xerr.NewCliErr(fmt.Sprintf("check disk space failed. err: %s", err))
 	}
 
-	prompt := fmt.Sprintln(backupPromptFmt)
+	prompt := backupPromptFmt
 	err = promptutil.GetUserApproveInTerminal(prompt)
 	if err != nil {
 		cancel = true
@@ -286,7 +286,7 @@ func execBackup(lsBackup *model.LsBackup) error {
 	// if backup failed, return error
 	if err != nil {
 		lsBackup.SsBackup.Status = model.SsBackupStatusFailed
-		return xerr.NewCliErr(fmt.Sprintf("node backup failed. err: %s", err))
+		return xerr.NewCliErr(err.Error())
 	}
 
 	// save data node list to lsBackup
@@ -311,7 +311,7 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 	}
 	backupID, err := as.Backup(in)
 	if err != nil {
-		return xerr.NewCliErr(fmt.Sprintf("backup failed, err: %s", err))
+		return xerr.NewCliErr(err.Error())
 	}
 
 	// update DnList of lsBackup
