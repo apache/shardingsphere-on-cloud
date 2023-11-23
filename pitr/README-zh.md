@@ -19,11 +19,10 @@
     * [准备测试数据](#准备测试数据)
     * [测试用例](#测试用例)
       * [备份](#备份)
-      * [查看备份]
+      * [查看备份](#查看备份)
       * [恢复](#恢复)
-      * [删除备份]
+      * [删除备份](#删除备份)
 * [使用限制](#使用限制)
-* [FAQ](#faq)
 
 # 使用说明 
 
@@ -58,14 +57,15 @@
 在服务器都准备就绪后，你需要检查和确认如下内容：
 
 - Apache ShardingSphere 所在的服务器允许访问呢 OpenGauss 所在的服务器
-- 允许从外部访问 Apache ShardingSphere
-- 允许从外部通过 18080 端口访问 OpenGauss 服务器
+- 允许从外部通过 3307 端口访问 Apache ShardingSphere
+- 允许从外部通过 18080 端口访问 OpenGauss 服务器上的 Pitr Agent 
 - 在 OpenGauss 服务器上设置如下环境变量：
   - export PGDATABASE=tpccdb
   - export PGPORT=13100
 - OpenGauss 使用用户 `omm` 并且可以访问数据库 `omm`
 - OpenGauss 开启了 `cbm tracking`
 - SSL 密钥对。用来提供 Pitr 命令行工具和 Pitr Agent 之间的安全通信，可以使用任何有效的密钥对
+- 需要手动在每个节点创建期望的备份数据路径，并保证多个节点路径是一致的
 - 需要部署 GLT 服务，比如 Redis，用来向 ShardingSphere 和 OpenGauss 构成的分布式数据库提供全局 CSN
 
 #### 编译说明（可选）
@@ -118,7 +118,7 @@ make openssl-local
 
 ## 部署说明
 
-Pitr cli （即 `gs_pitr`）和 Pitr agent （即 `pitr-agent`）二进制都可以在[Apache ShardingSphere on Cloud 的发布页](https://github.com/apache/shardingsphere-on-cloud/releases)下载，或者在你的环境中按前述步骤手动编译得到。
+Pitr cli （即 `gs_pitr`）和 Pitr agent （即 `pitr-agent`）二进制都可以在 [Apache ShardingSphere on Cloud 的发布页](https://github.com/apache/shardingsphere-on-cloud/releases)下载，或者在你的环境中按前述步骤手动编译得到。
 
 整个部署过程由如下两个步骤构成：
 
@@ -167,6 +167,13 @@ authority:
   privilege:
     type: ALL_PERMITTED
 
+transaction:
+  defaultType: XA
+  providerType: Atomikos
+
+props:
+  proxy-frontend-database-protocol-type: openGauss
+
 # 以下配置为 GLT 相关配置
 globalClock:
   enabled: true
@@ -175,13 +182,6 @@ globalClock:
   props:
     host: 127.0.0.1
     port: 6379
-
-transaction:
-  defaultType: XA
-  providerType: Atomikos
-
-props:
-  proxy-frontend-database-protocol-type: openGauss
 
 ```
 
@@ -348,11 +348,6 @@ select * from t_user;
 - dn-threads-num: OpenGauss 并发备份数量 
 - dn-threads-path: OpenGauss 备份文件路径 
 - b: 备份模式 
-
-检查备份并查看备份 id：
-```Shell
-./gs_pitr show
-```
 
 #### 查看备份 
 
