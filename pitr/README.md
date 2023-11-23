@@ -1,26 +1,28 @@
 # Content
-```shell
-README
-    Prerequisition 
-        Servers
-        Environment 
-            Compilation (optional) 
-        SSL Configurations 
-            Generate new SSL keypair (Optional) 
-    Deployment 
-        Step 1: Get Pitr tools 
-            Get binary release 
-            Compile it yourself 
-        Step 2: Get ShardingSphere Proxy Configurations 
-        Step 3: Set OpenGauss Configurations
-        Step 4: Deploy SSL certs for Pitr Agent  
-        Step 5: Start Pitr Agent 
-    Test
-        Prepare Test Data 
-        Test Case 
-            Backup
-            Recovery 
-```
+
+* [README](#readme)
+  * [Prerequisition](#prerequisition)
+    * [Servers](#servers)
+      * [Environment](#environment)
+        * [Compilation (optional) ](#compilation-optional)
+      * [SSL Configurations](#ssl-configurations)
+        * [Generate new SSL keypair (Optional) ](#generate-new-ssl-keypair-optional)
+  * [Deployment](#deployment)
+    * [Step 1: Get Pitr tools](#step-1-get-pitr-tools) 
+      * [Get binary release](#get-binary-release)
+      * [Compile it yourself](#compile-it-yourself) 
+    * [Step 2: Get ShardingSphere Proxy Configurations](#step-2-get-shardingsphere-proxy-configurations) 
+    * [Step 3: Set OpenGauss Configurations](#step-3-set-opengauss-configurations)
+    * [Step 4: Deploy SSL certs for Pitr Agent](#step-4-deploy-ssl-certs-for-pitr-agent)  
+    * [Step 5: Start Pitr Agent](#step-5-start-pitr-agent) 
+  * [Test](#test)
+    * [Prepare Test Data](#prepare-test-data) 
+    * [Test Case](#test-case) 
+      * [Backup](#backup)
+      * [Show](#show-backup-info)
+      * [Recovery](#recovery) 
+      * [Deletion](#deletion)
+* [Limitations](#limitations)
 
 # README
 
@@ -48,7 +50,7 @@ You need to prepare at least three servers: one server for the Pitr commandline 
 
 | | Role | Components |
 |:-:|:-:|:-:|
-|1| Pitr cli operation server | Pitr Cli + ShardingSphere Proxy + Zookeeper|
+|1| Pitr cli operation server | Pitr Cli + ShardingSphere Proxy + Zookeeper + GLT |
 |2| OpenGauss Server 1 | OpenGauss Server + Pitr Agent |
 |3| OpenGauss Server 2 | OpenGauss Server + Pitr Agent |
 
@@ -57,14 +59,16 @@ You need to prepare at least three servers: one server for the Pitr commandline 
 After the servers are ready, you should check and ensure the following items:
 
 - Apache ShardingSphere Proxy is allowed to access OpenGauss Servers
-- External access to Apache ShardingSphere Proxy
-- External access to OpenGauss Server via port 18080
+- External access to Apache ShardingSphere Proxy via port 3307
+- External access to Pitr agent on OpenGauss servers via port 18080
 - Set below environment variables on OpenGauss Servers
   - export PGDATABASE=tpccdb
   - export PGPORT=13100
 - OpenGauss has user `omm` and database `omm` which can be accessed
 - OpenGauss enables `cbm tracking`
 - SSL key pairs. Any valid key pairs are acceptable, they will be used for Pitr cli-agent secure communication
+- Create OpenGauss backup path manually and keep it same between OpenGauss servers
+- Deploy GLT service such a Redis, in order to provide CSN to ShardingSphere and OpenGauss distributed database
 
 #### Compilation (optional)
 
@@ -166,14 +170,6 @@ authority:
   privilege:
     type: ALL_PERMITTED
 
-globalClock:
-  enabled: true
-  type: TSO
-  provider: redis
-  props:
-    host: 127.0.0.1
-    port: 6379
-
 transaction:
   defaultType: XA
   providerType: Atomikos
@@ -181,6 +177,14 @@ transaction:
 props:
   proxy-frontend-database-protocol-type: openGauss
 
+# Below is GLT related configs
+globalClock:
+  enabled: true
+  type: TSO
+  provider: redis
+  props:
+    host: 127.0.0.1
+    port: 6379
 ```
 
 config-sharding.yaml
@@ -333,7 +337,7 @@ select * from t_user;
 #### Backup
 
 ```Shell
-./gs_pitr backup --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-threads-num 1 --dn-backup-path "/home/omm/data" -b FULL
+./gs_pitr backup --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-threads-num 10 --dn-backup-path "/home/omm/data" -b FULL
 ```
 
 Parameters:
@@ -346,7 +350,9 @@ Parameters:
 - dn-threads-path: OpenGauss backup files path
 - b: Backup mode
 
-Check backups and get the backup id for recovery.
+#### Show backup info 
+
+Show backups:
 
 ```Shell
 ./gs_pitr show
@@ -362,7 +368,29 @@ delete from t_user where user_id=2;
 
 Do recovery:
 ```Shell
-./gs_pitr restore --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
+./gs_pitr restore --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-threads-num 10 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
+```
+
+Parameters:
+- host: ShardingSphere Proxy server
+- port: ShardingSphere Proxy port
+- username: ShardingSphere Proxy user
+- password: ShardingSphere Proxy password
+- agent-port: Pitr agent port
+- dn-threads-num: OpenGauss concurrent restore 
+- dn-backup-path: OpenGauss backup files path
+- id: Backup id
+
+Verify data:
+```SQL
+select * from t_user;
+```
+
+#### Deletion 
+
+Delete backup :
+```Shell
+./gs_pitr delete --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080  --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
 ```
 
 Parameters:
@@ -374,17 +402,18 @@ Parameters:
 - dn-backup-path: OpenGauss backup files path
 - id: Backup id
 
-Verify data:
-```SQL
-select * from t_user;
-```
 
-# Restrictions
+# Limitations 
 
+- Pitr backup and restore depends on GLT which is configured in ShardingSphere. Pitr can not ensure consistency without CSN if there is no GLT
+- Redis can be deployed as GLT service without any extra configuration
 - Global backup tasks need to be executed while there is no uncommitted transaction, and this will be ensuranced by ShardingSphere lock.
-- The backup metadata of ShardingSphere will be stored on the same host with the Pitr cli. You need to copy this metadata backup to the another host first where you want to start recovery.
-- The recovery operation need to stop service, and it is a synchonized operation. Users have to make sure the success of the recovery operation.
-- OpenGauss data nodes should use the same IP and port while backup and recovery
+- ShardingSphere will hold the lock until the whole backup process is done
 - Only one Pitr cli could successfully if multiple cli are executed simutaneously
-- OpenGauss servers may under inconsistent status if recovery fails. Users need to try to recovery again until it is succeed.
+- OpenGauss data nodes should use the same IP and port while backup and recovery
 - Using the same version of ShardingSphere while backup and recovery to make sure the metadata is compatible.
+- The recovery operation need to stop service, and it is a synchonized operation. Users have to make sure the success of the recovery operation.
+- OpenGauss servers may under inconsistent status if recovery fails. Users need to try to recovery again until it is succeed.
+- Pitr cli will create a directory `.gs_pitr/backup` under user `$HOME` and save backup metadata files under it
+- You need to copy this metadata backup to the another host first where you want to restore.
+- The backup file under directory `$HOME/.gs_pitr/backup` will be deleted after the execution of `gs_pitr delete`

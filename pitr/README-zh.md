@@ -1,27 +1,28 @@
 # 目录
-```shell
-使用说明
-    前置准备
-        服务器说明
-        环境说明
-            编译说明（可选）
-        SSL 配置
-            生成新的 SSL 密钥对（可选）
-    部署说明
-        步骤1：获取 Pitr 二进制
-            下载二进制包
-            自行编译
-        步骤2：准备 ShardingSphere Proxy 配置
-        步骤3：配置 OpenGauss
-        步骤4：为 Pitr Agent 部署 SSL 证书
-        步骤5：启动 Pitr Agent
-    测试说明
-        准备测试数据
-        测试用例
-            备份
-            恢复
-```
 
+* [使用说明](#使用说明)
+  * [前置准备](#前置说明)
+    * [服务器说明](#服务器说明)
+    * [环境说明](#环境说明)
+      * [编译说明（可选）](#编译说明可选)
+    * [SSL 配置](#ssl-配置)
+      * [生成新的 SSL 密钥对（可选）](#生成新的-ssl-密钥对可选)
+  * [部署说明](#部署说明)
+    * [步骤1：获取 Pitr 二进制](#步骤1-获取-pitr-二进制)
+      * [下载二进制包](#下载二进制包)
+      * [自行编译](#自行编译)
+    * [步骤2：准备 ShardingSphere Proxy 配置](#步骤-2-准备-shardingsphere-proxy-配置)
+    * [步骤3：配置 OpenGauss](#步骤-3-配置-opengauss)
+    * [步骤4：为 Pitr Agent 部署 SSL 证书](#步骤-4-为-pitr-agent-部署-ssl-证书)
+    * [步骤5：启动 Pitr Agent](#步骤-5-启动-pitr-agent)
+  * [测试说明](#测试说明)
+    * [准备测试数据](#准备测试数据)
+    * [测试用例](#测试用例)
+      * [备份](#备份)
+      * [查看备份](#查看备份)
+      * [恢复](#恢复)
+      * [删除备份](#删除备份)
+* [使用限制](#使用限制)
 
 # 使用说明 
 
@@ -47,7 +48,7 @@
 
 | | Role | Components |
 |:-:|:-:|:-:|
-|1| Pitr cli operation server | Pitr Cli + ShardingSphere Proxy + Zookeeper|
+|1| Pitr cli operation server | Pitr Cli + ShardingSphere Proxy + Zookeeper + GLT |
 |2| OpenGauss Server 1 | OpenGauss Server + Pitr Agent |
 |3| OpenGauss Server 2 | OpenGauss Server + Pitr Agent |
 
@@ -56,14 +57,16 @@
 在服务器都准备就绪后，你需要检查和确认如下内容：
 
 - Apache ShardingSphere 所在的服务器允许访问呢 OpenGauss 所在的服务器
-- 允许从外部访问 Apache ShardingSphere
-- 允许从外部通过 18080 端口访问 OpenGauss 服务器
+- 允许从外部通过 3307 端口访问 Apache ShardingSphere
+- 允许从外部通过 18080 端口访问 OpenGauss 服务器上的 Pitr Agent 
 - 在 OpenGauss 服务器上设置如下环境变量：
   - export PGDATABASE=tpccdb
   - export PGPORT=13100
 - OpenGauss 使用用户 `omm` 并且可以访问数据库 `omm`
 - OpenGauss 开启了 `cbm tracking`
 - SSL 密钥对。用来提供 Pitr 命令行工具和 Pitr Agent 之间的安全通信，可以使用任何有效的密钥对
+- 需要手动在每个节点创建期望的备份数据路径，并保证多个节点路径是一致的
+- 需要部署 GLT 服务，比如 Redis，用来向 ShardingSphere 和 OpenGauss 构成的分布式数据库提供全局 CSN
 
 #### 编译说明（可选）
 
@@ -115,7 +118,7 @@ make openssl-local
 
 ## 部署说明
 
-Pitr cli （即 `gs_pitr`）和 Pitr agent （即 `pitr-agent`）二进制都可以在[Apache ShardingSphere on Cloud 的发布页](https://github.com/apache/shardingsphere-on-cloud/releases)下载，或者在你的环境中按前述步骤手动编译得到。
+Pitr cli （即 `gs_pitr`）和 Pitr agent （即 `pitr-agent`）二进制都可以在 [Apache ShardingSphere on Cloud 的发布页](https://github.com/apache/shardingsphere-on-cloud/releases)下载，或者在你的环境中按前述步骤手动编译得到。
 
 整个部署过程由如下两个步骤构成：
 
@@ -164,6 +167,14 @@ authority:
   privilege:
     type: ALL_PERMITTED
 
+transaction:
+  defaultType: XA
+  providerType: Atomikos
+
+props:
+  proxy-frontend-database-protocol-type: openGauss
+
+# 以下配置为 GLT 相关配置
 globalClock:
   enabled: true
   type: TSO
@@ -171,13 +182,6 @@ globalClock:
   props:
     host: 127.0.0.1
     port: 6379
-
-transaction:
-  defaultType: XA
-  providerType: Atomikos
-
-props:
-  proxy-frontend-database-protocol-type: openGauss
 
 ```
 
@@ -332,7 +336,7 @@ select * from t_user;
 
 执行备份：
 ```Shell
-./gs_pitr backup --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-threads-num 1 --dn-backup-path "/home/omm/data" -b FULL
+./gs_pitr backup --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-threads-num 10 --dn-backup-path "/home/omm/data" -b FULL
 ```
 
 参数说明:
@@ -345,9 +349,11 @@ select * from t_user;
 - dn-threads-path: OpenGauss 备份文件路径 
 - b: 备份模式 
 
-检查备份并查看备份 id：
+#### 查看备份 
+
+查看备份：
 ```Shell
-./gs_pitr show
+./gs_pitr show 
 ```
 
 #### 恢复 
@@ -360,7 +366,7 @@ delete from t_user where user_id=2;
 
 执行恢复：
 ```Shell
-./gs_pitr restore --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
+./gs_pitr restore --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-threads-num 10 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
 ```
 
 参数说明:
@@ -370,6 +376,7 @@ delete from t_user where user_id=2;
 - password: ShardingSphere Proxy 连接密码
 - agent-port: Pitr Agent 监听端口 
 - dn-backup-path: OpenGauss 备份文件路径 
+- dn-threads-num: OpenGauss 并发恢复数量 
 - id: 备份 id 
 
 验证数据:
@@ -377,12 +384,33 @@ delete from t_user where user_id=2;
 select * from t_user;
 ```
 
+#### 删除备份
+
+删除备份：
+```shell
+./gs_pitr delete --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
+```
+
+参数说明：
+- host: ShardingSphere Proxy 服务器 
+- port: ShardingSphere Proxy 监听端口 
+- username: ShardingSphere Proxy 连接用户名 
+- password: ShardingSphere Proxy 连接密码
+- agent-port: Pitr Agent 监听端口 
+- dn-backup-path: OpenGauss 备份文件路径 
+- id: 备份 id 
+
 # 使用限制
 
+- Pitr 备份恢复功能的使用需要开启 GLT，并在 ShardingSphere 中进行配置。如果没有 GLT，那么 Pitr 无法依据 CSN 保证一致性
+- GLT 部署可以使用 Redis，无需对 Redis 进行额外配置
 - 全局备份任务需要在没有进行中的事务的时间点进行开启，由 ShardingSphere 来加锁保证
-- ShardingSphere 备份元数据存储在 Pitr cli 本地，如果需要另一台设备上需要恢复，需要复制对应备份数据到对应设备
-- 恢复操作需要停机，并且为同步操作，用户需保证完全恢复成功
-- 恢复前后 OpenGauss 数据节点的 IP 地址和端口需保持不变
+- 备份开始后 ShardingSphere 会一直持有锁，当备份结束后才会释放锁
 - 多个 Pitr cli 客户端同时操作，只有一个 Pitr cli 客户端可执行成功
+- 恢复前后 OpenGauss 数据节点的 IP 地址和端口需保持不变，即和 ShardingSphere 中逻辑库注册的数据源保持一致
+- 恢复时，保证 ShardingSphere 在备份时和恢复时使用的版本一致，确保元数据兼容
+- 恢复操作需要停机，并且为同步操作，用户需保证完全恢复成功
 - 当恢复失败时，OpenGauss 数据节点存在状态不一致，需用户重新发起恢复操作，保证最终恢复成功
-- 恢复时，保证 ShardingSphere 备份和恢复的版本一致，确保元数据兼容
+- 当执行备份后，会在当前用户的 `$HOME` 下创建 `.gs_pitr/backup` 目录，并在该目录下存放备份元数据文件
+- 如果需要另一台设备上需要恢复，需要复制该路径下的备份数据到对应设备的相同路径
+- 当执行删除备份后，当前用户的 `$HOME/.gs_pitr/backup` 下的备份文件将被删除
