@@ -310,21 +310,23 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 		Instance:     defaultInstance,
 	}
 	backupID, err := as.Backup(in)
+	status := model.SsBackupStatusRunning
 	if err != nil {
-		return xerr.NewCliErr(err.Error())
+		// return xerr.NewCliErr(fmt.Sprintf("data node backup error: %s", err))
+		status = model.BackupStatus(err.Error())
 	}
 
 	// update DnList of lsBackup
 	dn := &model.DataNode{
 		IP:        node.IP,
 		Port:      node.Port,
-		Status:    model.SsBackupStatusRunning,
+		Status:    status,
 		BackupID:  backupID,
 		StartTime: timeutil.Now().String(),
 		EndTime:   timeutil.Init(),
 	}
 	dnCh <- dn
-	return nil
+	return err
 }
 
 func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
@@ -498,20 +500,20 @@ func deleteBackupFiles(ls pkg.ILocalStorage, lsBackup *model.LsBackup, m deleteM
 
 		close(resultCh)
 
-		t := table.NewWriter()
-		t.SetOutputMirror(os.Stdout)
-		t.SetTitle("Delete Backup Files Result")
-		t.AppendHeader(table.Row{"#", "Node IP", "Node Port", "Result", "Message"})
-		t.SetColumnConfigs([]table.ColumnConfig{{Number: 5, WidthMax: 50}})
+		// t := table.NewWriter()
+		// t.SetOutputMirror(os.Stdout)
+		// t.SetTitle("Delete Backup Files Result")
+		// t.AppendHeader(table.Row{"#", "Node IP", "Node Port", "Result", "Message"})
+		// t.SetColumnConfigs([]table.ColumnConfig{{Number: 5, WidthMax: 50}})
 
-		idx := 0
-		for result := range resultCh {
-			idx++
-			t.AppendRow([]interface{}{idx, result.IP, result.Port, result.Status, result.Msg})
-			t.AppendSeparator()
-		}
+		// idx := 0
+		// for result := range resultCh {
+		// 	idx++
+		// 	t.AppendRow([]interface{}{idx, result.IP, result.Port, result.Status, result.Msg})
+		// 	t.AppendSeparator()
+		// }
 
-		t.Render()
+		// t.Render()
 	}
 
 	if err := ls.DeleteByName(filename); err != nil {

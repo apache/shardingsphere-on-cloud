@@ -98,6 +98,10 @@ const (
 )
 
 func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, threadsNum uint8, dbPort uint16) (string, error) {
+	var (
+		bid string
+		err error
+	)
 	cmd := fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, og.pgData, threadsNum, dbPort)
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
 	if err != nil {
@@ -112,22 +116,35 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, th
 			Field("pgdata", og.pgData).
 			Debug(fmt.Sprintf("AsyncBackup output[lineNo=%d,msg=%s,err=%v]", output.LineNo, output.Message, output.Error))
 
+		fmt.Printf("[lineNo=%d,msg=%s,err=%v]\n", output.LineNo, output.Message, output.Error)
+
 		if output.Error != nil {
 			og.log.Error(fmt.Sprintf("output.Error[%s] is not nil", output.Error))
 			return "", output.Error
 		}
 
-		// get the backup id from the first line
-		bid, err := og.getBackupID(output.Message)
-		if err != nil {
-			og.log.Error(fmt.Sprintf("og.getBackupID[source=%s] return err wrap: %s", output.Message, err))
-			return "", err
+		// fmt.Printf("lalala: %s\n", output.Message)
+
+		if strings.Contains(output.Message, "INFO: Backup start") {
+			bid, err = og.getBackupID(output.Message)
+			if err != nil {
+				og.log.Error(fmt.Sprintf("og.getBackupID[source=%s] return err wrap: %s", output.Message, err))
+				return "", err
+			}
 		}
+
+		// get the backup id from the first line
+		// bid, err := og.getBackupID(output.Message)
+		// if err != nil {
+		// 	og.log.Error(fmt.Sprintf("og.getBackupID[source=%s] return err wrap: %s", output.Message, err))
+		// 	return "", err
+		// }
 		// ignore other output
-		go og.ignore(outputs)
-		return bid, nil //nolint
+		// go og.ignore(outputs)
+		// return bid, nil //nolint
 	}
-	return "", fmt.Errorf("unknow err")
+	return bid, nil //nolint
+	// return "", fmt.Errorf("unknow err")
 }
 
 //nolint:dupl
@@ -192,7 +209,7 @@ func (og *openGauss) AddInstance(backupPath, instance string) error {
 
 	if errors.Is(err, cons.CmdOperateFailed) {
 		og.log.Error(fmt.Sprintf("add instance failure[output=%s], err: %s, wrap: %s", output, err, cons.InstanceAlreadyExist))
-		return err
+		return fmt.Errorf("add instance failure[output=%s], err: %s, wrap: %w", output, err, cons.InstanceAlreadyExist)
 	}
 	if err != nil {
 		og.log.Error(fmt.Sprintf(_CmdErrorFmt, og.shell, cmd, cons.CmdAddInstanceFailed))
