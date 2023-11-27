@@ -49,6 +49,7 @@ func AsyncExec(name string, args ...string) (chan *Output, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can not obtain stdout pipe for command[args=%+v]:%s", args, err)
 	}
+
 	if err = cmd.Start(); err != nil {
 		return nil, fmt.Errorf("the command is err[args=%+v]:%s", args, err)
 	}
@@ -61,11 +62,16 @@ func AsyncExec(name string, args ...string) (chan *Output, error) {
 	go func() {
 		if err = syncutils.NewRecoverFuncWithErrRet("", func() error {
 			for scanner.Scan() {
-				output <- &Output{
+				op := &Output{
 					LineNo:  index,
 					Message: scanner.Text(),
 					Error:   err,
 				}
+				if strings.Contains(scanner.Text(), "No space left on device") {
+					op.Error = fmt.Errorf("%s", "No space left on device")
+				}
+
+				output <- op
 				index++
 			}
 
@@ -78,13 +84,14 @@ func AsyncExec(name string, args ...string) (chan *Output, error) {
 
 			if err = cmd.Wait(); err != nil {
 				if ee, ok := err.(*exec.ExitError); ok {
-					logging.Error(fmt.Sprintf("exec failure[ee=%s], wrap=%s", ee, cons.CmdOperateFailed))
+					output <- &Output{
+						Error: fmt.Errorf("exec failure[ee=%s], wrap=%w", ee, cons.CmdOperateFailed),
+					}
+				} else {
+					output <- &Output{
+						Error: fmt.Errorf("%s err: %s", cmd.String(), err),
+					}
 				}
-
-				output <- &Output{
-					Error: fmt.Errorf("%s err: %s", cmd.String(), err),
-				}
-
 			}
 			return nil
 		})(); err != nil {
@@ -113,6 +120,12 @@ func Exec(name string, args ...string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("can not obtain stdout pipe for command[args=%+v]:%s", args, err)
 	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return "", fmt.Errorf("can not obtain stderr pipe for cmand[args=%+v]:%s", args, err)
+	}
+
 	if err = cmd.Start(); err != nil {
 		return "", fmt.Errorf("the command is err[args=%+v]:%s", args, err)
 	}
@@ -122,11 +135,16 @@ func Exec(name string, args ...string) (string, error) {
 		return "", fmt.Errorf("io.ReadAll return err=%w", err)
 	}
 
+	ereader, err := io.ReadAll(stderr)
+	if err != nil {
+		return "", fmt.Errorf("io.ReadAll return err=%w", err)
+	}
+
 	if err = cmd.Wait(); err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
-			logging.Error(fmt.Sprintf("exec failure[ee=%s,stdout=%s]", ee, string(reader)))
+			return "", fmt.Errorf("exec failure[ee=%s,stdout=%s], wrap:%w", ee, string(reader), cons.CmdOperateFailed)
 		}
-		return "", fmt.Errorf("%s err: %s", cmd.String(), err)
+		return "", fmt.Errorf("%s err: %s", cmd.String(), string(ereader))
 	}
 	return string(reader), nil
 }

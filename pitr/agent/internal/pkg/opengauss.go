@@ -98,6 +98,10 @@ const (
 )
 
 func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, threadsNum uint8, dbPort uint16) (string, error) {
+	var (
+		bid string
+		err error
+	)
 	cmd := fmt.Sprintf(_backupFmt, backupPath, instanceName, backupMode, og.pgData, threadsNum, dbPort)
 	outputs, err := cmds.AsyncExec(og.shell, cmd)
 	if err != nil {
@@ -117,17 +121,15 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, th
 			return "", output.Error
 		}
 
-		// get the backup id from the first line
-		bid, err := og.getBackupID(output.Message)
-		if err != nil {
-			og.log.Error(fmt.Sprintf("og.getBackupID[source=%s] return err wrap: %s", output.Message, err))
-			return "", err
+		if strings.Contains(output.Message, "INFO: Backup start") {
+			bid, err = og.getBackupID(output.Message)
+			if err != nil {
+				og.log.Error(fmt.Sprintf("og.getBackupID[source=%s] return err wrap: %s", output.Message, err))
+				return "", err
+			}
 		}
-		// ignore other output
-		go og.ignore(outputs)
-		return bid, nil //nolint
 	}
-	return "", fmt.Errorf("unknow err")
+	return bid, nil //nolint
 }
 
 //nolint:dupl
@@ -192,7 +194,7 @@ func (og *openGauss) AddInstance(backupPath, instance string) error {
 
 	if errors.Is(err, cons.CmdOperateFailed) {
 		og.log.Error(fmt.Sprintf("add instance failure[output=%s], err: %s, wrap: %s", output, err, cons.InstanceAlreadyExist))
-		return err
+		return fmt.Errorf("add instance failure[output=%s], err: %s, wrap: %w", output, err, cons.InstanceAlreadyExist)
 	}
 	if err != nil {
 		og.log.Error(fmt.Sprintf(_CmdErrorFmt, og.shell, cmd, cons.CmdAddInstanceFailed))
@@ -347,6 +349,7 @@ func (og *openGauss) ShowBackupList(backupPath, instanceName string) ([]*model.B
 	return og.showbackup(cmd, instanceName)
 }
 
+//nolint:unused
 func (og *openGauss) ignore(outputs chan *cmds.Output) {
 	defer func() {
 		_ = recover()

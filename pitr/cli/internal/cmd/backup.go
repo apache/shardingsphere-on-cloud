@@ -134,12 +134,7 @@ func backup() error {
 			}
 
 			if lsBackup != nil {
-				if cancel {
-					deleteBackupFiles(ls, lsBackup, deleteModeQuiet)
-				} else {
-					logging.Warn("Try to delete backup data ...")
-					deleteBackupFiles(ls, lsBackup, deleteModeNormal)
-				}
+				deleteBackupFiles(ls, lsBackup, deleteModeQuiet)
 			}
 		}
 	}()
@@ -310,20 +305,24 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 		Instance:     defaultInstance,
 	}
 	backupID, err := as.Backup(in)
+	status := model.SsBackupStatusRunning
 	if err != nil {
-		return xerr.NewCliErr(err.Error())
+		status = model.BackupStatus(err.Error())
 	}
 
 	// update DnList of lsBackup
 	dn := &model.DataNode{
 		IP:        node.IP,
 		Port:      node.Port,
-		Status:    model.SsBackupStatusRunning,
+		Status:    status,
 		BackupID:  backupID,
 		StartTime: timeutil.Now().String(),
 		EndTime:   timeutil.Init(),
 	}
 	dnCh <- dn
+	if err != nil {
+		return fmt.Errorf("data node %s:%d backup error: %s", node.IP, node.Port, err)
+	}
 	return nil
 }
 
