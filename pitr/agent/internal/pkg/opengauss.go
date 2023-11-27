@@ -349,6 +349,7 @@ func (og *openGauss) ShowBackupList(backupPath, instanceName string) ([]*model.B
 	return og.showbackup(cmd, instanceName)
 }
 
+//nolint:unused
 func (og *openGauss) ignore(outputs chan *cmds.Output) {
 	defer func() {
 		_ = recover()
