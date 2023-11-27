@@ -326,7 +326,10 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 		EndTime:   timeutil.Init(),
 	}
 	dnCh <- dn
-	return fmt.Errorf("data node %s:%d backup error: %s", node.IP, node.Port, err)
+	if err != nil {
+		return fmt.Errorf("data node %s:%d backup error: %s", node.IP, node.Port, err)
+	}
+	return nil
 }
 
 func checkBackupStatus(lsBackup *model.LsBackup) model.BackupStatus {
