@@ -180,9 +180,9 @@ var _ = Describe("Backup", func() {
 
 			as.EXPECT().Backup(gomock.Any()).Return("", xerr.NewCliErr("backup failed"))
 
-			Expect(_execBackup(as, bak.SsBackup.StorageNodes[0], dnCh)).ToNot(BeNil())
+			Expect(_execBackup(as, bak.SsBackup.StorageNodes[1], dnCh)).ToNot(BeNil())
 			close(dnCh)
-			Expect(len(dnCh)).To(Equal(1))
+			Expect(len(dnCh)).To(Equal(2))
 
 		})
 	})
