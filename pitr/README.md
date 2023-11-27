@@ -271,7 +271,7 @@ drwx------ 29 omm  omm  4.0K May 23 11:37 pgdata
 ```
 
 Parameters:
-- pgdata: OpenGauss data storage path
+- pgdata: OpenGauss data storage path. Using `--env-source-file` or envvar `PGDATA` if it is not specified in command line.
 - port: Pitr agent exposed port
 - tls-crt: TLS crt file path
 - tls-key: TLS key file path
@@ -413,7 +413,8 @@ Parameters:
 - OpenGauss data nodes should use the same IP and port while backup and recovery
 - Using the same version of ShardingSphere while backup and recovery to make sure the metadata is compatible.
 - The recovery operation need to stop service, and it is a synchonized operation. Users have to make sure the success of the recovery operation.
-- OpenGauss servers may under inconsistent status if recovery fails. Users need to try to recovery again until it is succeed.
+- OpenGauss servers may under inconsistent status if recovery fails, such as one data node succeed while another failed. Users need to handle the exception and try to recovery again until it is succeed.
 - Pitr cli will create a directory `.gs_pitr/backup` under user `$HOME` and save backup metadata files under it
-- You need to copy this metadata backup to the another host first where you want to restore.
+- You need to copy this metadata backup under `$HOME/.gs_pitr/bakcup` to the another host first where you want to restore.
 - The backup file under directory `$HOME/.gs_pitr/backup` will be deleted after the execution of `gs_pitr delete`
+- Canceling the executing `gs_pitr` command on client side using either `Ctrl-C` or `kill` will do nothing about the execution of server task.
