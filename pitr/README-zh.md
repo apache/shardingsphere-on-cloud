@@ -270,11 +270,12 @@ drwx------ 29 omm  omm  4.0K May 23 11:37 pgdata
 ```
 
 参数说明:
-- pgdata: OpenGauss 数据存储路径
+- pgdata: OpenGauss 数据存储路径。当未指定时，可以通过 `--env-source-file` 或通过环境变量 `PGDATA` 进行指定
 - port: Pitr agent 暴露端口
 - tls-crt: TLS 证书文件路径
 - tls-key: TLS 私钥文件路径
 - log-level: Pitr agent 日志级别 
+
 
 ## 测试说明
 
@@ -410,7 +411,8 @@ select * from t_user;
 - 恢复前后 OpenGauss 数据节点的 IP 地址和端口需保持不变，即和 ShardingSphere 中逻辑库注册的数据源保持一致
 - 恢复时，保证 ShardingSphere 在备份时和恢复时使用的版本一致，确保元数据兼容
 - 恢复操作需要停机，并且为同步操作，用户需保证完全恢复成功
-- 当恢复失败时，OpenGauss 数据节点存在状态不一致，需用户重新发起恢复操作，保证最终恢复成功
+- 当恢复失败时，如果 OpenGauss 数据节点存在状态不一致（比如一台成功另一台失败），需用户处理异常后重新发起恢复操作，保证最终恢复成功
 - 当执行备份后，会在当前用户的 `$HOME` 下创建 `.gs_pitr/backup` 目录，并在该目录下存放备份元数据文件
-- 如果需要另一台设备上需要恢复，需要复制该路径下的备份数据到对应设备的相同路径
+- 如果需要另一台设备上需要恢复，需要复制路径 `$HOME/.gs_pitr/backup` 下的备份数据到对应设备的相同路径
 - 当执行删除备份后，当前用户的 `$HOME/.gs_pitr/backup` 下的备份文件将被删除
+- 当命令行执行过程中，`Ctrl-C` 取消或者 `kill` 中止进程，不会同时停止服务端正在执行的任务
