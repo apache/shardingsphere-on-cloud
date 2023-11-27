@@ -68,7 +68,6 @@ func AsyncExec(name string, args ...string) (chan *Output, error) {
 					Error:   err,
 				}
 				if strings.Contains(scanner.Text(), "No space left on device") {
-					// fmt.Printf("[%d] %s, [%s]\n", index, scanner.Text(), err)
 					op.Error = fmt.Errorf("%s", "No space left on device")
 				}
 

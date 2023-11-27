@@ -307,7 +307,6 @@ func _execBackup(as pkg.IAgentServer, node *model.StorageNode, dnCh chan *model.
 	backupID, err := as.Backup(in)
 	status := model.SsBackupStatusRunning
 	if err != nil {
-		// return xerr.NewCliErr(fmt.Sprintf("data node backup error: %s", err))
 		status = model.BackupStatus(err.Error())
 	}
 

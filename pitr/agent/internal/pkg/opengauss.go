@@ -116,14 +116,10 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, th
 			Field("pgdata", og.pgData).
 			Debug(fmt.Sprintf("AsyncBackup output[lineNo=%d,msg=%s,err=%v]", output.LineNo, output.Message, output.Error))
 
-		// fmt.Printf("[lineNo=%d,msg=%s,err=%v]\n", output.LineNo, output.Message, output.Error)
-
 		if output.Error != nil {
 			og.log.Error(fmt.Sprintf("output.Error[%s] is not nil", output.Error))
 			return "", output.Error
 		}
-
-		// fmt.Printf("lalala: %s\n", output.Message)
 
 		if strings.Contains(output.Message, "INFO: Backup start") {
 			bid, err = og.getBackupID(output.Message)
@@ -132,19 +128,8 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, th
 				return "", err
 			}
 		}
-
-		// get the backup id from the first line
-		// bid, err := og.getBackupID(output.Message)
-		// if err != nil {
-		// 	og.log.Error(fmt.Sprintf("og.getBackupID[source=%s] return err wrap: %s", output.Message, err))
-		// 	return "", err
-		// }
-		// ignore other output
-		// go og.ignore(outputs)
-		// return bid, nil //nolint
 	}
 	return bid, nil //nolint
-	// return "", fmt.Errorf("unknow err")
 }
 
 //nolint:dupl
