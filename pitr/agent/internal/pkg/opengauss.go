@@ -116,7 +116,7 @@ func (og *openGauss) AsyncBackup(backupPath, instanceName, backupMode string, th
 			Field("pgdata", og.pgData).
 			Debug(fmt.Sprintf("AsyncBackup output[lineNo=%d,msg=%s,err=%v]", output.LineNo, output.Message, output.Error))
 
-		fmt.Printf("[lineNo=%d,msg=%s,err=%v]\n", output.LineNo, output.Message, output.Error)
+		// fmt.Printf("[lineNo=%d,msg=%s,err=%v]\n", output.LineNo, output.Message, output.Error)
 
 		if output.Error != nil {
 			og.log.Error(fmt.Sprintf("output.Error[%s] is not nil", output.Error))
