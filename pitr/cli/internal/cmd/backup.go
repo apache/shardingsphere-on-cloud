@@ -134,12 +134,7 @@ func backup() error {
 			}
 
 			if lsBackup != nil {
-				if cancel {
-					deleteBackupFiles(ls, lsBackup, deleteModeQuiet)
-				} else {
-					logging.Warn("Try to delete backup data ...")
-					deleteBackupFiles(ls, lsBackup, deleteModeNormal)
-				}
+				deleteBackupFiles(ls, lsBackup, deleteModeQuiet)
 			}
 		}
 	}()
@@ -503,20 +498,20 @@ func deleteBackupFiles(ls pkg.ILocalStorage, lsBackup *model.LsBackup, m deleteM
 
 		close(resultCh)
 
-		// t := table.NewWriter()
-		// t.SetOutputMirror(os.Stdout)
-		// t.SetTitle("Delete Backup Files Result")
-		// t.AppendHeader(table.Row{"#", "Node IP", "Node Port", "Result", "Message"})
-		// t.SetColumnConfigs([]table.ColumnConfig{{Number: 5, WidthMax: 50}})
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.SetTitle("Delete Backup Files Result")
+		t.AppendHeader(table.Row{"#", "Node IP", "Node Port", "Result", "Message"})
+		t.SetColumnConfigs([]table.ColumnConfig{{Number: 5, WidthMax: 50}})
 
-		// idx := 0
-		// for result := range resultCh {
-		// 	idx++
-		// 	t.AppendRow([]interface{}{idx, result.IP, result.Port, result.Status, result.Msg})
-		// 	t.AppendSeparator()
-		// }
+		idx := 0
+		for result := range resultCh {
+			idx++
+			t.AppendRow([]interface{}{idx, result.IP, result.Port, result.Status, result.Msg})
+			t.AppendSeparator()
+		}
 
-		// t.Render()
+		t.Render()
 	}
 
 	if err := ls.DeleteByName(filename); err != nil {
