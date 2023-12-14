@@ -13,7 +13,7 @@ From StackGres's perspective, there are two kinds of solution as below:
                 <th> Advanced </th>
         </tr>
         <tr>
-                <td rowspan="4"> Features </td>
+                <td rowspan="3"> Features </td>
                 <td> * Half-Managed </td>
 		<td> * Fully-Managed </td>
         </tr>
