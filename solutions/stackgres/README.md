@@ -239,3 +239,10 @@ SELECT * FROM t_order_1;
 ```
 ![](./static/select-data-from-cluster-2.png)
 
+## References
+* [https://stackgres.io/doc/latest/quickstart/](https://stackgres.io/doc/latest/quickstart/)
+* [https://stackgres.io/doc/latest/install/helm/](https://stackgres.io/doc/latest/install/helm/)
+* [https://stackgres.io/doc/latest/administration/cluster/connection/passwords/](https://stackgres.io/doc/latest/administration/cluster/connection/passwords/)
+* [https://stackgres.io/doc/latest/administration/cluster/connection/dns/](https://stackgres.io/doc/latest/administration/cluster/connection/dns/)
+* [https://shardingsphere.apache.org/oncloud/current/en/user-manual/cn-sn-operator/](https://shardingsphere.apache.org/oncloud/current/en/user-manual/cn-sn-operator/)
+* [https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/distsql/usage/sharding-rule/](https://shardingsphere.apache.org/document/current/en/user-manual/shardingsphere-proxy/distsql/usage/sharding-rule/)
