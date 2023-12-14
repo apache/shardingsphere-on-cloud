@@ -183,13 +183,13 @@ postgres=> CREATE DATABASE sharding_db;
 postgres=> \c sharding_db;
 
 # Register storage units
-postgres=> REGISTER STORAGE UNIT ds_0 (HOST="cluster-1.sg-demo", PORT=5432, DB="postgres", USER="postgres", PASSWORD="5bc0-07f8-40b3-b81"),ds_1(HOST="cluster-2.sg-demo", PORT=5432, DB="postgres", USER="postgres", PASSWORD="700e-33b3-4edf-bde");
+sharding_db=> REGISTER STORAGE UNIT ds_0 (HOST="cluster-1.sg-demo", PORT=5432, DB="postgres", USER="postgres", PASSWORD="5bc0-07f8-40b3-b81"),ds_1(HOST="cluster-2.sg-demo", PORT=5432, DB="postgres", USER="postgres", PASSWORD="700e-33b3-4edf-bde");
 
 # Create sharding table rule 
-postgres=> CREATE SHARDING TABLE RULE t_order(STORAGE_UNITS(ds_0,ds_1),SHARDING_COLUMN=order_id,TYPE(NAME="hash_mod",PROPERTIES("sharding-count"="2")),KEY_GENERATE_STRATEGY(COLUMN=order_id,TYPE(NAME="snowflake"))); 
+sharding_db=> CREATE SHARDING TABLE RULE t_order(STORAGE_UNITS(ds_0,ds_1),SHARDING_COLUMN=order_id,TYPE(NAME="hash_mod",PROPERTIES("sharding-count"="2")),KEY_GENERATE_STRATEGY(COLUMN=order_id,TYPE(NAME="snowflake"))); 
 
 # Create logical table
-postgres=> CREATE TABLE t_order (
+sharding_db=> CREATE TABLE t_order (
    order_id INT PRIMARY KEY  NOT NULL,
    user_id  INT    NOT NULL,
    status        CHAR(50)
@@ -202,12 +202,12 @@ postgres=> CREATE TABLE t_order (
 ![](./static/shardingsphere-create-sharding-table-rule.png)
 
 8. Insert test data
-# Insert
 ```shell
-postgres=> INSERT INTO t_order(order_id, user_id, status) VALUES(1, 1, 'code1'),(2, 2, 'code2'),(3, 3, 'code3'),(4, 4, 'code4');
+# Insert
+sharding_db=> INSERT INTO t_order(order_id, user_id, status) VALUES(1, 1, 'code1'),(2, 2, 'code2'),(3, 3, 'code3'),(4, 4, 'code4');
 
 # Select 
-postgres=> SELECT * FROM t_order;
+sharding_db=> SELECT * FROM t_order;
 ```
 
 ![](./static/insert-data.png)
