@@ -6,16 +6,50 @@ StackGres is a Kubernetes operator for PostgreSQL. Apache ShardingSphere is a di
 
 From StackGres's perspective, there are two kinds of solution as below:
 
-|   | Basic | Advanced |
-|:-:|:-----:|:--------:|
-| Features | * Half-Managed | * Fully-Managed |
-|          | * Dual-Operators | * Only StackGres Operator |
-|          | * Exploit existed ShardingSphere Operator's functionalities | * Every required functionalities are implemented in StackGres Operator |
-| User Experience | * Users could perceive two operators | * Users experience intergrity |
-| Developer Experience | * Decoupled development, and seperated maintainence. Built with Go & Java | * Coupled development, Java stack |
-| Potential tasks | * Helm Charts of StackGres add an option which decicde the installation of ShardingSphere Operator, and dependency of ShardingSphere Charts | * SGShardedCluster's property `type` add another available value `ShardingSphere`, and a new property `ShardingSphereProfile` refering the name of new CR ShardingSphereProfile. |
-|                 | * SGShardedCluster's property `type` add another available value `ShardingSphere` and other properties that could be rendered into a ComputeNode CR | * A new CRD called ShardingSphereProfile which defines the required workload definitions for ShardingSphere Proxy such as Deployment, Service and ConfigMap. |
-|                 |            | * A new CRD called ShardingSphereDistSQLJob which defines serveral kinds of DistSQL job like `CREATE DATABASE`, `REGISTER STORAGE UNIT` and `CREATE SHARDING TABLE RULE`. |
+<table>
+        <tr>
+                <th>       </th>
+                <th> Basic </th>
+                <th> Advanced </th>
+        </tr>
+        <tr>
+                <td rowspan="4"> Features </td>
+                <td> * Half-Managed </td>
+		<td> * Fully-Managed </td>
+        </tr>
+        <tr>
+                <td> * Dual-Operators </td>
+		<td> * Only StackGres Operator  </td>
+        </tr>
+        <tr>
+                <td> * Exploit existed ShardingSphere Operator's functionalities </td>
+		<td> * Every required functionalities are implemented in StackGres Operator </td>
+        </tr>
+	<tr>
+		<td> User Experience </td>
+		<td> * Users could perceive two operators </td>
+		<td> * Users experience intergrity </td>
+	</tr>
+	<tr>
+		<td> Developer Experience </td>
+		<td> * Decoupled development, and seperated maintainence. Built with Go & Java </td>
+		<td> * Coupled development, Java stack </td>
+	</tr>
+	<tr>
+		<td rowspan="4">  Potential tasks </td>
+		<td> * Helm Charts of StackGres add an option which decicde the installation of ShardingSphere Operator, and dependency of ShardingSphere Charts </td>
+		<td> * SGShardedCluster's property `type` add another available value `ShardingSphere`, and a new property `ShardingSphereProfile` refering the name of new CR ShardingSphereProfile. </td>
+	</tr>
+	<tr>
+                <td> * SGShardedCluster's property `type` add another available value `ShardingSphere` and other properties that could be rendered into a ComputeNode CR </td>
+		<td> * A new CRD called ShardingSphereProfile which defines the required workload definitions for ShardingSphere Proxy such as Deployment, Service and ConfigMap. </td>
+	</tr>
+	<tr>
+		<td></td>
+		<td> * A new CRD called ShardingSphereDistSQLJob which defines serveral kinds of DistSQL job like `CREATE DATABASE`, `REGISTER STORAGE UNIT` and `CREATE SHARDING TABLE RULE`. </td>
+	</tr>
+</table>
+
 
 Here is a architecture illustration for this sharded PostgreSQL cluster with Apache ShardingSphere and StackGres:
 
