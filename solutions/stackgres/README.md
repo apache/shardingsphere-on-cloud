@@ -1,5 +1,57 @@
 # Solutions for StackGres
-Here is a demo for building a sharded PostgreSQL cluster with Apache ShardingSphere and StackGres. The basic architecture could be described as :
+
+## Background
+
+StackGres is a Kubernetes operator for PostgreSQL. Apache ShardingSphere is a distributed SQL transaction & query engine for data sharding, scaling, encryption, and most importnantly could be built on any databases. This means there could be a intergation solution which will build a distributed PostgreSQL cluster exploit StackGres and Apache ShardingSphere. 
+
+From StackGres's perspective, there are two kinds of solution as below:
+
+<table>
+        <tr>
+                <th>       </th>
+                <th> Basic </th>
+                <th> Advanced </th>
+        </tr>
+        <tr>
+                <td rowspan="3"> Features </td>
+                <td> * Half-Managed </td>
+		<td> * Fully-Managed </td>
+        </tr>
+        <tr>
+                <td> * Dual-Operators </td>
+		<td> * Only StackGres Operator  </td>
+        </tr>
+        <tr>
+                <td> * Exploit existed ShardingSphere Operator's functionalities </td>
+		<td> * Every required functionalities are implemented in StackGres Operator </td>
+        </tr>
+	<tr>
+		<td> User Experience </td>
+		<td> * Users could perceive two operators </td>
+		<td> * Users experience intergrity </td>
+	</tr>
+	<tr>
+		<td> Developer Experience </td>
+		<td> * Decoupled development, and seperated maintainence. Built with Go & Java </td>
+		<td> * Coupled development, Java stack </td>
+	</tr>
+	<tr>
+		<td rowspan="4">  Potential tasks </td>
+		<td> * Helm Charts of StackGres add an option which decicde the installation of ShardingSphere Operator, and dependency of ShardingSphere Charts </td>
+		<td> * SGShardedCluster's property `type` add another available value `ShardingSphere`, and a new property `ShardingSphereProfile` refering the name of new CR ShardingSphereProfile. </td>
+	</tr>
+	<tr>
+                <td> * SGShardedCluster's property `type` add another available value `ShardingSphere` and other properties that could be rendered into a ComputeNode CR </td>
+		<td> * A new CRD called ShardingSphereProfile which defines the required workload definitions for ShardingSphere Proxy such as Deployment, Service and ConfigMap. </td>
+	</tr>
+	<tr>
+		<td></td>
+		<td> * A new CRD called ShardingSphereDistSQLJob which defines serveral kinds of DistSQL job like `CREATE DATABASE`, `REGISTER STORAGE UNIT` and `CREATE SHARDING TABLE RULE`. </td>
+	</tr>
+</table>
+
+
+Here is a architecture illustration for this sharded PostgreSQL cluster with Apache ShardingSphere and StackGres:
 
 ```shell
 
@@ -240,6 +292,7 @@ SELECT * FROM t_order_1;
 ![](./static/select-data-from-cluster-2.png)
 
 ## References
+
 * [https://stackgres.io/doc/latest/quickstart/](https://stackgres.io/doc/latest/quickstart/)
 * [https://stackgres.io/doc/latest/install/helm/](https://stackgres.io/doc/latest/install/helm/)
 * [https://stackgres.io/doc/latest/administration/cluster/connection/passwords/](https://stackgres.io/doc/latest/administration/cluster/connection/passwords/)
