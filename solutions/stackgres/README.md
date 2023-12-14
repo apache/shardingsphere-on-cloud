@@ -1,16 +1,36 @@
 # Solutions for StackGres
+Here is a demo for building a sharded PostgreSQL cluster with Apache ShardingSphere and StackGres. The basic architecture could be described as :
+
+```shell
+
++--------------------------+        +-----------------------------+
+| ShardingSphere Operator  | -----> | Apache ShardingSphere Proxy | 
++--------------------------+        +-----------------------------+
+                                                   |
+						   V
+				    +-----------------------------+
++--------------------------+        |    SGClsuter Cluster-1      | 
+|   StackGres Operator     | -----> +-----------------------------+
++--------------------------+        |    SGClsuter Cluster-2      | 
+                                    +-----------------------------+
+```
+
 
 ## Demo
 
-1. 创建 namespace
-kubectl create namespace sg-demo
-2. 使用 Helm 安装 StackGres
+1. Create a Kubernetes namespace for demo
 
 ```shell
-# 添加 StackGres Helm 仓库
+kubectl create namespace sg-demo
+```
+
+2. Install StackGres with Helm Charts 
+
+```shell
+# Add StachGres Helm repo
 helm repo add stackgres-charts https://stackgres.io/downloads/stackgres-k8s/stackgres/helm/
 
-# 安装 operator
+# Install StachGres operator
 helm install --namespace sg-demo stackgres-operator stackgres-charts/stackgres-operator
 ```
 
@@ -18,7 +38,8 @@ helm install --namespace sg-demo stackgres-operator stackgres-charts/stackgres-o
 ![](./static/stackgres-operator-installation.png)
 ![](./static/check-stackgres-operator.png)
 
-3. 创建两个最简化 SGCluster：
+3. Create two minimum SGCluster
+
 ```shell
 cat << 'EOF' | kubectl create -f -
 apiVersion: stackgres.io/v1
@@ -53,24 +74,25 @@ EOF
 ![](./static/create-sgcluster.png)
 ![](./static/check-sgclusters.png)
 
-4. 通过查看 Secret 获取两个 PG 集群的访问用户名和密码
+4. Retrieve two SGCluster PostgreSQL username and password by decoding the secrets
+
 ```shell
-# 查看 cluster-1 的用户名和密码 postgres / 5bc0-07f8-40b3-b81
+# Retrieve username and password of cluster-1, which is postgres / 5bc0-07f8-40b3-b81
 kubectl get secret cluster-1 -n sg-demo -o jsonpath="{.data.superuser-username}" | base64 -d
 kubectl get secret cluster-1 -n sg-demo -o jsonpath="{.data.superuser-password}" | base64 -d
 
-# 查看 cluster-2 的用户名和密码 postgres / 700e-33b3-4edf-bde
+# Retrieve username and password of cluster-2, which is postgres / 700e-33b3-4edf-bde
 kubectl get secret cluster-2 -n sg-demo -o jsonpath="{.data.superuser-username}" | base64 -d
 kubectl get secret cluster-2 -n sg-demo -o jsonpath="{.data.superuser-password}" | base64 -d
 ```
 
+5. Install the ShardingSphere Operator 
 
-5. 部署 ShardingSphere Operator 
 ```
-# 添加 Apache ShardingSphere Helm 仓库
+# Add Apache ShardingSphere Helm repo
 helm repo add shardingsphere https://apache.github.io/shardingsphere-on-cloud
 
-# 安装 Apache ShardingSphere Operator
+# Install ShardingSphere operator 
 helm install shardingsphere-operator shardingsphere/apache-shardingsphere-operator-charts -n sg-demo --set zookeeper.persistence.enabled=false --set operator.featureGates.computeNode=true --set proxyCluster.enabled=false
 ```
 ![](./static/shardingsphere-operator-helm.png)
@@ -78,7 +100,8 @@ helm install shardingsphere-operator shardingsphere/apache-shardingsphere-operat
 ![](./static/shardingsphere-operator-installation-2.png)
 ![](./static/check-shardingsphere-operator.png)
 
-6. 创建计算节点并拉起 Proxy
+6. Create a ComputeNode
+
 ```shell
 cat << EOF | kubectl create -f -
 apiVersion: shardingsphere.apache.org/v1alpha1
@@ -143,28 +166,29 @@ EOF
 ```
 ![](./static/computenode.png)
 
-7. 手动登录 Proxy，注册数据源，配置分片规则
+7. Connect to ShardingSphere Proxy and register a cluster   
+
 ```shell
-# 通过 kubectl port-forward 暴露 ShardingSphere Proxy 端口到本地进行访问
+# Using kubectl port-forward to expose ShardingSphere Proxy for localhost connection
  kubectl port-forward svc/shardingsphere-proxy  -n sg-demo 5432:5432
 
-# 通过 psql 连接
+# Using psql to connect to ShardingSphere Proxy
 psql -h 127.0.0.1 -p 5432 postgres root
 
-# 创建逻辑库 sharding_db
+# Create a logical database named sharding_db;
 postgres=> CREATE DATABASE sharding_db;
 
-# 切换到该逻辑库
-\c sharding_db;
+# Change to this database
+postgres=> \c sharding_db;
 
-# 注册数据源
-REGISTER STORAGE UNIT ds_0 (HOST="cluster-1.sg-demo", PORT=5432, DB="postgres", USER="postgres", PASSWORD="5bc0-07f8-40b3-b81"),ds_1(HOST="cluster-2.sg-demo", PORT=5432, DB="postgres", USER="postgres", PASSWORD="700e-33b3-4edf-bde");
+# Register storage units
+postgres=> REGISTER STORAGE UNIT ds_0 (HOST="cluster-1.sg-demo", PORT=5432, DB="postgres", USER="postgres", PASSWORD="5bc0-07f8-40b3-b81"),ds_1(HOST="cluster-2.sg-demo", PORT=5432, DB="postgres", USER="postgres", PASSWORD="700e-33b3-4edf-bde");
 
-# 配置分片规则
-CREATE SHARDING TABLE RULE t_order(STORAGE_UNITS(ds_0,ds_1),SHARDING_COLUMN=order_id,TYPE(NAME="hash_mod",PROPERTIES("sharding-count"="2")),KEY_GENERATE_STRATEGY(COLUMN=order_id,TYPE(NAME="snowflake"))); 
+# Create sharding table rule 
+postgres=> CREATE SHARDING TABLE RULE t_order(STORAGE_UNITS(ds_0,ds_1),SHARDING_COLUMN=order_id,TYPE(NAME="hash_mod",PROPERTIES("sharding-count"="2")),KEY_GENERATE_STRATEGY(COLUMN=order_id,TYPE(NAME="snowflake"))); 
 
-# 创建表
- CREATE TABLE t_order (
+# Create logical table
+postgres=> CREATE TABLE t_order (
    order_id INT PRIMARY KEY  NOT NULL,
    user_id  INT    NOT NULL,
    status        CHAR(50)
@@ -175,39 +199,41 @@ CREATE SHARDING TABLE RULE t_order(STORAGE_UNITS(ds_0,ds_1),SHARDING_COLUMN=orde
 ![](./static/shardingsphere-change-db.png)
 ![](./static/shardingsphere-register-storage-units.png)
 ![](./static/shardingsphere-create-sharding-table-rule.png)
-8. Proxy 插入数据以及查看
-```shell
-# 插入数据
-INSERT INTO t_order(order_id, user_id, status) VALUES(1, 1, 'code1'),(2, 2, 'code2'),(3, 3, 'code3'),(4, 4, 'code4');
 
-# 查看数据
+8. Insert test data
+# Insert
+```shell
+postgres=> INSERT INTO t_order(order_id, user_id, status) VALUES(1, 1, 'code1'),(2, 2, 'code2'),(3, 3, 'code3'),(4, 4, 'code4');
+
+# Select 
+postgres=> SELECT * FROM t_order;
 ```
 
 ![](./static/insert-data.png)
 ![](./static/select-data-from-shardingsphere.png)
 
-9. 每个 SGCluster 检查数据
+9. Query data with every SGCluster 
 ```shell
-# 访问 SGCluster 自带的 psql 工具
+# Access SGCluster via psql
 kubectl exec -ti cluster-1-0 -n sg-demo  -c postgres-util -- psql
 
-# 查看机器 cluster-1 的表结构
+# Query tables 
 \d
 
-# 查询集群 cluster-1 里的数据
+# Query data from cluster-1
 SELECT * FROM t_order_0;
 ```
 
 ![](./static/select-data-from-cluster-1.png)
 
 ```shell
-# 访问 SGCluster 自带的 psql 工具
+# Access SGCluster via psql
 kubectl exec -ti cluster-2-0 -n sg-demo  -c postgres-util -- psql
 
-# 查看机器 cluster-2 的表结构
+# Query tables 
 \d
 
-# 查询集群 cluster-2 里的数据
+# Query data from cluster-2
 SELECT * FROM t_order_1;
 ```
 ![](./static/select-data-from-cluster-2.png)
