@@ -9,9 +9,9 @@ Here is a demo for building a sharded PostgreSQL cluster with Apache ShardingSph
                                                    |
 						   V
 				    +-----------------------------+
-+--------------------------+        |    SGClsuter Cluster-1      | 
++--------------------------+        |    SGCluster Cluster-1      | 
 |   StackGres Operator     | -----> +-----------------------------+
-+--------------------------+        |    SGClsuter Cluster-2      | 
++--------------------------+        |    SGCluster Cluster-2      | 
                                     +-----------------------------+
 ```
 
