@@ -71,7 +71,8 @@ spec:
       size: '5Gi'
 EOF
 ```
-![](./static/create-sgcluster.png)
+<img src="./static/create-sgcluster.png" width="500" height="650" />
+
 ![](./static/check-sgclusters.png)
 
 4. Retrieve two SGCluster PostgreSQL username and password by decoding the secrets
