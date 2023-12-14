@@ -1,5 +1,23 @@
 # Solutions for StackGres
-Here is a demo for building a sharded PostgreSQL cluster with Apache ShardingSphere and StackGres. The basic architecture could be described as :
+
+## Background
+
+StackGres is a Kubernetes operator for PostgreSQL. Apache ShardingSphere is a distributed SQL transaction & query engine for data sharding, scaling, encryption, and most importnantly could be built on any databases. This means there could be a intergation solution which will build a distributed PostgreSQL cluster exploit StackGres and Apache ShardingSphere. 
+
+From StackGres's perspective, there are two kinds of solution as below:
+
+|   | Basic | Advanced |
+|:-:|:-----:|:--------:|
+| Features | * Half-Managed | * Fully-Managed |
+|          | * Dual-Operators | * Only StackGres Operator |
+|          | * Exploit existed ShardingSphere Operator's functionalities | * Every required functionalities are implemented in StackGres Operator |
+| User Experience | * Users could perceive two operators | * Users experience intergrity |
+| Developer Experience | * Decoupled development, and seperated maintainence. Built with Go & Java | * Coupled development, Java stack |
+| Potential tasks | * Helm Charts of StackGres add an option which decicde the installation of ShardingSphere Operator, and dependency of ShardingSphere Charts | * SGShardedCluster's property `type` add another available value `ShardingSphere`, and a new property `ShardingSphereProfile` refering the name of new CR ShardingSphereProfile. |
+|                 | * SGShardedCluster's property `type` add another available value `ShardingSphere` and other properties that could be rendered into a ComputeNode CR | * A new CRD called ShardingSphereProfile which defines the required workload definitions for ShardingSphere Proxy such as Deployment, Service and ConfigMap. |
+|                 |            | * A new CRD called ShardingSphereDistSQLJob which defines serveral kinds of DistSQL job like `CREATE DATABASE`, `REGISTER STORAGE UNIT` and `CREATE SHARDING TABLE RULE`. |
+
+Here is a architecture illustration for this sharded PostgreSQL cluster with Apache ShardingSphere and StackGres:
 
 ```shell
 
@@ -240,6 +258,7 @@ SELECT * FROM t_order_1;
 ![](./static/select-data-from-cluster-2.png)
 
 ## References
+
 * [https://stackgres.io/doc/latest/quickstart/](https://stackgres.io/doc/latest/quickstart/)
 * [https://stackgres.io/doc/latest/install/helm/](https://stackgres.io/doc/latest/install/helm/)
 * [https://stackgres.io/doc/latest/administration/cluster/connection/passwords/](https://stackgres.io/doc/latest/administration/cluster/connection/passwords/)
