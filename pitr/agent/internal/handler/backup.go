@@ -45,6 +45,10 @@ func Backup(ctx *fiber.Ctx) error {
 		return fmt.Errorf(efmt, in.Username, len(in.Password), in.DBName, err)
 	}
 
+	if err := pkg.OG.Init(in.DnBackupPath); err != nil {
+		return fmt.Errorf("init instance failed, err: %w", err)
+	}
+
 	// try to add backup instance
 	if err := pkg.OG.AddInstance(in.DnBackupPath, in.Instance); err != nil && !errors.Is(err, cons.InstanceAlreadyExist) {
 		return fmt.Errorf("add instance failed, err wrap: %w", err)
