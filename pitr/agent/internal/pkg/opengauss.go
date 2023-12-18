@@ -162,7 +162,11 @@ func (og *openGauss) Init(backupPath string) error {
 	og.log.Debug(fmt.Sprintf("Init output[msg=%s,err=%v]", output, err))
 
 	if errors.Is(err, cons.CmdOperateFailed) {
-		og.log.Error(fmt.Sprintf("init backup path failure,err: %s, wrap: %s", err, cons.BackupPathAlreadyExist))
+		if strings.Contains(err.Error(), "backup catalog already exist and it's not empty") {
+			og.log.Error(fmt.Sprintf("init backup path failure,err: %s, wrap: %s", err, cons.BackupPathAlreadyExist))
+			return nil
+		}
+
 		return err
 	}
 	if err != nil {
