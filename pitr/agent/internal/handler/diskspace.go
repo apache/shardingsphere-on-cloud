@@ -40,6 +40,10 @@ func DiskSpace(ctx *fiber.Ctx) error {
 		return fmt.Errorf("invalid parameter, err wrap: %w", err)
 	}
 
+	if err := os.MkdirAll(in.DiskPath, 0755); err != nil {
+		return fmt.Errorf("mkdir [%s] failure, err wrap: %w", in.DiskPath, err)
+	}
+
 	// show disk space
 	cmd := fmt.Sprintf("df -h %s", in.DiskPath)
 	output, err := cmds.Exec(os.Getenv("SHELL"), cmd)
