@@ -142,7 +142,7 @@ func Exec(name string, args ...string) (string, error) {
 
 	if err = cmd.Wait(); err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
-			return "", fmt.Errorf("exec failure[ee=%s,stdout=%s], wrap:%w", ee, string(reader), cons.CmdOperateFailed)
+			return "", fmt.Errorf("exec failure[ee=%s,stdout=%s,stderr=%s], wrap:%w", ee, string(reader), string(ereader), cons.CmdOperateFailed)
 		}
 		return "", fmt.Errorf("%s err: %s", cmd.String(), string(ereader))
 	}
