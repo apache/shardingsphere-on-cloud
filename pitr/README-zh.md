@@ -49,24 +49,28 @@
 | | Role | Components |
 |:-:|:-:|:-:|
 |1| Pitr cli operation server | Pitr Cli + ShardingSphere Proxy + Zookeeper + GLT |
-|2| OpenGauss Server 1 | OpenGauss Server + Pitr Agent |
+|2| OpenGauss Server 1 | OpenGauss Server + Pitr Agent | 
 |3| OpenGauss Server 2 | OpenGauss Server + Pitr Agent |
 
 ### 环境说明 
 
 在服务器都准备就绪后，你需要检查和确认如下内容：
 
-- Apache ShardingSphere 所在的服务器允许访问呢 OpenGauss 所在的服务器
-- 允许从外部通过 3307 端口访问 Apache ShardingSphere
-- 允许从外部通过 18080 端口访问 OpenGauss 服务器上的 Pitr Agent 
-- 在 OpenGauss 服务器上设置如下环境变量：
-  - export PGDATABASE=tpccdb
-  - export PGPORT=13100
-- OpenGauss 使用用户 `omm` 并且可以访问数据库 `omm`
-- OpenGauss 开启了 `cbm tracking`
-- SSL 密钥对。用来提供 Pitr 命令行工具和 Pitr Agent 之间的安全通信，可以使用任何有效的密钥对
-- 需要手动在每个节点创建期望的备份数据路径，并保证多个节点路径是一致的
-- 需要部署 GLT 服务，比如 Redis，用来向 ShardingSphere 和 OpenGauss 构成的分布式数据库提供全局 CSN
+- Apache ShardingSphere
+  - 所在的服务器允许访问 OpenGauss 所在的服务器
+  - 如果通过 3307 暴露服务，则允许外部访问服务器的 3307 端口
+- GLT
+  - 需要部署 Redis 作为 GLT 服务，用来向 ShardingSphere 和 OpenGauss 构成的分布式数据库提供全局 CSN
+- OpenGauss
+  - OpenGauss 使用用户 `omm` 并且可以访问数据库 `omm`
+  - OpenGauss 开启了 `cbm tracking`
+  - 设置环境变量
+    - export PGDATABASE=tpccdb
+    - export PGPORT=13100
+- Pitr
+  - 如果通过 18080 暴露 Pitr Agent 服务，则允许外部访问服务器的 18080 端口
+  - SSL 密钥对。用来提供 Pitr 命令行工具和 Pitr Agent 之间的安全通信，可以使用任何有效的密钥对。可见[SSL 配置](#ssl-配置)
+
 
 #### 编译说明（可选）
 
@@ -210,17 +214,15 @@ dataSources:
     minPoolSize: 1
 ```
 
-然后使用脚本 `bin/start.sh` 来启动 ShardingSphere Proxy。脚本可以在 apache-shardingsphere-{version}-shardingsphere-proxy-bin.tar.gz 中找到。
+然后使用脚本 `bin/start.sh` 来启动 ShardingSphere Proxy。脚本包含在 apache-shardingsphere-{version}-shardingsphere-proxy-bin.tar.gz 中。
 
-### 步骤 3: 配置 OpenGauss
+### 步骤 3: 配置并启动 OpenGauss
 
-a. 在 postgres.conf 中开启 `cbm tracking`
+在 postgres.conf 中开启 `cbm tracking`
 
 ```shell
 enable_cbm_tracking = on
 ```
-
-b. 执行 `gs_probackup init -B ${backup-path}` 来设置期望的备份路径
 
 然后可以启动所有的 OpenGauss 服务。
 
@@ -270,7 +272,10 @@ drwx------ 29 omm  omm  4.0K May 23 11:37 pgdata
 ```
 
 参数说明:
-- pgdata: OpenGauss 数据存储路径。当未指定时，可以通过 `--env-source-file` 或通过环境变量 `PGDATA` 进行指定
+- pgdata: OpenGauss 数据存储路径。可以通过该参数、 环境变量 `PGDATA` 和`--env-source-file` 进行指定。优先级如下：
+  - pgdata 参数
+  - 环境变量 `PGDATA`
+  - `env-source-file` 
 - port: Pitr agent 暴露端口
 - tls-crt: TLS 证书文件路径
 - tls-key: TLS 私钥文件路径
@@ -341,14 +346,15 @@ select * from t_user;
 ```
 
 参数说明:
-- host: SharidngSphere Proxy 服务器
-- port: ShardingSphere Proxy 监听端口 
-- username: ShardingSphere Proxy 连接用户名 
-- password: ShardingSphere Proxy 连接密码
-- agent-port: Pitr Agent 监听端口 
-- dn-threads-num: OpenGauss 并发备份数量 
-- dn-threads-path: OpenGauss 备份文件路径 
-- b: 备份模式 
+- -a，--agent-port: Pitr Agent 监听端口 
+- -b，--dn-backup-mode: OpenGauss 备份模式 
+- -B，--dn-backup-path：OpenGauss 备份文件路径
+- -j，--dn-threads-num: OpenGauss 并发备份数量 
+- -h，--help：帮助文档
+- -H，--host: SharidngSphere Proxy 服务器
+- -p，--password: ShardingSphere Proxy 连接密码
+- -P，--port: ShardingSphere Proxy 监听端口 
+- -u，--username: ShardingSphere Proxy 连接用户名 
 
 #### 查看备份 
 
@@ -356,6 +362,11 @@ select * from t_user;
 ```Shell
 ./gs_pitr show 
 ```
+
+参数说明:
+- --csn: 备份记录 CSN 序号 
+- -h，--help：帮助文档
+- --id: 备份记录 ID
 
 #### 恢复 
 
@@ -371,14 +382,16 @@ delete from t_user where user_id=2;
 ```
 
 参数说明:
-- host: ShardingSphere Proxy 服务器 
-- port: ShardingSphere Proxy 监听端口 
-- username: ShardingSphere Proxy 连接用户名 
-- password: ShardingSphere Proxy 连接密码
-- agent-port: Pitr Agent 监听端口 
-- dn-backup-path: OpenGauss 备份文件路径 
-- dn-threads-num: OpenGauss 并发恢复数量 
-- id: 备份 id 
+- -a，--agent-port: Pitr Agent 监听端口
+- --csn：备份记录 CSN 序列号
+- -B，--dn-backup-path：OpenGauss 备份文件路径
+- -j，--dn-threads-num: OpenGauss 并发恢复数量 
+- -h，--help：帮助文档
+- -H，--host: SharidngSphere Proxy 服务器
+- --id，备份记录 ID
+- -p，--password: ShardingSphere Proxy 连接密码
+- -P，--port: ShardingSphere Proxy 监听端口 
+- -u，--username: ShardingSphere Proxy 连接用户名 
 
 验证数据:
 ```SQL
@@ -392,19 +405,20 @@ select * from t_user;
 ./gs_pitr delete --host ${OPENGAUSS_SERVER_1} --password sharding --port 3307 --username sharding --agent-port 18080 --dn-backup-path "/home/omm/data" --id ${BACKUP_ID}
 ```
 
-参数说明：
-- host: ShardingSphere Proxy 服务器 
-- port: ShardingSphere Proxy 监听端口 
-- username: ShardingSphere Proxy 连接用户名 
-- password: ShardingSphere Proxy 连接密码
-- agent-port: Pitr Agent 监听端口 
-- dn-backup-path: OpenGauss 备份文件路径 
-- id: 备份 id 
+参数说明:
+- -a，--agent-port: Pitr Agent 监听端口
+- --csn：备份记录 CSN 序列号
+- -B，--dn-backup-path：OpenGauss 备份文件路径
+- -h，--help：帮助文档
+- -H，--host: SharidngSphere Proxy 服务器
+- --id，备份记录 ID
+- -p，--password: ShardingSphere Proxy 连接密码
+- -P，--port: ShardingSphere Proxy 监听端口 
+- -u，--username: ShardingSphere Proxy 连接用户名 
 
 # 使用限制
 
-- Pitr 备份恢复功能的使用需要开启 GLT，并在 ShardingSphere 中进行配置。如果没有 GLT，那么 Pitr 无法依据 CSN 保证一致性
-- GLT 部署可以使用 Redis，无需对 Redis 进行额外配置
+- Pitr 备份恢复功能的使用依赖 GLT，通过部署 Redis 实现。如果没有 GLT，那么生成的 CSN 会为空，导致恢复无法根据 CSN 保证一致性，此时恢复命令执行只能使用备份 ID
 - 全局备份任务需要在没有进行中的事务的时间点进行开启，由 ShardingSphere 来加锁保证
 - 备份开始后 ShardingSphere 会一直持有锁，当备份结束后才会释放锁
 - 多个 Pitr cli 客户端同时操作，只有一个 Pitr cli 客户端可执行成功

@@ -58,17 +58,20 @@ You need to prepare at least three servers: one server for the Pitr commandline 
 
 After the servers are ready, you should check and ensure the following items:
 
-- Apache ShardingSphere Proxy is allowed to access OpenGauss Servers
-- External access to Apache ShardingSphere Proxy via port 3307
-- External access to Pitr agent on OpenGauss servers via port 18080
-- Set below environment variables on OpenGauss Servers
-  - export PGDATABASE=tpccdb
-  - export PGPORT=13100
-- OpenGauss has user `omm` and database `omm` which can be accessed
-- OpenGauss enables `cbm tracking`
-- SSL key pairs. Any valid key pairs are acceptable, they will be used for Pitr cli-agent secure communication
-- Create OpenGauss backup path manually and keep it same between OpenGauss servers
-- Deploy GLT service such a Redis, in order to provide CSN to ShardingSphere and OpenGauss distributed database
+- Apache ShardingSphere
+  - Allow access to openGauss server from ShardingSphere server 
+  - Allow external access to ShardingSphere Proxy via port 3307 if using this port
+- GLT
+  - GLT is required to provide global CSN for distributed database, this can be done by Redis  
+- OpenGauss
+  - OpenGauss has user `omm` and database `omm` which can be accessed
+  - OpenGauss enables `cbm tracking`
+  - Set below environment variables on OpenGauss Servers
+    - export PGDATABASE=tpccdb
+    - export PGPORT=13100
+- Pitr
+  - External access to Pitr agent on OpenGauss servers via port 18080 if using this port
+  - SSL key pairs. Any valid key pairs are acceptable, they will be used for Pitr cli-agent secure communication
 
 #### Compilation (optional)
 
@@ -216,12 +219,11 @@ And using the script `bin/start.sh` to start ShardingSphere Proxy. This script c
 
 ### Step 3: Set OpenGauss Configurations
 
-a. Enable `cbm tracking` in postgres.conf
+Enable `cbm tracking` in postgres.conf
 
 ```shell
 enable_cbm_tracking = on
 ```
-b. Execute `gs_probackup init -B ${backup-path}` to set the expected backup path. 
 
 Then you can start both OpenGauss servers.
 
@@ -271,7 +273,10 @@ drwx------ 29 omm  omm  4.0K May 23 11:37 pgdata
 ```
 
 Parameters:
-- pgdata: OpenGauss data storage path. Using `--env-source-file` or envvar `PGDATA` if it is not specified in command line.
+- pgdata: OpenGauss data storage path. Using `--env-source-file` or envvar `PGDATA` if it is not specified in command line. Priority is :
+  - commandline parameter `pgdata` 
+  - environment variable `PGDATA`
+  - environment source file `env-source-file`
 - port: Pitr agent exposed port
 - tls-crt: TLS crt file path
 - tls-key: TLS key file path
@@ -341,14 +346,16 @@ select * from t_user;
 ```
 
 Parameters:
-- host: ShardingSphere Proxy server
-- port: ShardingSphere Proxy port
-- username: ShardingSphere Proxy user
-- password: ShardingSphere Proxy password
-- agent-port: Pitr agent port
-- dn-threads-num: OpenGauss concurrent backup
-- dn-threads-path: OpenGauss backup files path
-- b: Backup mode
+- -a, --agent-port: Pitr agent port
+- -b, --dn-backup-mode: Backup mode
+- -B, --dn-threads-path: OpenGauss backup files path
+- -j, --dn-threads-num: OpenGauss concurrent backup
+- -h, --help: help manual
+- -H, --host: ShardingSphere Proxy server
+- -p, --password: ShardingSphere Proxy password
+- -P, --port: ShardingSphere Proxy port
+- -u, --username: ShardingSphere Proxy user
+
 
 #### Show backup info 
 
@@ -357,6 +364,9 @@ Show backups:
 ```Shell
 ./gs_pitr show
 ```
+- --csn: csn of backup record
+- -h, --help: help manual
+- --id: id of backup record
 
 #### Recovery
 
@@ -372,14 +382,16 @@ Do recovery:
 ```
 
 Parameters:
-- host: ShardingSphere Proxy server
-- port: ShardingSphere Proxy port
-- username: ShardingSphere Proxy user
-- password: ShardingSphere Proxy password
-- agent-port: Pitr agent port
-- dn-threads-num: OpenGauss concurrent restore 
-- dn-backup-path: OpenGauss backup files path
-- id: Backup id
+- -a, --agent-port: Pitr agent port
+- --csn: csn of backup record
+- -B, --dn-threads-path: OpenGauss backup files path
+- -j, --dn-threads-num: OpenGauss concurrent backup
+- -h, --help: help manual
+- -H, --host: ShardingSphere Proxy server
+- -id: id of backup record
+- -p, --password: ShardingSphere Proxy password
+- -P, --port: ShardingSphere Proxy port
+- -u, --username: ShardingSphere Proxy user
 
 Verify data:
 ```SQL
@@ -394,27 +406,28 @@ Delete backup :
 ```
 
 Parameters:
-- host: ShardingSphere Proxy server
-- port: ShardingSphere Proxy port
-- username: ShardingSphere Proxy user
-- password: ShardingSphere Proxy password
-- agent-port: Pitr agent port
-- dn-backup-path: OpenGauss backup files path
-- id: Backup id
+- -a, --agent-port: Pitr agent port
+- --csn: csn of backup record
+- -B, --dn-threads-path: OpenGauss backup files path
+- -h, --help: help manual
+- -H, --host: ShardingSphere Proxy server
+- -id: id of backup record
+- -p, --password: ShardingSphere Proxy password
+- -P, --port: ShardingSphere Proxy port
+- -u, --username: ShardingSphere Proxy user
 
 
 # Limitations 
 
-- Pitr backup and restore depends on GLT which is configured in ShardingSphere. Pitr can not ensure consistency without CSN if there is no GLT
-- Redis can be deployed as GLT service without any extra configuration
-- Global backup tasks need to be executed while there is no uncommitted transaction, and this will be ensuranced by ShardingSphere lock.
+- Pitr backup and restore depends on GLT which is implemented using Redis. Pitr can not ensure consistency without CSN if there is no GLT, and only backup id could be used for pitr restore
+- Global backup tasks need to be executed while there is no uncommitted transaction, and this will be ensuranced by ShardingSphere lock
 - ShardingSphere will hold the lock until the whole backup process is done
 - Only one Pitr cli could successfully if multiple cli are executed simutaneously
 - OpenGauss data nodes should use the same IP and port while backup and recovery
-- Using the same version of ShardingSphere while backup and recovery to make sure the metadata is compatible.
-- The recovery operation need to stop service, and it is a synchonized operation. Users have to make sure the success of the recovery operation.
-- OpenGauss servers may under inconsistent status if recovery fails, such as one data node succeed while another failed. Users need to handle the exception and try to recovery again until it is succeed.
+- Using the same version of ShardingSphere while backup and recovery to make sure the metadata is compatible
+- The recovery operation need to stop service, and it is a synchonized operation. Users have to make sure the success of the recovery operation
+- OpenGauss servers may under inconsistent status if recovery fails, such as one data node succeed while another failed. Users need to handle the exception and try to recovery again until it is succeed
 - Pitr cli will create a directory `.gs_pitr/backup` under user `$HOME` and save backup metadata files under it
-- You need to copy this metadata backup under `$HOME/.gs_pitr/bakcup` to the another host first where you want to restore.
+- You need to copy this metadata backup under `$HOME/.gs_pitr/bakcup` to the another host first where you want to restore
 - The backup file under directory `$HOME/.gs_pitr/backup` will be deleted after the execution of `gs_pitr delete`
-- Canceling the executing `gs_pitr` command on client side using either `Ctrl-C` or `kill` will do nothing about the execution of server task.
+- Canceling the executing `gs_pitr` command on client side using either `Ctrl-C` or `kill` will do nothing about the execution of server task
