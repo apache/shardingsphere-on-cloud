@@ -151,12 +151,10 @@ func checkDatabaseExist(proxy pkg.IShardingSphereProxy, bak *model.LsBackup) err
 		return xerr.NewCliErr(fmt.Sprintf("get cluster metadata failed. err: %s", err))
 	}
 
-	if clusterNow.MetaData.Databases == nil {
-		return xerr.NewCliErr(fmt.Sprintf("no cluster metadata database found. err: %s", err))
-	}
-
-	for k := range clusterNow.MetaData.Databases {
-		databaseNamesExist = append(databaseNamesExist, k)
+	if clusterNow != nil && clusterNow.MetaData.Databases != nil {
+		for k := range clusterNow.MetaData.Databases {
+			databaseNamesExist = append(databaseNamesExist, k)
+		}
 	}
 
 	if len(databaseNamesExist) == 0 {
