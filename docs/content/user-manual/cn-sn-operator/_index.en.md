@@ -85,7 +85,7 @@ ShardingSphereProxy
 
 Configuration item |  Description | Type | Examples 
 ------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
-`.spec.version`  | ShardingSphere-Proxy version | string | `5.4.1`
+`.spec.version`  | ShardingSphere-Proxy version | string | `5.5.0`
 `.spec.serviceType.type` | Service type |  string | `NodePort`
 `.spec.serviceType.nodePort` | Node Port service | number | `33307`
 `.spec.replicas` | Operstor replica count | number | `3` 
@@ -147,7 +147,7 @@ metadata:
   name: shardingsphere-cluster-shardingsphere-proxy
   namespace: shardingsphere-operator
 spec:
-  version: 5.4.1
+  version: 5.5.0
   serviceType:
     type: ClusterIP
   replicas: 3
@@ -212,7 +212,7 @@ Configuration item|  Description | Type | Examples
 `metadata.namespace` | Default namespace of deployment plan | string |                                      | `shardingsphere-system`
 `spec.storageNodeConnector.type`     | Back end driver type | string | `mysql`
 `spec.storageNodeConnector.version`  | Back end driver version| string  | `5.1.47`
-`spec.serverVersion`                 | ShardingSphere-Proxy version | string | `5.4.1`
+`spec.serverVersion`                 | ShardingSphere-Proxy version | string | `5.5.0`
 `spec.replicas `     | Deployment plan instance |  number | `3`
 `spec.selectors`     | Instance selector, same as Deployment.Spec.Selectors |  number | `3`
 `spec.portBindings[0].name`          | Name of exposed port  | string |                                                                         | `3307`
@@ -270,7 +270,7 @@ spec:
   storageNodeConnector:
     type: mysql
     version: 5.1.47
-  serverVersion: 5.4.1
+  serverVersion: 5.5.0
   replicas: 3
   selector:
     matchLabels:
