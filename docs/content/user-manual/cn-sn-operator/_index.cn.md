@@ -85,7 +85,7 @@ ShardingSphereProxy
 
 配置项 |  描述 | 类型 | 示例 
 ------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
-`.spec.version`  | ShardingSphere Proxy 版本 | string | `5.4.1`
+`.spec.version`  | ShardingSphere Proxy 版本 | string | `5.5.0`
 `.spec.serviceType.type` | 服务类型 |  string | `NodePort`
 `.spec.serviceType.nodePort` | 服务 NodePort | number | `33307`
 `.spec.replicas` | 副本数 | number | `3` 
@@ -147,7 +147,7 @@ metadata:
   name: shardingsphere-cluster-shardingsphere-proxy
   namespace: shardingsphere-operator
 spec:
-  version: 5.4.1
+  version: 5.5.0
   serviceType:
     type: ClusterIP
   replicas: 3
@@ -212,7 +212,7 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 `metadata.namespace` | 计划部署的命名空间，默认为 default | string |                                      | `shardingsphere-system`
 `spec.storageNodeConnector.type`     | 后端驱动类型 | string | `mysql`
 `spec.storageNodeConnector.version`  | 后端驱动版本| string  | `5.1.47`
-`spec.serverVersion`                 | ShardingSphere Proxy 版本 | string | `5.4.1`
+`spec.serverVersion`                 | ShardingSphere Proxy 版本 | string | `5.5.0`
 `spec.replicas `     | 计划部署的实例数量 |  number | `3`
 `spec.selectors`     | 实例选择器,同 Deployment.Spec.Selectors |  number | `3`
 `spec.portBindings[0].name`          | 对外暴露的端口名称 | string |                                                                         | `3307`
@@ -270,7 +270,7 @@ spec:
   storageNodeConnector:
     type: mysql
     version: 5.1.47
-  serverVersion: 5.4.1
+  serverVersion: 5.5.0
   replicas: 3
   selector:
     matchLabels:
