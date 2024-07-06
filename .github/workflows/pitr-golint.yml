@@ -26,10 +26,10 @@ on:
     branches:
       - main 
     paths:
-      - 'solutions/pitr/**'
+      - 'solutions/opengauss/pitr/**'
       - '.github/workflows/pitr-golint.yml'
-      - 'solutions/pitr/agent/.golangci-lint.yml'
-      - 'solutions/pitr/cli/.golangci-lint.yml'
+      - 'solutions/opengauss/pitr/agent/.golangci-lint.yml'
+      - 'solutions/opengauss/pitr/cli/.golangci-lint.yml'
 
 jobs:
   changes:
@@ -51,9 +51,9 @@ jobs:
         run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.49.0
       - name: Lint Pitr Cli 
         run: |
-          cd solutions/pitr/cli
+          cd solutions/opengauss/pitr/cli
           $(go env GOPATH)/bin/golangci-lint run -v --timeout 300s ./...
       - name: Lint Pitr Agent
         run: |
-          cd solutions/pitr/agent
+          cd solutions/opengauss/pitr/agent
           $(go env GOPATH)/bin/golangci-lint run -v --timeout 300s ./...
