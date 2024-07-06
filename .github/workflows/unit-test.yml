@@ -22,7 +22,7 @@ on:
     branches: [ main ]
     paths:
       - 'shardingsphere-operator/**'
-      - 'pitr/**'
+      - 'solutions/opengauss/pitr/**'
       - '.github/workflows/unit-test.yml'
 jobs:
   operator:
@@ -40,17 +40,17 @@ jobs:
           make test
       - name: "pitr agent test"
         run: |
-          cd pitr/agent
+          cd solutions/opengauss/pitr/agent
           make test
       - name: "pitr cli test"
         run: |
-          cd pitr/cli
+          cd solutions/opengauss/pitr/cli
           make test
       - name: "aggregate reports"
         run: |
           cat ./shardingsphere-operator/cover.out >> cover.out
-          cat ./pitr/cli/cover.out >> cover.out
-          cat ./pitr/agent/cover.out >> cover.out
+          cat ./solutions/opengauss/pitr/cli/cover.out >> cover.out
+          cat ./solutions/opengauss/pitr/agent/cover.out >> cover.out
       - name: "code coverage"
         uses: codecov/codecov-action@v3
         with:
