@@ -58,6 +58,12 @@ governance:
 ## @section Compute-Node parameters
 ## 
 compute:
+
+  busyBox:
+    image:
+      repository: "busybox"
+      tag: "1.36"
+      
   ## @section Compute-Node ShardingSphere-Proxy parameters
   ## ref: https://kubernetes.io/docs/concepts/containers/images/
   ## @param compute.image.repository Image name of ShardingSphere-Proxy.
@@ -183,3 +189,5 @@ compute:
             port: 9090
             props:
               jvm-information-collector-enabled: "true"
+
+affinity: {}

@@ -47,10 +47,14 @@ spec:
       labels:
         app: {{ template "common.names.fullname" . }}
     spec:
+      {{- if .Values.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 8 }}
+      {{- end }}
       {{- if .Values.compute.mysqlConnector.version }}
       initContainers:
         - name: download-mysql-jar
-          image: busybox:1.36
+          # image: busybox:1.36
+          image: "{{ .Values.compute.busyBox.image.repository }}:{{ .Values.compute.busyBox.image.tag }}"
           command: ["sh","-c","wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{.Values.compute.mysqlConnector.version}}/mysql-connector-java-{{.Values.compute.mysqlConnector.version}}.jar;
           wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/{{.Values.compute.mysqlConnector.version}}/mysql-connector-java-{{.Values.compute.mysqlConnector.version}}.jar.md5;
           if [ $(md5sum /mysql-connector-java-{{.Values.compute.mysqlConnector.version}}.jar | cut -d ' ' -f1) = $(cat /mysql-connector-java-{{.Values.compute.mysqlConnector.version}}.jar.md5) ];
@@ -62,7 +66,8 @@ spec:
       {{- end }}
         {{- if .Values.compute.agent.enabled }}
         - name: agent-metrics-jar
-          image: busybox:1.36
+          # image: busybox:1.36
+          image: "{{ .Values.compute.busyBox.image.repository }}:{{ .Values.compute.busyBox.image.tag }}"
           command: ["sh","-c","wget https://archive.apache.org/dist/shardingsphere/{{ .Values.compute.image.tag | default .Chart.AppVersion }}/apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz;
           mkdir /opt/shardingsphere-proxy/agent;
           tar -zxvf apache-shardingsphere-{{ .Values.compute.image.tag | default .Chart.AppVersion }}-shardingsphere-agent-bin.tar.gz -C /opt/shardingsphere-proxy/agent --strip-component 1"]

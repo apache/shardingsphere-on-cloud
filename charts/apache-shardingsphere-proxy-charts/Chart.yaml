@@ -17,18 +17,18 @@
 
 apiVersion: v2
 appVersion: 5.5.0
-name: apache-shardingsphere-proxy-charts
+name: visla-shardingsphere-proxy-chart
 description: A Helm chart for ShardingSphere-Proxy-Cluster
-version: 0.3.0
+version: 0.1.1
 maintainers:
-  - name: dev@shardingsphere.apache.org
+  - name: xu.geng@visla.us
 dependencies:
   - condition: governance.enabled
     name: governance
-    repository: file://./charts/governance
+    repository: file://./governance
     version: 1.x.x
   - name: common
-    repository: https://charts.bitnami.com/bitnami
+    repository: file://./common
     tags:
       - bitnami-common
     version: 1.x.x
