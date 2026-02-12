@@ -19,6 +19,8 @@ apiVersion: shardingsphere.apache.org/v1alpha1
 kind: StorageProvider
 metadata:
   name: aws-rds-cluster-mysql-8.0.32
+  annotations:
+    storageproviders.shardingsphere.apache.org/allowed-namespaces: default
 spec:
   provisioner: storageproviders.shardingsphere.apache.org/aws-rds-cluster
   reclaimPolicy: Delete

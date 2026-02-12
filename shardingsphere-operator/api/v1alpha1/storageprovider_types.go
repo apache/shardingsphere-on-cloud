@@ -35,6 +35,9 @@ const (
 	AnnotationsMasterUsername          = "storageproviders.shardingsphere.apache.org/master-username"
 	AnnotationsMasterUserPassword      = "storageproviders.shardingsphere.apache.org/master-user-password"
 	AnnotationsFinalSnapshotIdentifier = "storageproviders.shardingsphere.apache.org/final-snapshot-identifier"
+	// AnnotationsAllowedNamespaces declares which namespaces are allowed to reference this cluster-scoped StorageProvider.
+	// Value is a comma-separated list, e.g. "default,tenant-a", or "*" to allow all namespaces.
+	AnnotationsAllowedNamespaces = "storageproviders.shardingsphere.apache.org/allowed-namespaces"
 
 	ProvisionerAWSRDSInstance = "storageproviders.shardingsphere.apache.org/aws-rds-instance"
 	ProvisionerAWSRDSCluster  = "storageproviders.shardingsphere.apache.org/aws-rds-cluster"

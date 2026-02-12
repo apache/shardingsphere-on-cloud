@@ -254,6 +254,11 @@ func (r *StorageNodeReconciler) getStorageProvider(ctx context.Context, node *v1
 		r.Recorder.Event(node, corev1.EventTypeWarning, "storageProviderNotFound", fmt.Sprintf("storageProvider %s not found", node.Spec.StorageProviderName))
 		return nil, err
 	}
+	if err := validateStorageProviderNamespace(node, storageProvider); err != nil {
+		r.Log.Error(err, fmt.Sprintf("storageProvider %s is not accessible from namespace %s", node.Spec.StorageProviderName, node.Namespace))
+		r.Recorder.Event(node, corev1.EventTypeWarning, "storageProviderNamespaceDenied", err.Error())
+		return nil, err
+	}
 
 	// check provisioner
 	// aws-like provisioner need aws rds client
@@ -267,6 +272,23 @@ func (r *StorageNodeReconciler) getStorageProvider(ctx context.Context, node *v1
 	}
 
 	return storageProvider, nil
+}
+
+func validateStorageProviderNamespace(node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
+	if storageProvider == nil {
+		return fmt.Errorf("storageProvider is nil")
+	}
+	allowedNamespaces, ok := storageProvider.Annotations[v1alpha1.AnnotationsAllowedNamespaces]
+	if !ok || strings.TrimSpace(allowedNamespaces) == "" {
+		return fmt.Errorf("storageProvider %s missing annotation %s", storageProvider.Name, v1alpha1.AnnotationsAllowedNamespaces)
+	}
+	for _, namespace := range strings.Split(allowedNamespaces, ",") {
+		namespace = strings.TrimSpace(namespace)
+		if namespace == "*" || namespace == node.Namespace {
+			return nil
+		}
+	}
+	return fmt.Errorf("namespace %s is not allowed to use storageProvider %s", node.Namespace, storageProvider.Name)
 }
 
 // nolint:gocritic

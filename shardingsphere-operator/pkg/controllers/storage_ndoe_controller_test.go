@@ -99,6 +99,9 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 		dbClass := &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: defaultTestStorageProvider,
+				Annotations: map[string]string{
+					v1alpha1.AnnotationsAllowedNamespaces: defaultTestNamespace,
+				},
 			},
 			Spec: v1alpha1.StorageProviderSpec{
 				Provisioner: v1alpha1.ProvisionerAWSRDSInstance,
@@ -641,6 +644,9 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 			storageProvider := &v1alpha1.StorageProvider{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: defaultTestStorageProvider,
+					Annotations: map[string]string{
+						v1alpha1.AnnotationsAllowedNamespaces: defaultTestNamespace,
+					},
 				},
 				Spec: v1alpha1.StorageProviderSpec{
 					Provisioner: v1alpha1.ProvisionerAWSRDSInstance,
@@ -742,6 +748,9 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 		provider = &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "aws-aurora",
+				Annotations: map[string]string{
+					v1alpha1.AnnotationsAllowedNamespaces: defaultTestNamespace,
+				},
 			},
 			Spec: v1alpha1.StorageProviderSpec{
 				Provisioner: v1alpha1.ProvisionerAWSAurora,
@@ -1192,6 +1201,9 @@ var _ = Describe("StorageNode Controller Mock Test For AWS RDS Cluster", func() 
 		provider = &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: providerName,
+				Annotations: map[string]string{
+					v1alpha1.AnnotationsAllowedNamespaces: defaultTestNamespace,
+				},
 			},
 			Spec: v1alpha1.StorageProviderSpec{
 				Provisioner: v1alpha1.ProvisionerAWSRDSCluster,
@@ -1633,5 +1645,41 @@ var _ = Describe("StorageNode Controller Mock Test For AWS RDS Cluster", func() 
 			err = fakeClient.Get(ctx, namespacedName, storageNode)
 			Expect(storageNode.Status.Registered).To(BeFalse())
 		})
+	})
+})
+
+var _ = Describe("validateStorageProviderNamespace", func() {
+	It("should allow when namespace is in allow list", func() {
+		node := &v1alpha1.StorageNode{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "tenant-a",
+			},
+		}
+		provider := &v1alpha1.StorageProvider{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "sp",
+				Annotations: map[string]string{
+					v1alpha1.AnnotationsAllowedNamespaces: "tenant-a,tenant-b",
+				},
+			},
+		}
+		Expect(validateStorageProviderNamespace(node, provider)).To(Succeed())
+	})
+
+	It("should deny when namespace is not in allow list", func() {
+		node := &v1alpha1.StorageNode{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "tenant-c",
+			},
+		}
+		provider := &v1alpha1.StorageProvider{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "sp",
+				Annotations: map[string]string{
+					v1alpha1.AnnotationsAllowedNamespaces: "tenant-a,tenant-b",
+				},
+			},
+		}
+		Expect(validateStorageProviderNamespace(node, provider)).To(HaveOccurred())
 	})
 })

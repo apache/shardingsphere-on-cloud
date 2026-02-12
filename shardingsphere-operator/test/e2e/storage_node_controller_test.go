@@ -47,6 +47,9 @@ var _ = Describe("StorageNode Controller Suite Test For AWS RDS Instance", func(
 		StorageProvider := &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: storageProviderName,
+				Annotations: map[string]string{
+					v1alpha1.AnnotationsAllowedNamespaces: "default",
+				},
 			},
 			Spec: v1alpha1.StorageProviderSpec{
 				Provisioner: v1alpha1.ProvisionerAWSRDSInstance,
@@ -294,6 +297,9 @@ var _ = Describe("StorageNode Controller Suite Test For AWS Aurora Cluster", fun
 		provider := &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: storageProviderName,
+				Annotations: map[string]string{
+					v1alpha1.AnnotationsAllowedNamespaces: "default",
+				},
 			},
 			Spec: v1alpha1.StorageProviderSpec{
 				Provisioner: v1alpha1.ProvisionerAWSAurora,
