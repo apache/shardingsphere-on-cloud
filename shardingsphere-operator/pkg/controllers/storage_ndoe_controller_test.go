@@ -1683,3 +1683,20 @@ var _ = Describe("validateStorageProviderNamespace", func() {
 		Expect(validateStorageProviderNamespace(node, provider)).To(HaveOccurred())
 	})
 })
+
+var _ = Describe("storageProviderObjectKey", func() {
+	It("should include storageProvider name and storagenode namespace", func() {
+		node := &v1alpha1.StorageNode{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "tenant-a",
+			},
+			Spec: v1alpha1.StorageNodeSpec{
+				StorageProviderName: "sp-a",
+			},
+		}
+
+		key := storageProviderObjectKey(node)
+		Expect(key.Name).To(Equal("sp-a"))
+		Expect(key.Namespace).To(Equal("tenant-a"))
+	})
+})

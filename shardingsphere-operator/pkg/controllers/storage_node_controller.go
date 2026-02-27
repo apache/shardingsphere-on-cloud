@@ -249,7 +249,7 @@ func (r *StorageNodeReconciler) getStorageProvider(ctx context.Context, node *v1
 
 	storageProvider = &v1alpha1.StorageProvider{}
 
-	if err := r.Get(ctx, client.ObjectKey{Name: node.Spec.StorageProviderName}, storageProvider); err != nil {
+	if err := r.Get(ctx, storageProviderObjectKey(node), storageProvider); err != nil {
 		r.Log.Error(err, fmt.Sprintf("unable to fetch storageProvider %s", node.Spec.StorageProviderName))
 		r.Recorder.Event(node, corev1.EventTypeWarning, "storageProviderNotFound", fmt.Sprintf("storageProvider %s not found", node.Spec.StorageProviderName))
 		return nil, err
@@ -272,6 +272,13 @@ func (r *StorageNodeReconciler) getStorageProvider(ctx context.Context, node *v1
 	}
 
 	return storageProvider, nil
+}
+
+func storageProviderObjectKey(node *v1alpha1.StorageNode) client.ObjectKey {
+	return client.ObjectKey{
+		Name:      node.Spec.StorageProviderName,
+		Namespace: node.Namespace,
+	}
 }
 
 func validateStorageProviderNamespace(node *v1alpha1.StorageNode, storageProvider *v1alpha1.StorageProvider) error {
