@@ -98,7 +98,8 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 		// create default resource
 		dbClass := &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: defaultTestStorageProvider,
+				Name:      defaultTestStorageProvider,
+				Namespace: defaultTestNamespace,
 				Annotations: map[string]string{
 					v1alpha1.AnnotationsAllowedNamespaces: defaultTestNamespace,
 				},
@@ -134,7 +135,8 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 		})).Should(Succeed())
 		Expect(fakeClient.Delete(ctx, &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: defaultTestStorageProvider,
+				Name:      defaultTestStorageProvider,
+				Namespace: defaultTestNamespace,
 			},
 		})).Should(Succeed())
 
@@ -643,7 +645,8 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 
 			storageProvider := &v1alpha1.StorageProvider{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: defaultTestStorageProvider,
+					Name:      defaultTestStorageProvider,
+					Namespace: defaultTestNamespace,
 					Annotations: map[string]string{
 						v1alpha1.AnnotationsAllowedNamespaces: defaultTestNamespace,
 					},
@@ -747,7 +750,8 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 	BeforeEach(func() {
 		provider = &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "aws-aurora",
+				Name:      "aws-aurora",
+				Namespace: defaultTestNamespace,
 				Annotations: map[string]string{
 					v1alpha1.AnnotationsAllowedNamespaces: defaultTestNamespace,
 				},
@@ -1200,7 +1204,8 @@ var _ = Describe("StorageNode Controller Mock Test For AWS RDS Cluster", func() 
 	BeforeEach(func() {
 		provider = &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: providerName,
+				Name:      providerName,
+				Namespace: defaultTestNamespace,
 				Annotations: map[string]string{
 					v1alpha1.AnnotationsAllowedNamespaces: defaultTestNamespace,
 				},
