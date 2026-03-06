@@ -46,7 +46,8 @@ var _ = Describe("StorageNode Controller Suite Test For AWS RDS Instance", func(
 	BeforeEach(func() {
 		StorageProvider := &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: storageProviderName,
+				Name:      storageProviderName,
+				Namespace: "default",
 			},
 			Spec: v1alpha1.StorageProviderSpec{
 				Provisioner: v1alpha1.ProvisionerAWSRDSInstance,
@@ -66,7 +67,7 @@ var _ = Describe("StorageNode Controller Suite Test For AWS RDS Instance", func(
 
 	AfterEach(func() {
 		StorageProvider := &v1alpha1.StorageProvider{}
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: storageProviderName}, StorageProvider)).Should(Succeed())
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: storageProviderName, Namespace: "default"}, StorageProvider)).Should(Succeed())
 		Expect(k8sClient.Delete(ctx, StorageProvider)).Should(Succeed())
 	})
 
@@ -293,7 +294,8 @@ var _ = Describe("StorageNode Controller Suite Test For AWS Aurora Cluster", fun
 	BeforeEach(func() {
 		provider := &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: storageProviderName,
+				Name:      storageProviderName,
+				Namespace: "default",
 			},
 			Spec: v1alpha1.StorageProviderSpec{
 				Provisioner: v1alpha1.ProvisionerAWSAurora,
@@ -313,7 +315,7 @@ var _ = Describe("StorageNode Controller Suite Test For AWS Aurora Cluster", fun
 		monkey.UnpatchAll()
 
 		StorageProvider := &v1alpha1.StorageProvider{}
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: storageProviderName}, StorageProvider)).Should(Succeed())
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: storageProviderName, Namespace: "default"}, StorageProvider)).Should(Succeed())
 		Expect(k8sClient.Delete(ctx, StorageProvider)).Should(Succeed())
 	})
 

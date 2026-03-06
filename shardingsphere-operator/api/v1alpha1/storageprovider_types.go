@@ -75,7 +75,7 @@ type StorageProviderStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Cluster,shortName=sp
+//+kubebuilder:resource:scope=Namespaced,shortName=sp
 
 // StorageProvider is the Schema for the storageproviders API
 type StorageProvider struct {

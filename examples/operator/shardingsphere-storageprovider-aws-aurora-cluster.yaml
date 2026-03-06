@@ -20,6 +20,7 @@ apiVersion: shardingsphere.apache.org/v1alpha1
 kind: StorageProvider
 metadata:
   name: aws-aurora-cluster-mysql-5.7
+  namespace: default
 spec:
   provisioner: storageproviders.shardingsphere.apache.org/aws-aurora
   reclaimPolicy: Delete

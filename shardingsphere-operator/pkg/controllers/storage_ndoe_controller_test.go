@@ -98,7 +98,8 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 		// create default resource
 		dbClass := &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: defaultTestStorageProvider,
+				Name:      defaultTestStorageProvider,
+				Namespace: defaultTestNamespace,
 			},
 			Spec: v1alpha1.StorageProviderSpec{
 				Provisioner: v1alpha1.ProvisionerAWSRDSInstance,
@@ -131,7 +132,8 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 		})).Should(Succeed())
 		Expect(fakeClient.Delete(ctx, &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: defaultTestStorageProvider,
+				Name:      defaultTestStorageProvider,
+				Namespace: defaultTestNamespace,
 			},
 		})).Should(Succeed())
 
@@ -180,6 +182,45 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 			_, err := reconciler.Reconcile(ctx, req)
 			Expect(client.IgnoreNotFound(err)).Should(Succeed())
 			Expect(fakeClient.Delete(ctx, storageNode)).Should(Succeed())
+		})
+	})
+
+	Context("create storage node with storage provider in another namespace", func() {
+		It("should fail reconcile because cross-namespace reference is not allowed", func() {
+			storageProvider := &v1alpha1.StorageProvider{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-storage-provider-cross-namespace",
+					Namespace: "another-namespace",
+				},
+				Spec: v1alpha1.StorageProviderSpec{
+					Provisioner: v1alpha1.ProvisionerAWSRDSInstance,
+				},
+			}
+			storageNode := &v1alpha1.StorageNode{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-storage-node-3",
+					Namespace: defaultTestNamespace,
+				},
+				Spec: v1alpha1.StorageNodeSpec{
+					StorageProviderName: storageProvider.GetName(),
+				},
+				Status: v1alpha1.StorageNodeStatus{},
+			}
+
+			Expect(fakeClient.Create(ctx, storageProvider)).Should(Succeed())
+			Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
+
+			req := ctrl.Request{
+				NamespacedName: client.ObjectKey{
+					Name:      storageNode.GetName(),
+					Namespace: storageNode.GetNamespace(),
+				},
+			}
+
+			_, err := reconciler.Reconcile(ctx, req)
+			Expect(apierrors.IsNotFound(err)).To(BeTrue())
+			Expect(fakeClient.Delete(ctx, storageNode)).Should(Succeed())
+			Expect(fakeClient.Delete(ctx, storageProvider)).Should(Succeed())
 		})
 	})
 
@@ -640,7 +681,8 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 
 			storageProvider := &v1alpha1.StorageProvider{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: defaultTestStorageProvider,
+					Name:      defaultTestStorageProvider,
+					Namespace: defaultTestNamespace,
 				},
 				Spec: v1alpha1.StorageProviderSpec{
 					Provisioner: v1alpha1.ProvisionerAWSRDSInstance,
@@ -741,7 +783,8 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 	BeforeEach(func() {
 		provider = &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "aws-aurora",
+				Name:      "aws-aurora",
+				Namespace: defaultTestNamespace,
 			},
 			Spec: v1alpha1.StorageProviderSpec{
 				Provisioner: v1alpha1.ProvisionerAWSAurora,
@@ -1191,7 +1234,8 @@ var _ = Describe("StorageNode Controller Mock Test For AWS RDS Cluster", func() 
 	BeforeEach(func() {
 		provider = &v1alpha1.StorageProvider{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: providerName,
+				Name:      providerName,
+				Namespace: defaultTestNamespace,
 			},
 			Spec: v1alpha1.StorageProviderSpec{
 				Provisioner: v1alpha1.ProvisionerAWSRDSCluster,

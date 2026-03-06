@@ -76,7 +76,7 @@ type StorageNodeReconciler struct {
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/finalizers,verbs=update
-// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storageproviders,verbs=get;list;watch
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storageproviders,verbs=get
 // +kubebuilder:rbac:groups=postgresql.cnpg.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=event,verbs=create;patch
 
@@ -249,9 +249,9 @@ func (r *StorageNodeReconciler) getStorageProvider(ctx context.Context, node *v1
 
 	storageProvider = &v1alpha1.StorageProvider{}
 
-	if err := r.Get(ctx, client.ObjectKey{Name: node.Spec.StorageProviderName}, storageProvider); err != nil {
-		r.Log.Error(err, fmt.Sprintf("unable to fetch storageProvider %s", node.Spec.StorageProviderName))
-		r.Recorder.Event(node, corev1.EventTypeWarning, "storageProviderNotFound", fmt.Sprintf("storageProvider %s not found", node.Spec.StorageProviderName))
+	if err := r.Get(ctx, client.ObjectKey{Name: node.Spec.StorageProviderName, Namespace: node.Namespace}, storageProvider); err != nil {
+		r.Log.Error(err, fmt.Sprintf("unable to fetch storageProvider %s/%s", node.Namespace, node.Spec.StorageProviderName))
+		r.Recorder.Event(node, corev1.EventTypeWarning, "storageProviderNotFound", fmt.Sprintf("storageProvider %s/%s not found", node.Namespace, node.Spec.StorageProviderName))
 		return nil, err
 	}
 

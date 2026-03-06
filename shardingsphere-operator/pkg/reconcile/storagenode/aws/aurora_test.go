@@ -146,7 +146,8 @@ var _ = Describe("Test For AWS Aurora Manually", func() {
 
 			storageProvider := &v1alpha1.StorageProvider{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-get-aurora-cluster",
+					Name:      "test-get-aurora-cluster",
+					Namespace: "test-namespace",
 				},
 				Spec: v1alpha1.StorageProviderSpec{
 					Provisioner:   v1alpha1.ProvisionerAWSAurora,

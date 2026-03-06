@@ -20,6 +20,7 @@ apiVersion: shardingsphere.apache.org/v1alpha1
 kind: StorageProvider
 metadata:
   name: aws-rds-instance-mysql-5.7
+  namespace: default
 spec:
   provisioner: storageproviders.shardingsphere.apache.org/aws-rds-instance
   reclaimPolicy: Delete
