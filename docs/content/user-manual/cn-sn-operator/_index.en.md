@@ -329,7 +329,7 @@ Configuration items |  Description | Type | Examples
 ------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
 `metadata.name` | Name of deployment plan |  string | `foo` 
 `metadata.namespace` | Default namespace of deployment plan | string |                                      | `shardingsphere-system`
-`spec.storageProviderName` | Name of provisioner |  string  | `aws-rds-instance` 
+`spec.storageProviderName` | Name of a StorageProviderBinding in the same namespace |  string  | `aws-rds-instance`
 
 ##### Optional Configuration
 
@@ -340,6 +340,18 @@ Configuration item |  Description | Type | Examples
 
 #### Examples
 
+Before creating a StorageNode, a cluster administrator must grant its namespace access to the cluster-scoped StorageProvider:
+
+```yaml
+apiVersion: shardingsphere.apache.org/v1alpha1
+kind: StorageProviderBinding
+metadata:
+  name: aws-aurora-cluster-mysql-5.7
+  namespace: tenant-a
+spec:
+  storageProviderName: aws-aurora-cluster-mysql-5.7
+```
+
 The following is a StorageNode configuration introduction for AWS RDS Aurora, which can pull up Aurora cluster:
 
 ```yaml
@@ -347,6 +359,7 @@ apiVersion: shardingsphere.apache.org/v1alpha1
 kind: StorageNode
 metadata:
   name: storage-node-with-aurora-example
+  namespace: tenant-a
   annotations:
     "storageproviders.shardingsphere.apache.org/cluster-identifier": "storage-node-with-aurora-example"
     "storageproviders.shardingsphere.apache.org/instance-db-name": "test_db"

@@ -81,6 +81,7 @@ spec:
                   set, will NOT create database
                 type: string
               storageProviderName:
+                description: StorageProviderName is the name of a StorageProviderBinding in the same namespace.
                 type: string
             required:
             - storageProviderName

@@ -62,9 +62,17 @@ var _ = Describe("StorageNode Controller Suite Test For AWS RDS Instance", func(
 		}
 
 		Expect(k8sClient.Create(ctx, StorageProvider)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, &v1alpha1.StorageProviderBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: storageProviderName, Namespace: "default"},
+			Spec:       v1alpha1.StorageProviderBindingSpec{StorageProviderName: storageProviderName},
+		})).Should(Succeed())
 	})
 
 	AfterEach(func() {
+		binding := &v1alpha1.StorageProviderBinding{}
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: storageProviderName, Namespace: "default"}, binding)).Should(Succeed())
+		Expect(k8sClient.Delete(ctx, binding)).Should(Succeed())
+
 		StorageProvider := &v1alpha1.StorageProvider{}
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: storageProviderName}, StorageProvider)).Should(Succeed())
 		Expect(k8sClient.Delete(ctx, StorageProvider)).Should(Succeed())
@@ -307,10 +315,18 @@ var _ = Describe("StorageNode Controller Suite Test For AWS Aurora Cluster", fun
 			},
 		}
 		Expect(k8sClient.Create(ctx, provider)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, &v1alpha1.StorageProviderBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: storageProviderName, Namespace: "default"},
+			Spec:       v1alpha1.StorageProviderBindingSpec{StorageProviderName: storageProviderName},
+		})).Should(Succeed())
 	})
 
 	AfterEach(func() {
 		monkey.UnpatchAll()
+
+		binding := &v1alpha1.StorageProviderBinding{}
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: storageProviderName, Namespace: "default"}, binding)).Should(Succeed())
+		Expect(k8sClient.Delete(ctx, binding)).Should(Succeed())
 
 		StorageProvider := &v1alpha1.StorageProvider{}
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: storageProviderName}, StorageProvider)).Should(Succeed())

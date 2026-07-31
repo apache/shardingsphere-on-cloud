@@ -116,6 +116,7 @@ type StorageNode struct {
 // StorageNodeSpec defines the desired state of a set of storage units
 type StorageNodeSpec struct {
 	// +kubebuilder:validation:Required
+	// StorageProviderName is the name of a StorageProviderBinding in the same namespace.
 	StorageProviderName string `json:"storageProviderName"`
 	// +optional
 	// the default database name of the storage node.

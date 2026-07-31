@@ -77,6 +77,7 @@ type StorageNodeReconciler struct {
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storagenodes/finalizers,verbs=update
 // +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storageproviders,verbs=get;list;watch
+// +kubebuilder:rbac:groups=shardingsphere.apache.org,resources=storageproviderbindings,verbs=get;list;watch
 // +kubebuilder:rbac:groups=postgresql.cnpg.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=event,verbs=create;patch
 
@@ -91,10 +92,10 @@ func (r *StorageNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Get storageProvider with storagenode.Spec.StorageProviderName
+	// Resolve the namespace-local StorageProviderBinding before reading a cluster-scoped StorageProvider.
 	storageProvider, err := r.getStorageProvider(ctx, node)
 	if err != nil {
-		r.Log.Error(err, fmt.Sprintf("unable to fetch storageProvider %s", node.Spec.StorageProviderName))
+		r.Log.Error(err, fmt.Sprintf("unable to resolve storageProvider binding %s", node.Spec.StorageProviderName))
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -247,11 +248,19 @@ func (r *StorageNodeReconciler) getStorageProvider(ctx context.Context, node *v1
 		return nil, fmt.Errorf("storageProviderName is nil")
 	}
 
+	binding := &v1alpha1.StorageProviderBinding{}
+	bindingKey := client.ObjectKey{Name: node.Spec.StorageProviderName, Namespace: node.Namespace}
+	if err := r.Get(ctx, bindingKey, binding); err != nil {
+		r.Log.Error(err, fmt.Sprintf("unable to fetch StorageProviderBinding %s/%s", node.Namespace, node.Spec.StorageProviderName))
+		r.Recorder.Event(node, corev1.EventTypeWarning, "storageProviderBindingNotFound", fmt.Sprintf("StorageProviderBinding %s not found in namespace %s", node.Spec.StorageProviderName, node.Namespace))
+		return nil, err
+	}
+
 	storageProvider = &v1alpha1.StorageProvider{}
 
-	if err := r.Get(ctx, client.ObjectKey{Name: node.Spec.StorageProviderName}, storageProvider); err != nil {
-		r.Log.Error(err, fmt.Sprintf("unable to fetch storageProvider %s", node.Spec.StorageProviderName))
-		r.Recorder.Event(node, corev1.EventTypeWarning, "storageProviderNotFound", fmt.Sprintf("storageProvider %s not found", node.Spec.StorageProviderName))
+	if err := r.Get(ctx, client.ObjectKey{Name: binding.Spec.StorageProviderName}, storageProvider); err != nil {
+		r.Log.Error(err, fmt.Sprintf("unable to fetch storageProvider %s", binding.Spec.StorageProviderName))
+		r.Recorder.Event(node, corev1.EventTypeWarning, "storageProviderNotFound", fmt.Sprintf("storageProvider %s not found", binding.Spec.StorageProviderName))
 		return nil, err
 	}
 

@@ -329,7 +329,7 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 ------------------ | --------------------------|------------------------------------------------------ | ----------------------------------------
 `metadata.name` | 计划部署的名称 |  string | `foo` 
 `metadata.namespace` | 计划部署的命名空间，默认为 default | string |                                      | `shardingsphere-system`
-`spec.storageProviderName` | StorageProvider 名称 |  string  | `aws-rds-instance` 
+`spec.storageProviderName` | 同一命名空间内 StorageProviderBinding 的名称 |  string  | `aws-rds-instance`
 
 ##### 选填配置
 
@@ -340,6 +340,18 @@ helm install [RELEASE_NAME] shardingsphere/apache-shardingsphere-operator-charts
 
 #### 示例
 
+创建 StorageNode 前，集群管理员必须先授权该命名空间访问集群级 StorageProvider：
+
+```yaml
+apiVersion: shardingsphere.apache.org/v1alpha1
+kind: StorageProviderBinding
+metadata:
+  name: aws-aurora-cluster-mysql-5.7
+  namespace: tenant-a
+spec:
+  storageProviderName: aws-aurora-cluster-mysql-5.7
+```
+
 以下是一个 AWS RDS Aurora 对应的 StorageNode 配置说明，可以拉起相应的 Aurora 集群：
 
 ```yaml
@@ -347,6 +359,7 @@ apiVersion: shardingsphere.apache.org/v1alpha1
 kind: StorageNode
 metadata:
   name: storage-node-with-aurora-example
+  namespace: tenant-a
   annotations:
     "storageproviders.shardingsphere.apache.org/cluster-identifier": "storage-node-with-aurora-example"
     "storageproviders.shardingsphere.apache.org/instance-db-name": "test_db"

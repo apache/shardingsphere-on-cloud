@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: storagenodes.shardingsphere.apache.org
 spec:
   group: shardingsphere.apache.org
@@ -38,14 +37,19 @@ spec:
         description: StorageNode is the Schema for the ShardingSphere storage unit
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -55,16 +59,20 @@ spec:
             properties:
               replicas:
                 default: 1
-                description: Only for aws aurora storage provider right now. And the
-                  default value is 1. aws rds instance is always 1. aws rds cluster
-                  will auto create 3 instances(1 primary and 2 replicas).
+                description: |-
+                  Only for aws aurora storage provider right now. And the default value is 1.
+                  aws rds instance is always 1.
+                  aws rds cluster will auto create 3 instances(1 primary and 2 replicas).
                 format: int32
                 type: integer
               schema:
-                description: the default database name of the storage node. if not
-                  set, will NOT create database
+                description: |-
+                  the default database name of the storage node.
+                  if not set, will NOT create database
                 type: string
               storageProviderName:
+                description: StorageProviderName is the name of a StorageProviderBinding
+                  in the same namespace.
                 type: string
             required:
             - storageProviderName
@@ -168,10 +176,11 @@ spec:
                 format: int64
                 type: integer
               phase:
-                description: 'Phase is a brief summary of the StorageNode life cycle
-                  There are two possible phase values: Ready: StorageNode can already
-                  provide external services NotReady: StorageNode cannot provide external
-                  services'
+                description: |-
+                  Phase is a brief summary of the StorageNode life cycle
+                  There are two possible phase values:
+                  Ready: StorageNode can already provide external services
+                  NotReady: StorageNode cannot provide external services
                 type: string
               registered:
                 description: Registered indicates whether the StorageNode has been

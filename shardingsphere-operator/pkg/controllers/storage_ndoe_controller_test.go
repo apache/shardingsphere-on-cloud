@@ -81,8 +81,42 @@ func fakeStorageNodeReconciler() {
 	}
 }
 
+func storageProviderBinding(name, namespace, storageProviderName string) *v1alpha1.StorageProviderBinding {
+	return &v1alpha1.StorageProviderBinding{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec:       v1alpha1.StorageProviderBindingSpec{StorageProviderName: storageProviderName},
+	}
+}
+
 var _ = BeforeEach(func() {
 	fakeStorageNodeReconciler()
+})
+
+var _ = Describe("StorageProviderBinding access control", func() {
+	It("does not resolve a binding from another namespace", func() {
+		provider := &v1alpha1.StorageProvider{ObjectMeta: metav1.ObjectMeta{Name: "shared-provider"}}
+		Expect(fakeClient.Create(ctx, provider)).Should(Succeed())
+		Expect(fakeClient.Create(ctx, storageProviderBinding("tenant-provider", "other-namespace", provider.Name))).Should(Succeed())
+
+		node := &v1alpha1.StorageNode{
+			ObjectMeta: metav1.ObjectMeta{Name: "node", Namespace: defaultTestNamespace},
+			Spec:       v1alpha1.StorageNodeSpec{StorageProviderName: "tenant-provider"},
+		}
+		_, err := reconciler.getStorageProvider(ctx, node)
+		Expect(apierrors.IsNotFound(err)).To(BeTrue())
+	})
+
+	It("does not resolve a StorageProvider without a same-namespace binding", func() {
+		provider := &v1alpha1.StorageProvider{ObjectMeta: metav1.ObjectMeta{Name: "unbound-provider"}}
+		Expect(fakeClient.Create(ctx, provider)).Should(Succeed())
+
+		node := &v1alpha1.StorageNode{
+			ObjectMeta: metav1.ObjectMeta{Name: "node", Namespace: defaultTestNamespace},
+			Spec:       v1alpha1.StorageNodeSpec{StorageProviderName: provider.Name},
+		}
+		_, err := reconciler.getStorageProvider(ctx, node)
+		Expect(apierrors.IsNotFound(err)).To(BeTrue())
+	})
 })
 
 var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func() {
@@ -118,6 +152,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Rds Instance", func()
 			},
 		}
 		Expect(fakeClient.Create(ctx, dbClass)).Should(Succeed())
+		Expect(fakeClient.Create(ctx, storageProviderBinding(defaultTestStorageProvider, defaultTestNamespace, defaultTestStorageProvider))).Should(Succeed())
 		Expect(fakeClient.Create(ctx, storageNode)).Should(Succeed())
 	})
 
@@ -754,6 +789,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS Aurora", func() {
 			},
 		}
 		Expect(fakeClient.Create(ctx, provider)).Should(Succeed())
+		Expect(fakeClient.Create(ctx, storageProviderBinding(provider.Name, defaultTestNamespace, provider.Name))).Should(Succeed())
 
 		// mock aws client
 		// mock aws rds client
@@ -1205,6 +1241,7 @@ var _ = Describe("StorageNode Controller Mock Test For AWS RDS Cluster", func() 
 			},
 		}
 		Expect(fakeClient.Create(ctx, provider)).Should(Succeed())
+		Expect(fakeClient.Create(ctx, storageProviderBinding(provider.Name, defaultTestNamespace, provider.Name))).Should(Succeed())
 
 		// mock aws client
 		// mock aws rds client
