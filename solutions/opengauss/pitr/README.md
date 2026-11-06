@@ -128,7 +128,7 @@ Pitr cli (aka `gs_pitr`) and Pitr agent (aka `pitr-agent`) binaries could be dow
 
 The whole deployment process consists of two parts: 
 
-1. Deploying Apache ShardingSphere Proxy, Zookeeper and Pitr Cli, refering to step 1 - step 2
+1. Deploying Apache ShardingSphere Proxy, Zookeeper and Pitr Cli, referring to step 1 - step 2
 2. Deploying OpenGauss and Pitr Agent, refering to step 3 - step 5.
 
 ### Step 1: Get Pitr tools
